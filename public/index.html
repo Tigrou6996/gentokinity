@@ -2566,37 +2566,75 @@
                             </div>
 
                             <!-- Where the live connection runs (public/runmode.js) -->
-                            <div class="settings-group-premium" id="runmode-card" style="margin-bottom: 2rem;">
-                                <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-tower-broadcast"></i> Connexion au live : Cloud ou sur mon PC
-                                </h3>
-                                <p class="text-dim small mb-3">Choisissez où Gentok se connecte à votre live TikTok. Vos réglages, overlays et classements sont les mêmes dans les deux cas.</p>
-                                <div class="runmode-options" role="radiogroup">
-                                    <label class="runmode-option"><input type="radio" name="runmode" value="auto">
-                                        <span><b><i class="fas fa-wand-magic-sparkles"></i> Automatique</b> <em>recommandé</em>
-                                        <small>Sur votre PC quand l'application Gentok est ouverte, sinon dans le Cloud.</small></span></label>
-                                    <label class="runmode-option"><input type="radio" name="runmode" value="cloud">
-                                        <span><b><i class="fas fa-cloud"></i> Cloud (serveurs Gentok)</b>
-                                        <small>Rien à installer, marche même en live depuis le téléphone, votre PC peut être éteint.</small></span></label>
-                                    <label class="runmode-option"><input type="radio" name="runmode" value="pc">
-                                        <span><b><i class="fas fa-desktop"></i> Sur mon PC (application Windows)</b>
-                                        <small>Connexion depuis votre ordinateur et votre adresse IP, toutes les actions PC disponibles.</small></span></label>
+                            <div class="settings-group-premium rm-card" id="runmode-card" style="margin-bottom: 2rem;">
+                                <div class="rm-head">
+                                    <span class="rm-head-icon"><i class="fas fa-tower-broadcast"></i></span>
+                                    <div>
+                                        <h3>Connexion au live</h3>
+                                        <p>Où Gentok se connecte à votre live TikTok. Réglages, overlays et classements restent les mêmes.</p>
+                                    </div>
                                 </div>
-                                <div class="table-container">
-                                    <table class="runmode-table">
-                                        <thead><tr><th></th><th><i class="fas fa-cloud"></i> Cloud</th><th><i class="fas fa-desktop"></i> Sur mon PC</th></tr></thead>
-                                        <tbody>
-                                            <tr><td>Installation</td><td>Aucune, depuis le navigateur</td><td>Application Windows à installer</td></tr>
-                                            <tr><td>PC allumé pendant le live</td><td>Non (idéal en live sur téléphone)</td><td>Oui, l'application doit rester ouverte</td></tr>
-                                            <tr><td>Overlays, alertes, TTS, points, objectifs</td><td>Oui</td><td>Oui</td></tr>
-                                            <tr><td>Touches clavier, OBS, Minecraft, Streamer.bot</td><td>Seulement si l'application est ouverte (elle reçoit les ordres)</td><td>Oui, directement</td></tr>
-                                            <tr><td>Adresse IP utilisée pour TikTok</td><td>Celle des serveurs Gentok</td><td>La vôtre (moins de blocages TikTok)</td></tr>
-                                            <tr><td>Réactivité des actions</td><td>Très bonne</td><td>La meilleure (tout est sur place)</td></tr>
-                                            <tr><td>Ressources de votre PC</td><td>Aucune</td><td>Faibles</td></tr>
-                                        </tbody>
-                                    </table>
+
+                                <div class="rm-options" role="radiogroup">
+                                    <label class="rm-option rm-auto">
+                                        <input type="radio" name="runmode" value="auto">
+                                        <span class="rm-badge">Recommandé</span>
+                                        <span class="rm-bubble"><i class="fas fa-wand-magic-sparkles"></i></span>
+                                        <b>Automatique</b>
+                                        <small>Votre PC quand l'application est ouverte, sinon le Cloud. Rien à penser.</small>
+                                    </label>
+                                    <label class="rm-option rm-cloud">
+                                        <input type="radio" name="runmode" value="cloud">
+                                        <span class="rm-bubble"><i class="fas fa-cloud"></i></span>
+                                        <b>Cloud</b>
+                                        <small>Les serveurs Gentok s'en occupent. PC éteint possible, idéal en live téléphone.</small>
+                                    </label>
+                                    <label class="rm-option rm-pc">
+                                        <input type="radio" name="runmode" value="pc">
+                                        <span class="rm-bubble"><i class="fas fa-desktop"></i></span>
+                                        <b>Sur mon PC</b>
+                                        <small>L'application Windows se connecte avec votre IP. Toutes les actions PC en direct.</small>
+                                    </label>
                                 </div>
-                                <div id="runmode-status" class="small mt-2"></div>
+
+                                <div id="runmode-status" class="rm-status"></div>
+
+                                <details class="rm-compare">
+                                    <summary><i class="fas fa-scale-balanced"></i> Quelle différence entre Cloud et PC ?</summary>
+                                    <div class="rm-grid">
+                                        <div class="rm-col-head"></div>
+                                        <div class="rm-col-head"><i class="fas fa-cloud"></i> Cloud</div>
+                                        <div class="rm-col-head"><i class="fas fa-desktop"></i> Sur mon PC</div>
+
+                                        <div class="rm-label">Installation</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Aucune</div>
+                                        <div class="rm-mid"><i class="fas fa-download"></i> Application Windows</div>
+
+                                        <div class="rm-label">PC allumé pendant le live</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Pas besoin</div>
+                                        <div class="rm-mid"><i class="fas fa-power-off"></i> Oui, appli ouverte</div>
+
+                                        <div class="rm-label">Overlays, alertes, TTS, points</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Oui</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Oui</div>
+
+                                        <div class="rm-label">Clavier, OBS, Minecraft, Streamer.bot</div>
+                                        <div class="rm-mid"><i class="fas fa-circle-half-stroke"></i> Si l'appli est ouverte</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Oui, en direct</div>
+
+                                        <div class="rm-label">Adresse IP vue par TikTok</div>
+                                        <div class="rm-mid"><i class="fas fa-server"></i> Celle de Gentok</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> La vôtre</div>
+
+                                        <div class="rm-label">Réactivité des actions</div>
+                                        <div class="rm-yes"><i class="fas fa-bolt"></i> Très bonne</div>
+                                        <div class="rm-yes"><i class="fas fa-bolt"></i> Maximale</div>
+
+                                        <div class="rm-label">Ressources de votre PC</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Aucune</div>
+                                        <div class="rm-yes"><i class="fas fa-feather"></i> Très faibles</div>
+                                    </div>
+                                </details>
                             </div>
 
                             <!-- Application & updates (filled by appstatus.js) -->
