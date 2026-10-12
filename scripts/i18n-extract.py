@@ -94,7 +94,7 @@ def handle_js_literal(raw, is_template):
     elif looks_french_ui(raw):
         texts.add(norm(raw))
 
-for js in ["public/app.js", "public/previews.js", "public/router.js"]:
+for js in ["public/app.js", "public/previews.js", "public/router.js", "public/pro.js"]:
     p = os.path.join(ROOT, js)
     src = open(p, encoding="utf-8").read()
     # drop comments
@@ -108,6 +108,14 @@ for js in ["public/app.js", "public/previews.js", "public/router.js"]:
             handle_js_literal(m.group(1), True)
         else:
             handle_js_literal(m.group(2) if m.group(2) is not None else m.group(3), False)
+
+# Explicit t('...') calls are always UI texts, even short ones the heuristics would drop
+T_CALL = re.compile(r"\bt\((['\"])((?:\\.|(?!\1).)*)\1\)")
+for js in ["public/app.js", "public/pro.js"]:
+    for m in T_CALL.finditer(open(os.path.join(ROOT, js), encoding="utf-8").read()):
+        txt = norm(m.group(2).replace("\\'", "'"))
+        if txt and WORD.search(txt):
+            texts.add(txt)
 
 # ---- Server messages shown in the dashboard (notifications / API errors) ----
 SERVER_MSG = re.compile(r"(?:error|message|title|details)\s*:\s*(['\"`])((?:\\.|(?!\1).)*)\1")

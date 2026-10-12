@@ -26,7 +26,10 @@ const ActionSchema = new mongoose.Schema({
     obsScene: String,      // obs: scene name
     obsSource: String,     // obs: source name
     obsDuration: Number,   // obs: seconds before going back (0 = stay)
-    segments: String       // wheel: one segment per line, "Texte => Nom d'une action" to chain an action
+    segments: String,      // wheel: one segment per line, "Texte => Nom d'une action" to chain an action
+    sbActionId: String,    // streamerbot: action id
+    sbActionName: String,  // streamerbot: action name
+    sbArgs: String         // streamerbot: extra arguments (JSON, placeholders allowed)
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token

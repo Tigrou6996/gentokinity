@@ -100,6 +100,15 @@ function initRemoteClient() {
         }
     });
 
+    socket.on('remote_streamerbot', async (data) => {
+        try {
+            const { runStreamerbotAction } = require('../actions/streamerbotAction');
+            await runStreamerbotAction(data.payload, data.settings || {});
+        } catch (e) {
+            logger.error(`🚨 Error executing remote Streamer.bot action: ${e.message}`);
+        }
+    });
+
     socket.on('disconnect', () => {
         logger.warn('❌ Application disconnected from remote server.');
     });

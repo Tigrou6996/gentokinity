@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Battle</title>
+    <style>
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: #fff; }
+        .battle { width: min(720px, 96vw); margin: 10px auto; opacity: 0; transition: opacity .4s ease; }
+        .battle.show { opacity: 1; }
+        .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; text-shadow: 0 2px 6px #000; }
+        .top .title { font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+        .top .timer { font-weight: 900; font-size: 22px; font-variant-numeric: tabular-nums; padding: 4px 12px; border-radius: 10px; background: rgba(0,0,0,.5); }
+        .timer.hurry { color: #fbbf24; animation: blink 1s infinite; }
+        /* 2 teams: tug of war */
+        .tug { position: relative; display: flex; height: 64px; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.45); border: 3px solid rgba(255,255,255,.85); }
+        .tug .side { display: flex; align-items: center; padding: 0 16px; font-weight: 900; font-size: 22px; transition: flex-grow .5s cubic-bezier(.2,.9,.2,1); min-width: 90px; text-shadow: 0 2px 4px rgba(0,0,0,.6); }
+        .tug .side.right { justify-content: flex-end; }
+        .tug .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-weight: 900; font-size: 18px; background: #111; border: 3px solid #fff;
+            width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .labels { display: flex; justify-content: space-between; margin-top: 6px; font-weight: 800; font-size: 15px; text-shadow: 0 2px 4px #000; }
+        .labels .cmd { padding: 2px 8px; border-radius: 8px; background: rgba(0,0,0,.55); }
+        /* 3-4 teams: bars */
+        .bars { display: flex; flex-direction: column; gap: 8px; }
+        .bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,.55); }
+        .bar .n { width: 130px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bar .t { flex: 1; height: 18px; border-radius: 10px; background: rgba(255,255,255,.12); overflow: hidden; }
+        .bar .t div { height: 100%; border-radius: 10px; transition: width .5s ease; }
+        .bar .s { width: 80px; text-align: right; font-weight: 900; font-variant-numeric: tabular-nums; }
+        .bar .c { width: 90px; text-align: right; font-size: 13px; opacity: .85; }
+        .winner { margin-top: 14px; text-align: center; font-size: 40px; font-weight: 900; text-shadow: 0 3px 12px #000; animation: pop .6s cubic-bezier(.2,1.6,.4,1); }
+        @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes blink { 50% { opacity: .5; } }
+    </style>
+</head>
+
+<body>
+    <div class="battle" id="battle">
+        <div class="top"><span class="title" id="title"></span><span class="timer" id="timer"></span></div>
+        <div id="body"></div>
+        <div id="winner"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Bataille d'équipes lancée depuis le tableau de bord (Outils live > Batailles d'équipes).
+        // URL parameters: hold=10 (secondes d'affichage du gagnant), font, lang, demo=1
+        const G = window.Gentok;
+        const hold = Math.min(Math.max(G.numParam('hold', 10), 2), 120);
+        const el = document.getElementById('battle');
+        let state = null;
+        let hideTimer = null;
+
+        function render() {
+            if (!state || !state.teams) { el.classList.remove('show'); return; }
+            el.classList.add('show');
+            document.getElementById('title').textContent = state.title || '';
+            const teams = state.teams;
+            const total = teams.reduce((a, t) => a + t.score, 0);
+            const body = document.getElementById('body');
+            if (teams.length === 2) {
+                const [a, b] = teams;
+                const share = total > 0 ? a.score / total : 0.5;
+                body.innerHTML = `
+                    <div class="tug">
+                        <div class="side" style="background:${G.escapeHtml(a.color)};flex-grow:${Math.max(0.12, share)}">${G.formatNumber(a.score)}</div>
+                        <div class="side right" style="background:${G.escapeHtml(b.color)};flex-grow:${Math.max(0.12, 1 - share)}">${G.formatNumber(b.score)}</div>
+                        <div class="vs">VS</div>
+                    </div>
+                    <div class="labels">
+                        <span>${G.escapeHtml(a.name)} <span class="cmd">${G.escapeHtml(G.t('battle.join', { cmd: a.command }))}</span> · ${G.escapeHtml(G.t('battle.members', { n: a.members }))}</span>
+                        <span>${G.escapeHtml(G.t('battle.members', { n: b.members }))} · <span class="cmd">${G.escapeHtml(G.t('battle.join', { cmd: b.command }))}</span> ${G.escapeHtml(b.name)}</span>
+                    </div>`;
+            } else {
+                const max = Math.max(1, ...teams.map(t => t.score));
+                body.innerHTML = `<div class="bars">${teams.map(t => `
+                    <div class="bar"><span class="n" style="color:${G.escapeHtml(t.color)}">${G.escapeHtml(t.name)}</span>
+                        <div class="t"><div style="width:${Math.round(t.score / max * 100)}%;background:${G.escapeHtml(t.color)}"></div></div>
+                        <span class="s">${G.formatNumber(t.score)}</span><span class="c">${G.escapeHtml(t.command)}</span></div>`).join('')}</div>`;
+            }
+            const w = document.getElementById('winner');
+            if (!state.running && state.winnerId) {
+                const team = teams.find(t => t.id === state.winnerId);
+                w.innerHTML = `<div class="winner" style="color:${G.escapeHtml(team ? team.color : '#fff')}">🏆 ${G.escapeHtml(team ? G.t('battle.winner', { team: team.name }) : G.t('battle.draw'))}</div>`;
+            } else {
+                w.innerHTML = '';
+            }
+        }
+
+        function tick() {
+            const t = document.getElementById('timer');
+            if (!state || !state.running) { t.textContent = ''; return; }
+            const left = Math.max(0, Math.round((state.endsAt - Date.now()) / 1000));
+            t.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+            t.classList.toggle('hurry', left <= 10);
+        }
+        setInterval(tick, 250);
+
+        function update(s) {
+            clearTimeout(hideTimer);
+            state = s;
+            render();
+            tick();
+            if (s && !s.running) hideTimer = setTimeout(() => { state = null; render(); }, hold * 1000);
+        }
+
+        const socket = G.connect();
+        socket.on('battle_update', update);
+        socket.on('battle_end', update);
+        if (G.token && !G.isDemo) {
+            fetch(`/api/battle/state?token=${encodeURIComponent(G.token)}`).then(r => r.json()).then(s => { if (s && s.running) update(s); }).catch(() => { });
+        }
+
+        if (G.isDemo) {
+            const demo = { title: 'Bataille de likes', running: true, endsAt: Date.now() + 90000, teams: [
+                { id: 't1', name: 'Rouge', color: '#fe2c55', command: '!rouge', score: 120, members: 8 },
+                { id: 't2', name: 'Bleu', color: '#25f4ee', command: '!bleu', score: 95, members: 6 }] };
+            update(demo);
+            setInterval(() => { demo.teams[Math.random() < 0.5 ? 0 : 1].score += Math.floor(Math.random() * 40); update({ ...demo }); }, 900);
+        }
+    </script>
+</body>
+
+</html>

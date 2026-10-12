@@ -45,13 +45,20 @@ Filtres « Qui peut déclencher ? » : tout le monde, followers, abonnés, modé
 | **Synthèse vocale** | Texte lu à voix haute par le tableau de bord. |
 | **OBS Studio** | Change de scène, affiche, masque ou bascule une source, avec retour automatique après X secondes (obs-websocket v5, OBS 28+). |
 | **Roue de la fortune** | Fait tourner la roue de l'overlay `wheel`. Une case écrite `Texte => Nom d'une action` lance cette action quand la roue tombe dessus. |
+| **Streamer.bot** | Lance une action Streamer.bot (serveur HTTP de Streamer.bot, port 7474) avec les infos de l'événement en arguments (`user`, `nickname`, `comment`, `giftName`, `coins`…). |
+
+Les actions OBS, Roue de la fortune et Streamer.bot sont réservées à Gentok Premium.
 
 Options communes à toutes les actions :
 - **cooldown global** : délai minimum entre deux exécutions ;
 - **cooldown par spectateur** : même chose, mais pour un même spectateur ;
-- **délai avant exécution**.
+- **délai avant exécution** (Premium).
+
+Un événement peut aussi avoir un **coût en points** (Premium) : le spectateur paie avec ses points, et l'action ne se lance pas s'il n'en a pas assez (boutique de points, comme sur TikFinity).
 
 Variables disponibles dans les textes : `{nickname}`, `{username}`, `{giftname}`, `{repeatcount}`, `{combo}`, `{coins}`, `{comment}`, `{likecount}`, `{totallikecount}`, `{submonth}`, et `{playername}` pour Minecraft.
+
+Pour Streamer.bot, active *Servers/Clients → HTTP Server* dans Streamer.bot, puis clique sur **Tester** dans le formulaire de l'action : la liste de tes actions Streamer.bot s'affiche.
 
 Pour OBS, active le serveur WebSocket dans OBS (Outils → Paramètres du serveur WebSocket), puis renseigne l'adresse, le port et le mot de passe dans le formulaire de l'action OBS. Le bouton **Tester** affiche la liste de tes scènes. Sur le VPS, l'action est transmise à l'application Windows, qui tourne sur le même PC qu'OBS.
 
@@ -68,9 +75,40 @@ URL de base : `https://tiktok.gentok.fr/overlay/<nom>?token=TON_TOKEN`. Ajoute `
 | `timer`: timer subathon | `start` (minutes), `coin`, `follow`, `sub`, `share`, `like` (secondes ajoutées), `maxh`, `reset=1` |
 | `rain`: pluie de cadeaux | `gifts`, `likes`, `follows`, `shares`, `size`, `max` |
 | `wheel`: roue de la fortune | `size`, `hold`, `persist`, `color` |
+| `likegoal`: objectif de likes à thèmes | `theme` (neon, glass, gradient, minimal, candy, retro), `target`, `title`, `emoji`, `footer`, `hearts`, `width`, `color`, `color2` |
+| `ranking`: top pièces / top likes / top points | `type` (coins, likes, points), `period` (live, all, weekly), `theme` (glass, neon, podium, minimal, gradient, ticker), `limit`, `avatars`, `title`, `width`, `size` |
+| `points`: carte `!score`, top `!top`, passages de niveau | `duration`, `toasts`, `levelup`, `minlevel`, `color`, `color2` |
+| `battle`: bataille d'équipes | `hold` (secondes d'affichage du gagnant) |
 | Déjà existants | `goals` (objectif de likes), `gifts`, `last-*`, `top-*`, `leaderboard`, `gift_legend.html`, `gallery` |
 
-Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**. Tous les overlays acceptent `lang=fr|en|es|de|pt|it`.
+Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**. Tous les overlays acceptent `lang=fr|en|es|de|pt|it` et `font=` avec le nom d'une police Google Fonts (Bangers, Poppins, Press Start 2P, Luckiest Guy, Orbitron…). Dans le tableau de bord, la barre « Police des overlays / Couleurs » au-dessus des Overlays Pro ajoute ces paramètres aux liens. La police de l'interface elle-même se change dans **Paramètres**.
+
+### Utilisateurs & Points
+Chaque spectateur gagne des points pendant le live : pièces offertes, likes, follow, partage, abonnement, messages (avec un délai anti-spam) et minutes de présence. Les montants se règlent dans **Utilisateurs & Points → Réglages des points**.
+
+- **Points disponibles** : peuvent être dépensés dans la boutique de points (Premium).
+- **Points comptés pour le niveau** : ne baissent jamais. Niveau N = N² × difficulté (50 par défaut).
+- `!score` affiche la carte du spectateur (points, niveau, rang) dans l'overlay `points`, `!top` affiche le top 5. Les commandes sont modifiables.
+- Le tableau liste chaque spectateur (niveau, pièces, likes, première et dernière activité), avec recherche, tri, ajout ou retrait manuel de points, historique des transactions et **export CSV** (Excel / Google Sheets).
+- Les points sont regroupés et enregistrés toutes les 3 secondes en une seule écriture, pour ne pas surcharger la base pendant les gros lives.
+
+### Offres Gratuit / Premium
+| | Gratuit | Premium |
+|---|---|---|
+| Scènes | 2 | 10 |
+| Actions / événements par scène | 5 / 5 | illimités |
+| Spectateurs dans les points | 1 000 | 100 000 |
+| Équipes par bataille | 2 | 4 |
+| Boutique de points, délai avant action, historique détaillé | – | ✓ |
+| Actions OBS, Roue de la fortune, Streamer.bot | – | ✓ |
+
+Les limites sont définies dans `src/features/plans.js` et vérifiées côté serveur. La page **Mon offre** affiche l'utilisation actuelle.
+
+### Batailles d'équipes
+Menu **Outils live → Batailles d'équipes**. Choisis le mode (likes, cadeaux ou les deux), la durée et 2 à 4 équipes. Chaque équipe a une commande (`!rouge`, `!bleu`…) que les spectateurs tapent pour la rejoindre, un cadeau optionnel qui fait gagner directement l'équipe, et une action lancée en cas de victoire. L'overlay `battle` affiche un tir à la corde (2 équipes) ou des barres (3-4 équipes), le chrono et le gagnant.
+
+### Simulateur d'événements
+Menu **Outils live → Simulateur**. Envoie un follow, un partage, un abonnement, des likes, un message (ou une `!commande`) ou un cadeau (avec ou sans combo) au nom d'un faux spectateur. Les événements simulés passent par le même moteur que les vrais (déclencheurs, actions, overlays, batailles), mais ne sont jamais enregistrés dans les classements ni dans les points.
 
 ### Langues
 Le tableau de bord et les overlays existent en **français, anglais, espagnol, allemand, portugais et italien**. On choisit la langue en bas de la barre latérale ou sur l'écran de connexion. Elle est mémorisée sur le compte, et les liens d'overlay la suivent automatiquement.
@@ -118,10 +156,12 @@ src/
   connector.js        connexion au live TikTok
   config.js           paramètres par utilisateur (token) avec cache
   handlers/           traitement des événements TikTok (cadeaux, likes, chat…)
-  actions/            exécution des actions (webhook, clavier, Minecraft)
+  actions/            exécution des actions (webhook, clavier, Minecraft, OBS, Streamer.bot)
+  features/           points, offres, batailles d'équipes, simulateur
+  routes/             API des points, offres, batailles, simulateur
   models/             schémas MongoDB
   utils/              socket.io, Spotify, prix des cadeaux, planificateur…
-public/               tableau de bord (index.html + app.js) et overlays OBS
+public/               tableau de bord (index.html + app.js + pro.js) et overlays OBS
 scripts/              outils de build et de vérification
 data/gift_cache.json  cache de la liste des cadeaux TikTok
 ```

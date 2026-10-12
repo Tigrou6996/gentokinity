@@ -15,6 +15,7 @@ const EventSchema = new mongoose.Schema({
     likeThreshold: Number,
     command: String,
     message: String, // chat trigger: text the message must contain
+    pointsCost: Number, // Premium points shop: points paid by the viewer to trigger it
     minCoins: Number
 }, { timestamps: true });
 

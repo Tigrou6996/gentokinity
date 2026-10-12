@@ -1379,6 +1379,47 @@ async function fetchData() {
 
 // OBS connection settings (saved per account, used by "OBS Studio" actions)
 let currentObsSettings = { host: '127.0.0.1', port: 4455, password: '' };
+// Streamer.bot HTTP server settings (used by "Streamer.bot" actions)
+let currentStreamerbotSettings = { host: '127.0.0.1', port: 7474 };
+
+function readStreamerbotForm() {
+    return {
+        host: (document.querySelector('#f-sb-host')?.value || '127.0.0.1').trim(),
+        port: parseInt(document.querySelector('#f-sb-port')?.value) || 7474
+    };
+}
+
+async function saveStreamerbotSettingsFromForm() {
+    const streamerbot = readStreamerbotForm();
+    if (JSON.stringify(streamerbot) === JSON.stringify(currentStreamerbotSettings)) return;
+    currentStreamerbotSettings = streamerbot;
+    try {
+        await fetch(`${getApiBase()}/api/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), streamerbot })
+        });
+    } catch (e) { console.warn('Streamer.bot settings save failed', e); }
+}
+
+window.testStreamerbotConnection = async () => {
+    const status = document.querySelector('#f-sb-status');
+    if (status) { status.style.color = 'var(--text-dim)'; status.textContent = '⏳ Connexion à Streamer.bot...'; }
+    try {
+        const res = await fetch(`${getApiBase()}/api/streamerbot/test`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(readStreamerbotForm())
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Erreur');
+        window.streamerbotActions = data.actions || [];
+        const list = document.querySelector('#sb-action-list');
+        if (list) list.innerHTML = window.streamerbotActions.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.group)}</option>`).join('');
+        if (status) { status.style.color = '#10b981'; status.textContent = `✅ Streamer.bot connecté — ${window.streamerbotActions.length} action(s)`; }
+        saveStreamerbotSettingsFromForm();
+    } catch (e) {
+        if (status) { status.style.color = '#ef4444'; status.textContent = `❌ ${e.message}`; }
+    }
+};
 
 function readObsSettingsForm() {
     return {
@@ -1610,6 +1651,8 @@ function applyConfigUI(config) {
     }
 
     if (config.obs) currentObsSettings = { ...currentObsSettings, ...config.obs };
+    if (config.streamerbot) currentStreamerbotSettings = { ...currentStreamerbotSettings, ...config.streamerbot };
+    window.gentokConfig = config;
     // Language chosen on another device (only when this browser has no choice yet)
     if (config.language && config.language !== 'fr' && window.GentokI18n && !localStorage.getItem('gentok_lang')) {
         window.GentokI18n.setLanguage(config.language, { save: false });
@@ -2109,7 +2152,8 @@ function renderActions() {
         webhook: 'fa-globe',
         alert: 'fa-bell',
         tts: 'fa-volume-up',
-        wheel: 'fa-dharmachakra'
+        wheel: 'fa-dharmachakra',
+        streamerbot: 'fa-robot'
     };
 
     const labels = {
@@ -2123,7 +2167,8 @@ function renderActions() {
         rcon: 'Minecraft Serveur',
         alert: 'Alerte écran',
         tts: 'Synthèse vocale',
-        wheel: 'Roue de la fortune'
+        wheel: 'Roue de la fortune',
+        streamerbot: 'Streamer.bot'
     };
 
     otherActions.forEach(action => {
@@ -2433,7 +2478,8 @@ function renderEvents() {
         webhook: 'fa-globe',
         alert: 'fa-bell',
         tts: 'fa-volume-up',
-        wheel: 'fa-dharmachakra'
+        wheel: 'fa-dharmachakra',
+        streamerbot: 'fa-robot'
     };
 
     const labels = {
@@ -2447,7 +2493,8 @@ function renderEvents() {
         rcon: 'Minecraft Serveur',
         alert: 'Alerte écran',
         tts: 'Synthèse vocale',
-        wheel: 'Roue de la fortune'
+        wheel: 'Roue de la fortune',
+        streamerbot: 'Streamer.bot'
     };
 
     currentEvents.forEach(event => {
@@ -2592,6 +2639,11 @@ window.editItem = async (type, id) => {
                 document.querySelector('#f-obs-duration').value = action.obsDuration || 0;
             }
             if (action.type === 'wheel') document.querySelector('#f-segments').value = action.segments || '';
+            if (action.type === 'streamerbot') {
+                document.querySelector('#f-sb-name').value = action.sbActionName || '';
+                document.querySelector('#f-sb-id').value = action.sbActionId || '';
+                document.querySelector('#f-sb-args').value = action.sbArgs || '';
+            }
             const cooldownInput = document.querySelector('#action-cooldown');
             if (cooldownInput) cooldownInput.value = action.cooldown || 0;
             const userCooldownInput = document.querySelector('#action-user-cooldown');
@@ -2642,6 +2694,9 @@ window.editItem = async (type, id) => {
         // Pass event to handle async pre-selection (like gifts)
         await updateEventFields(event);
 
+        const costInput = document.querySelector('#event-points-cost');
+        if (costInput) costInput.value = event.pointsCost || 0;
+
         // Select actions
         const actionCheckboxes = document.querySelectorAll('#event-action-list input[type="checkbox"]');
         actionCheckboxes.forEach(chk => {
@@ -2667,6 +2722,7 @@ function formatDetails(a) {
     if (a.type === 'tts') return `🔊 ${a.text || ''}`;
     if (a.type === 'obs') return `🎬 ${a.obsAction === 'scene' ? a.obsScene : a.obsSource}`;
     if (a.type === 'wheel') return `🎡 ${(a.segments || '').split('\n').filter(l => l.trim()).length} cases`;
+    if (a.type === 'streamerbot') return `🤖 ${a.sbActionName || a.sbActionId}`;
     return '';
 }
 
@@ -3193,6 +3249,31 @@ function updateActionFields() {
         };
         obsActionSelect.addEventListener('change', toggleSource);
         toggleSource();
+    } else if (type === 'streamerbot') {
+        container.innerHTML = `
+            <div class="form-group"><label>Action Streamer.bot (nom exact)</label>
+                <input type="text" id="f-sb-name" list="sb-action-list" placeholder="ex: Jouer un son">
+                <datalist id="sb-action-list"></datalist>
+                <input type="hidden" id="f-sb-id">
+            </div>
+            <div class="form-group"><label>Arguments supplémentaires (JSON, optionnel)</label>
+                <input type="text" id="f-sb-args" placeholder='{"message": "Merci {nickname} !"}'>
+                <small style="color: var(--text-dim); font-size: 0.8rem;">Toujours envoyés : user, nickname, comment, giftName, giftId, coins, repeatCount, likeCount, trigger.</small>
+            </div>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-plug"></i> Connexion Streamer.bot (Servers/Clients → HTTP Server, port 7474)</div>
+                <div style="display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; align-items: center;">
+                    <input type="text" id="f-sb-host" placeholder="127.0.0.1" value="${escapeHtml(currentStreamerbotSettings.host || '127.0.0.1')}">
+                    <input type="number" id="f-sb-port" placeholder="7474" value="${escapeHtml(currentStreamerbotSettings.port || 7474)}">
+                    <button type="button" class="btn-secondary" onclick="testStreamerbotConnection()"><i class="fas fa-plug"></i> Tester</button>
+                </div>
+                <small id="f-sb-status" style="display: block; margin-top: 6px; color: var(--text-dim);"></small>
+            </div>
+        `;
+        document.querySelector('#f-sb-name').addEventListener('input', (e) => {
+            const opt = (window.streamerbotActions || []).find(a => a.name === e.target.value);
+            document.querySelector('#f-sb-id').value = opt ? opt.id : '';
+        });
     } else if (type === 'wheel') {
         container.innerHTML = `
             <div class="form-group">
@@ -3561,6 +3642,19 @@ async function saveNewAction(e) {
         }
         saveObsSettingsFromForm();
     }
+    if (action.type === 'streamerbot') {
+        action.sbActionName = document.querySelector('#f-sb-name').value.trim();
+        action.sbActionId = document.querySelector('#f-sb-id').value.trim();
+        action.sbArgs = document.querySelector('#f-sb-args').value.trim();
+        if (!action.sbActionName && !action.sbActionId) {
+            showToast('Indiquez le nom de l\'action Streamer.bot !', 'error');
+            return;
+        }
+        if (action.sbArgs) {
+            try { JSON.parse(action.sbArgs); } catch (e) { showToast('Arguments : JSON invalide', 'error'); return; }
+        }
+        saveStreamerbotSettingsFromForm();
+    }
     if (action.type === 'wheel') {
         action.segments = document.querySelector('#f-segments').value;
         const count = action.segments.split('\n').map(l => l.trim()).filter(Boolean).length;
@@ -3657,6 +3751,13 @@ async function saveNewEvent(e) {
 
     if (event.triggerType === 'gift_min') {
         event.minCoins = parseInt(document.querySelector('#f-min-coins').value);
+    }
+
+    // Points shop (Premium): cost paid by the viewer
+    event.pointsCost = Math.max(0, parseInt(document.querySelector('#event-points-cost')?.value) || 0);
+    if (event.pointsCost > 0 && !isPremiumUser) {
+        showNotify('🌟 Gentok Pro', 'La boutique de points est réservée à Gentok Premium.', 'info');
+        event.pointsCost = 0;
     }
 
     // [DUPLICATE TRIGGER GUARD] Block duplicate triggers for the same gift/action
@@ -4427,7 +4528,7 @@ window.showSection = (sectionId) => {
     }
 
     // Hide all sections
-    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games'];
+    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games', 'points', 'premium', 'battle', 'simulator'];
     sections.forEach(s => {
         const el = document.getElementById(`${s}-section`);
         if (el) el.style.display = 'none';
@@ -4456,7 +4557,11 @@ window.showSection = (sectionId) => {
             'settings': 'Paramètres',
             'logs': 'Console / Logs',
             'admin': 'Administration Système',
-            'ranking': 'Classement'
+            'ranking': 'Classement',
+            'points': 'Utilisateurs & Points',
+            'premium': 'Mon offre',
+            'battle': "Batailles d'équipes",
+            'simulator': "Simulateur d'événements"
         };
         headerTitle.textContent = titles[sectionId] || 'Gentok';
     }
@@ -4476,6 +4581,9 @@ window.showSection = (sectionId) => {
     if (sectionId === 'stats') {
         renderStatsHistory();
     }
+
+    // New pages (public/pro.js)
+    if (window.GentokPro && typeof window.GentokPro.onSection === 'function') window.GentokPro.onSection(sectionId);
 
     if (sectionId === 'ranking') {
         // Default to legends tab
@@ -4638,7 +4746,8 @@ function updateOverlayLinks() {
         // Determine if we need ? or & to append token (+ the dashboard language for the overlay texts)
         const hasQuery = url.includes('?');
         const uiLang = window.GentokI18n ? window.GentokI18n.lang : 'fr';
-        const langParam = uiLang !== 'fr' && !url.includes('lang=') ? `&lang=${uiLang}` : '';
+        // Always pinned: OBS / TikTok Live Studio browsers are often in English whatever the streamer's language
+        const langParam = !url.includes('lang=') ? `&lang=${uiLang}` : '';
         const fullUrl = `${url}${hasQuery ? '&' : '?'}token=${token}${langParam}`;
         input.value = fullUrl;
 

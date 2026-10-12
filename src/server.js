@@ -343,6 +343,10 @@ app.get('/overlay/rain', (req, res) => sendOverlay(res, 'overlay_rain.html'));
 app.get('/overlay/timer', (req, res) => sendOverlay(res, 'overlay_timer.html'));
 app.get('/overlay/feed', (req, res) => sendOverlay(res, 'overlay_feed.html'));
 app.get('/overlay/wheel', (req, res) => sendOverlay(res, 'overlay_wheel.html'));
+app.get('/overlay/points', (req, res) => sendOverlay(res, 'overlay_points.html'));
+app.get('/overlay/battle', (req, res) => sendOverlay(res, 'overlay_battle.html'));
+app.get('/overlay/likegoal', (req, res) => sendOverlay(res, 'overlay_likegoal.html'));
+app.get('/overlay/ranking', (req, res) => sendOverlay(res, 'overlay_ranking.html'));
 
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
 app.use('/pages', express.static(path.resolve(__dirname, '../classement/pages')));
@@ -407,6 +411,9 @@ app.get('/api/verify-license', async (req, res) => {
 function getRequestToken(req) {
     return req.query?.token || req.body?.token || (config.isAppMode ? config.licenseToken : null);
 }
+
+// Plans, viewer points, team battles, simulator, Streamer.bot
+require('./routes/pro')(app, { getRequestToken });
 
 // =======================
 // LOGIN API (Email/Password)
@@ -677,6 +684,8 @@ async function getFullConfig(token) {
         minecraft: settings.minecraft,
         obs: settings.obs || { host: '127.0.0.1', port: 4455, password: '' },
         language: settings.language || 'fr',
+        streamerbot: settings.streamerbot || { host: '127.0.0.1', port: 7474 },
+        points: require('./features/points').getSettings(settings),
         spotify: {
             ...settings.spotify,
             redirectUri: `${config.remoteDashboardUrl}/api/spotify/callback`

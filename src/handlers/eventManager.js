@@ -1,5 +1,6 @@
 const logger = require('../utils/logger');
 const { GiftStreakTracker } = require('./giftStreaks');
+const liveFeatures = require('../features/liveFeatures');
 const actionManager = require('../actions/actionManager');
 const { emitStats, emitEvent } = require('../utils/socket');
 const config = require('../config');
@@ -382,8 +383,8 @@ function updateLastEvent(connector, type, data) {
     */
 
     // [DEBOUNCE] Only save to DB settings every 5 seconds to avoid spam
-    debounceSave(connector.token, 'lastEvents', 5000, () => {
-        if (connector.lastEvents) {
+    if (!connector.isSimulation) debounceSave(connector.token, 'lastEvents', 5000, () => {
+        if (connector.lastEvents && !connector.isSimulation) {
             config.saveSettings({ token: connector.token, lastEvents: connector.lastEvents });
         }
     });
@@ -418,7 +419,7 @@ function handleNewGifts(connector, data, count) {
     if (coinsAdded > 0) updateStats(connector, 'diamonds', coinsAdded);
 
     // Persistent leaderboard (coins + per-gift count, free gifts included)
-    queueLeaderboardUpdate(connector.token, data, coinsAdded, 0, data.giftId, count);
+    if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, coinsAdded, 0, data.giftId, count);
 
     if (!connector.stats.giftsBreakdown) connector.stats.giftsBreakdown = {};
     connector.stats.giftsBreakdown[giftName] = (connector.stats.giftsBreakdown[giftName] || 0) + count;
@@ -442,7 +443,7 @@ function handleNewGifts(connector, data, count) {
         .sort((a, b) => b.coins - a.coins)
         .slice(0, limitCoins);
 
-    debounceSave(connector.token, 'topCoins', 3000, () => {
+    if (!connector.isSimulation) debounceSave(connector.token, 'topCoins', 3000, () => {
         config.saveSettings({ token: connector.token, topCoins: connector.stats.topCoins });
     });
 
@@ -455,7 +456,7 @@ function handleNewGifts(connector, data, count) {
             giftName: giftName,
             giftIcon: giftIcon
         };
-        debounceSave(connector.token, 'topGift', 3000, () => {
+        if (!connector.isSimulation) debounceSave(connector.token, 'topGift', 3000, () => {
             config.saveSettings({ token: connector.token, topGift: connector.stats.topGift });
         });
     }
@@ -470,12 +471,14 @@ function handleNewGifts(connector, data, count) {
             giftName: giftName,
             giftIcon: giftIcon
         };
-        debounceSave(connector.token, 'topStreak', 3000, () => {
+        if (!connector.isSimulation) debounceSave(connector.token, 'topStreak', 3000, () => {
             config.saveSettings({ token: connector.token, topStreak: connector.stats.topStreak });
         });
     }
 
     broadcastStatsImmediate(connector);
+
+    liveFeatures.onGifts(connector, data, count, coinsAdded);
 
     // `repeatCount` = gifts in THIS batch, `comboCount` = position in the combo
     const giftEvent = { ...data, repeatCount: count, comboCount, coins: coinsAdded, unitPrice };
@@ -490,7 +493,7 @@ function handleNewGifts(connector, data, count) {
         if (info) {
             data.nickname = info.nickname || data.nickname;
             data.profilePictureUrl = info.profilePictureUrl || data.profilePictureUrl;
-            queueLeaderboardUpdate(connector.token, data, 0, 0);
+            if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, 0, 0);
         }
         updateLastEvent(connector, 'gift', { ...data, repeatCount: comboCount });
     });
@@ -688,6 +691,7 @@ function registerEvents(tiktokConnection, connector) {
         }
 
         emitEvent('chat', data, token);
+        liveFeatures.onChat(connector, data); // points, battles, !score / !top
 
         getUserInfo(data.uniqueId, data).then(info => {
             if (info) {
@@ -729,6 +733,7 @@ function registerEvents(tiktokConnection, connector) {
         if (!isFirstTimeThisLive(connector, 'follow', data)) return;
 
         updateStats(connector, 'follows', 1);
+        liveFeatures.onSocial(connector, 'follow', data);
         actionManager.executeAction('follow', data, connector);
         emitStats('follow', data, connector.token);
         emitEvent('notify', { type: 'follow', user: data.uniqueId }, connector.token);
@@ -748,6 +753,7 @@ function registerEvents(tiktokConnection, connector) {
         if (isDuplicateMessage(connector, data)) return;
 
         updateStats(connector, 'shares', 1);
+        liveFeatures.onSocial(connector, 'share', data);
         emitStats('share', data, connector.token);
         emitEvent('tiktok_alert', { type: 'share', data: alertPayload(data) }, connector.token);
         actionManager.executeAction('share', data, connector);
@@ -779,7 +785,8 @@ function registerEvents(tiktokConnection, connector) {
         }
 
         // [NEW] UPDATE PERSISTENT LEADERBOARD (Likes)
-        queueLeaderboardUpdate(connector.token, data, 0, likeCountNow);
+        if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, 0, likeCountNow);
+        liveFeatures.onLike(connector, data, likeCountNow);
 
         if (!connector.topLikesMap) connector.topLikesMap = new Map();
         const currentLikeUser = connector.topLikesMap.get(data.uniqueId) || {
@@ -799,7 +806,7 @@ function registerEvents(tiktokConnection, connector) {
             .sort((a, b) => b.count - a.count)
             .slice(0, limitLikes);
 
-        debounceSave(connector.token, 'topLikes', 5000, () => {
+        if (!connector.isSimulation) debounceSave(connector.token, 'topLikes', 5000, () => {
             config.saveSettings({
                 token: connector.token,
                 topLikes: connector.stats.topLikes
@@ -851,7 +858,7 @@ function registerEvents(tiktokConnection, connector) {
                 }
             }
 
-            config.saveSettings({ token: connector.token, likesGoal: goal });
+            if (!connector.isSimulation) config.saveSettings({ token: connector.token, likesGoal: goal });
             emitEvent('likes_goal_update', goal, connector.token);
         }
 
@@ -876,7 +883,7 @@ function registerEvents(tiktokConnection, connector) {
                     broadcastStats(connector);
                 }
 
-                queueLeaderboardUpdate(connector.token, data, 0, 0);
+                if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, 0, 0);
             }
             updateLastEvent(connector, 'like', data);
         });
@@ -887,6 +894,7 @@ function registerEvents(tiktokConnection, connector) {
         if (isDuplicateMessage(connector, data)) return;
         checkUniqueViewer(connector, data.uniqueId);
         updateViewerCountIfPresent(connector, data);
+        liveFeatures.onSocial(connector, 'member', data);
         actionManager.executeAction('member', data, connector);
     });
 
@@ -897,6 +905,7 @@ function registerEvents(tiktokConnection, connector) {
 
         logger.info(`🌟 [SUB] ${data.uniqueId} s'est abonné !`);
         updateStats(connector, 'subscribers', 1);
+        liveFeatures.onSocial(connector, 'subscribe', data);
         emitStats('subscribe', data, connector.token);
         emitEvent('tiktok_alert', { type: 'subscribe', data: alertPayload(data, { subMonth: data.subMonth }) }, connector.token);
         actionManager.executeAction('subscribe', data, connector);

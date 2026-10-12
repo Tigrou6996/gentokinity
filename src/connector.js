@@ -450,6 +450,9 @@ class TikTokConnector {
             this.connection = null;
         }
 
+        // Save the viewers' points and stop the watch-time timer
+        try { require('./features/liveFeatures').onStop(this); } catch (e) { }
+
         // Clear action queue and stop audio playback immediately on stop
         actionManager.clearQueue(this.token);
         emitEvent('stop_audio', {}, this.token);

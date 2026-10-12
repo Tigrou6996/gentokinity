@@ -154,7 +154,13 @@ function initSocket(server) {
             'tiktok_alert',   // follow / gift / sub / share alerts for the Alerts overlay
             'overlay_alert',  // "Alerte" actions
             'tts_speak',      // "Synthèse vocale" actions
-            'wheel_spin'      // "Roue de la fortune" actions
+            'wheel_spin',     // "Roue de la fortune" actions
+            'points_score',   // !score
+            'points_top',     // !top
+            'points_levelup', // a viewer reached a new level
+            'points_insufficient',
+            'battle_update',  // team battles
+            'battle_end'
         ];
 
         relayEvents.forEach(eventName => {

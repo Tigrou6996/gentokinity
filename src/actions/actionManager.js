@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const logger = require('../utils/logger');
+const { getPlan, canUseActionType, PREMIUM_ONLY_ACTION_TYPES } = require('../features/plans');
 const config = require('../config');
 const { pressKey } = require('./keyboardAction');
 const { sendWebhook } = require('./webhookAction');
@@ -34,6 +35,15 @@ function buildPlaceholders(context = {}, extra = {}) {
 }
 
 const MAX_RUNS_PER_TRIGGER = 50; // safety cap for one trigger (e.g. a 1000-rose combo)
+
+function safeJson(text) {
+    try {
+        const v = JSON.parse(text);
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+    } catch (e) {
+        return {};
+    }
+}
 
 function fillPlaceholders(template, context, extra) {
     let out = String(template || '');
@@ -133,11 +143,25 @@ class ActionManager {
         // Trouver les événements qui correspondent au triggerCode.
         // Chaque événement retenu indique combien de fois il se déclenche (`times`).
         const matched = [];
+        const plan = getPlan(settings);
         for (const e of events) {
             if (!e || e.active === false) continue;
             if (!this.matchesAudience(e, context)) continue;
             const times = this.matchTrigger(e, triggerCode, context, connector);
-            if (times > 0) matched.push({ event: e, times });
+            if (times <= 0) continue;
+
+            // Points shop (Premium): the viewer pays the event with his points
+            const cost = Number(e.pointsCost) || 0;
+            if (cost > 0 && plan.pointsStore && context.uniqueId && !connector.isSimulation) {
+                const points = require('../features/points');
+                const paid = await points.spend(token, context, cost * times, 'spend', e.command || e.triggerType);
+                if (!paid) {
+                    emitEvent('points_insufficient', { uniqueId: context.uniqueId, nickname: context.nickname || context.uniqueId, cost: cost * times }, token);
+                    logger.info(`💸 [${token.substring(0, 8)}] ${context.uniqueId} n'a pas assez de points (${cost * times}).`);
+                    continue;
+                }
+            }
+            matched.push({ event: e, times });
         }
 
         // Group actions by number of runs so that a gift combo of 5 runs its actions 5 times,
@@ -280,6 +304,8 @@ class ActionManager {
             const { actionDefs, triggerCode, context, connector } = task;
 
             const actionNames = actionDefs.map(a => a.name || a.type).join(' + ');
+            let plan = getPlan(false);
+            try { plan = getPlan(await config.getSettings(token)); } catch (e) { }
             logger.info(`🔥 [${token.substring(0, 8)}] Déclenchement simultané (${q.items.length} cadeaux en attente) : ${actionNames}`);
 
             let maxDuration = 1.5;
@@ -290,8 +316,8 @@ class ActionManager {
                     if (actionDef.duration && typeof actionDef.duration === 'number' && actionDef.duration > maxDuration) {
                         maxDuration = actionDef.duration;
                     }
-                    // Optional delay: runs later without blocking the other actions of the queue
-                    const delayS = Math.min(Math.max(Number(actionDef.delay) || 0, 0), 600);
+                    // Optional delay (Premium): runs later without blocking the other actions of the queue
+                    const delayS = plan.actionDelay ? Math.min(Math.max(Number(actionDef.delay) || 0, 0), 600) : 0;
                     if (delayS > 0) {
                         setTimeout(() => {
                             if (connector && connector.isStopping) return;
@@ -322,6 +348,15 @@ class ActionManager {
     async runAction(action, triggerCode, context, connector) {
         if (!connector || !connector.token) return;
         const token = connector.token;
+
+        // Premium-only action types
+        if (PREMIUM_ONLY_ACTION_TYPES.includes(action.type)) {
+            const plan = getPlan(await config.getSettings(token));
+            if (!canUseActionType(plan, action.type)) {
+                logger.warn(`🔒 [${token.substring(0, 8)}] Action "${action.name || action.type}" réservée à Gentok Premium.`);
+                return;
+            }
+        }
 
         // Manual tests (dashboard "Tester") and goal rewards ignore cooldowns
         if (triggerCode !== 'manual' && !this.passesCooldown(token, action, context)) {
@@ -446,6 +481,25 @@ class ActionManager {
                     await runObsAction(obsAction, obsSettings);
                 } else {
                     logger.warn(`⚠️ [${token.substring(0, 8)}] Action OBS ignorée : lancez l'application Gentok sur le PC où tourne OBS.`);
+                }
+            } else if (action.type === 'streamerbot') {
+                const settings = await config.getSettings(token);
+                const sb = settings.streamerbot || {};
+                const args = {
+                    user: context.uniqueId || '', nickname: context.nickname || '', comment: context.comment || context.message || '',
+                    giftName: context.giftName || '', giftId: context.giftId || '', coins: context.diamondCount || context.coins || 0,
+                    repeatCount: context.repeatCount || 1, likeCount: context.likeCount || 0, trigger: triggerCode,
+                    ...(action.sbArgs ? safeJson(fillPlaceholders(action.sbArgs, context)) : {})
+                };
+                const payload = { action: { id: action.sbActionId || undefined, name: action.sbActionName || undefined }, args };
+                const isLocalHost = !sb.host || ['localhost', '127.0.0.1'].includes(sb.host);
+                if (config.isAppMode || !isLocalHost) {
+                    const { runStreamerbotAction } = require('./streamerbotAction');
+                    await runStreamerbotAction(payload, sb);
+                } else if (isAppConnected(token)) {
+                    emitToDesktopApp(token, 'remote_streamerbot', { payload, settings: sb });
+                } else {
+                    logger.warn(`⚠️ [${token.substring(0, 8)}] Action Streamer.bot ignorée : lancez l'application Gentok sur le PC de Streamer.bot.`);
                 }
             } else if (action.type === 'wheel') {
                 await this.spinWheel(action, context, connector);

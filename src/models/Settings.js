@@ -34,6 +34,11 @@ const SettingsSchema = new mongoose.Schema({
         password: { type: String, default: '' }
     },
     language: { type: String, default: 'fr' }, // dashboard + overlays language
+    streamerbot: {
+        host: { type: String, default: '127.0.0.1' },
+        port: { type: Number, default: 7474 }
+    },
+    points: { type: Object, default: null }, // points system settings (see features/points.js)
     minecraft: {
         host: { type: String, default: 'localhost' },
         port: { type: Number, default: 4567 },
