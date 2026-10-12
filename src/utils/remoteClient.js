@@ -1,3 +1,4 @@
+const APP_VERSION = (() => { try { return require('../../package.json').version; } catch (e) { return null; } })();
 const io = require('socket.io-client');
 const config = require('../config');
 const logger = require('./logger');
@@ -32,10 +33,11 @@ function initRemoteClient() {
     socket.on('connect', () => {
         logger.info('✅ Application connected to remote server.');
 
-        // Identify as an "app" for this token
+        // Identify as an "app" for this token (with the version, shown on the website)
         socket.emit('identify', {
             token: config.licenseToken,
-            type: 'app'
+            type: 'app',
+            version: APP_VERSION
         });
     });
 
@@ -132,7 +134,8 @@ function reauthRemoteClient() {
     if (socket && socket.connected && config.licenseToken) {
         socket.emit('identify', {
             token: config.licenseToken,
-            type: 'app'
+            type: 'app',
+            version: APP_VERSION
         });
     }
 }

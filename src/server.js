@@ -1413,6 +1413,56 @@ app.delete('/api/sounds/:id', async (req, res) => {
     }
 });
 
+// ---- Desktop app detection ----
+function readLatestVersion() {
+    try {
+        const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../version.json'), 'utf8'));
+        return data.version || null;
+    } catch (e) {
+        return null;
+    }
+}
+function isNewerVersion(latest, current) {
+    if (!latest || !current) return false;
+    const a = String(latest).split('.').map(n => parseInt(n, 10) || 0);
+    const b = String(current).split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+    }
+    return false;
+}
+
+// Is the Windows app connected for this account, and is it up to date?
+app.get('/api/app/status', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const token = getRequestToken(req);
+    const { getAppInfo } = require('./utils/socket');
+    const info = token ? getAppInfo(token) : null;
+    const latest = readLatestVersion();
+    res.json({
+        connected: !!info,
+        version: info ? info.version : null,
+        since: info ? info.since : null,
+        latestVersion: latest,
+        updateAvailable: !!(info && isNewerVersion(latest, info.version)),
+        downloadUrl: '/download'
+    });
+});
+
+// Answered only by the app running on the streamer's PC: the website calls http://localhost:<port>/api/app/ping
+// to know whether Gentok is open on this computer (CORS + Private Network Access headers for Chrome).
+app.options('/api/app/ping', (req, res) => {
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET', 'Access-Control-Allow-Private-Network': 'true' });
+    res.sendStatus(204);
+});
+app.get('/api/app/ping', (req, res) => {
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Private-Network': 'true', 'Cache-Control': 'no-store' });
+    if (!config.isAppMode) return res.status(404).json({ app: false });
+    let version = null;
+    try { version = require('../package.json').version; } catch (e) { /* ignore */ }
+    res.json({ app: true, version, account: !!config.licenseToken });
+});
+
 // API: Version Check
 app.get('/api/version', (req, res) => {
     res.set('Cache-Control', 'no-store');

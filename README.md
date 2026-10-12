@@ -140,7 +140,13 @@ Menu **Outils live → Giveaway & Points Drop**.
 `!play <titre ou lien>`, `!skip` (vote, ou immédiat pour les modérateurs / l'auteur), `!remove`. Overlay `songs` façon TikFinity : pochette, progression, « démarre dans ». Corrections : jeton d'accès après reconnexion, `!play` juste après un redémarrage, la pause du streamer n'est plus annulée, `!playlist` n'est plus pris pour `!play`, limite de la file appliquée.
 
 ### Style de l'interface
-**Paramètres → Apparence → Style de l'interface** : **Studio** (par défaut, sobre comme TikFinity : panneaux gris anthracite, bordures fines), Moderne (néon), Compact ou Glass. Fichier `public/theme-studio.css`.
+L'interface utilise **Bootstrap 5.3** (`public/vendor/bootstrap.min.css`, thème sombre) avec une couche de compatibilité (`public/ui-classic.css`) qui garde la mise en page existante.
+**Paramètres → Apparence → Style de l'interface** : **Classique** (par défaut : police système, couleurs plates, sans dégradés ni effets lumineux), Studio, Néon, Compact ou Glass.
+
+### Mises à jour et détection de l'application
+- **Application Windows** : electron-updater vérifie au démarrage puis toutes les 30 minutes (serveur `publish` de `package.json`). L'écran de démarrage suit la vraie vérification (recherche, téléchargement x %, installation) au lieu d'une fausse barre. Si la mise à jour commence avant l'affichage du tableau de bord, la fenêtre de progression s'ouvre quand même. **Paramètres → Application & mises à jour** affiche la version et propose « Rechercher des mises à jour ».
+- **Site web** : un badge dans l'en-tête indique si l'application est connectée au compte (avec sa version et « mise à jour disponible » si elle est plus ancienne que `version.json`), si elle est ouverte sur ce PC (`http://localhost:3000/api/app/ping`) ou non détectée (lien de téléchargement). API : `GET /api/app/status?token=...`.
+- Pour publier une version : mettre à jour `version` dans `package.json` **et** `version.json`, construire l'installateur, puis déposer `latest.yml` et l'installateur dans le dossier `app/` du serveur.
 
 ### Langues
 Le tableau de bord et les overlays existent en **français, anglais, espagnol, allemand, portugais et italien**. On choisit la langue en bas de la barre latérale ou sur l'écran de connexion. Elle est mémorisée sur le compte, et les liens d'overlay la suivent automatiquement.

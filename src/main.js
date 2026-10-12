@@ -24,13 +24,42 @@ autoUpdater.autoDownload = true; // [AUTO] Download immediately
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.allowPrerelease = false;
 
+// Last known state of the updater: the launcher and the dashboard ask for it when they load,
+// so an update found before they were displayed is never missed.
+// status: idle | checking | downloading | downloaded | up-to-date | error | dev
+let updateState = { status: 'idle', version: null, percent: 0, current: app.getVersion(), checkedAt: null };
+const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
+
+function setUpdateState(patch) {
+    updateState = { ...updateState, ...patch };
+    sendToWindow('update-state', updateState);
+}
+
+async function checkForUpdates() {
+    if (!app.isPackaged) {
+        // electron-updater only works in the installed app
+        setUpdateState({ status: 'dev', checkedAt: Date.now() });
+        return updateState;
+    }
+    if (['downloading', 'downloaded'].includes(updateState.status)) return updateState;
+    try {
+        await autoUpdater.checkForUpdates();
+    } catch (err) {
+        logger.error(`❌ Vérification des mises à jour impossible : ${err.message}`);
+        setUpdateState({ status: 'error', error: err.message, checkedAt: Date.now() });
+    }
+    return updateState;
+}
+
 function setupAutoUpdater() {
     autoUpdater.on('checking-for-update', () => {
         logger.info('🔍 Vérification des mises à jour...');
+        setUpdateState({ status: 'checking', error: null });
     });
 
     autoUpdater.on('update-available', (info) => {
         logger.info(`📦 Mise à jour disponible : ${info.version}. Téléchargement automatique...`);
+        setUpdateState({ status: 'downloading', version: info.version, percent: 0, checkedAt: Date.now() });
         sendToWindow('update-available', info);
         // Window is hidden by default, we'll show it only to show progress if needed
         if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
@@ -38,6 +67,7 @@ function setupAutoUpdater() {
 
     autoUpdater.on('update-not-available', () => {
         logger.info('✅ Application à jour.');
+        setUpdateState({ status: 'up-to-date', checkedAt: Date.now() });
         // If no update, we can safely show the dashboard
         if (mainWindow && !mainWindow.isVisible()) {
             mainWindow.show();
@@ -48,8 +78,10 @@ function setupAutoUpdater() {
         const is404 = err.message && (err.message.includes('404') || err.message.includes('latest.yml'));
         if (is404) {
             logger.info('ℹ️ Aucun fichier de mise à jour trouvé (Normal).');
+            setUpdateState({ status: 'up-to-date', checkedAt: Date.now() });
         } else {
             logger.error(`❌ Erreur Auto-Updater : ${err.message}`);
+            setUpdateState({ status: 'error', error: err.message, checkedAt: Date.now() });
             sendToWindow('update-error', err.message);
         }
         // Even on error, we show the app so the user isn't stuck
@@ -59,11 +91,13 @@ function setupAutoUpdater() {
     });
 
     autoUpdater.on('download-progress', (progressObj) => {
+        setUpdateState({ status: 'downloading', percent: Math.floor(progressObj.percent || 0) });
         sendToWindow('update-progress', progressObj);
     });
 
     autoUpdater.on('update-downloaded', (info) => {
         logger.info('✅ Mise à jour prête. Notification et installation...');
+        setUpdateState({ status: 'downloaded', version: info.version, percent: 100 });
 
         // Native Notification BEFORE quit
         const { Notification } = require('electron');
@@ -103,6 +137,9 @@ function setupAutoUpdater() {
     ipcMain.handle('get-app-version', () => {
         return app.getVersion();
     });
+
+    ipcMain.handle('get-update-state', () => updateState);
+    ipcMain.handle('check-for-updates', () => checkForUpdates());
 
     ipcMain.handle('update-rpc', (event, data) => {
         updateRPC(data);
@@ -494,11 +531,10 @@ app.on('ready', async () => {
 
     createWindow();
 
-    // Check for updates immediately
+    // Check for updates now, then every 30 minutes (a stream can last hours)
     logger.info(`🚀 Gentok v${app.getVersion()} - Vérification initiale des mises à jour...`);
-    autoUpdater.checkForUpdates().catch(err => {
-        logger.error(`❌ Échec vérification initiale : ${err.message}`);
-    });
+    checkForUpdates();
+    setInterval(checkForUpdates, UPDATE_CHECK_INTERVAL);
 });
 
 app.on('window-all-closed', function () {

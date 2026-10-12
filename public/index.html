@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-bs-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -8,12 +8,18 @@
     <link rel="icon" type="image/png" href="/logo.png">
     <script src="/i18n.js"></script>
 
+    <link rel="stylesheet" href="vendor/bootstrap.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pro.css">
     <link rel="stylesheet" href="theme-studio.css">
+    <link rel="stylesheet" href="ui-classic.css">
     <script>
-        // Interface style chosen in Settings (default: Studio), applied before the page draws to avoid a flash
-        try { if ((localStorage.getItem('gentok_ui_style') || 'studio') === 'studio') document.documentElement.classList.add('ui-studio'); } catch (e) { document.documentElement.classList.add('ui-studio'); }
+        // Interface style chosen in Settings (default: Classique), applied before the page draws to avoid a flash
+        (function () {
+            var style = 'classic';
+            try { style = localStorage.getItem('gentok_ui_style') || 'classic'; } catch (e) { }
+            if (style === 'classic' || style === 'studio') document.documentElement.classList.add('ui-' + style);
+        })();
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Luckiest+Guy&display=swap"
         rel="stylesheet">
@@ -240,7 +246,7 @@
                     <i class="fas fa-star"></i>
                 </div>
                 <div class="pro-text">
-                    <span class="pro-title">Gentok Premium ✨</span>
+                    <span class="pro-title">Gentok Premium</span>
                     <span class="pro-subtitle">Débloquez tout</span>
                 </div>
                 <i class="fas fa-chevron-right"></i>
@@ -960,7 +966,7 @@
             <section id="actions-section" class="card" style="display: none;">
                 <div class="card-header"
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2>⚡ Actions</h2>
+                    <h2><i class="fas fa-bolt"></i> Actions</h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-secondary" onclick="deleteUnusedActions()" style="border-color: rgba(239, 68, 68, 0.4); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Supprimer toutes les actions non liées à un événement">
                             <i class="fas fa-broom"></i> Supprimer non-liées
@@ -994,7 +1000,7 @@
             <section id="events-section" class="card" style="display: none;">
                 <div class="card-header"
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2>📅 Événements</h2>
+                    <h2><i class="fas fa-calendar-days"></i> Événements</h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-secondary" onclick="deleteEventsWithoutActions()" style="border-color: rgba(239, 68, 68, 0.4); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Supprimer tous les événements qui n'ont aucune action liée">
                             <i class="fas fa-broom"></i> Supprimer sans action
@@ -1029,7 +1035,7 @@
                 <div class="card-header" style="margin-bottom: 2rem;">
                     <div style="display: flex; justify-content: space-between; align-items: start;">
                         <div>
-                            <h2>📦 Gestion des Scènes</h2>
+                            <h2>Gestion des Scènes</h2>
                             <p class="text-dim">Sélectionnez vos packs d'automatisations et Presets Chaos</p>
                         </div>
                         <div style="display: flex; gap: 10px;">
@@ -1075,7 +1081,7 @@
                 <div class="modal-content card" style="max-width: 500px;">
                     <button class="btn-close" onclick="closeModal('modal-publish-preset')"><i
                             class="fas fa-times"></i></button>
-                    <h2>🚀 Publier un Preset</h2>
+                    <h2>Publier un Preset</h2>
                     <p class="text-dim" style="margin-bottom: 20px;">Créez un pack à partir de votre configuration
                         actuelle (Actions + Événements).</p>
 
@@ -1130,7 +1136,7 @@
             <!-- SECTION OVERLAYS -->
             <section id="overlays-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1.5rem;">
-                    <h2>🖥️ Overlays</h2>
+                    <h2><i class="fas fa-display"></i> Overlays</h2>
                     <p class="text-dim">Gérez vos overlays pour OBS / TikTok Live Studio.</p>
                 </div>
 
@@ -2203,7 +2209,7 @@
             <!-- SECTION POINTS (viewer points / levels, like TikFinity "User & Points") -->
             <section id="points-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1rem;">
-                    <h2>🏅 Utilisateurs &amp; Points</h2>
+                    <h2><i class="fas fa-medal"></i> Utilisateurs &amp; Points</h2>
                 </div>
                 <div class="pro-tabs" data-tabs="points">
                     <button class="active" data-tab="points-users">Utilisateurs</button>
@@ -2216,12 +2222,12 @@
                         <b id="points-user-count">0</b> utilisateurs sur un maximum de <b id="points-user-max">1 000</b>.
                         Les spectateurs tapent <b id="points-score-cmd">!score</b> dans le chat pour afficher leur carte dans l'overlay Points.</p>
                     <div class="pro-toolbar">
-                        <input type="search" id="points-search" class="grow" placeholder="Rechercher un spectateur...">
-                        <button class="btn-secondary" onclick="GentokPro.points.load()" title="Actualiser"><i class="fas fa-sync-alt"></i></button>
-                        <button class="btn-secondary" onclick="GentokPro.points.exportCsv()" title="Exporter (CSV)"><i class="fas fa-file-csv"></i> CSV</button>
+                        <input type="search" id="points-search" class="grow form-control" placeholder="Rechercher un spectateur...">
+                        <button class="btn-secondary btn" onclick="GentokPro.points.load()" title="Actualiser"><i class="fas fa-sync-alt"></i></button>
+                        <button class="btn-secondary btn" onclick="GentokPro.points.exportCsv()" title="Exporter (CSV)"><i class="fas fa-file-csv"></i> CSV</button>
                     </div>
                     <div class="pro-table-wrap">
-                        <table class="pro-table">
+                        <table class="pro-table table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th class="sortable" data-sort="nickname">Utilisateur</th>
@@ -2245,11 +2251,11 @@
 
                 <div class="pro-tab" id="points-transactions">
                     <div class="pro-toolbar">
-                        <input type="search" id="points-tx-search" class="grow" placeholder="Filtrer par spectateur...">
-                        <button class="btn-secondary" onclick="GentokPro.points.loadTransactions()"><i class="fas fa-sync-alt"></i></button>
+                        <input type="search" id="points-tx-search" class="grow form-control" placeholder="Filtrer par spectateur...">
+                        <button class="btn-secondary btn" onclick="GentokPro.points.loadTransactions()"><i class="fas fa-sync-alt"></i></button>
                     </div>
                     <div class="pro-table-wrap">
-                        <table class="pro-table">
+                        <table class="pro-table table table-hover align-middle mb-0">
                             <thead><tr><th>Date</th><th>Utilisateur</th><th>Points</th><th>Raison</th><th>Détails</th></tr></thead>
                             <tbody id="points-tx-tbody"><tr><td colspan="5" class="pro-empty">Chargement...</td></tr></tbody>
                         </table>
@@ -2260,27 +2266,27 @@
                     <p class="pro-intro">Définissez ce que vos spectateurs gagnent. Les points disponibles peuvent être dépensés
                         (boutique de points Premium : un événement peut coûter des points) ; le niveau, lui, ne baisse jamais.</p>
                     <div class="pro-form-grid">
-                        <div class="pro-field"><label>Système de points</label><select id="pts-enabled"><option value="1">Activé</option><option value="0">Désactivé</option></select></div>
-                        <div class="pro-field"><label>Points par pièce offerte</label><input type="number" step="0.1" min="0" id="pts-perCoin"></div>
-                        <div class="pro-field"><label>Points par like</label><input type="number" step="0.01" min="0" id="pts-perLike"></div>
-                        <div class="pro-field"><label>Points par follow</label><input type="number" step="1" min="0" id="pts-perFollow"></div>
-                        <div class="pro-field"><label>Points par partage</label><input type="number" step="1" min="0" id="pts-perShare"></div>
-                        <div class="pro-field"><label>Points par abonnement</label><input type="number" step="1" min="0" id="pts-perSub"></div>
-                        <div class="pro-field"><label>Points par message</label><input type="number" step="0.1" min="0" id="pts-perChat"></div>
-                        <div class="pro-field"><label>Délai entre 2 messages comptés (s)</label><input type="number" step="1" min="0" id="pts-chatCooldown"></div>
-                        <div class="pro-field"><label>Points par minute de présence</label><input type="number" step="0.1" min="0" id="pts-perActiveMinute"><small>Spectateurs actifs dans les 5 dernières minutes</small></div>
-                        <div class="pro-field"><label>Difficulté des niveaux</label><input type="number" step="1" min="1" id="pts-levelFactor"><small>Niveau N = N² × cette valeur</small></div>
-                        <div class="pro-field"><label>Commande score</label><input type="text" id="pts-scoreCommand" placeholder="!score"></div>
-                        <div class="pro-field"><label>Commande classement</label><input type="text" id="pts-topCommand" placeholder="!top"></div>
-                        <div class="pro-field"><label>Délai entre 2 commandes (s)</label><input type="number" step="1" min="0" id="pts-commandCooldown"></div>
+                        <div class="pro-field"><label>Système de points</label><select class="form-select" id="pts-enabled"><option value="1">Activé</option><option value="0">Désactivé</option></select></div>
+                        <div class="pro-field"><label>Points par pièce offerte</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perCoin"></div>
+                        <div class="pro-field"><label>Points par like</label><input class="form-control" type="number" step="0.01" min="0" id="pts-perLike"></div>
+                        <div class="pro-field"><label>Points par follow</label><input class="form-control" type="number" step="1" min="0" id="pts-perFollow"></div>
+                        <div class="pro-field"><label>Points par partage</label><input class="form-control" type="number" step="1" min="0" id="pts-perShare"></div>
+                        <div class="pro-field"><label>Points par abonnement</label><input class="form-control" type="number" step="1" min="0" id="pts-perSub"></div>
+                        <div class="pro-field"><label>Points par message</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perChat"></div>
+                        <div class="pro-field"><label>Délai entre 2 messages comptés (s)</label><input class="form-control" type="number" step="1" min="0" id="pts-chatCooldown"></div>
+                        <div class="pro-field"><label>Points par minute de présence</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perActiveMinute"><small>Spectateurs actifs dans les 5 dernières minutes</small></div>
+                        <div class="pro-field"><label>Difficulté des niveaux</label><input class="form-control" type="number" step="1" min="1" id="pts-levelFactor"><small>Niveau N = N² × cette valeur</small></div>
+                        <div class="pro-field"><label>Commande score</label><input class="form-control" type="text" id="pts-scoreCommand" placeholder="!score"></div>
+                        <div class="pro-field"><label>Commande classement</label><input class="form-control" type="text" id="pts-topCommand" placeholder="!top"></div>
+                        <div class="pro-field"><label>Délai entre 2 commandes (s)</label><input class="form-control" type="number" step="1" min="0" id="pts-commandCooldown"></div>
                     </div>
-                    <div style="margin-top: 1rem;"><button class="btn-primary" onclick="GentokPro.points.saveSettings()"><i class="fas fa-save"></i> Enregistrer</button></div>
+                    <div style="margin-top: 1rem;"><button class="btn-primary btn" onclick="GentokPro.points.saveSettings()"><i class="fas fa-save"></i> Enregistrer</button></div>
 
                     <div class="pro-section-title"><i class="fas fa-user-edit"></i> Ajouter / retirer des points</div>
                     <div class="pro-toolbar">
-                        <input type="text" id="pts-adjust-user" class="grow" placeholder="Pseudo TikTok (sans @)">
-                        <input type="text" id="pts-adjust-amount" style="width: 120px;" placeholder="ex: 500 ou -200">
-                        <button class="btn-secondary" onclick="GentokPro.points.adjustFromForm()">Appliquer</button>
+                        <input type="text" id="pts-adjust-user" class="grow form-control" placeholder="Pseudo TikTok (sans @)">
+                        <input class="form-control" type="text" id="pts-adjust-amount" style="width: 120px;" placeholder="ex: 500 ou -200">
+                        <button class="btn-secondary btn" onclick="GentokPro.points.adjustFromForm()">Appliquer</button>
                     </div>
 
                     <div class="pro-danger">
@@ -2304,30 +2310,30 @@
             <!-- SECTION BATTLE (team battles) -->
             <section id="giveaway-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1rem;">
-                    <h2>🎁 Giveaway & Points Drop</h2>
+                    <h2><i class="fas fa-gift"></i> Giveaway & Points Drop</h2>
                     <p class="text-dim">Organisez un tirage au sort ou lâchez des points pendant le live. Overlays : Galerie d'overlays › Giveaway et Points Drop.</p>
                 </div>
                 <div class="gw-grid">
                     <div class="gw-card">
                         <h3><i class="fas fa-gift"></i> Giveaway (tirage au sort)</h3>
                         <div class="pro-form-grid">
-                            <div class="pro-field"><label>Titre</label><input type="text" id="gw-title" value="Giveaway"></div>
-                            <div class="pro-field"><label>Lot à gagner</label><input type="text" id="gw-prize" placeholder="ex: Carte cadeau 20 €"></div>
-                            <div class="pro-field"><label>Mot-clé</label><input type="text" id="gw-keyword" value="!join"></div>
-                            <div class="pro-field"><label>Durée des inscriptions</label><select id="gw-duration">
+                            <div class="pro-field"><label>Titre</label><input class="form-control" type="text" id="gw-title" value="Giveaway"></div>
+                            <div class="pro-field"><label>Lot à gagner</label><input class="form-control" type="text" id="gw-prize" placeholder="ex: Carte cadeau 20 €"></div>
+                            <div class="pro-field"><label>Mot-clé</label><input class="form-control" type="text" id="gw-keyword" value="!join"></div>
+                            <div class="pro-field"><label>Durée des inscriptions</label><select class="form-select" id="gw-duration">
                                 <option value="0">Jusqu'à fermeture manuelle</option><option value="60">1 min</option><option value="120">2 min</option><option value="300" selected>5 min</option><option value="600">10 min</option><option value="1800">30 min</option></select></div>
-                            <div class="pro-field"><label>+1 ticket tous les X pièces (0 = non)</label><input type="number" id="gw-coins" value="0" min="0"></div>
-                            <div class="pro-field"><label>Nombre de gagnants</label><input type="number" id="gw-count" value="1" min="1" max="20"></div>
+                            <div class="pro-field"><label>+1 ticket tous les X pièces (0 = non)</label><input class="form-control" type="number" id="gw-coins" value="0" min="0"></div>
+                            <div class="pro-field"><label>Nombre de gagnants</label><input class="form-control" type="number" id="gw-count" value="1" min="1" max="20"></div>
                         </div>
                         <div class="gw-checks">
                             <label><input type="checkbox" id="gw-followers"> Followers uniquement</label>
                             <label><input type="checkbox" id="gw-subs"> Abonnés uniquement</label>
                         </div>
                         <div class="battle-actions">
-                            <button class="btn-primary" onclick="GentokPro.giveaway.start()"><i class="fas fa-play"></i> Ouvrir les inscriptions</button>
-                            <button class="btn-secondary" onclick="GentokPro.giveaway.cmd('close')"><i class="fas fa-lock"></i> Fermer</button>
-                            <button class="btn-secondary" onclick="GentokPro.giveaway.draw()"><i class="fas fa-dice"></i> Tirer au sort</button>
-                            <button class="btn-ghost" onclick="GentokPro.giveaway.cmd('reset')"><i class="fas fa-rotate-left"></i> Réinitialiser</button>
+                            <button class="btn-primary btn" onclick="GentokPro.giveaway.start()"><i class="fas fa-play"></i> Ouvrir les inscriptions</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.giveaway.cmd('close')"><i class="fas fa-lock"></i> Fermer</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.giveaway.draw()"><i class="fas fa-dice"></i> Tirer au sort</button>
+                            <button class="btn-ghost btn" onclick="GentokPro.giveaway.cmd('reset')"><i class="fas fa-rotate-left"></i> Réinitialiser</button>
                         </div>
                         <div class="gw-live" id="gw-live"><span class="text-dim">Aucun giveaway en cours.</span></div>
                     </div>
@@ -2335,14 +2341,14 @@
                         <h3><i class="fas fa-coins"></i> Points Drop</h3>
                         <p class="text-dim" style="margin:0 0 10px;font-size:.85rem;">Les premiers spectateurs qui tapent le mot-clé gagnent des points (Utilisateurs & Points).</p>
                         <div class="pro-form-grid">
-                            <div class="pro-field"><label>Points par spectateur</label><input type="number" id="pd-amount" value="100" min="1"></div>
-                            <div class="pro-field"><label>Mot-clé</label><input type="text" id="pd-keyword" value="!catch"></div>
-                            <div class="pro-field"><label>Durée (s)</label><input type="number" id="pd-duration" value="30" min="5" max="600"></div>
-                            <div class="pro-field"><label>Spectateurs max</label><input type="number" id="pd-max" value="10" min="1" max="500"></div>
+                            <div class="pro-field"><label>Points par spectateur</label><input class="form-control" type="number" id="pd-amount" value="100" min="1"></div>
+                            <div class="pro-field"><label>Mot-clé</label><input class="form-control" type="text" id="pd-keyword" value="!catch"></div>
+                            <div class="pro-field"><label>Durée (s)</label><input class="form-control" type="number" id="pd-duration" value="30" min="5" max="600"></div>
+                            <div class="pro-field"><label>Spectateurs max</label><input class="form-control" type="number" id="pd-max" value="10" min="1" max="500"></div>
                         </div>
                         <div class="battle-actions">
-                            <button class="btn-primary" onclick="GentokPro.drop.start()"><i class="fas fa-parachute-box"></i> Lâcher les points</button>
-                            <button class="btn-secondary" onclick="GentokPro.drop.stop()"><i class="fas fa-stop"></i> Arrêter</button>
+                            <button class="btn-primary btn" onclick="GentokPro.drop.start()"><i class="fas fa-parachute-box"></i> Lâcher les points</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.drop.stop()"><i class="fas fa-stop"></i> Arrêter</button>
                         </div>
                         <div class="gw-live" id="pd-live"><span class="text-dim">Aucun drop en cours.</span></div>
                     </div>
@@ -2351,22 +2357,22 @@
 
             <section id="battle-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1rem;">
-                    <h2>⚔️ Batailles d'équipes</h2>
+                    <h2><i class="fas fa-fist-raised"></i> Batailles d'équipes</h2>
                     <p class="text-dim">Les spectateurs rejoignent une équipe en tapant sa commande dans le chat, puis leurs likes et/ou cadeaux font gagner des points à leur équipe.</p>
                 </div>
                 <div class="battle-live" style="margin: 0 0 16px;" id="battle-live"><span class="text-dim">Aucune bataille en cours.</span></div>
                 <div class="pro-form-grid" style="margin-bottom: 14px;">
-                    <div class="pro-field"><label>Titre</label><input type="text" id="battle-title" value="Bataille de likes"></div>
-                    <div class="pro-field"><label>Mode</label><select id="battle-mode">
+                    <div class="pro-field"><label>Titre</label><input class="form-control" type="text" id="battle-title" value="Bataille de likes"></div>
+                    <div class="pro-field"><label>Mode</label><select class="form-select" id="battle-mode">
                         <option value="likes">Likes</option><option value="gifts">Cadeaux (pièces)</option><option value="both">Likes + Cadeaux</option><option value="votes">Sondage (1 vote par spectateur)</option></select></div>
-                    <div class="pro-field"><label>Durée (minutes)</label><input type="number" id="battle-duration" min="1" max="180" value="3"></div>
-                    <div class="pro-field"><label>Valeur d'un like</label><input type="number" id="battle-like-value" min="0" step="0.1" value="1"><small>En mode « Likes + Cadeaux », 1 pièce = 1 point</small></div>
-                    <div class="pro-field"><label>Nombre d'équipes</label><select id="battle-team-count"><option value="2">2</option><option value="3">3 (Premium)</option><option value="4">4 (Premium)</option></select></div>
+                    <div class="pro-field"><label>Durée (minutes)</label><input class="form-control" type="number" id="battle-duration" min="1" max="180" value="3"></div>
+                    <div class="pro-field"><label>Valeur d'un like</label><input class="form-control" type="number" id="battle-like-value" min="0" step="0.1" value="1"><small>En mode « Likes + Cadeaux », 1 pièce = 1 point</small></div>
+                    <div class="pro-field"><label>Nombre d'équipes</label><select class="form-select" id="battle-team-count"><option value="2">2</option><option value="3">3 (Premium)</option><option value="4">4 (Premium)</option></select></div>
                 </div>
                 <div class="battle-teams" id="battle-teams"></div>
                 <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
-                    <button class="btn-primary" onclick="GentokPro.battle.start()"><i class="fas fa-play"></i> Lancer la bataille</button>
-                    <button class="btn-ghost" onclick="GentokPro.battle.stop()"><i class="fas fa-flag-checkered"></i> Terminer maintenant</button>
+                    <button class="btn-primary btn" onclick="GentokPro.battle.start()"><i class="fas fa-play"></i> Lancer la bataille</button>
+                    <button class="btn-ghost btn" onclick="GentokPro.battle.stop()"><i class="fas fa-flag-checkered"></i> Terminer maintenant</button>
                 </div>
             </section>
 
@@ -2378,8 +2384,8 @@
                 </div>
                 <div class="gal-toolbar">
                     <div class="gal-filters" id="gallery-filters"></div>
-                    <input type="search" id="gallery-search" placeholder="Rechercher un overlay...">
-                    <select id="gallery-bg" title="Fond des aperçus">
+                    <input class="form-control" type="search" id="gallery-search" placeholder="Rechercher un overlay...">
+                    <select class="form-select" id="gallery-bg" title="Fond des aperçus">
                         <option value="dark">Fond sombre</option>
                         <option value="checker">Damier (transparent)</option>
                         <option value="game">Fond « jeu »</option>
@@ -2391,13 +2397,13 @@
 
             <section id="simulator-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1rem;">
-                    <h2>🧪 Simulateur d'événements</h2>
+                    <h2><i class="fas fa-flask"></i> Simulateur d'événements</h2>
                     <p class="text-dim">Testez vos déclencheurs, actions et overlays sans être en live. Les événements simulés passent par le même moteur que les vrais, mais ne sont jamais enregistrés dans vos classements ni dans les points.</p>
                 </div>
                 <div class="sim-grid">
                     <div class="sim-card">
                         <h4><i class="fas fa-user"></i> Spectateur simulé</h4>
-                        <input type="text" id="sim-user" value="gentok_test" placeholder="Pseudo">
+                        <input class="form-control" type="text" id="sim-user" value="gentok_test" placeholder="Pseudo">
                         <label style="display:flex;gap:8px;align-items:center;font-size:0.85rem;"><input type="checkbox" id="sim-follower" checked style="width:auto;"> Follower</label>
                         <label style="display:flex;gap:8px;align-items:center;font-size:0.85rem;"><input type="checkbox" id="sim-sub" style="width:auto;"> Abonné</label>
                         <label style="display:flex;gap:8px;align-items:center;font-size:0.85rem;"><input type="checkbox" id="sim-mod" style="width:auto;"> Modérateur</label>
@@ -2405,27 +2411,27 @@
                     <div class="sim-card">
                         <h4><i class="fas fa-bolt"></i> Événements rapides</h4>
                         <div class="sim-quick">
-                            <button class="btn-secondary" onclick="GentokPro.sim.send('follow')">➕ Follow</button>
-                            <button class="btn-secondary" onclick="GentokPro.sim.send('share')">🔁 Partage</button>
-                            <button class="btn-secondary" onclick="GentokPro.sim.send('subscribe')">⭐ Abonnement</button>
-                            <button class="btn-secondary" onclick="GentokPro.sim.send('member')">🚪 Rejoint le live</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('follow')">➕ Follow</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('share')">🔁 Partage</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('subscribe')">⭐ Abonnement</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('member')">🚪 Rejoint le live</button>
                         </div>
                     </div>
                     <div class="sim-card">
                         <h4><i class="fas fa-heart"></i> Likes</h4>
-                        <div class="inline"><input type="number" id="sim-likes" value="15" min="1" max="1000"><button class="btn-secondary" onclick="GentokPro.sim.send('like')">Envoyer</button></div>
+                        <div class="inline"><input class="form-control" type="number" id="sim-likes" value="15" min="1" max="1000"><button class="btn-secondary btn" onclick="GentokPro.sim.send('like')">Envoyer</button></div>
                     </div>
                     <div class="sim-card">
                         <h4><i class="fas fa-comment"></i> Message / commande</h4>
-                        <input type="text" id="sim-comment" value="!score" placeholder="Message ou !commande">
-                        <div class="inline"><button class="btn-secondary" onclick="GentokPro.sim.send('chat')">💬 Chat</button><button class="btn-secondary" onclick="GentokPro.sim.send('question')">❓ Question</button></div>
+                        <input class="form-control" type="text" id="sim-comment" value="!score" placeholder="Message ou !commande">
+                        <div class="inline"><button class="btn-secondary btn" onclick="GentokPro.sim.send('chat')">💬 Chat</button><button class="btn-secondary btn" onclick="GentokPro.sim.send('question')">❓ Question</button></div>
                     </div>
                     <div class="sim-card">
                         <h4><i class="fas fa-gift"></i> Cadeau</h4>
-                        <input type="text" id="sim-gift" list="sim-gift-list" placeholder="Rechercher un cadeau..." value="Rose">
+                        <input class="form-control" type="text" id="sim-gift" list="sim-gift-list" placeholder="Rechercher un cadeau..." value="Rose">
                         <datalist id="sim-gift-list"></datalist>
-                        <div class="inline"><input type="number" id="sim-gift-count" value="5" min="1" max="200" title="Quantité"><label style="display:flex;gap:6px;align-items:center;font-size:0.8rem;"><input type="checkbox" id="sim-gift-combo" checked style="width:auto;"> Combo</label></div>
-                        <button class="btn-primary" onclick="GentokPro.sim.send('gift')"><i class="fas fa-gift"></i> Envoyer le cadeau</button>
+                        <div class="inline"><input class="form-control" type="number" id="sim-gift-count" value="5" min="1" max="200" title="Quantité"><label style="display:flex;gap:6px;align-items:center;font-size:0.8rem;"><input type="checkbox" id="sim-gift-combo" checked style="width:auto;"> Combo</label></div>
+                        <button class="btn-primary btn" onclick="GentokPro.sim.send('gift')"><i class="fas fa-gift"></i> Envoyer le cadeau</button>
                     </div>
                 </div>
                 <div class="pro-section-title"><i class="fas fa-stream"></i> Journal de simulation</div>
@@ -2496,13 +2502,22 @@
                                     <div class="form-group">
                                         <label>Style de l'interface</label>
                                         <select id="setting-ui-style" onchange="updateUIStyle(this.value)">
-                                            <option value="studio">Studio (Défaut)</option>
-                                            <option value="modern">Moderne (Néon)</option>
+                                            <option value="classic">Classique (Défaut)</option>
+                                            <option value="studio">Studio</option>
+                                            <option value="modern">Néon</option>
                                             <option value="compact">Compact (Plus d'infos)</option>
                                             <option value="glass">Full Glass (Translucide)</option>
                                         </select>
                                     </div>
                                 </div>
+                            </div>
+
+                            <!-- Application & updates (filled by appstatus.js) -->
+                            <div class="settings-group-premium" id="app-update-card" style="margin-bottom: 2rem;">
+                                <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-desktop"></i> Application & mises à jour
+                                </h3>
+                                <div id="app-update-body"><span class="text-dim">Détection de l'application...</span></div>
                             </div>
 
                             <!-- Automation -->
@@ -2569,7 +2584,7 @@
 
                         <!-- Minecraft Tab -->
                         <div id="settings-tab-minecraft" class="settings-tab" style="display: none;">
-                            <h2 style="margin-bottom: 1.5rem;">🎮 Minecraft / Server</h2>
+                            <h2 style="margin-bottom: 1.5rem;"><i class="fas fa-gamepad"></i> Minecraft / Server</h2>
                             <div class="settings-grid"
                                 style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                                 <div class="form-group">
@@ -3250,7 +3265,7 @@
     <div id="modal-action" class="modal">
         <div class="modal-content card">
             <button class="btn-close" onclick="closeModal('modal-action')"><i class="fas fa-times"></i></button>
-            <h2>⚡ Nouvelle Action</h2>
+            <h2><i class="fas fa-bolt"></i> Nouvelle Action</h2>
             <form id="form-action">
                 <div class="form-group">
                     <label>Nom de l'action</label>
@@ -3326,7 +3341,7 @@
     <div id="modal-event" class="modal">
         <div class="modal-content card">
             <button class="btn-close" onclick="closeModal('modal-event')"><i class="fas fa-times"></i></button>
-            <h2>📅 Nouvel Événement</h2>
+            <h2><i class="fas fa-calendar-days"></i> Nouvel Événement</h2>
             <form id="form-event">
                 <div class="form-group">
                     <label>Qui peut déclencher ?</label>
@@ -3439,7 +3454,7 @@
     <div id="modal-quick-sound" class="modal">
         <div class="modal-content card">
             <button class="btn-close" onclick="closeModal('modal-quick-sound')"><i class="fas fa-times"></i></button>
-            <h2>🔗 Lier un Son à un Déclencheur</h2>
+            <h2>Lier un Son à un Déclencheur</h2>
             <form id="form-quick-sound">
                 <input type="hidden" id="qs-sound-url">
                 <input type="hidden" id="qs-sound-name">
@@ -3555,7 +3570,7 @@
                     class="fas fa-times"></i></button>
 
             <div class="modal-header">
-                <h2>📈 Analyse détaillée du Live</h2>
+                <h2>Analyse détaillée du Live</h2>
                 <div id="sd-date" class="text-dim">---</div>
             </div>
 
@@ -3593,11 +3608,11 @@
             <div class="charts-container"
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 30px;">
                 <div class="chart-box">
-                    <h3>📊 Répartition des Actions</h3>
+                    <h3><i class="fas fa-chart-line"></i> Répartition des Actions</h3>
                     <canvas id="actionsChart"></canvas>
                 </div>
                 <div class="chart-box">
-                    <h3>🎁 Top Cadeaux</h3>
+                    <h3><i class="fas fa-gift"></i> Top Cadeaux</h3>
                     <canvas id="giftsChart"></canvas>
                 </div>
             </div>
@@ -3729,7 +3744,7 @@
                 style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
                 <select data-language-select aria-label="Langue"
                     style="margin-bottom: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;"></select>
-                <p style="color: var(--text-muted); font-size: 0.75rem; opacity: 0.8;">© 2026 Gentok • Version 1.0.5</p>
+                <p style="color: var(--text-muted); font-size: 0.75rem; opacity: 0.8;">© 2026 Gentok • Version <span class="gentok-version">1.0.6</span></p>
             </div>
         </div>
     </div>
@@ -3737,7 +3752,7 @@
     <div id="toast-container" class="toast-container"></div>
 
     <div id="app-footer" style="display: none;">
-        <span id="app-version-display">Gentok v1.0.5</span>
+        <span id="app-version-display">Gentok v1.0.6</span>
     </div>
     <!-- PRO MODAL -->
     <!-- PRO MODAL (Redesigned) -->
@@ -3839,6 +3854,7 @@
     <script src="router.js"></script>
     <script src="pro.js"></script>
     <script src="gallery.js"></script>
+    <script src="appstatus.js"></script>
 
     <!-- MODAL MINECRAFT OPTIONS -->
     <div id="modal-mc-options" class="modal-overlay hidden" style="z-index: 11000;">
@@ -3870,7 +3886,7 @@
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <span
                                 style="font-size: 0.65rem; color: var(--primary); font-weight: 800; letter-spacing: 1px;"><i
-                                    class="fas fa-microchip"></i> GENTOK KERNEL v1.0.5</span>
+                                    class="fas fa-microchip"></i> GENTOK KERNEL v<span class="gentok-version">1.0.6</span></span>
                             <span
                                 style="font-size: 0.65rem; color: #444; font-family: monospace;">SYSTEM_SCANNING...</span>
                         </div>

@@ -274,14 +274,14 @@
                 const v = prev[i] || d;
                 return `
                 <div class="battle-team" style="--team-color:${esc(v.color)}" data-team="${i}">
-                    <div class="pro-field"><label>${esc(t('Nom'))}</label><input type="text" class="bt-name" value="${esc(v.name)}"></div>
+                    <div class="pro-field"><label>${esc(t('Nom'))}</label><input type="text" class="bt-name form-control" value="${esc(v.name)}"></div>
                     <div class="inline" style="display:flex;gap:8px;margin-top:8px;">
-                        <div class="pro-field" style="flex:1"><label>${esc(t('Commande'))}</label><input type="text" class="bt-command" value="${esc(v.command)}"></div>
+                        <div class="pro-field" style="flex:1"><label>${esc(t('Commande'))}</label><input type="text" class="bt-command form-control" value="${esc(v.command)}"></div>
                         <div class="pro-field" style="width:70px"><label>${esc(t('Couleur'))}</label><input type="color" class="bt-color" value="${esc(v.color)}" style="padding:2px;height:40px;"></div>
                     </div>
-                    <div class="pro-field" style="margin-top:8px"><label>${esc(t('Cadeau de l\'équipe (ID, optionnel)'))}</label><input type="text" class="bt-gift" value="${esc(v.giftId || '')}" placeholder="ex: 5655"></div>
+                    <div class="pro-field" style="margin-top:8px"><label>${esc(t('Cadeau de l\'équipe (ID, optionnel)'))}</label><input type="text" class="bt-gift form-control" value="${esc(v.giftId || '')}" placeholder="ex: 5655"></div>
                     <div class="pro-field" style="margin-top:8px"><label>${esc(t('Action si victoire'))}</label>
-                        <select class="bt-action"><option value="">${esc(t('Aucune action'))}</option>
+                        <select class="bt-action form-select"><option value="">${esc(t('Aucune action'))}</option>
                         ${actions.map(a => `<option value="${esc(a.id)}" ${v.winActionId === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
                 </div>`;
             }).join('');
@@ -515,9 +515,9 @@
         bar.className = 'overlay-style-bar';
         bar.innerHTML = `
             <div class="pro-field"><label>${esc(t('Police des overlays'))}</label>
-                <select id="ovl-font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option value="${esc(f)}" style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></div>
+                <select id="ovl-font" class="form-select"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option value="${esc(f)}" style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></div>
             <div class="pro-field"><label>${esc(t('Style des overlays'))}</label>
-                <select id="ovl-theme"><option value="">${esc(t('Par défaut'))}</option>${OVERLAY_THEMES.map(([v, l]) => `<option value="${v}">${esc(t(l))}</option>`).join('')}</select></div>
+                <select id="ovl-theme" class="form-select"><option value="">${esc(t('Par défaut'))}</option>${OVERLAY_THEMES.map(([v, l]) => `<option value="${v}">${esc(t(l))}</option>`).join('')}</select></div>
             <div class="pro-field" style="min-width:110px;flex:0"><label>${esc(t('Couleur principale'))}</label><input type="color" id="ovl-color" value="#fe2c55"></div>
             <div class="pro-field" style="min-width:110px;flex:0"><label>${esc(t('Couleur 2'))}</label><input type="color" id="ovl-color2" value="#ff8a00"></div>
             <div class="pro-field" id="ovl-font-preview" style="font-size:1.4rem;font-weight:800;padding-bottom:6px;">Gentok 123 ❤️</div>`;
@@ -619,7 +619,7 @@
         const group = document.createElement('div');
         group.className = 'form-group';
         group.innerHTML = `<label>${esc(t('Police de l\'interface'))}</label>
-            <select id="setting-ui-font"><option value="">Outfit (${esc(t('Par défaut'))})</option>
+            <select id="setting-ui-font" class="form-select"><option value="">${esc(t('Police système'))} (${esc(t('Par défaut'))})</option>
             ${FONTS.filter(f => f !== 'Outfit').map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('')}</select>`;
         styleSelect.closest('.form-group').after(group);
         const sel = group.querySelector('select');

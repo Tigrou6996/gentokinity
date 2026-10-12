@@ -6,6 +6,7 @@ let onAppConnectedCallback = null;
 // Track connected clients by token
 // Structure: { [token]: { dashboard: [sockets], app: [sockets], status: 'offline' } }
 const clientsByToken = {};
+const appInfoByToken = {}; // token -> { version, since } of the connected desktop app
 const socketCache = {}; // [NEW] Store last stats for remote apps (VPS side)
 
 function initSocket(server) {
@@ -49,14 +50,19 @@ function initSocket(server) {
                     onAppConnectedCallback(token);
                 }
 
-                // Add App socket
+                // Add App socket (and remember its version for the "application detected" badge)
                 clientsByToken[token].app.push(socket.id);
+                appInfoByToken[token] = {
+                    version: String(data.version || '').replace(/[^0-9a-zA-Z.-]/g, '').slice(0, 20) || null,
+                    since: Date.now()
+                };
 
                 socket.join(`room:${token}`);
                 socket.join(`app:${token}`);
 
                 // Notify that app is online
                 io.to(`room:${token}`).emit('app_status', 'online');
+                io.to(`room:${token}`).emit('app_info', { connected: true, ...appInfoByToken[token] });
 
             } else if (identifiedType === 'overlay') {
                 socket.join(`room:${token}`);
@@ -349,7 +355,9 @@ function initSocket(server) {
 
                 // If it was the last app client, notify dashboards
                 if (identifiedType === 'app' && prevAppCount > 0 && clientsByToken[identifiedToken].app.length === 0) {
+                    delete appInfoByToken[identifiedToken];
                     io.to(`room:${identifiedToken}`).emit('app_status', 'offline');
+                    io.to(`room:${identifiedToken}`).emit('app_info', { connected: false });
                 }
             }
         });
@@ -564,6 +572,12 @@ function isAppConnected(token) {
     return clientsByToken[token].app.length > 0;
 }
 
+/** Version and connection time of the desktop app connected for this token (null when none) */
+function getAppInfo(token) {
+    if (!isAppConnected(token)) return null;
+    return appInfoByToken[token] || { version: null, since: null };
+}
+
 function setOnAppConnected(cb) {
     onAppConnectedCallback = cb;
 }
@@ -577,6 +591,7 @@ function getSocketCache(token) {
 }
 
 module.exports = {
+    getAppInfo,
     initSocket,
     getIO,
     emitLog,

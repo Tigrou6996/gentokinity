@@ -1339,6 +1339,8 @@ function initLocalAppDetection() {
 }
 
 function showDownloadButton() {
+    // The application badge (appstatus.js) already offers the download when the app is not detected
+    if (window.GentokAppStatus) return;
     const downloadBtn = document.querySelector('#btn-download-app');
     if (!downloadBtn) {
         const header = document.querySelector('header .user-control');
@@ -2973,6 +2975,29 @@ function setupEventListeners() {
             }
             updateModal.classList.remove('active');
         });
+
+        // The update may have started before this page was shown (e.g. during the launcher):
+        // ask the current state and follow it, so the progress window is never missed
+        const followUpdateState = (st) => {
+            if (!st) return;
+            if (st.status === 'downloading' || st.status === 'downloaded') {
+                if (st.version) newVersionNumber.textContent = `v${st.version}`;
+                updateModal.classList.add('active');
+                btnDownload.style.display = 'none';
+                btnLater.style.display = 'none';
+                progressContainer.style.display = 'block';
+                const percent = st.status === 'downloaded' ? 100 : (st.percent || 0);
+                progressBarFill.style.width = `${percent}%`;
+                progressPercent.textContent = `${percent}%`;
+                btnDownloading.style.display = st.status === 'downloaded' ? 'none' : 'block';
+                btnRestart.style.display = st.status === 'downloaded' ? 'block' : 'none';
+                if (st.status === 'downloaded') progressStatusText.textContent = 'Votre app va être mise à jour...';
+            }
+        };
+        if (window.electronAPI.getUpdateState) {
+            window.electronAPI.getUpdateState().then(followUpdateState).catch(() => { });
+            window.electronAPI.onUpdateState(followUpdateState);
+        }
 
         // Buttons
         btnDownload.onclick = () => {
@@ -9435,11 +9460,11 @@ function setAccentColor(color, el) {
 }
 
 function updateUIStyle(style) {
-    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio');
-    document.documentElement.classList.remove('ui-studio');
+    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio', 'ui-classic');
+    document.documentElement.classList.remove('ui-studio', 'ui-classic');
     if (style === 'compact') document.body.classList.add('ui-compact');
     if (style === 'glass') document.body.classList.add('ui-glass');
-    if (style === 'studio') { document.body.classList.add('ui-studio'); document.documentElement.classList.add('ui-studio'); }
+    if (style === 'studio' || style === 'classic') { document.body.classList.add('ui-' + style); document.documentElement.classList.add('ui-' + style); }
     try { localStorage.setItem('gentok_ui_style', style); } catch (e) { }
     savePremiumSettings();
 }
@@ -9447,7 +9472,7 @@ function updateUIStyle(style) {
 function savePremiumSettings() {
     const settings = {
         accentColor: document.documentElement.style.getPropertyValue('--primary'),
-        uiStyle: document.getElementById('setting-ui-style')?.value || 'studio',
+        uiStyle: document.getElementById('setting-ui-style')?.value || 'classic',
         autoConnect: document.getElementById('setting-auto-connect')?.checked,
         autoReset: document.getElementById('setting-auto-reset')?.checked,
         soundAlerts: document.getElementById('setting-sound-alerts')?.checked,
@@ -9457,13 +9482,13 @@ function savePremiumSettings() {
 }
 
 function loadPremiumSettings() {
-    // Interface style: its own key, Studio by default (older saves of "modern" were only the old default)
-    let uiStyle = 'studio';
-    try { uiStyle = localStorage.getItem('gentok_ui_style') || 'studio'; } catch (e) { }
+    // Interface style: its own key, Classique by default (older saves of "modern" were only the old default)
+    let uiStyle = 'classic';
+    try { uiStyle = localStorage.getItem('gentok_ui_style') || 'classic'; } catch (e) { }
     const styleSelect = document.getElementById('setting-ui-style');
     if (styleSelect) styleSelect.value = uiStyle;
-    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio');
-    if (['compact', 'glass', 'studio'].includes(uiStyle)) document.body.classList.add('ui-' + uiStyle);
+    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio', 'ui-classic');
+    if (['compact', 'glass', 'studio', 'classic'].includes(uiStyle)) document.body.classList.add('ui-' + uiStyle);
 
     const saved = localStorage.getItem('gentok_premium_settings');
     if (!saved) return;

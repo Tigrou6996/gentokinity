@@ -125,20 +125,20 @@
     function controlsHtml(o) {
         if (o.controls === 'coinmatch') {
             return `<div class="gal-controls">
-                <select data-cm="duration" title="${esc(t('Durée'))}">${[[60, '1 min'], [120, '2 min'], [180, '3 min'], [300, '5 min'], [600, '10 min']].map(([v, l]) => `<option value="${v}"${v === 120 ? ' selected' : ''}>${l}</option>`).join('')}</select>
-                <button class="btn-secondary" data-cm="start"><i class="fas fa-play"></i> ${esc(t('Lancer'))}</button>
-                <button class="btn-secondary" data-cm="stop"><i class="fas fa-stop"></i> ${esc(t('Terminer'))}</button>
-                <button class="btn-secondary" data-cm="reset"><i class="fas fa-rotate-left"></i> ${esc(t('Réinitialiser'))}</button>
-                <button class="btn-secondary" data-cm="winners"><i class="fas fa-trophy"></i> ${esc(t('Gagnants'))}</button></div>`;
+                <select class="form-select form-select-sm" style="width:auto" data-cm="duration" title="${esc(t('Durée'))}">${[[60, '1 min'], [120, '2 min'], [180, '3 min'], [300, '5 min'], [600, '10 min']].map(([v, l]) => `<option value="${v}"${v === 120 ? ' selected' : ''}>${l}</option>`).join('')}</select>
+                <button class="btn btn-sm btn-outline-secondary" data-cm="start"><i class="fas fa-play"></i> ${esc(t('Lancer'))}</button>
+                <button class="btn btn-sm btn-outline-secondary" data-cm="stop"><i class="fas fa-stop"></i> ${esc(t('Terminer'))}</button>
+                <button class="btn btn-sm btn-outline-secondary" data-cm="reset"><i class="fas fa-rotate-left"></i> ${esc(t('Réinitialiser'))}</button>
+                <button class="btn btn-sm btn-outline-secondary" data-cm="winners"><i class="fas fa-trophy"></i> ${esc(t('Gagnants'))}</button></div>`;
         }
         if (o.controls === 'jar') {
-            return `<div class="gal-controls"><button class="btn-secondary" data-jar="reset"><i class="fas fa-rotate-left"></i> ${esc(t('Vider le pot'))}</button></div>`;
+            return `<div class="gal-controls"><button class="btn btn-sm btn-outline-secondary" data-jar="reset"><i class="fas fa-rotate-left"></i> ${esc(t('Vider le pot'))}</button></div>`;
         }
         if (o.controls === 'giveaway') {
-            return `<div class="gal-controls"><button class="btn-secondary" onclick="showSection('giveaway')"><i class="fas fa-gift"></i> ${esc(t('Ouvrir Giveaway & Points Drop'))}</button></div>`;
+            return `<div class="gal-controls"><button class="btn btn-sm btn-outline-secondary" onclick="showSection('giveaway')"><i class="fas fa-gift"></i> ${esc(t('Ouvrir Giveaway & Points Drop'))}</button></div>`;
         }
         if (o.controls === 'battle') {
-            return `<div class="gal-controls"><button class="btn-secondary" onclick="showSection('battle')"><i class="fas fa-fist-raised"></i> ${esc(t("Ouvrir les batailles"))}</button></div>`;
+            return `<div class="gal-controls"><button class="btn btn-sm btn-outline-secondary" onclick="showSection('battle')"><i class="fas fa-fist-raised"></i> ${esc(t("Ouvrir les batailles"))}</button></div>`;
         }
         return '';
     }
@@ -148,10 +148,10 @@
         const val = v === undefined ? (p.def === undefined ? '' : p.def) : v;
         const id = `gal-${o.id}-${p.key}`;
         let input;
-        if (p.type === 'select') input = `<select id="${id}" data-k="${p.key}">${p.options.map(x => `<option value="${esc(x)}"${String(val) === x ? ' selected' : ''}>${esc(x === '' ? t('Par défaut') : x)}</option>`).join('')}</select>`;
+        if (p.type === 'select') input = `<select id="${id}" class="form-select form-select-sm" data-k="${p.key}">${p.options.map(x => `<option value="${esc(x)}"${String(val) === x ? ' selected' : ''}>${esc(x === '' ? t('Par défaut') : x)}</option>`).join('')}</select>`;
         else if (p.type === 'bool') input = `<label class="gal-switch"><input type="checkbox" id="${id}" data-k="${p.key}"${val ? ' checked' : ''}><span></span></label>`;
-        else if (p.type === 'color') input = `<input type="color" id="${id}" data-k="${p.key}" value="${esc(val || p.def || '#fe2c55')}">`;
-        else input = `<input type="${p.type === 'number' ? 'number' : 'text'}" id="${id}" data-k="${p.key}" value="${esc(val)}"${p.type === 'number' ? ' step="any"' : ''}>`;
+        else if (p.type === 'color') input = `<input type="color" class="form-control form-control-color" id="${id}" data-k="${p.key}" value="${esc(val || p.def || '#fe2c55')}">`;
+        else input = `<input type="${p.type === 'number' ? 'number' : 'text'}" class="form-control form-control-sm" id="${id}" data-k="${p.key}" value="${esc(val)}"${p.type === 'number' ? ' step="any"' : ''}>`;
         return `<div class="gal-field${p.type === 'bool' ? ' bool' : ''}"><label for="${id}">${esc(t(p.label))}</label>${input}</div>`;
     }
 
@@ -161,17 +161,17 @@
             <p class="gal-desc">${esc(t(o.desc))}</p>
             ${controlsHtml(o)}
             <div class="gal-url">
-                <input type="text" readonly class="gal-link">
-                <button class="btn-secondary" data-act="copy"><i class="fas fa-copy"></i> ${esc(t("Copier l'URL"))}</button>
-                <button class="btn-secondary" data-act="test"${o.test ? '' : ' disabled title="' + esc(t('Pas de test pour cet overlay')) + '"'}><i class="fas fa-chevron-right"></i> Test</button>
-                <button class="btn-secondary" data-act="custom"><i class="fas fa-gear"></i> ${esc(t('Personnaliser'))}</button>
-                <button class="btn-secondary" data-act="open" title="${esc(t('Ouvrir'))}"><i class="fas fa-external-link-alt"></i></button>
+                <input type="text" readonly class="gal-link form-control form-control-sm">
+                <button class="btn btn-sm btn-outline-secondary" data-act="copy"><i class="fas fa-copy"></i> ${esc(t("Copier l'URL"))}</button>
+                <button class="btn btn-sm btn-outline-secondary" data-act="test"${o.test ? '' : ' disabled title="' + esc(t('Pas de test pour cet overlay')) + '"'}><i class="fas fa-chevron-right"></i> Test</button>
+                <button class="btn btn-sm btn-outline-secondary" data-act="custom"><i class="fas fa-gear"></i> ${esc(t('Personnaliser'))}</button>
+                <button class="btn btn-sm btn-outline-secondary" data-act="open" title="${esc(t('Ouvrir'))}"><i class="fas fa-external-link-alt"></i></button>
             </div>
             <div class="gal-custom" hidden>
                 <div class="gal-fields">${(o.params || []).map(p => fieldHtml(o, p)).join('')}
-                    <div class="gal-field"><label>${esc(t('Police'))}</label><select data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option${(options[o.id] || {}).font === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
+                    <div class="gal-field"><label>${esc(t('Police'))}</label><select class="form-select form-select-sm" data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option${(options[o.id] || {}).font === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
                 </div>
-                <button class="btn-ghost gal-reset" data-act="defaults"><i class="fas fa-eraser"></i> ${esc(t('Valeurs par défaut'))}</button>
+                <button class="btn btn-sm btn-link gal-reset" data-act="defaults"><i class="fas fa-eraser"></i> ${esc(t('Valeurs par défaut'))}</button>
             </div>
             <div class="gal-preview${o.scale ? ' scaled' : ''}" style="height:${o.h}px"><iframe loading="lazy" title="${esc(o.name)}"></iframe></div>
         </div>`;
@@ -279,7 +279,7 @@
                 const panel = card.querySelector('.gal-custom'); panel.hidden = !panel.hidden; btn.classList.toggle('active', !panel.hidden);
             } else if (act === 'defaults') {
                 delete options[o.id]; saveOptions();
-                card.querySelector('.gal-fields').outerHTML = `<div class="gal-fields">${(o.params || []).map(p => fieldHtml(o, p)).join('')}<div class="gal-field"><label>${esc(t('Police'))}</label><select data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div></div>`;
+                card.querySelector('.gal-fields').outerHTML = `<div class="gal-fields">${(o.params || []).map(p => fieldHtml(o, p)).join('')}<div class="gal-field"><label>${esc(t('Police'))}</label><select class="form-select form-select-sm" data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div></div>`;
                 refreshCard(card, true);
             } else if (act === 'test' && o.test) {
                 await api('/api/simulate', { uniqueId: 'gentok_test', nickname: 'Gentok Test', followRole: 1, ...o.test });

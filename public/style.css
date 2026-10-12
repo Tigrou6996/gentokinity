@@ -5026,3 +5026,5 @@ table td:first-child {
 table td {
     vertical-align: middle;
 }
+/* The update window is opened by adding .active (app.js): without this rule it stayed hidden */
+#update-modal.active { display: flex; }
