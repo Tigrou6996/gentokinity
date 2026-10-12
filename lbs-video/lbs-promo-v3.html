@@ -410,7 +410,7 @@ function upG(t){
   const rp=(k)=>((t*.9+k/3)%1);ring.forEach((r,k)=>{const rr=rp(k);r.setAttribute('r',130+rr*160);r.setAttribute('opacity',(t>36.78&&t<41.6)?(1-rr)*.5:0);TF(r,1560,500,0,1);});
   ring.forEach(r=>r.setAttribute('transform','translate(1560 130)'));
   popT(chipCall,1560,130+0,P(t,36.8,13,.55)*(t<41.5?1:0));
-  popT(chipOpp,1420,390,P(t,41.66,13,.55)*(t<46.3?1:0),-4);
+  popT(chipOpp,1340,660,P(t,41.66,13,.55)*(t<46.3?1:0),-4);
   popT(chipWrite,1560,150,P(t,47.1,13,.55)*(t<51.3?1:0),3);
   popT(chipSite,1560,150,P(t,51.5,13,.55)*(t<56.0?1:0),-3);
   ring.forEach(r=>{});
