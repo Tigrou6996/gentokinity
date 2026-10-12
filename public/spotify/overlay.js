@@ -202,7 +202,7 @@ socket.on('overlayUpdate', data => {
 
             if (requesterEl) {
                 if (data.current.requestedBy) {
-                    requesterEl.innerText = `Demandé par ${data.current.requestedBy}`;
+                    requesterEl.innerText = (window.Gentok ? window.Gentok.t('spotify.requestedBy', { name: data.current.requestedBy }) : `Demandé par ${data.current.requestedBy}`);
                     requesterEl.classList.remove('hidden');
                 } else {
                     requesterEl.classList.add('hidden');

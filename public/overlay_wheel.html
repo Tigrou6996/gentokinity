@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Wheel</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --accent: #fe2c55; --size: 520px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        #wrap { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
+            opacity: 0; transform: scale(.85); transition: opacity .4s ease, transform .4s ease; }
+        #wrap.show { opacity: 1; transform: scale(1); }
+        .who { color: #fff; font-size: 26px; font-weight: 800; text-shadow: 0 2px 8px #000; text-align: center; }
+        .who b { color: var(--accent); }
+        .stage { position: relative; width: var(--size); height: var(--size); }
+        canvas { width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+        .pointer { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); width: 0; height: 0;
+            border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #fff;
+            filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); z-index: 2; }
+        .hub { position: absolute; left: 50%; top: 50%; width: 15%; height: 15%; transform: translate(-50%, -50%); border-radius: 50%;
+            background: #fff; border: 6px solid var(--accent); box-shadow: 0 0 20px rgba(0,0,0,.5); }
+        .result { min-height: 54px; color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 3px 12px #000; text-align: center;
+            opacity: 0; transform: translateY(10px); transition: all .35s ease; }
+        .result.show { opacity: 1; transform: none; }
+        .result b { color: var(--accent); }
+    </style>
+</head>
+
+<body>
+    <div id="wrap">
+        <div class="who" id="who"></div>
+        <div class="stage">
+            <div class="pointer"></div>
+            <canvas id="wheel" width="1000" height="1000"></canvas>
+            <div class="hub"></div>
+        </div>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters:
+        //   size=520    taille de la roue (px)
+        //   hold=5      secondes d'affichage du résultat
+        //   persist=1   laisser la roue affichée entre deux tirages
+        //   color=fe2c55, lang=fr|en|es|de|pt|it, demo=1
+        const G = window.Gentok;
+        const t = G.t;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 520), 200), 1200)}px`);
+        const hold = Math.min(Math.max(G.numParam('hold', 5), 1), 60);
+        const persist = G.boolParam('persist', false);
+
+        const COLORS = ['#fe2c55', '#25f4ee', '#fbbf24', '#a78bfa', '#4ade80', '#f97316', '#60a5fa', '#f472b6'];
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        const wrap = document.getElementById('wrap');
+        const resultEl = document.getElementById('result');
+        const queue = [];
+        let busy = false;
+        let rotation = 0;
+
+        function draw(segments) {
+            const n = segments.length, r = canvas.width / 2, arc = (Math.PI * 2) / n;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < n; i++) {
+                const start = -Math.PI / 2 + i * arc;
+                ctx.beginPath();
+                ctx.moveTo(r, r);
+                ctx.arc(r, r, r, start, start + arc);
+                ctx.closePath();
+                ctx.fillStyle = COLORS[i % COLORS.length];
+                if (n % COLORS.length === 1 && i === n - 1) ctx.fillStyle = COLORS[(i + 2) % COLORS.length];
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(0,0,0,.25)';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(r, r);
+                ctx.rotate(start + arc / 2);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#111';
+                const fontSize = Math.max(22, Math.min(54, 460 / Math.max(n, 4)));
+                ctx.font = `800 ${fontSize}px 'Segoe UI', sans-serif`;
+                let label = segments[i];
+                while (ctx.measureText(label).width > r * 0.72 && label.length > 3) label = label.slice(0, -2) + '…';
+                ctx.fillText(label, r - 30, 0);
+                ctx.restore();
+            }
+        }
+
+        function spin(data) {
+            busy = true;
+            const segments = data.segments;
+            const n = segments.length, arcDeg = 360 / n;
+            draw(segments);
+            resultEl.classList.remove('show');
+            document.getElementById('who').innerHTML = data.nickname
+                ? `${t('wheel.spunBy')} <b>${G.escapeHtml(data.nickname)}</b>`
+                : G.escapeHtml(data.title || '');
+            wrap.classList.add('show');
+
+            // Land the winner's centre under the pointer (top), with a little randomness
+            const jitter = (Math.random() - 0.5) * arcDeg * 0.6;
+            const targetMod = (360 - ((data.winnerIndex + 0.5) * arcDeg + jitter)) % 360;
+            const current = ((rotation % 360) + 360) % 360;
+            rotation += (360 * 6) + ((targetMod - current + 360) % 360);
+            const spinMs = Math.min(Math.max(Number(data.spinMs) || 6000, 2000), 15000);
+            canvas.style.transition = 'none';
+            void canvas.offsetWidth;
+            canvas.style.transition = `transform ${spinMs}ms cubic-bezier(.12,.75,.15,1)`;
+            canvas.style.transform = `rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                resultEl.innerHTML = `🎉 <b>${G.escapeHtml(segments[data.winnerIndex])}</b>`;
+                resultEl.classList.add('show');
+                setTimeout(() => {
+                    if (!persist) wrap.classList.remove('show');
+                    setTimeout(() => { busy = false; next(); }, 450);
+                }, hold * 1000);
+            }, spinMs);
+        }
+
+        function next() {
+            if (busy || queue.length === 0) return;
+            spin(queue.shift());
+        }
+
+        function onSpin(data) {
+            if (!data || !Array.isArray(data.segments) || data.segments.length < 2) return;
+            if (queue.length > 10) return;
+            queue.push(data);
+            next();
+        }
+
+        const socket = G.connect();
+        socket.on('wheel_spin', onSpin);
+
+        if (G.isDemo) {
+            const demo = () => onSpin({ segments: ['10 pompes', 'Danse', 'Rien 😅', 'Chanson', 'Gage', 'x2 points'], winnerIndex: Math.floor(Math.random() * 6), nickname: G.demoUser().nickname, spinMs: 4000 });
+            demo();
+            setInterval(demo, (4 + hold + 1.5) * 1000);
+        }
+    </script>
+</body>
+
+</html>

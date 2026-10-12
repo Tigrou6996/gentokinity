@@ -77,7 +77,7 @@ function updateDiscordPresence() {
     if (!window.electronAPI || !window.electronAPI.updateRPC) return;
 
     const hash = window.location.hash.replace('#', '') || 'dashboard';
-    const isLive = btnStart && btnStart.innerText === 'Arrêter';
+    const isLive = isBotRunningUI();
     const username = document.getElementById('header-username')?.value || 'Utilisateur';
 
     const pageNames = {
@@ -167,6 +167,13 @@ const statusText = document.querySelector('#status-text');
 // Escapes text coming from TikTok viewers / external APIs before it is put into innerHTML
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Bot state read from the Start button icon (its text is translated, so never compare the text)
+function isBotRunningUI(includeConnecting = false) {
+    const btn = document.querySelector('#btn-start');
+    if (!btn) return false;
+    return !!btn.querySelector(includeConnecting ? '.fa-stop, .fa-spinner' : '.fa-stop');
 }
 
 // [CONSOLE] Add log entry function
@@ -437,7 +444,7 @@ async function init() {
         const username = headerUsername ? headerUsername.value.trim() : '';
 
         if (pSettings.autoConnect && isAuthenticated && hasToken && username && username !== '@pseudo' && username !== '0') {
-            const isRunning = btnStart && (btnStart.innerText.includes('Arrêter') || btnStart.innerText.includes('Connexion...'));
+            const isRunning = isBotRunningUI(true);
             if (!isRunning) {
                 console.log('🤖 [AUTO-LIVE] Automated connection attempt...');
                 await startBot(username, true);
@@ -1370,6 +1377,52 @@ async function fetchData() {
     }
 }
 
+// OBS connection settings (saved per account, used by "OBS Studio" actions)
+let currentObsSettings = { host: '127.0.0.1', port: 4455, password: '' };
+
+function readObsSettingsForm() {
+    return {
+        host: (document.querySelector('#f-obs-host')?.value || '127.0.0.1').trim(),
+        port: parseInt(document.querySelector('#f-obs-port')?.value) || 4455,
+        password: document.querySelector('#f-obs-password')?.value || ''
+    };
+}
+
+async function saveObsSettingsFromForm() {
+    const obs = readObsSettingsForm();
+    if (JSON.stringify(obs) === JSON.stringify(currentObsSettings)) return;
+    currentObsSettings = obs;
+    try {
+        await fetch(`${getApiBase()}/api/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), obs })
+        });
+    } catch (e) {
+        console.warn('OBS settings save failed', e);
+    }
+}
+
+window.testObsConnection = async () => {
+    const status = document.querySelector('#f-obs-status');
+    if (status) { status.style.color = 'var(--text-dim)'; status.textContent = '⏳ Connexion à OBS...'; }
+    try {
+        const res = await fetch(`${getApiBase()}/api/obs/test`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(readObsSettingsForm())
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Erreur');
+        const list = document.querySelector('#obs-scene-list');
+        if (list) list.innerHTML = (data.scenes || []).map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+        if (status) { status.style.color = '#10b981'; status.textContent = `✅ OBS ${data.version || ''} connecté — ${data.scenes.length} scène(s) : ${data.scenes.join(', ')}`; }
+        saveObsSettingsFromForm();
+    } catch (e) {
+        if (status) { status.style.color = '#ef4444'; status.textContent = `❌ ${e.message}`; }
+    }
+};
+
 function applyConfigUI(config) {
     if (!config) return;
     console.log('[DEBUG] applyConfigUI received config:', { isAdmin: config.isAdmin, isPremium: config.isPremium });
@@ -1554,6 +1607,12 @@ function applyConfigUI(config) {
             if (loginOverlay) loginOverlay.style.display = 'none';
             if (dashboardContainer) dashboardContainer.style.display = 'flex';
         }
+    }
+
+    if (config.obs) currentObsSettings = { ...currentObsSettings, ...config.obs };
+    // Language chosen on another device (only when this browser has no choice yet)
+    if (config.language && config.language !== 'fr' && window.GentokI18n && !localStorage.getItem('gentok_lang')) {
+        window.GentokI18n.setLanguage(config.language, { save: false });
     }
 
     if (config.minecraft) {
@@ -2049,7 +2108,8 @@ function renderActions() {
         rcon: 'fa-cube', // Cube icon for Minecraft
         webhook: 'fa-globe',
         alert: 'fa-bell',
-        tts: 'fa-volume-up'
+        tts: 'fa-volume-up',
+        wheel: 'fa-dharmachakra'
     };
 
     const labels = {
@@ -2062,7 +2122,8 @@ function renderActions() {
         webhook: 'Webhook',
         rcon: 'Minecraft Serveur',
         alert: 'Alerte écran',
-        tts: 'Synthèse vocale'
+        tts: 'Synthèse vocale',
+        wheel: 'Roue de la fortune'
     };
 
     otherActions.forEach(action => {
@@ -2348,7 +2409,7 @@ function renderEvents() {
                         <i class="fas fa-calendar-check" style="font-size: 3rem; opacity: 0.3;"></i>
                         <div>
                             <h3 style="margin-bottom: 5px; color: var(--text);">Aucun événement configuré</h3>
-                            <p style="font-size: 0.9rem;">Liez vos Cadeaux et Likes à  vos Actions ici.</p>
+                            <p style="font-size: 0.9rem;">Liez vos Cadeaux et Likes à vos Actions ici.</p>
                         </div>
                         <button class="btn-primary" onclick="document.querySelector('#btn-new-event').click()">
                             <i class="fas fa-plus"></i> Créer un Événement
@@ -2371,7 +2432,8 @@ function renderEvents() {
         rcon: 'fa-cube',
         webhook: 'fa-globe',
         alert: 'fa-bell',
-        tts: 'fa-volume-up'
+        tts: 'fa-volume-up',
+        wheel: 'fa-dharmachakra'
     };
 
     const labels = {
@@ -2384,7 +2446,8 @@ function renderEvents() {
         webhook: 'Webhook',
         rcon: 'Minecraft Serveur',
         alert: 'Alerte écran',
-        tts: 'Synthèse vocale'
+        tts: 'Synthèse vocale',
+        wheel: 'Roue de la fortune'
     };
 
     currentEvents.forEach(event => {
@@ -2521,8 +2584,20 @@ window.editItem = async (type, id) => {
                 document.querySelector('#f-alert-duration').value = action.alertDuration || 5;
             }
             if (action.type === 'tts') document.querySelector('#f-text').value = action.text || '';
+            if (action.type === 'obs') {
+                document.querySelector('#f-obs-action').value = action.obsAction || 'scene';
+                document.querySelector('#f-obs-action').dispatchEvent(new Event('change'));
+                document.querySelector('#f-obs-scene').value = action.obsScene || '';
+                document.querySelector('#f-obs-source').value = action.obsSource || '';
+                document.querySelector('#f-obs-duration').value = action.obsDuration || 0;
+            }
+            if (action.type === 'wheel') document.querySelector('#f-segments').value = action.segments || '';
             const cooldownInput = document.querySelector('#action-cooldown');
             if (cooldownInput) cooldownInput.value = action.cooldown || 0;
+            const userCooldownInput = document.querySelector('#action-user-cooldown');
+            if (userCooldownInput) userCooldownInput.value = action.userCooldown || 0;
+            const delayInput = document.querySelector('#action-delay');
+            if (delayInput) delayInput.value = action.delay || 0;
             if (action.type === 'sound') {
                 document.querySelector('#f-sound-name').value = action.soundName;
                 document.querySelector('#f-sound-url').value = action.soundUrl;
@@ -2590,12 +2665,24 @@ function formatDetails(a) {
     if (a.type === 'rcon') return a.command;
     if (a.type === 'alert') return a.text || a.mediaUrl || 'Alerte';
     if (a.type === 'tts') return `🔊 ${a.text || ''}`;
+    if (a.type === 'obs') return `🎬 ${a.obsAction === 'scene' ? a.obsScene : a.obsSource}`;
+    if (a.type === 'wheel') return `🎡 ${(a.segments || '').split('\n').filter(l => l.trim()).length} cases`;
     return '';
 }
 
+const TRIGGER_LABELS = {
+    like: '❤️ Likes', follow: '➕ Follow', share: '🔁 Partage', member: '🚪 Rejoint le live', subscribe: '⭐ Abonnement',
+    chat: '💬 Chat', command: '⌨️ Commande', gift_min: '💰 Cadeau (valeur min.)', first_message: '👋 Premier message',
+    emote: '😀 Emote', question: '❓ Question'
+};
+
 function formatTrigger(e) {
-    if (e.triggerType === 'gift') return `🎁 Gift: ${e.giftName}`;
-    return `⚡ ${e.triggerType.charAt(0).toUpperCase() + e.triggerType.slice(1)}`;
+    if (e.triggerType === 'gift') return `🎁 ${e.giftName || 'Cadeau'}`;
+    let label = TRIGGER_LABELS[e.triggerType] || `⚡ ${e.triggerType}`;
+    if (e.triggerType === 'like' && e.likeThreshold > 1) label += ` ×${e.likeThreshold}`;
+    if (e.triggerType === 'command' && e.command) label += ` !${e.command.replace(/^!/, '')}`;
+    if (e.triggerType === 'gift_min' && e.minCoins) label += ` ≥ ${e.minCoins}`;
+    return label;
 }
 
 function updateActionSelect() {
@@ -2817,7 +2904,7 @@ function setupEventListeners() {
         window.electronAPI.onUpdateDownloaded(() => {
             btnDownloading.style.display = 'none';
             btnRestart.style.display = 'block';
-            progressStatusText.textContent = 'Votre app va être mise à  jour...';
+            progressStatusText.textContent = 'Votre app va être mise à jour...';
         });
 
         // Error
@@ -3072,6 +3159,49 @@ function updateActionFields() {
                 </div>
             </div>
         `;
+    } else if (type === 'obs') {
+        container.innerHTML = `
+            <div class="form-group">
+                <label>Que faire dans OBS ?</label>
+                <select id="f-obs-action">
+                    <option value="scene">Changer de scène</option>
+                    <option value="source_show">Afficher une source</option>
+                    <option value="source_hide">Masquer une source</option>
+                    <option value="source_toggle">Basculer une source (afficher / masquer)</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Scène <span style="opacity: 0.6; font-weight: 400;">(pour une source : vide = scène en cours)</span></label>
+                <input type="text" id="f-obs-scene" list="obs-scene-list" placeholder="ex: Caméra plein écran">
+                <datalist id="obs-scene-list"></datalist>
+            </div>
+            <div class="form-group" id="f-obs-source-group"><label>Source</label><input type="text" id="f-obs-source" placeholder="ex: Webcam, GIF Danse..."></div>
+            <div class="form-group"><label>Revenir en arrière après (secondes, 0 = rester)</label><input type="number" id="f-obs-duration" min="0" max="3600" value="0" style="width: 100px;"></div>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-plug"></i> Connexion OBS (Outils → Paramètres du serveur WebSocket)</div>
+                <div style="display: grid; grid-template-columns: 1fr 90px 1fr auto; gap: 8px; align-items: center;">
+                    <input type="text" id="f-obs-host" placeholder="127.0.0.1" value="${escapeHtml(currentObsSettings.host || '127.0.0.1')}">
+                    <input type="number" id="f-obs-port" placeholder="4455" value="${escapeHtml(currentObsSettings.port || 4455)}">
+                    <input type="password" id="f-obs-password" placeholder="Mot de passe" value="${escapeHtml(currentObsSettings.password || '')}">
+                    <button type="button" class="btn-secondary" onclick="testObsConnection()"><i class="fas fa-plug"></i> Tester</button>
+                </div>
+                <small id="f-obs-status" style="display: block; margin-top: 6px; color: var(--text-dim);"></small>
+            </div>
+        `;
+        const obsActionSelect = document.querySelector('#f-obs-action');
+        const toggleSource = () => {
+            document.querySelector('#f-obs-source-group').style.display = obsActionSelect.value === 'scene' ? 'none' : 'block';
+        };
+        obsActionSelect.addEventListener('change', toggleSource);
+        toggleSource();
+    } else if (type === 'wheel') {
+        container.innerHTML = `
+            <div class="form-group">
+                <label>Cases de la roue <span style="opacity: 0.6; font-weight: 400;">(une par ligne, 2 à 24)</span></label>
+                <textarea id="f-segments" rows="7" style="width: 100%; resize: vertical;" placeholder="10 pompes&#10;Danse => Action Danse&#10;Rien 😅&#10;Chanson"></textarea>
+                <small style="color: var(--text-dim); font-size: 0.8rem;">Ajoutez <b>=&gt; Nom d'une action</b> après une case pour lancer cette action quand la roue tombe dessus.</small>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> S'affiche dans l'overlay <b>Roue de la fortune</b> (menu Overlays → Overlays Pro).</p>
+        `;
     } else if (type === 'sound') {
         container.innerHTML = `
             <div class="form-group">
@@ -3159,13 +3289,13 @@ async function updateEventFields(eventToEdit = null) {
             <div class="form-group">
                 <label>Nombre de Likes (Taps) requis</label>
                 <input type="number" id="f-like-threshold" min="1" value="${(eventToEdit && eventToEdit.likeThreshold) || 1}" placeholder="ex: 10">
-                <small style="color: var(--text-dim); font-size: 0.8rem;">L'action se déclenchera si un utilisateur envoie ce nombre de likes d'un coup.</small>
+                <small style="color: var(--text-dim); font-size: 0.8rem;">L'action se déclenche chaque fois qu'un spectateur atteint ce nombre de likes (cumulés pendant le live). 1 = à chaque like.</small>
             </div>
         `;
     } else if (type === 'command') {
         container.innerHTML = `
             <div class="form-group">
-                <label>Commande à  taper (sans !)</label>
+                <label>Commande à taper (sans !)</label>
                 <input type="text" id="f-command" value="${(eventToEdit && eventToEdit.command) || ''}" placeholder="ex: jouer, sauter..." required>
                 <small style="color: var(--text-dim); font-size: 0.8rem;">Le viewer devra écrire cette commande dans le chat.</small>
             </div>
@@ -3420,7 +3550,28 @@ async function saveNewAction(e) {
         }
     }
     if (action.type === 'tts') action.text = document.querySelector('#f-text').value;
+    if (action.type === 'obs') {
+        action.obsAction = document.querySelector('#f-obs-action').value;
+        action.obsScene = document.querySelector('#f-obs-scene').value.trim();
+        action.obsSource = document.querySelector('#f-obs-source').value.trim();
+        action.obsDuration = Math.max(0, parseInt(document.querySelector('#f-obs-duration').value) || 0);
+        if (action.obsAction === 'scene' ? !action.obsScene : !action.obsSource) {
+            showToast(action.obsAction === 'scene' ? 'Indiquez le nom de la scène OBS !' : 'Indiquez le nom de la source OBS !', 'error');
+            return;
+        }
+        saveObsSettingsFromForm();
+    }
+    if (action.type === 'wheel') {
+        action.segments = document.querySelector('#f-segments').value;
+        const count = action.segments.split('\n').map(l => l.trim()).filter(Boolean).length;
+        if (count < 2) {
+            showToast('La roue doit avoir au moins 2 cases !', 'error');
+            return;
+        }
+    }
     action.cooldown = Math.max(0, parseInt(document.querySelector('#action-cooldown')?.value) || 0);
+    action.userCooldown = Math.max(0, parseInt(document.querySelector('#action-user-cooldown')?.value) || 0);
+    action.delay = Math.max(0, parseInt(document.querySelector('#action-delay')?.value) || 0);
     if (action.type === 'sound') {
         action.soundName = document.querySelector('#f-sound-name').value;
         action.soundUrl = document.querySelector('#f-sound-url').value;
@@ -3808,7 +3959,7 @@ function saveUser(username) {
 }
 
 async function toggleBot() {
-    const isRunning = btnStart.innerText === 'Arrêter';
+    const isRunning = isBotRunningUI();
     const base = isLocalMode ? getLocalApiBase() : getApiBase();
     const token = localStorage.getItem('gentok_token');
 
@@ -4484,9 +4635,11 @@ function updateOverlayLinks() {
             url = url.split(separator)[0];
         }
 
-        // Determine if we need ? or & to append token
+        // Determine if we need ? or & to append token (+ the dashboard language for the overlay texts)
         const hasQuery = url.includes('?');
-        const fullUrl = `${url}${hasQuery ? '&' : '?'}token=${token}`;
+        const uiLang = window.GentokI18n ? window.GentokI18n.lang : 'fr';
+        const langParam = uiLang !== 'fr' && !url.includes('lang=') ? `&lang=${uiLang}` : '';
+        const fullUrl = `${url}${hasQuery ? '&' : '?'}token=${token}${langParam}`;
         input.value = fullUrl;
 
         // Also update any preview iframes within the same container
@@ -4969,7 +5122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnStart) {
         btnStart.onclick = async () => {
             if (!window.electronAPI) return;
-            const isOnline = btnStart.innerText.includes('Arrêter');
+            const isOnline = !!btnStart.querySelector('.fa-stop'); // Minecraft server button (text is translated)
             if (isOnline) {
                 btnStart.disabled = true;
                 btnStart.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Arrêt...';
@@ -5225,7 +5378,7 @@ window.savePresetContentChanges = async () => {
 
         const data = await res.json();
         if (data.success) {
-            showNotify('Succès', 'Le contenu du pack a été mis à  jour !', 'success');
+            showNotify('Succès', 'Le contenu du pack a été mis à jour !', 'success');
             quitPresetEditorMode();
             loadPresets();
         } else throw new Error(data.error);
@@ -5314,7 +5467,7 @@ window.populatePresetItems = () => {
     }
 
     if (currentEvents.length === 0 && currentActions.length === 0) {
-        container.innerHTML = '<p class="text-dim" style="font-size: 0.8rem; text-align: center;">Aucune donnée à  inclure.</p>';
+        container.innerHTML = '<p class="text-dim" style="font-size: 0.8rem; text-align: center;">Aucune donnée à inclure.</p>';
     }
 };
 
@@ -6626,7 +6779,7 @@ async function handleSaveSpotify() {
     // Only validate if trying to enable the module
     if (isEnabled && (!clientId || !clientSecret)) {
         const statusMsg = document.querySelector('#spotify-status-msg');
-        if (statusMsg && !statusMsg.innerText.includes('Connecté')) {
+        if (statusMsg && !statusMsg.querySelector('.fa-check-circle')) {
             showNotify('Spotify', 'Veuillez remplir le Client ID et Client Secret pour activer Spotify.', 'warning');
             return;
         }
@@ -7238,7 +7391,7 @@ function handleChatForTTS(data) {
 
 // Check if user is allowed
 function isUserAllowedForTTS(data) {
-    // [PRIORITY] Si le serveur a déjà  validé l'éligibilité, on fait confiance
+    // [PRIORITY] Si le serveur a déjà validé l'éligibilité, on fait confiance
     if (data.eligibleForTTS === true) return true;
 
     // [FALLBACK] Toujours autoriser le Streamer (Broadcaster)
@@ -8609,7 +8762,7 @@ window.resetRankingFilters = () => {
     rankingSort = 'score';
     document.querySelectorAll('.ranking-filter-row .btn-tab').forEach(b => {
         b.classList.remove('active');
-        if (b.innerText.includes('Score')) b.classList.add('active');
+        if ((b.getAttribute('onclick') || '').includes("'score'")) b.classList.add('active');
     });
     applyRankingFilters();
 };

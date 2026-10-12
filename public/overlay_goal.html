@@ -41,12 +41,12 @@
         document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
         document.documentElement.style.setProperty('--accent2', G.colorParam('color2', '#ff8a00'));
 
-        const TITLES = { likes: 'Objectif likes', diamonds: 'Objectif pièces', gifts: 'Objectif cadeaux', follows: 'Objectif follows', shares: 'Objectif partages', subscribers: 'Objectif abonnés', chats: 'Objectif messages', viewers: 'Objectif spectateurs' };
         const stat = G.param('stat', 'follows');
+        const KNOWN = ['likes', 'diamonds', 'gifts', 'follows', 'shares', 'subscribers', 'chats', 'viewers'];
         const key = stat === 'viewers' ? 'viewerCount' : stat;
         let target = Math.max(1, G.numParam('target', 100));
         const step = Math.max(0, G.numParam('step', 0));
-        document.getElementById('title').textContent = G.param('title', TITLES[stat] || 'Objectif');
+        document.getElementById('title').textContent = G.param('title', KNOWN.includes(stat) ? `${G.t('goal.prefix')} ${G.t('stat.' + stat)}` : G.t('goal.default'));
 
         const goalEl = document.getElementById('goal');
         let value = 0;

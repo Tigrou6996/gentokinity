@@ -39,7 +39,7 @@
         const G = window.Gentok;
         document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
         document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 72), 16), 300)}px`);
-        document.getElementById('title').textContent = G.param('title', 'Subathon');
+        document.getElementById('title').textContent = G.param('title', G.t('timer.title'));
 
         const rates = {
             coin: G.numParam('coin', 5), follow: G.numParam('follow', 30), subscribe: G.numParam('sub', 300),

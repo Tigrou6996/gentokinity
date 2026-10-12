@@ -80,10 +80,97 @@
     function warnIfNoToken() {
         if (token || boolParam('demo', false)) return;
         const div = document.createElement('div');
-        div.textContent = '⚠️ Token manquant dans l\'URL de l\'overlay';
+        div.textContent = t('token.missing');
         div.style.cssText = 'position:fixed;top:8px;left:8px;padding:8px 12px;background:#b00020;color:#fff;font:600 14px sans-serif;border-radius:8px;z-index:9999';
         document.addEventListener('DOMContentLoaded', () => document.body.appendChild(div));
     }
+
+    // ---------------------------------------------------------------------
+    // Translations (?lang=fr|en|es|de|pt|it, default: browser language, else fr)
+    // ---------------------------------------------------------------------
+    const I18N = {
+        fr: {
+            'alert.follow': 'Nouveau follow', 'alert.gift': 'Merci pour le cadeau', 'alert.subscribe': 'Nouvel abonné',
+            'alert.share': 'Merci pour le partage', 'alert.question': 'Nouvelle question',
+            'did.follow': 'suit maintenant la chaîne ❤️', 'did.followShort': 'suit la chaîne', 'did.gift': 'a envoyé',
+            'did.subscribe': 's\'est abonné ⭐', 'did.subMonths': 'abonné depuis {n} mois ⭐', 'did.share': 'a partagé le live 🔁',
+            'did.question': 'a posé une question', 'anonymous': 'Anonyme', 'gift': 'cadeau',
+            'stat.viewers': 'Spectateurs', 'stat.likes': 'Likes', 'stat.diamonds': 'Pièces', 'stat.gifts': 'Cadeaux',
+            'stat.follows': 'Nouveaux follows', 'stat.shares': 'Partages', 'stat.subscribers': 'Abonnés', 'stat.chats': 'Messages',
+            'stat.cumulativeViewers': 'Viewers uniques', 'goal.prefix': 'Objectif', 'goal.default': 'Objectif',
+            'timer.title': 'Subathon', 'wheel.spunBy': 'Lancée par', 'token.missing': '⚠️ Token manquant dans l\'URL de l\'overlay',
+            'goal.remaining': 'Plus que {n} likes !', 'goal.reached': 'Objectif atteint !', 'legend.week': 'Légendes de la semaine', 'legend.all': 'Légendes All-Time', 'legend.none': 'Aucune légende pour le moment', 'spotify.requestedBy': 'Demandé par {name}'
+        },
+        en: {
+            'alert.follow': 'New follower', 'alert.gift': 'Thanks for the gift', 'alert.subscribe': 'New subscriber',
+            'alert.share': 'Thanks for sharing', 'alert.question': 'New question',
+            'did.follow': 'is now following ❤️', 'did.followShort': 'followed', 'did.gift': 'sent',
+            'did.subscribe': 'subscribed ⭐', 'did.subMonths': 'subscribed for {n} months ⭐', 'did.share': 'shared the live 🔁',
+            'did.question': 'asked a question', 'anonymous': 'Anonymous', 'gift': 'gift',
+            'stat.viewers': 'Viewers', 'stat.likes': 'Likes', 'stat.diamonds': 'Coins', 'stat.gifts': 'Gifts',
+            'stat.follows': 'New followers', 'stat.shares': 'Shares', 'stat.subscribers': 'Subscribers', 'stat.chats': 'Messages',
+            'stat.cumulativeViewers': 'Unique viewers', 'goal.prefix': 'Goal', 'goal.default': 'Goal',
+            'timer.title': 'Subathon', 'wheel.spunBy': 'Spun by', 'token.missing': '⚠️ Token missing in the overlay URL',
+            'goal.remaining': 'Only {n} likes to go!', 'goal.reached': 'Goal reached!', 'legend.week': 'Legends of the week', 'legend.all': 'All-time legends', 'legend.none': 'No legend yet', 'spotify.requestedBy': 'Requested by {name}'
+        },
+        es: {
+            'alert.follow': 'Nuevo seguidor', 'alert.gift': 'Gracias por el regalo', 'alert.subscribe': 'Nuevo suscriptor',
+            'alert.share': 'Gracias por compartir', 'alert.question': 'Nueva pregunta',
+            'did.follow': 'ahora te sigue ❤️', 'did.followShort': 'te sigue', 'did.gift': 'envió',
+            'did.subscribe': 'se suscribió ⭐', 'did.subMonths': 'suscrito desde hace {n} meses ⭐', 'did.share': 'compartió el directo 🔁',
+            'did.question': 'hizo una pregunta', 'anonymous': 'Anónimo', 'gift': 'regalo',
+            'stat.viewers': 'Espectadores', 'stat.likes': 'Me gusta', 'stat.diamonds': 'Monedas', 'stat.gifts': 'Regalos',
+            'stat.follows': 'Nuevos seguidores', 'stat.shares': 'Compartidos', 'stat.subscribers': 'Suscriptores', 'stat.chats': 'Mensajes',
+            'stat.cumulativeViewers': 'Espectadores únicos', 'goal.prefix': 'Meta', 'goal.default': 'Meta',
+            'timer.title': 'Subathon', 'wheel.spunBy': 'Girada por', 'token.missing': '⚠️ Falta el token en la URL del overlay',
+            'goal.remaining': '¡Solo faltan {n} me gusta!', 'goal.reached': '¡Meta alcanzada!', 'legend.week': 'Leyendas de la semana', 'legend.all': 'Leyendas de siempre', 'legend.none': 'Aún no hay leyendas', 'spotify.requestedBy': 'Pedida por {name}'
+        },
+        de: {
+            'alert.follow': 'Neuer Follower', 'alert.gift': 'Danke für das Geschenk', 'alert.subscribe': 'Neuer Abonnent',
+            'alert.share': 'Danke fürs Teilen', 'alert.question': 'Neue Frage',
+            'did.follow': 'folgt jetzt ❤️', 'did.followShort': 'folgt jetzt', 'did.gift': 'hat gesendet',
+            'did.subscribe': 'hat abonniert ⭐', 'did.subMonths': 'seit {n} Monaten Abonnent ⭐', 'did.share': 'hat den Live geteilt 🔁',
+            'did.question': 'hat eine Frage gestellt', 'anonymous': 'Anonym', 'gift': 'Geschenk',
+            'stat.viewers': 'Zuschauer', 'stat.likes': 'Likes', 'stat.diamonds': 'Münzen', 'stat.gifts': 'Geschenke',
+            'stat.follows': 'Neue Follower', 'stat.shares': 'Geteilt', 'stat.subscribers': 'Abonnenten', 'stat.chats': 'Nachrichten',
+            'stat.cumulativeViewers': 'Einzelne Zuschauer', 'goal.prefix': 'Ziel', 'goal.default': 'Ziel',
+            'timer.title': 'Subathon', 'wheel.spunBy': 'Gedreht von', 'token.missing': '⚠️ Token fehlt in der Overlay-URL',
+            'goal.remaining': 'Nur noch {n} Likes!', 'goal.reached': 'Ziel erreicht!', 'legend.week': 'Legenden der Woche', 'legend.all': 'Legenden aller Zeiten', 'legend.none': 'Noch keine Legende', 'spotify.requestedBy': 'Gewünscht von {name}'
+        },
+        pt: {
+            'alert.follow': 'Novo seguidor', 'alert.gift': 'Obrigado pelo presente', 'alert.subscribe': 'Novo assinante',
+            'alert.share': 'Obrigado por compartilhar', 'alert.question': 'Nova pergunta',
+            'did.follow': 'agora está seguindo ❤️', 'did.followShort': 'seguiu', 'did.gift': 'enviou',
+            'did.subscribe': 'assinou ⭐', 'did.subMonths': 'assinante há {n} meses ⭐', 'did.share': 'compartilhou a live 🔁',
+            'did.question': 'fez uma pergunta', 'anonymous': 'Anônimo', 'gift': 'presente',
+            'stat.viewers': 'Espectadores', 'stat.likes': 'Curtidas', 'stat.diamonds': 'Moedas', 'stat.gifts': 'Presentes',
+            'stat.follows': 'Novos seguidores', 'stat.shares': 'Compartilhamentos', 'stat.subscribers': 'Assinantes', 'stat.chats': 'Mensagens',
+            'stat.cumulativeViewers': 'Espectadores únicos', 'goal.prefix': 'Meta', 'goal.default': 'Meta',
+            'timer.title': 'Subathon', 'wheel.spunBy': 'Girada por', 'token.missing': '⚠️ Token ausente na URL do overlay',
+            'goal.remaining': 'Faltam só {n} curtidas!', 'goal.reached': 'Meta alcançada!', 'legend.week': 'Lendas da semana', 'legend.all': 'Lendas de todos os tempos', 'legend.none': 'Nenhuma lenda ainda', 'spotify.requestedBy': 'Pedida por {name}'
+        },
+        it: {
+            'alert.follow': 'Nuovo follower', 'alert.gift': 'Grazie per il regalo', 'alert.subscribe': 'Nuovo abbonato',
+            'alert.share': 'Grazie per la condivisione', 'alert.question': 'Nuova domanda',
+            'did.follow': 'ora ti segue ❤️', 'did.followShort': 'ti segue', 'did.gift': 'ha inviato',
+            'did.subscribe': 'si è abbonato ⭐', 'did.subMonths': 'abbonato da {n} mesi ⭐', 'did.share': 'ha condiviso la live 🔁',
+            'did.question': 'ha fatto una domanda', 'anonymous': 'Anonimo', 'gift': 'regalo',
+            'stat.viewers': 'Spettatori', 'stat.likes': 'Mi piace', 'stat.diamonds': 'Monete', 'stat.gifts': 'Regali',
+            'stat.follows': 'Nuovi follower', 'stat.shares': 'Condivisioni', 'stat.subscribers': 'Abbonati', 'stat.chats': 'Messaggi',
+            'stat.cumulativeViewers': 'Spettatori unici', 'goal.prefix': 'Obiettivo', 'goal.default': 'Obiettivo',
+            'timer.title': 'Subathon', 'wheel.spunBy': 'Girata da', 'token.missing': '⚠️ Token mancante nell\'URL dell\'overlay',
+            'goal.remaining': 'Mancano solo {n} mi piace!', 'goal.reached': 'Obiettivo raggiunto!', 'legend.week': 'Leggende della settimana', 'legend.all': 'Leggende di sempre', 'legend.none': 'Ancora nessuna leggenda', 'spotify.requestedBy': 'Richiesta da {name}'
+        }
+    };
+    const browserLang = (navigator.language || 'fr').slice(0, 2).toLowerCase();
+    const lang = I18N[(params.get('lang') || '').toLowerCase()] ? params.get('lang').toLowerCase() : (I18N[browserLang] ? browserLang : 'fr');
+    document.documentElement.lang = lang;
+    function t(key, vars = {}) {
+        let text = (I18N[lang] && I18N[lang][key]) || I18N.fr[key] || key;
+        for (const [k, v] of Object.entries(vars)) text = text.replace(`{${k}}`, v);
+        return text;
+    }
+
     warnIfNoToken();
 
     const DEMO_USERS = [
@@ -99,7 +186,7 @@
     }
 
     window.Gentok = {
-        params, token, escapeHtml, safeUrl, param, numParam, boolParam, listParam, colorParam,
+        params, token, lang, t, escapeHtml, safeUrl, param, numParam, boolParam, listParam, colorParam,
         formatNumber, connect, applyFont, demoUser, isDemo: boolParam('demo', false)
     };
 

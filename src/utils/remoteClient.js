@@ -91,6 +91,15 @@ function initRemoteClient() {
         }
     });
 
+    socket.on('remote_obs', async (data) => {
+        try {
+            const { runObsAction } = require('../actions/obsAction');
+            await runObsAction(data.action || {}, data.settings || {});
+        } catch (e) {
+            logger.error(`🚨 Error executing remote OBS action: ${e.message}`);
+        }
+    });
+
     socket.on('disconnect', () => {
         logger.warn('❌ Application disconnected from remote server.');
     });

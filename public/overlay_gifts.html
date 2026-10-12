@@ -95,6 +95,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
     <script>
         // Escapes text coming from TikTok viewers before it is put into innerHTML
         function escapeHtml(value) {
@@ -130,7 +131,7 @@
             item.className = 'gift-item';
 
             const name = data.nickname || data.uniqueId || 'Anonyme';
-            const giftName = data.giftName || 'Cadeau';
+            const giftName = data.giftName || window.Gentok.t('gift');
             const count = data.repeatCount || 1;
 
             const iconHtml = data.url
@@ -141,7 +142,7 @@
                 ${iconHtml}
                 <div class="gift-info">
                     <span class="gift-user">${escapeHtml(name)}</span>
-                    <span class="gift-name">a envoyé ${escapeHtml(giftName)}</span>
+                    <span class="gift-name">${window.Gentok.t('did.gift')} ${escapeHtml(giftName)}</span>
                 </div>
                 <div class="gift-badge">x${escapeHtml(count)}</div>
             `;

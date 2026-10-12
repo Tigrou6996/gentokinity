@@ -22,6 +22,12 @@ const getSessionDefaults = () => ({
         password: '',
         playerName: ''
     },
+    obs: {
+        host: '127.0.0.1',
+        port: 4455,
+        password: ''
+    },
+    language: 'fr',
     spotify: {
         clientId: '',
         clientSecret: '',
@@ -165,6 +171,11 @@ module.exports = {
             if (settings.minecraft) {
                 newSession.minecraft = { ...newSession.minecraft, ...settings.minecraft };
             }
+            if (settings.obs) {
+                const obs = settings.obs.toObject ? settings.obs.toObject() : settings.obs;
+                newSession.obs = { ...newSession.obs, ...obs };
+            }
+            if (settings.language) newSession.language = settings.language;
             if (settings.spotify) {
                 const spotifySettings = settings.spotify.toObject ? settings.spotify.toObject() : settings.spotify;
                 const defaults = getSessionDefaults().spotify;
@@ -393,6 +404,8 @@ module.exports = {
         if (data.activeSceneId !== undefined) s.activeSceneId = data.activeSceneId;
         if (data.scenes !== undefined) s.scenes = (!s.isPremium && data.scenes.length > 2) ? data.scenes.slice(0, 2) : data.scenes;
         if (data.minecraft) s.minecraft = { ...s.minecraft, ...data.minecraft };
+        if (data.obs) s.obs = { ...s.obs, ...data.obs };
+        if (typeof data.language === 'string' && /^[a-z]{2}$/.test(data.language)) s.language = data.language;
         if (data.spotify) {
             s.spotify = {
                 ...s.spotify, ...data.spotify,
@@ -431,7 +444,7 @@ module.exports = {
         const updatePayload = {
             $set: {
                 username: s.username, ip: s.ip, isPremium: s.isPremium, activeSceneId: s.activeSceneId,
-                scenes: s.scenes, minecraft: s.minecraft, spotify: s.spotify, tts: s.tts,
+                scenes: s.scenes, minecraft: s.minecraft, obs: s.obs, language: s.language, spotify: s.spotify, tts: s.tts,
                 lastEvents: s.lastEvents,
                 autoResetTopStats: s.autoResetTopStats,
                 autoResetLastX: s.autoResetLastX,

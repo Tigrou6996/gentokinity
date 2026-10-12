@@ -37,14 +37,11 @@
         document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
         document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 48), 12), 200)}px`);
 
-        const DEFAULTS = {
-            viewers: ['👁️', 'Spectateurs'], likes: ['❤️', 'Likes'], diamonds: ['🪙', 'Pièces'], gifts: ['🎁', 'Cadeaux'],
-            follows: ['➕', 'Nouveaux follows'], shares: ['🔁', 'Partages'], subscribers: ['⭐', 'Abonnés'],
-            chats: ['💬', 'Messages'], cumulativeViewers: ['👥', 'Viewers uniques']
-        };
+        const ICONS = { viewers: '👁️', likes: '❤️', diamonds: '🪙', gifts: '🎁', follows: '➕', shares: '🔁', subscribers: '⭐', chats: '💬', cumulativeViewers: '👥' };
         const stat = G.param('stat', 'viewers');
         const key = stat === 'viewers' ? 'viewerCount' : stat;
-        const [defIcon, defLabel] = DEFAULTS[stat] || ['', stat];
+        const defIcon = ICONS[stat] || '';
+        const defLabel = ICONS[stat] ? G.t('stat.' + stat) : stat;
         document.getElementById('icon').textContent = G.param('icon', defIcon);
         document.getElementById('label').textContent = G.param('label', defLabel);
         if (!G.boolParam('bg', true)) document.getElementById('counter').classList.add('nobg');

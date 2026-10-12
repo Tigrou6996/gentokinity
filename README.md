@@ -25,6 +25,15 @@ Le même code tourne de deux façons :
 - **Follow / abonnement** : comptés une seule fois par spectateur et par live, même si quelqu'un se désabonne puis se réabonne.
 - Les messages envoyés avant le démarrage du bot sont ignorés.
 
+### Déclencheurs (événements)
+Cadeau précis, cadeau à partir d'une valeur en pièces, likes, follow, partage, arrivée dans le live, abonnement, message du chat (contenant un texte), commande (`!mot` ou `mot`), **premier message d'un spectateur**, **emote d'abonné** et **question (Q&R)**.
+
+Filtres « Qui peut déclencher ? » : tout le monde, followers, abonnés, modérateurs, top donateur de la session, ou un spectateur précis.
+
+- **Likes** : l'action se déclenche chaque fois qu'**un spectateur** atteint le nombre de likes choisi, en cumulant ses likes pendant le live. Avant, le total du live était comparé au seuil, et une fois dépassé, l'action se déclenchait à chaque like.
+- **Followers uniquement** : inclut maintenant tous les followers. Avant, seuls les « amis » (abonnements mutuels) étaient acceptés.
+- **Cadeau** : quand l'événement connaît l'identifiant du cadeau, seul cet identifiant compte. Il n'y a plus de correspondance approximative sur le nom (« Lion » ne déclenche plus « Lion King »).
+
 ### Actions
 | Type | Effet |
 |---|---|
@@ -34,8 +43,17 @@ Le même code tourne de deux façons :
 | Son | Lecture d'un son. |
 | **Alerte à l'écran** | Texte et image, GIF ou vidéo dans l'overlay *Alertes*. |
 | **Synthèse vocale** | Texte lu à voix haute par le tableau de bord. |
+| **OBS Studio** | Change de scène, affiche, masque ou bascule une source, avec retour automatique après X secondes (obs-websocket v5, OBS 28+). |
+| **Roue de la fortune** | Fait tourner la roue de l'overlay `wheel`. Une case écrite `Texte => Nom d'une action` lance cette action quand la roue tombe dessus. |
 
-Toutes les actions acceptent un **cooldown**, c'est-à-dire un délai minimum entre deux exécutions. Variables disponibles dans les textes : `{nickname}`, `{username}`, `{giftname}`, `{repeatcount}`, `{combo}`, `{coins}`, `{comment}`, `{likecount}`, `{totallikecount}`, `{submonth}`, et `{playername}` pour Minecraft.
+Options communes à toutes les actions :
+- **cooldown global** : délai minimum entre deux exécutions ;
+- **cooldown par spectateur** : même chose, mais pour un même spectateur ;
+- **délai avant exécution**.
+
+Variables disponibles dans les textes : `{nickname}`, `{username}`, `{giftname}`, `{repeatcount}`, `{combo}`, `{coins}`, `{comment}`, `{likecount}`, `{totallikecount}`, `{submonth}`, et `{playername}` pour Minecraft.
+
+Pour OBS, active le serveur WebSocket dans OBS (Outils → Paramètres du serveur WebSocket), puis renseigne l'adresse, le port et le mot de passe dans le formulaire de l'action OBS. Le bouton **Tester** affiche la liste de tes scènes. Sur le VPS, l'action est transmise à l'application Windows, qui tourne sur le même PC qu'OBS.
 
 ### Overlays OBS / TikTok Live Studio
 URL de base : `https://tiktok.gentok.fr/overlay/<nom>?token=TON_TOKEN`. Ajoute `&demo=1` pour avoir un aperçu sans être en live.
@@ -49,9 +67,20 @@ URL de base : `https://tiktok.gentok.fr/overlay/<nom>?token=TON_TOKEN`. Ajoute `
 | `counter`: compteur | `stat`, `label`, `icon`, `short`, `size` |
 | `timer`: timer subathon | `start` (minutes), `coin`, `follow`, `sub`, `share`, `like` (secondes ajoutées), `maxh`, `reset=1` |
 | `rain`: pluie de cadeaux | `gifts`, `likes`, `follows`, `shares`, `size`, `max` |
+| `wheel`: roue de la fortune | `size`, `hold`, `persist`, `color` |
 | Déjà existants | `goals` (objectif de likes), `gifts`, `last-*`, `top-*`, `leaderboard`, `gift_legend.html`, `gallery` |
 
-Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**.
+Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**. Tous les overlays acceptent `lang=fr|en|es|de|pt|it`.
+
+### Langues
+Le tableau de bord et les overlays existent en **français, anglais, espagnol, allemand, portugais et italien**. On choisit la langue en bas de la barre latérale ou sur l'écran de connexion. Elle est mémorisée sur le compte, et les liens d'overlay la suivent automatiquement.
+
+L'interface est écrite en français ; `public/i18n.js` la traduit à l'affichage, y compris les listes, les notifications et les messages du serveur. Pour ajouter ou corriger des textes :
+1. `python3 scripts/i18n-extract.py` met à jour `public/i18n/source.json` avec tous les textes de l'interface.
+2. Ajoute ou modifie les traductions dans `public/i18n/<langue>.json`. Les variables s'écrivent `{0}`, `{1}`…
+3. `python3 scripts/i18n-build.py` génère `public/i18n/<langue>.js` et liste les textes encore manquants.
+
+Pour ajouter une langue, crée `public/i18n/<code>.json`, puis ajoute le code dans `LANGUAGES` (`public/i18n.js`) et dans `I18N` (`public/overlay-common.js`).
 
 ## Installation
 

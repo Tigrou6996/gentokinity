@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gentok</title>
     <link rel="icon" type="image/png" href="/logo.png">
+    <script src="/i18n.js"></script>
 
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Luckiest+Guy&display=swap"
@@ -429,6 +430,11 @@
                 <div class="status-group">
                     <div id="status-indicator" class="status offline"></div>
                     <span id="status-text">Hors ligne</span>
+                </div>
+                <div class="language-group" style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-globe" style="color: var(--text-dim);"></i>
+                    <select id="language-select" data-language-select aria-label="Langue"
+                        style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff; border-radius: 8px; padding: 6px 8px; font-size: 0.8rem;"></select>
                 </div>
             </div>
         </nav>
@@ -1594,6 +1600,7 @@
                             <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--text-dim);">
                                 Ajoutez l'URL dans OBS / TikTok Live Studio comme <b>source navigateur</b>. Personnalisez en ajoutant des
                                 paramètres à la fin de l'URL (ex : <code>&amp;color=00ff99</code>). Ajoutez <code>&amp;demo=1</code> pour voir un aperçu sans être en live.
+                                La langue des overlays suit celle du tableau de bord (<code>&amp;lang=en</code> pour la forcer).
                             </p>
                             <div class="overlay-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                                 <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
@@ -1661,6 +1668,17 @@
                                         <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
                                     </div>
                                     <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">start (min) · coin, follow, sub, share (secondes ajoutées) · like (par 100 likes) · maxh · reset=1</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-dharmachakra" style="width: 22px; color: #fbbf24;"></i> Roue de la fortune</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Affiche les tirages des actions « Roue de la fortune » (chaque case peut lancer une action).</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/wheel" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : size=520 · hold=5 · persist=1 · color=fe2c55</p>
                                 </div>
                                 <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
                                     <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-cloud-showers-heavy" style="width: 22px; color: #38bdf8;"></i> Pluie de cadeaux</label>
@@ -2898,6 +2916,10 @@
                                 (Overlay)</div>
                             <div class="custom-option" data-value="tts"><i class="fas fa-volume-up"></i> Synthèse vocale
                                 (TTS)</div>
+                            <div class="custom-option" data-value="obs"><i class="fas fa-video"></i> OBS Studio (scène /
+                                source)</div>
+                            <div class="custom-option" data-value="wheel"><i class="fas fa-dharmachakra"></i> Roue de la
+                                fortune</div>
 
                         </div>
                     </div>
@@ -2908,6 +2930,8 @@
                         <option value="rcon">Minecraft (Serveur)</option>
                         <option value="alert">Alerte à l'écran (Overlay)</option>
                         <option value="tts">Synthèse vocale (TTS)</option>
+                        <option value="obs">OBS Studio (scène / source)</option>
+                        <option value="wheel">Roue de la fortune</option>
 
                     </select>
                 </div>
@@ -2918,6 +2942,16 @@
                     <label>Cooldown (secondes) <span style="opacity: 0.6; font-weight: 400;">— délai minimum entre deux
                             exécutions, 0 = aucun</span></label>
                     <input type="number" id="action-cooldown" min="0" max="3600" value="0" style="width: 120px;">
+                </div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="form-group">
+                        <label>Cooldown par spectateur (secondes)</label>
+                        <input type="number" id="action-user-cooldown" min="0" max="86400" value="0" style="width: 120px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Délai avant exécution (secondes)</label>
+                        <input type="number" id="action-delay" min="0" max="600" value="0" style="width: 120px;">
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-ghost" onclick="closeModal('modal-action')">Annuler</button>
@@ -2992,6 +3026,11 @@
                                 Chat (!mot)</div>
                             <div class="custom-option" data-value="gift_min"><i class="fas fa-coins"></i> Cadeau (Valeur
                                 min. pièces)</div>
+                            <div class="custom-option" data-value="first_message"><i class="fas fa-hand-sparkles"></i>
+                                Premier message d'un spectateur</div>
+                            <div class="custom-option" data-value="emote"><i class="fas fa-smile"></i> Emote d'abonné</div>
+                            <div class="custom-option" data-value="question"><i class="fas fa-question-circle"></i>
+                                Question posée (Q&amp;R)</div>
                         </div>
                     </div>
                     <select id="event-trigger-type" style="display: none;">
@@ -3005,6 +3044,9 @@
                         <option value="chat">Message dans le Chat (Tout)</option>
                         <option value="command">Commande Chat (!mot)</option>
                         <option value="gift_min">Cadeau (Valeur min. pièces)</option>
+                        <option value="first_message">Premier message d'un spectateur</option>
+                        <option value="emote">Emote d'abonné</option>
+                        <option value="question">Question posée (Q&amp;R)</option>
                     </select>
                 </div>
                 <div id="event-trigger-details">
@@ -3069,6 +3111,11 @@
                                 Chat (!mot)</div>
                             <div class="custom-option" data-value="gift_min"><i class="fas fa-coins"></i> Cadeau (Valeur
                                 min. pièces)</div>
+                            <div class="custom-option" data-value="first_message"><i class="fas fa-hand-sparkles"></i>
+                                Premier message d'un spectateur</div>
+                            <div class="custom-option" data-value="emote"><i class="fas fa-smile"></i> Emote d'abonné</div>
+                            <div class="custom-option" data-value="question"><i class="fas fa-question-circle"></i>
+                                Question posée (Q&amp;R)</div>
                         </div>
                     </div>
                     <select id="qs-trigger-type" style="display: none;" onchange="updateQuickSoundTriggerFields()">
@@ -3081,6 +3128,9 @@
                         <option value="chat">💬 Message dans le Chat (Tout)</option>
                         <option value="command">⌨️ Commande Chat (!mot)</option>
                         <option value="gift_min">💰 Cadeau (Valeur min. pièces)</option>
+                        <option value="first_message">👋 Premier message d'un spectateur</option>
+                        <option value="emote">😀 Emote d'abonné</option>
+                        <option value="question">❓ Question posée (Q&amp;R)</option>
                     </select>
                 </div>
 
@@ -3308,6 +3358,8 @@
 
             <div
                 style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <select data-language-select aria-label="Langue"
+                    style="margin-bottom: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;"></select>
                 <p style="color: var(--text-muted); font-size: 0.75rem; opacity: 0.8;">© 2026 Gentok • Version 1.0.5</p>
             </div>
         </div>

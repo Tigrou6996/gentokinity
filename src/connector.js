@@ -215,6 +215,8 @@ class TikTokConnector {
         this.seenMsgOrder = [];
         this.followedUsers = new Set();
         this.subscribedUsers = new Set();
+        this.chattedUsers = new Set();
+        this.likeAccumulators = new Map();
         this.streamEnded = false;
         this.reconnectAttempt = 0;
 

@@ -35,7 +35,8 @@
     <script src="/overlay-common.js"></script>
     <script>
         // URL parameters:
-        //   events=follow,gift,subscribe,share  types d'alertes affichées (défaut : toutes)
+        //   events=follow,gift,subscribe,share,question  types d'alertes affichées (défaut : toutes)
+        //   lang=fr|en|es|de|pt|it
         //   mingift=0      valeur minimale (pièces) d'un combo de cadeaux pour afficher une alerte
         //   duration=5     durée d'affichage en secondes
         //   actions=1      afficher aussi les actions "Alerte" (0 pour désactiver)
@@ -43,7 +44,7 @@
         const G = window.Gentok;
         document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
 
-        const enabledTypes = G.listParam('events', ['follow', 'gift', 'subscribe', 'share']);
+        const enabledTypes = G.listParam('events', ['follow', 'gift', 'subscribe', 'share', 'question']);
         const minGift = G.numParam('mingift', 0);
         const duration = Math.min(Math.max(G.numParam('duration', 5), 1), 60);
         const showActions = G.boolParam('actions', true);
@@ -51,25 +52,26 @@
         const queue = [];
         let busy = false;
 
-        const TITLES = { follow: 'Nouveau follow', gift: 'Merci pour le cadeau', subscribe: 'Nouvel abonné', share: 'Merci pour le partage' };
+        const t = G.t;
 
         function buildTikTokAlert(type, d) {
-            const name = G.escapeHtml(d.nickname || d.uniqueId || 'Anonyme');
+            const name = G.escapeHtml(d.nickname || d.uniqueId || t('anonymous'));
             const avatar = G.safeUrl(d.profilePictureUrl) || '/logo.png';
             let sub = '';
             let badge = '';
             if (type === 'gift') {
-                sub = `a envoyé <b>${G.escapeHtml(d.repeatCount || 1)}× ${G.escapeHtml(d.giftName || 'cadeau')}</b>`;
+                sub = `${t('did.gift')} <b>${G.escapeHtml(d.repeatCount || 1)}× ${G.escapeHtml(d.giftName || t('gift'))}</b>`;
                 if (d.coins) sub += ` <span style="opacity:.8">(${G.formatNumber(d.coins)} 🪙)</span>`;
                 const icon = G.safeUrl(d.giftIcon);
                 if (icon) badge = `<img class="badge" src="${G.escapeHtml(icon)}">`;
-            } else if (type === 'follow') sub = 'suit maintenant la chaîne ❤️';
-            else if (type === 'subscribe') sub = d.subMonth ? `abonné depuis <b>${G.escapeHtml(d.subMonth)} mois</b> ⭐` : 's\'est abonné ⭐';
-            else if (type === 'share') sub = 'a partagé le live 🔁';
+            } else if (type === 'follow') sub = t('did.follow');
+            else if (type === 'subscribe') sub = d.subMonth ? G.escapeHtml(t('did.subMonths', { n: d.subMonth })) : t('did.subscribe');
+            else if (type === 'share') sub = t('did.share');
+            else if (type === 'question') sub = `${t('did.question')} :<br><b>${G.escapeHtml(d.question || '')}</b>`;
 
             return `
                 <div class="avatar-wrap"><img class="avatar" src="${G.escapeHtml(avatar)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">${badge}</div>
-                <div class="title">${TITLES[type] || ''}</div>
+                <div class="title">${G.escapeHtml(t('alert.' + type))}</div>
                 <div class="name">${name}</div>
                 <div class="sub">${sub}</div>`;
         }

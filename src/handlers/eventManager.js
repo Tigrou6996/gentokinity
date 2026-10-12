@@ -699,6 +699,14 @@ function registerEvents(tiktokConnection, connector) {
 
         actionManager.executeAction('chat', { ...data, message: data.comment }, connector);
         actionManager.executeAction('command', { ...data, message: data.comment }, connector);
+
+        // "Premier message" trigger: first chat message of this viewer during the live
+        if (!connector.chattedUsers) connector.chattedUsers = new Set();
+        const chatKey = String(data.userId || data.uniqueId || '');
+        if (chatKey && !connector.chattedUsers.has(chatKey)) {
+            connector.chattedUsers.add(chatKey);
+            actionManager.executeAction('first_message', { ...data, message: data.comment }, connector);
+        }
     });
 
     tiktokConnection.on('gift', (data) => {
@@ -912,6 +920,23 @@ function registerEvents(tiktokConnection, connector) {
                 emitEvent('likes_goal_update', settings.likesGoal, connector.token);
             }
         }
+    });
+
+    // Subscriber emotes sent in the chat
+    tiktokConnection.on('emote', (data) => {
+        data = normalizeSocial(data);
+        if (isDuplicateMessage(connector, data) || isOldMessage(connector, data)) return;
+        const emote = Array.isArray(data.emotes) && data.emotes[0] ? data.emotes[0] : {};
+        actionManager.executeAction('emote', { ...data, emoteId: emote.emoteId, emoteImageUrl: emote.emoteImageUrl }, connector);
+    });
+
+    // Questions asked with the TikTok "Q&A" feature
+    tiktokConnection.on('questionNew', (data) => {
+        data = normalizeSocial(data);
+        if (isDuplicateMessage(connector, data)) return;
+        const question = data.questionText || data.content || '';
+        actionManager.executeAction('question', { ...data, comment: question, message: question }, connector);
+        emitEvent('tiktok_alert', { type: 'question', data: alertPayload(data, { question }) }, connector.token);
     });
 
     tiktokConnection.on('streamEnd', () => {

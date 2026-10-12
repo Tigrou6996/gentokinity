@@ -153,7 +153,8 @@ function initSocket(server) {
             'status',         // [NEW] Relay status (online/offline) to VPS
             'tiktok_alert',   // follow / gift / sub / share alerts for the Alerts overlay
             'overlay_alert',  // "Alerte" actions
-            'tts_speak'       // "Synthèse vocale" actions
+            'tts_speak',      // "Synthèse vocale" actions
+            'wheel_spin'      // "Roue de la fortune" actions
         ];
 
         relayEvents.forEach(eventName => {
@@ -534,6 +535,14 @@ function emitToApp(token, event, data) {
 }
 
 /**
+ * Emit only to the desktop app sockets of a token (not to dashboards / overlays).
+ * Used for commands carrying private settings (e.g. the OBS password).
+ */
+function emitToDesktopApp(token, event, data) {
+    if (io && token) io.to(`app:${token}`).emit(event, data);
+}
+
+/**
  * Check if at least one App (EXE) is connected for this token
  */
 function isAppConnected(token) {
@@ -561,6 +570,7 @@ module.exports = {
     emitStatus,
     emitEvent,
     emitToApp,
+    emitToDesktopApp,
     isAppConnected,
     setOnAppConnected,
     getActiveTokens,

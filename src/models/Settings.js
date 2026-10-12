@@ -28,6 +28,12 @@ const SettingsSchema = new mongoose.Schema({
     autoResetTopStats: { type: Boolean, default: false },
     autoResetLastX: { type: Boolean, default: false },
 
+    obs: {
+        host: { type: String, default: '127.0.0.1' },
+        port: { type: Number, default: 4455 },
+        password: { type: String, default: '' }
+    },
+    language: { type: String, default: 'fr' }, // dashboard + overlays language
     minecraft: {
         host: { type: String, default: 'localhost' },
         port: { type: Number, default: 4567 },

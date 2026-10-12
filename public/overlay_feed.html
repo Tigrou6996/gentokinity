@@ -28,27 +28,29 @@
         // URL parameters:
         //   events=follow,gift,subscribe,share   événements listés
         //   max=6       nombre de lignes, mingift=0 valeur minimale d'un combo de cadeaux
-        //   size=18, color=fe2c55, demo=1
+        //   size=18, color=fe2c55, lang=fr|en|es|de|pt|it, demo=1
         const G = window.Gentok;
         document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
         document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 18), 10), 60)}px`);
 
-        const enabled = G.listParam('events', ['follow', 'gift', 'subscribe', 'share']);
+        const enabled = G.listParam('events', ['follow', 'gift', 'subscribe', 'share', 'question']);
         const max = Math.min(Math.max(G.numParam('max', 6), 1), 30);
         const minGift = G.numParam('mingift', 0);
         const feed = document.getElementById('feed');
-        const COLORS = { follow: '#4ade80', gift: '#fbbf24', subscribe: '#a78bfa', share: '#60a5fa' };
+        const COLORS = { follow: '#4ade80', gift: '#fbbf24', subscribe: '#a78bfa', share: '#60a5fa', question: '#f472b6' };
 
         function add(payload) {
             if (!payload || !enabled.includes(payload.type)) return;
             const d = payload.data || {};
             if (payload.type === 'gift' && (Number(d.coins) || 0) < minGift) return;
 
+            const t = G.t;
             let what = '';
-            if (payload.type === 'follow') what = 'suit la chaîne';
-            else if (payload.type === 'subscribe') what = 's\'est abonné ⭐';
-            else if (payload.type === 'share') what = 'a partagé le live';
-            else if (payload.type === 'gift') what = `a envoyé ${G.escapeHtml(d.repeatCount || 1)}× ${G.escapeHtml(d.giftName || 'cadeau')}`;
+            if (payload.type === 'follow') what = t('did.followShort');
+            else if (payload.type === 'subscribe') what = t('did.subscribe');
+            else if (payload.type === 'share') what = t('did.share');
+            else if (payload.type === 'question') what = `${t('did.question')} : ${G.escapeHtml(d.question || '')}`;
+            else if (payload.type === 'gift') what = `${t('did.gift')} ${G.escapeHtml(d.repeatCount || 1)}× ${G.escapeHtml(d.giftName || t('gift'))}`;
 
             const avatar = G.safeUrl(d.profilePictureUrl) || '/logo.png';
             const gift = payload.type === 'gift' ? G.safeUrl(d.giftIcon) : '';

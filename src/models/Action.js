@@ -19,7 +19,14 @@ const ActionSchema = new mongoose.Schema({
     text: String,          // alert / tts: text with {placeholders}
     mediaUrl: String,      // alert: image, GIF or video shown on the Alerts overlay
     alertDuration: Number, // alert: seconds on screen
-    cooldown: Number       // any action: minimum seconds between two executions
+    cooldown: Number,      // any action: minimum seconds between two executions
+    userCooldown: Number,  // any action: minimum seconds between two executions for the same viewer
+    delay: Number,         // any action: seconds to wait before running
+    obsAction: String,     // obs: 'scene' | 'source_show' | 'source_hide' | 'source_toggle'
+    obsScene: String,      // obs: scene name
+    obsSource: String,     // obs: source name
+    obsDuration: Number,   // obs: seconds before going back (0 = stay)
+    segments: String       // wheel: one segment per line, "Texte => Nom d'une action" to chain an action
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token

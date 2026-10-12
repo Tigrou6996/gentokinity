@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Gentok - Overlay Légende Cadeau</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
     <style>
         :root {
             --main-color: #ffd700;
@@ -245,7 +246,7 @@
 
             const modeLabel = document.getElementById("modeLabel");
             if (modeLabel) {
-                modeLabel.textContent = rankingPeriod === 'weekly' ? 'Légendes de la semaine' : 'Légendes All-Time';
+                modeLabel.textContent = rankingPeriod === 'weekly' ? window.Gentok.t('legend.week') : window.Gentok.t('legend.all');
                 modeLabel.style.color = rankingPeriod === 'weekly' ? '#fe2c55' : 'var(--main-color)';
             }
 
@@ -281,7 +282,7 @@
                     // Update UI Labels
                     const modeLabel = document.getElementById("modeLabel");
                     if (modeLabel) {
-                        modeLabel.textContent = rankingPeriod === 'weekly' ? 'Légendes de la semaine' : 'Légendes All-Time';
+                        modeLabel.textContent = rankingPeriod === 'weekly' ? window.Gentok.t('legend.week') : window.Gentok.t('legend.all');
                         modeLabel.style.color = rankingPeriod === 'weekly' ? '#fe2c55' : 'var(--main-color)';
                     }
 
@@ -374,7 +375,7 @@
           </div>`;
             }).join("");
 
-            document.getElementById("ranking").innerHTML = listHtml || "<p style='opacity:0.5'>Aucune légende pour le moment</p>";
+            document.getElementById("ranking").innerHTML = listHtml || `<p style='opacity:0.5'>${window.Gentok.t('legend.none')}</p>`;
 
             if (forceVisible) {
                 document.getElementById("overlay").classList.add('visible');

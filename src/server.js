@@ -342,6 +342,7 @@ app.get('/overlay/goal', (req, res) => sendOverlay(res, 'overlay_goal.html'));
 app.get('/overlay/rain', (req, res) => sendOverlay(res, 'overlay_rain.html'));
 app.get('/overlay/timer', (req, res) => sendOverlay(res, 'overlay_timer.html'));
 app.get('/overlay/feed', (req, res) => sendOverlay(res, 'overlay_feed.html'));
+app.get('/overlay/wheel', (req, res) => sendOverlay(res, 'overlay_wheel.html'));
 
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
 app.use('/pages', express.static(path.resolve(__dirname, '../classement/pages')));
@@ -674,6 +675,8 @@ async function getFullConfig(token) {
         events: settings.events || [],
         actions: settings.actions || [],
         minecraft: settings.minecraft,
+        obs: settings.obs || { host: '127.0.0.1', port: 4455, password: '' },
+        language: settings.language || 'fr',
         spotify: {
             ...settings.spotify,
             redirectUri: `${config.remoteDashboardUrl}/api/spotify/callback`
@@ -2179,6 +2182,18 @@ app.post('/api/test-action/:id', async (req, res) => {
     } catch (e) {
         logger.error(`Erreur test action : ${e.message}`);
         res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Test OBS connection (obs-websocket v5) and list its scenes
+app.post('/api/obs/test', async (req, res) => {
+    const { host, port, password } = req.body || {};
+    try {
+        const { testObs } = require('./actions/obsAction');
+        const result = await testObs({ host, port, password });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 

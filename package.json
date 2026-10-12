@@ -38,7 +38,8 @@
     "spotify-web-api-node": "^5.0.2",
     "stripe": "^20.3.1",
     "tiktok-live-connector": "^2.4.4",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "ws": "^8.18.3"
   },
   "build": {
     "appId": "electron.gentok",
