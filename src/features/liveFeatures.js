@@ -9,6 +9,7 @@ const battle = require('./battle');
 const coinmatch = require('./coinmatch');
 const giveaway = require('./giveaway');
 const pointsdrop = require('./pointsdrop');
+const donors = require('./donors');
 
 const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
@@ -34,6 +35,7 @@ function canPersist(connector) {
 /** Remembers who is active, and every minute gives "watch time" points to them */
 function markActive(connector, data) {
     if (!data || !data.uniqueId) return;
+    donors.seen(connector.token, data);
     if (!connector.activeViewers) connector.activeViewers = new Map();
     connector.activeViewers.set(String(data.uniqueId), { at: Date.now(), user: userOf(data) });
 
@@ -109,6 +111,7 @@ async function onChat(connector, data) {
 async function onGifts(connector, data, count, coins) {
     try {
         markActive(connector, data);
+        donors.seen(connector.token, data, coins);
         battle.onGift(connector.token, userOf(data), data.giftId, coins);
         coinmatch.onGift(connector.token, userOf(data), coins);
         giveaway.onGift(connector.token, userOf(data), coins);
@@ -148,6 +151,7 @@ async function onSocial(connector, type, data) {
 }
 
 function onStop(connector) {
+    donors.reset(connector.token);
     if (connector.watchTimer) clearInterval(connector.watchTimer);
     connector.watchTimer = null;
     points.flushToken(connector.token).catch(() => { });

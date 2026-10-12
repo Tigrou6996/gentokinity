@@ -373,6 +373,17 @@ app.get('/overlay/songs', (req, res) => sendOverlay(res, 'overlay_songs.html'));
 app.get('/overlay/giveaway', (req, res) => sendOverlay(res, 'overlay_giveaway.html'));
 app.get('/overlay/pointsdrop', (req, res) => sendOverlay(res, 'overlay_pointsdrop.html'));
 app.get('/overlay/emojify', (req, res) => sendOverlay(res, 'overlay_emojify.html'));
+app.get('/overlay/donors', (req, res) => sendOverlay(res, 'overlay_donors.html'));
+
+// [DONORS] Viewers in the live and what they already gave (private panel, like Viraloria)
+app.get('/api/donors', (req, res) => {
+    const token = getRequestToken(req);
+    if (!token) return res.status(400).json({ error: 'Token manquant' });
+    const donors = require('./features/donors');
+    if (req.query.alertMin !== undefined) donors.setAlertMin(token, req.query.alertMin);
+    res.set('Cache-Control', 'no-store');
+    res.json(donors.list(token));
+});
 
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
 app.use('/pages', express.static(path.resolve(__dirname, '../classement/pages')));

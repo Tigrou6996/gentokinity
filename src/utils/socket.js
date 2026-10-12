@@ -174,7 +174,9 @@ function initSocket(server) {
             'giveaway_draw',
             'pointsdrop_update', // points drop
             'pointsdrop_catch',
-            'emote'             // subscriber emotes (Emojify overlay)
+            'emote',            // subscriber emotes (Emojify overlay)
+            'donors_update',    // viewers in the live and their budget (Donateurs présents)
+            'donor_arrived'
         ];
 
         relayEvents.forEach(eventName => {

@@ -442,6 +442,15 @@
                         </span>
                     </a>
                 </li>
+                <li>
+                    <a href="#donors" onclick="showSection('donors')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-sack-dollar"></i>
+                            <span>Donateurs présents</span>
+                        </span>
+                        <span class="beta-tag">NEW</span>
+                    </a>
+                </li>
                 <li class="scene-required">
                     <a href="#giveaway" onclick="showSection('giveaway')">
                         <span class="nav-item-content">
@@ -2329,6 +2338,27 @@
             </section>
 
             <!-- SECTION BATTLE (team battles) -->
+            <!-- SECTION DONORS: who is in the live and what they already gave (public/donors.js) -->
+            <section id="donors-section" class="card" style="display: none;">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3" style="margin-bottom: 1rem;">
+                    <div>
+                        <h2><i class="fas fa-sack-dollar"></i> Donateurs présents</h2>
+                        <p class="text-dim mb-0">Les spectateurs actuellement dans votre live, classés selon ce qu'ils vous ont déjà offert (tous vos lives Gentok + ce live). Visible par vous seul.</p>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <label class="small text-dim mb-0">Alerte dès <input type="number" id="donors-alert-min" class="form-control form-control-sm d-inline-block" min="0" step="100" value="1000" style="width: 95px"> pièces</label>
+                        <label class="small mb-0 d-flex align-items-center gap-1"><input type="checkbox" id="donors-only"> Donateurs uniquement</label>
+                    </div>
+                </div>
+                <div class="donors-stats" id="donors-stats"></div>
+                <div id="donors-list" class="donors-list"></div>
+                <div class="donors-help text-dim small mt-3">
+                    <i class="fas fa-circle-info"></i> Overlay privé : <code id="donors-overlay-url">/overlay/donors</code>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="donors-copy"><i class="fas fa-copy"></i> Copier</button>
+                    <div class="mt-1">À ouvrir comme <b>dock</b> dans OBS (Docks › Docks de navigateur personnalisés) ou dans une fenêtre à côté de TikTok Live Studio. Ne l'ajoutez pas comme source de scène : vos spectateurs le verraient. Gentok ne connaît que les cadeaux envoyés pendant vos lives.</div>
+                </div>
+            </section>
+
             <section id="giveaway-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1rem;">
                     <h2><i class="fas fa-gift"></i> Giveaway & Points Drop</h2>
@@ -3883,6 +3913,7 @@
     <script src="pro.js"></script>
     <script src="gallery.js"></script>
     <script src="appstatus.js"></script>
+    <script src="donors.js"></script>
 
     <!-- MODAL MINECRAFT OPTIONS -->
     <div id="modal-mc-options" class="modal-overlay hidden" style="z-index: 11000;">

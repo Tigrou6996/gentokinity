@@ -4613,7 +4613,8 @@ window.showSection = (sectionId) => {
             'battle': "Batailles d'équipes",
             'simulator': "Simulateur d'événements",
             'gallery': "Galerie d'overlays",
-            'giveaway': 'Giveaway & Points Drop'
+            'giveaway': 'Giveaway & Points Drop',
+            'donors': 'Donateurs présents'
         };
         headerTitle.textContent = titles[sectionId] || 'Gentok';
     }

@@ -4941,3 +4941,23 @@ table td {
 
 /* The sidebar Premium button already shows the plan: the old badge above it is redundant */
 #premium-badge { display: none !important; }
+
+/* Donateurs présents */
+.donors-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.donors-stats > div { padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: rgba(255, 255, 255, .02); color: var(--text-dim); font-size: .85rem; }
+.donors-stats span { display: block; color: #fff; font-size: 1.4rem; font-weight: 800; }
+.donors-list { display: flex; flex-direction: column; gap: 6px; }
+.donors-empty { padding: 24px; text-align: center; border: 1px dashed var(--border); border-radius: 10px; }
+.donor-row { display: grid; grid-template-columns: 42px 1fr auto 130px; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--border); border-left-width: 3px; border-radius: 10px; background: rgba(255, 255, 255, .02); }
+.donor-row img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: #222; }
+.donor-name { display: flex; flex-direction: column; min-width: 0; }
+.donor-name b, .donor-name small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.donor-name small, .donor-coins small { color: var(--text-dim); font-size: .75rem; }
+.donor-tier { font-size: .78rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: rgba(255, 255, 255, .06); white-space: nowrap; }
+.donor-coins { display: flex; flex-direction: column; align-items: flex-end; }
+.donor-coins b { font-size: 1.05rem; }
+.donor-row.tier-whale { border-left-color: #22d3ee; background: rgba(34, 211, 238, .07); }
+.donor-row.tier-big { border-left-color: #a78bfa; background: rgba(167, 139, 250, .06); }
+.donor-row.tier-supporter { border-left-color: #fbbf24; }
+.donor-row.tier-small { border-left-color: #34d399; }
+@media (max-width: 700px) { .donor-row { grid-template-columns: 36px 1fr auto; } .donor-tier { display: none; } }
