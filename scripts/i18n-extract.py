@@ -52,7 +52,7 @@ def collect_html_fragment(fragment):
     except Exception:
         pass
 
-for page in ["index.html", "launcher.html", "download.html"]:
+for page in ["index.html", "launcher.html", "download.html", "payment.html"]:
     p = os.path.join(ROOT, "public", page)
     if os.path.exists(p):
         collect_html_fragment(open(p, encoding="utf-8").read())
@@ -94,7 +94,7 @@ def handle_js_literal(raw, is_template):
     elif looks_french_ui(raw):
         texts.add(norm(raw))
 
-for js in ["public/app.js", "public/previews.js", "public/router.js", "public/pro.js", "public/gallery.js", "public/appstatus.js"]:
+for js in ["public/app.js", "public/previews.js", "public/router.js", "public/pro.js", "public/gallery.js", "public/appstatus.js", "public/premium.js"]:
     p = os.path.join(ROOT, js)
     src = open(p, encoding="utf-8").read()
     # drop comments
@@ -111,7 +111,7 @@ for js in ["public/app.js", "public/previews.js", "public/router.js", "public/pr
 
 # Explicit t('...') calls are always UI texts, even short ones the heuristics would drop
 T_CALL = re.compile(r"\bt\((['\"])((?:\\.|(?!\1).)*)\1\)")
-for js in ["public/app.js", "public/pro.js", "public/gallery.js", "public/appstatus.js"]:
+for js in ["public/app.js", "public/pro.js", "public/gallery.js", "public/appstatus.js", "public/premium.js"]:
     for m in T_CALL.finditer(open(os.path.join(ROOT, js), encoding="utf-8").read()):
         txt = norm(m.group(2).replace("\\'", "'"))
         if txt and WORD.search(txt):

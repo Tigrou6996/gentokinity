@@ -24,6 +24,9 @@ const Global = require('./models/Global');
 const Sound = require('./models/Sound');
 const { initRemoteClient, reauthRemoteClient } = require('./utils/remoteClient');
 const { exec } = require('child_process'); // [NEW] Use native exec instead of 'open'
+const billing = require('./features/billing');
+const tts = require('./features/tts');
+const { isPremiumActive } = require('./features/plans');
 let stripe;
 // [STRIPE] Initialize ONLY in Web/VPS Mode
 if (!config.isAppMode) {
@@ -131,57 +134,25 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     }
 
     // Handle the event
-    if (event.type === 'checkout.session.completed') {
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
         const session = event.data.object;
-        const token = session.client_reference_id || (session.metadata ? session.metadata.token : null);
-
-        if (token) {
-            const parsedMonths = session.metadata ? parseInt(session.metadata.months, 10) : 1;
-            const months = [1, 3, 6, 12].includes(parsedMonths) ? parsedMonths : 1;
-            console.log(`💰 [STRIPE] Payment success for token: ${token.substring(0, 8)}... Plan: ${months}m`);
-
-            const Settings = require('./models/Settings');
-
+        // Delayed methods (bank transfer...) complete unpaid first and send async_payment_succeeded later
+        if (session.payment_status === 'paid' || event.type === 'checkout.session.async_payment_succeeded') {
             try {
-                // Extend from the current end date if the subscription is still running,
-                // so renewing early never makes the customer lose paid days.
-                const existing = await Settings.findOne({ token }).select('billing.currentPeriodEnd').lean();
-                const currentEnd = existing?.billing?.currentPeriodEnd ? new Date(existing.billing.currentPeriodEnd) : null;
-                const endDate = (currentEnd && currentEnd > new Date()) ? currentEnd : new Date();
-                endDate.setMonth(endDate.getMonth() + months);
-
-                await Settings.updateOne(
-                    { token },
-                    {
-                        $set: {
-                            isPremium: true,
-                            'billing.status': 'active',
-                            'billing.plan': `${months}m`,
-                            'billing.currentPeriodEnd': endDate,
-                            'billing.stripeCustomerId': session.customer,
-                            'billing.subscriptionId': session.subscription
-                        },
-                        $push: {
-                            'billing.history': {
-                                sessionId: session.id,
-                                amount: session.amount_total,
-                                currency: session.currency,
-                                status: session.payment_status,
-                                date: new Date()
-                            }
-                        }
-                    },
-                    { upsert: true }
-                );
-                console.log(`💎 [STRIPE] Premium & Billing updated for ${token.substring(0, 8)}.`);
-
-                // Refresh cached data for this user
-                await config.invalidate(token);
+                const result = await billing.applyPayment(require('./models/Settings'), session);
+                if (!result) {
+                    console.warn('⚠️ [STRIPE] Checkout completed but no token (client_reference_id) found.');
+                } else if (!result.duplicate) {
+                    console.log(`💎 [STRIPE] Premium ${result.plan} actif jusqu'au ${result.currentPeriodEnd.toISOString().slice(0, 10)} pour ${result.token.substring(0, 8)}.`);
+                    await config.invalidate(result.token);
+                    // The open dashboards unlock Premium right away
+                    emitEvent('premium_updated', { premium: true, plan: result.plan, currentPeriodEnd: result.currentPeriodEnd }, result.token);
+                }
             } catch (dbErr) {
                 console.error(`🚨 [STRIPE] DB Update Error:`, dbErr.message);
+                // Stripe retries the event when it gets an error
+                return res.status(500).json({ error: 'db' });
             }
-        } else {
-            console.warn('⚠️ [STRIPE] Checkout completed but no token (client_reference_id) found.');
         }
     }
 
@@ -247,19 +218,14 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
     if (!stripe) return res.status(500).json({ error: 'Stripe is not configured' });
     try {
         const { token, plan } = req.body; // plan is '1m', '3m', etc.
-        if (!token) return res.status(400).json({ error: 'Token manquant' });
+        if (!token || typeof token !== 'string') return res.status(400).json({ error: 'Token manquant' });
 
-        const monthsMap = { '1m': 1, '3m': 3, '6m': 6, '12m': 12 };
-        const months = monthsMap[plan] || 1;
-
-        const priceMap = {
-            1: 899,
-            3: 2499,
-            6: 4499,
-            12: 7999
-        };
-
-        const totalAmount = priceMap[months];
+        const offer = billing.offerFor(plan);
+        const months = offer.months;
+        const totalAmount = offer.amount;
+        // The desktop app opens checkout in the browser: it comes back to a simple "thank you" page
+        const base = process.env.DASHBOARD_URL || 'https://tiktok.gentok.fr';
+        const back = req.body.source === 'app' ? `${base}/payment.html` : `${base}/`;
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card', 'revolut_pay'],
@@ -288,8 +254,8 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
                 token,
                 months
             },
-            success_url: `${process.env.DASHBOARD_URL || 'https://tiktok.gentok.fr'}/?payment=success`,
-            cancel_url: `${process.env.DASHBOARD_URL || 'https://tiktok.gentok.fr'}/?payment=cancel`,
+            success_url: `${back}?payment=success`,
+            cancel_url: `${back}?payment=cancel`,
         });
 
         res.json({ id: session.id, url: session.url });
@@ -299,6 +265,27 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
     }
 });
 
+
+// [BILLING] Offers shown by the Premium window, and the live state of the account (polled after a checkout)
+app.get('/api/billing/offers', (req, res) => {
+    res.json({ offers: billing.publicOffers(), checkout: !!stripe });
+});
+app.get('/api/billing/status', async (req, res) => {
+    const token = typeof req.query.token === 'string' ? req.query.token : '';
+    if (!token) return res.status(400).json({ error: 'Token manquant' });
+    try {
+        // read the database directly: the payment may have been recorded by the webhook a second ago
+        const doc = await require('./models/Settings').findOne({ token }).select('isPremium billing.plan billing.status billing.currentPeriodEnd').lean();
+        const premium = isPremiumActive(doc);
+        // the cached session follows when it is out of date
+        if (premium !== !!(await config.getSettings(token)).isPremium) await config.invalidate(token);
+        const b = (doc && doc.billing) || {};
+        res.set('Cache-Control', 'no-store');
+        res.json({ premium, plan: b.plan || null, status: b.status || 'inactive', currentPeriodEnd: b.currentPeriodEnd || null });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // [FIX] Helper to send overlay files with no-cache headers so OBS/Electron always load fresh code
 const publicPath = path.resolve(__dirname, '../public');
@@ -1103,50 +1090,35 @@ app.post('/api/tts/settings', async (req, res) => {
     }
 });
 
-// API: Generate TikTok TTS (Proxy)
+// [TTS] Natural voices (free Edge neural voices, see src/features/tts.js)
+const ttsHits = new Map(); // account (or ip) -> { n, since }: a chat can't flood the speech service through Gentok
+function ttsAllowed(key) {
+    const now = Date.now();
+    const h = ttsHits.get(key);
+    if (!h || now - h.since > 60000) { ttsHits.set(key, { n: 1, since: now }); return true; }
+    h.n++;
+    return h.n <= 90;
+}
+setInterval(() => { const now = Date.now(); for (const [key, h] of ttsHits) if (now - h.since > 60000) ttsHits.delete(key); }, 5 * 60000).unref();
+
+app.get('/api/tts/voices', (req, res) => {
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.json({ voices: tts.VOICES, default: tts.DEFAULT_VOICE, maxChars: tts.MAX_CHARS });
+});
+
 app.post('/api/tts/generate', async (req, res) => {
+    const { text, voice, rate, pitch } = req.body || {};
+    if (!text || typeof text !== 'string') return res.status(400).json({ error: 'Texte manquant' });
+    // behind the VPS proxy every request comes from the same address: count per account when known
+    const who = (typeof req.body.token === 'string' && req.body.token) || String(req.headers['x-forwarded-for'] || req.ip).split(',')[0].trim();
+    if (!ttsAllowed(who)) return res.status(429).json({ error: 'Trop de messages lus, réessayez dans une minute.' });
     try {
-        const { text, voice } = req.body;
-        if (!text) return res.status(400).json({ error: 'Texte manquant' });
-
-        const speaker = voice || 'fr_001';
-
-        // Use a more stable endpoint if possible
-        const apiUrl = `https://api16-normal-v6.tiktokv.com/media/api/text/speech/invoke/`;
-        const params = new URLSearchParams({
-            text_speaker: speaker,
-            req_text: text,
-            speaker_map_type: '0',
-            aid: '1233'
-        });
-
-        const fullUrl = `${apiUrl}?${params.toString()}`;
-
-        const response = await axios.post(fullUrl, null, {
-            headers: {
-                'User-Agent': 'com.zhiliaoapp.musically/2022600030 (Linux; U; Android 7.1.2; es_ES; SM-G988N; Build/NRD90M; Cronet/58.0.2991.0)',
-                'Cookie': 'sessionid=none' // Sometimes helps to bypass some checks
-            },
-            timeout: 10000,
-            responseType: 'json'
-        });
-
-        if (response.data && response.data.status_code === 0 && response.data.data && response.data.data.v_str) {
-            const buffer = Buffer.from(response.data.data.v_str, 'base64');
-            res.set('Content-Type', 'audio/mpeg');
-            res.send(buffer);
-        } else {
-            const errorMsg = response.data ? (response.data.message || response.data.status_msg) : 'Unknown TikTok Error';
-            console.error('[TTS] Gen Error:', response.data);
-            res.status(500).json({
-                error: 'Échec de la génération TikTok TTS',
-                details: errorMsg,
-                code: response.data ? response.data.status_code : -1
-            });
-        }
+        const audio = await tts.synthesize(text, voice, rate, pitch);
+        res.set({ 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store' });
+        res.send(audio);
     } catch (e) {
-        console.error('[TTS] Proxy Error:', e.message);
-        res.status(500).json({ error: 'Erreur serveur proxy TTS', details: e.message });
+        console.error('[TTS] Synthèse impossible:', e.message);
+        res.status(502).json({ error: 'Synthèse vocale indisponible', details: e.message });
     }
 });
 
@@ -2707,6 +2679,24 @@ async function startServer() {
 
             server.listen(PORT, async () => {
                 logger.info(`🌐 Dashboard disponible sur : http://localhost:${PORT}`);
+
+                // [BILLING] Premium ends with the paid period (checked on the VPS, which receives the payments)
+                if (!config.isAppMode) {
+                    const runExpiry = async () => {
+                        try {
+                            const expired = await billing.expireOverdue(require('./models/Settings'));
+                            for (const token of expired) {
+                                await config.invalidate(token);
+                                emitEvent('premium_updated', { premium: false, status: 'expired' }, token);
+                            }
+                            if (expired.length) logger.info(`⌛ [BILLING] ${expired.length} abonnement(s) Premium expiré(s).`);
+                        } catch (e) {
+                            logger.warn(`⚠️ [BILLING] Vérification des expirations impossible : ${e.message}`);
+                        }
+                    };
+                    runExpiry();
+                    setInterval(runExpiry, 15 * 60 * 1000).unref();
+                }
 
                 // [GUI] Auto-launch browser in App Mode
                 if (config.isAppMode) {

@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getUpdateState: () => ipcRenderer.invoke('get-update-state'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
 
+    // Opens an https page (Stripe checkout, help...) in the default browser
+    openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
     // Auto-updater commands
     startDownload: () => ipcRenderer.invoke('start-download'),
     restartApp: () => ipcRenderer.invoke('restart-app'),

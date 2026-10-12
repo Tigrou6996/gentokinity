@@ -1,6 +1,7 @@
 const Action = require('./models/Action');
 const Event = require('./models/Event');
 const Settings = require('./models/Settings');
+const { isPremiumActive } = require('./features/plans');
 
 // Values baked into the desktop build (see scripts/write-build-env.js). Missing in dev.
 let buildEnv = {};
@@ -166,7 +167,7 @@ module.exports = {
         if (settings) {
             newSession.username = settings.username || null;
             newSession.ip = settings.ip || null;
-            newSession.isPremium = settings.isPremium || false;
+            newSession.isPremium = isPremiumActive(settings);
             newSession.activeSceneId = settings.activeSceneId || null;
             newSession.scenes = settings.scenes || [];
 
@@ -296,6 +297,7 @@ module.exports = {
                 topCoins: { ...defaults.topCoins, ...(s.topCoins || {}) },
                 topLikes: { ...defaults.topLikes, ...(s.topLikes || {}) }
             };
+            result.isPremium = isPremiumActive(s);
 
             // [FIX] Scene Isolation in getSettings (Consistency with loadSession)
             if (result.activeSceneId && result.scenes) {
@@ -452,7 +454,7 @@ module.exports = {
 
         const updatePayload = {
             $set: {
-                username: s.username, ip: s.ip, isPremium: s.isPremium, activeSceneId: s.activeSceneId,
+                username: s.username, ip: s.ip, activeSceneId: s.activeSceneId,
                 scenes: s.scenes, minecraft: s.minecraft, obs: s.obs, language: s.language, streamerbot: s.streamerbot, points: s.points, spotify: s.spotify, tts: s.tts,
                 lastEvents: s.lastEvents,
                 autoResetTopStats: s.autoResetTopStats,
@@ -464,6 +466,10 @@ module.exports = {
                 topLikes: s.topLikes
             }
         };
+
+        // Premium is only written when explicitly given: the Stripe webhook / expiry job (other process)
+        // own it, and a stale in-memory value must never overwrite a payment made meanwhile.
+        if (data.isPremium !== undefined) updatePayload.$set.isPremium = !!data.isPremium;
 
         await Settings.updateOne({ token: t }, updatePayload, { upsert: true });
         delete _settingsCache[t];

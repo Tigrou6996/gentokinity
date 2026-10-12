@@ -194,26 +194,10 @@ function addLog(msg, type = '') {
 
 
 async function init() {
-    // Check for payment result in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment') === 'success') {
-        Swal.fire({
-            title: 'Félicitations !',
-            text: 'Votre abonnement Gentok App Premium est maintenant actif. Merci pour votre confiance !',
-            icon: 'success',
-            confirmButtonColor: '#fe2c55',
-            background: '#1a1a1a',
-            color: '#fff'
-        });
-        // Remove query param without reload
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (urlParams.get('payment') === 'cancel') {
-        showToast('Paiement annulé.');
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
+    // The return from Stripe (?payment=success / cancel) is handled by premium.js
 
     // [DETECTION] Are we running in the Electron App?
-    // urlParams already declared above
+    const urlParams = new URLSearchParams(window.location.search);
     const isAppUA = navigator.userAgent.toLowerCase().includes('electron');
     const isAppMode = urlParams.get('mode') === 'app' || isAppUA;
 
@@ -1498,7 +1482,7 @@ function applyConfigUI(config) {
     updateSceneUI();
 
     const premiumBadge = document.getElementById('premium-badge');
-    const proBanner = document.querySelector('.pro-banner');
+    if (window.GentokPremium) window.GentokPremium.render(isPremiumUser);
 
     if (isPremiumUser) {
         if (!window._premiumLogged) {
@@ -1506,13 +1490,11 @@ function applyConfigUI(config) {
             window._premiumLogged = true;
         }
         if (premiumBadge) premiumBadge.classList.remove('hidden');
-        if (proBanner) proBanner.style.display = 'none';
         document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('locked'));
         document.querySelectorAll('.crown-tag').forEach(tag => tag.style.display = 'none');
         if (window.location.hash === '#stats') renderStatsHistory();
     } else {
         if (premiumBadge) premiumBadge.classList.add('hidden');
-        if (proBanner) proBanner.style.display = 'flex';
         document.querySelector('#nav-stats')?.classList.add('locked');
         document.querySelectorAll('.crown-tag').forEach(tag => tag.style.display = 'block');
     }
@@ -2914,14 +2896,6 @@ function setupEventListeners() {
 
     const btnTestLG = document.getElementById('btn-test-likes-goal');
     if (btnTestLG) btnTestLG.onclick = handleTestLikesGoal;
-
-    // Pro Banner Listener
-    const proBanner = document.querySelector('.pro-banner');
-    if (proBanner) {
-        proBanner.addEventListener('click', () => {
-            if (window.openProModal) window.openProModal();
-        });
-    }
 
     // Auto-Updater UI Logic
     if (window.electronAPI) {
@@ -7112,38 +7086,7 @@ window.addEventListener('click', (e) => {
     }
 });
 
-async function subscribePlan(plan) {
-    console.log(`[Stripe] Initiating ${plan} plan subscription...`);
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-
-    try {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
-
-        const base = getApiBase();
-        const token = localStorage.getItem('gentok_token');
-
-        const res = await fetch(`${base}/api/stripe/create-checkout-session`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, plan })
-        });
-
-        const data = await res.json();
-
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            throw new Error(data.error || 'Erreur lors de la création de la session');
-        }
-    } catch (err) {
-        console.error('[Stripe] Error:', err);
-        showNotify('Erreur Stripe', err.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-}
+// subscribePlan(plan, button) is defined in premium.js (Stripe checkout + activation)
 
 // ========================================
 // TTS CHAT SYSTEM
@@ -7187,9 +7130,10 @@ let ttsSynth = window.speechSynthesis;
 async function initTTS() {
     console.log('[TTS] Initializing TTS System...');
 
-    // Load voices
+    // Load voices (natural voices from the server, then the ones of this computer)
     loadVoices();
-    if (ttsSynth.onvoiceschanged !== undefined) {
+    fetchNeuralVoices();
+    if (ttsSynth && ttsSynth.onvoiceschanged !== undefined) {
         ttsSynth.onvoiceschanged = loadVoices;
     }
 
@@ -7225,54 +7169,91 @@ async function initTTS() {
     console.log('[TTS] TTS System Ready');
 }
 
-// Load available voices
-// [NEW] Hardcoded TikTok Voices - Only verified ones
-const TIKTOK_VOICES = [
-    { name: 'FR | Homme Vocal', id: 'fr_001', lang: 'fr-FR' },
-    { name: 'FR | Homme Calme', id: 'fr_002', lang: 'fr-FR' }
+// Natural voices (free Edge neural voices, synthesized by the server: /api/tts/voices and /api/tts/generate).
+// The browser / Windows voices stay available below them and are used as a fallback if the server can't answer.
+let NEURAL_VOICES = [
+    { id: 'fr-FR-DeniseNeural', name: 'Denise', lang: 'fr-FR', gender: 'F', style: 'Claire et posée' },
+    { id: 'fr-FR-VivienneMultilingualNeural', name: 'Vivienne', lang: 'fr-FR', gender: 'F', style: 'Chaleureuse, très naturelle' },
+    { id: 'fr-FR-EloiseNeural', name: 'Eloise', lang: 'fr-FR', gender: 'F', style: 'Jeune, enjouée' },
+    { id: 'fr-FR-HenriNeural', name: 'Henri', lang: 'fr-FR', gender: 'M', style: 'Grave, radio' },
+    { id: 'fr-FR-RemyMultilingualNeural', name: 'Rémy', lang: 'fr-FR', gender: 'M', style: 'Dynamique, très naturel' }
 ];
+// Old TikTok voices saved in settings now map to a natural voice on the server
+const LEGACY_TTS_VOICES = ['fr_001', 'fr_002'];
+const isNeuralVoice = (id) => !!id && (NEURAL_VOICES.some(v => v.id === id) || LEGACY_TTS_VOICES.includes(id));
+
+async function fetchNeuralVoices() {
+    try {
+        const r = await fetch(`${getApiBase()}/api/tts/voices`);
+        const d = await r.json();
+        if (Array.isArray(d.voices) && d.voices.length) NEURAL_VOICES = d.voices;
+    } catch (e) {
+        console.warn('[TTS] Natural voices list unavailable, using the built-in one', e);
+    }
+    loadVoices();
+}
+
+// Natural voices of the chosen language (same country first, then the other countries of the language)
+function neuralVoicesFor(lang) {
+    const base = (lang || 'fr-FR').slice(0, 2);
+    const same = NEURAL_VOICES.filter(v => v.lang === lang);
+    const others = NEURAL_VOICES.filter(v => v.lang !== lang && v.lang.startsWith(base));
+    return same.concat(others);
+}
+
+// The voice really used for a message ("" = automatic: first natural voice of the language)
+function resolveTTSVoice() {
+    if (ttsConfig.randomVoice) {
+        const pool = neuralVoicesFor(ttsConfig.language);
+        if (pool.length) return pool[Math.floor(Math.random() * pool.length)].id;
+    }
+    if (ttsConfig.voice) return ttsConfig.voice;
+    const auto = neuralVoicesFor(ttsConfig.language)[0];
+    return auto ? auto.id : '';
+}
 
 function loadVoices() {
-    ttsVoices = ttsSynth.getVoices();
-    console.log('[TTS] Loaded', ttsVoices.length, 'voices');
+    ttsVoices = ttsSynth ? ttsSynth.getVoices() : [];
 
-    // Populate voice selector
     const voiceSelect = document.getElementById('tts-voice');
-    if (voiceSelect) {
-        voiceSelect.innerHTML = '<option value="">Défaut (Système)</option>';
+    if (!voiceSelect) return;
+    voiceSelect.innerHTML = '';
 
-        // 1. Add TikTok Voices Group
-        const groupTikTok = document.createElement('optgroup');
-        groupTikTok.label = "--- TikTok Officiel (Premium) ---";
+    const auto = document.createElement('option');
+    auto.value = '';
+    auto.textContent = 'Automatique (voix naturelle)';
+    voiceSelect.appendChild(auto);
 
-        TIKTOK_VOICES.forEach(v => {
-            const option = document.createElement('option');
-            option.value = v.id; // ID used for API call
-            option.textContent = `🎵 ${v.name}`;
-            groupTikTok.appendChild(option);
-        });
-        voiceSelect.appendChild(groupTikTok);
+    const base = (ttsConfig.language || 'fr-FR').slice(0, 2);
+    const group = (label, voices, toOption) => {
+        if (!voices.length) return;
+        const g = document.createElement('optgroup');
+        g.label = label;
+        voices.forEach(v => g.appendChild(toOption(v)));
+        voiceSelect.appendChild(g);
+    };
+    const neuralOption = (v) => {
+        const o = document.createElement('option');
+        o.value = v.id;
+        o.textContent = `${v.gender === 'M' ? '♂' : '♀'} ${v.name} · ${v.style} (${v.lang})`;
+        return o;
+    };
 
-        // 2. Add System Voices Group
-        const groupSystem = document.createElement('optgroup');
-        groupSystem.label = "--- Voix Système / Navigateur ---";
+    // 1. Natural voices (free, best quality)
+    group('Voix naturelles (gratuites)', neuralVoicesFor(ttsConfig.language), neuralOption);
+    // 2. Natural voices of the other languages (a French streamer can read English messages...)
+    group('Autres langues (voix naturelles)', NEURAL_VOICES.filter(v => !v.lang.startsWith(base)), neuralOption);
+    // 3. Voices installed on this computer / browser
+    group('Voix de cet ordinateur', ttsVoices.filter(v => v.lang.startsWith(base)), (voice) => {
+        const o = document.createElement('option');
+        o.value = voice.name; // name used by SpeechSynthesis
+        o.textContent = `${voice.name} (${voice.lang})`;
+        return o;
+    });
 
-        // Filter by language roughly
-        const langVoices = ttsVoices.filter(v => v.lang.startsWith(ttsConfig.language.substring(0, 2)));
-
-        langVoices.forEach((voice) => {
-            const option = document.createElement('option');
-            option.value = voice.name; // Name used for SpeechSynthesis
-            option.textContent = `${voice.name} (${voice.lang})`;
-            groupSystem.appendChild(option);
-        });
-        voiceSelect.appendChild(groupSystem);
-
-        // Set saved voice
-        if (ttsConfig.voice) {
-            voiceSelect.value = ttsConfig.voice;
-        }
-    }
+    const saved = LEGACY_TTS_VOICES.includes(ttsConfig.voice) ? '' : (ttsConfig.voice || '');
+    voiceSelect.value = saved;
+    if (voiceSelect.value !== saved) voiceSelect.value = ''; // voice not available here: automatic
 }
 
 // Bind UI controls
@@ -7625,7 +7606,7 @@ let isTTSPlaying = false; // Flag for custom audio playback
 
 function processTTSQueue() {
     if (ttsQueue.length === 0) return;
-    if (ttsSynth.speaking || isTTSPlaying) return; // Already speaking (System or Custom)
+    if ((ttsSynth && ttsSynth.speaking) || isTTSPlaying) return; // Already speaking (System or Custom)
 
     const item = ttsQueue.shift();
     speakText(item.text, item.user);
@@ -7633,107 +7614,89 @@ function processTTSQueue() {
 
 // Speak text
 async function speakText(text, user) {
-    if (ttsSynth.speaking) {
+    if (ttsSynth && ttsSynth.speaking) {
         ttsSynth.cancel();
     }
 
-    // Check if selected voice is a TikTok Voice ID
-    const selectedVoiceId = ttsConfig.voice;
-    const isTikTokVoice = TIKTOK_VOICES.some(v => v.id === selectedVoiceId);
+    const voiceId = resolveTTSVoice();
 
-    if (isTikTokVoice) {
-        // [CUSTOM TTS] Fetch audio from backend proxy
+    if (isNeuralVoice(voiceId)) {
+        // [NATURAL VOICE] MP3 generated by the server
         isTTSPlaying = true;
-        ttsLog(`🔊 Lecture (Custom): "${text}" (${user})`, 'info');
+        ttsLog(`🔊 Lecture : "${text}" (${user})`, 'info');
 
         try {
-            const base = getApiBase();
-            const response = await fetch(`${base}/api/tts/generate`, {
+            const response = await fetch(`${getApiBase()}/api/tts/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, voice: selectedVoiceId })
+                body: JSON.stringify({ text, voice: voiceId, rate: ttsConfig.speed, pitch: ttsConfig.pitch, token: localStorage.getItem('gentok_token') || '' })
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || errorData.error || 'TTS Gen Failed');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}`);
             }
 
             const blob = await response.blob();
             const audioUrl = URL.createObjectURL(blob);
             const audio = new Audio(audioUrl);
-            audio.volume = ttsConfig.volume;
+            audio.volume = Math.min(Math.max(Number(ttsConfig.volume) || 1, 0), 1);
 
-            audio.onended = () => {
+            const done = (ok) => {
                 isTTSPlaying = false;
                 URL.revokeObjectURL(audioUrl);
-                ttsLog(`✅ Terminé: "${text}"`, 'success');
-                setTimeout(processTTSQueue, 500); // Small delay between messages
+                ttsLog(ok ? `✅ Terminé : "${text}"` : '❌ Lecture audio impossible', ok ? 'success' : 'error');
+                setTimeout(processTTSQueue, 400); // small pause between messages
             };
-
-            audio.onerror = () => {
-                console.error('[TTS] Audio playback error');
-                ttsLog(`❌ Erreur Audio Playback`, 'error');
-                isTTSPlaying = false;
-                processTTSQueue();
-            };
+            audio.onended = () => done(true);
+            audio.onerror = () => done(false);
 
             await audio.play();
-
         } catch (err) {
-            console.error('[TTS] Failed to play custom voice:', err);
-            ttsLog(`❌ Erreur Gen TTS: ${err.message}`, 'error');
+            console.error('[TTS] Natural voice failed:', err);
             isTTSPlaying = false;
-            // Fallback to system voice or skip?
-            // Let's try to fallback to system voice if custom fails
-            // But for now, just skip to avoid infinite loops if network is down
-            processTTSQueue();
-        }
-
-    } else {
-        // [SYSTEM TTS] Standard Browser API
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        // Select voice
-        let selectedVoice = null;
-        if (ttsConfig.randomVoice) {
-            const langVoices = ttsVoices.filter(v => v.lang.startsWith(ttsConfig.language.substring(0, 2)));
-            if (langVoices.length > 0) {
-                selectedVoice = langVoices[Math.floor(Math.random() * langVoices.length)];
+            if (ttsSynth) {
+                // the message is still read, with the voice of this computer
+                ttsLog(`⚠️ Voix naturelle indisponible (${err.message}), voix de l'ordinateur utilisée.`, 'warning');
+                speakWithSystemVoice(text, user, null);
+            } else {
+                ttsLog(`❌ Erreur TTS : ${err.message}`, 'error');
+                processTTSQueue();
             }
-        } else if (ttsConfig.voice) {
-            selectedVoice = ttsVoices.find(v => v.name === ttsConfig.voice);
         }
-
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
-        }
-
-        utterance.lang = ttsConfig.language;
-        utterance.rate = ttsConfig.speed;
-        utterance.pitch = ttsConfig.pitch;
-        utterance.volume = ttsConfig.volume;
-
-        utterance.onstart = () => {
-            ttsLog(`🔊 Lecture: "${text}" (${user})`, 'info');
-        };
-
-        utterance.onend = () => {
-            ttsLog(`✅ Terminé: "${text}"`, 'success');
-            ttsCurrentUtterance = null;
-            // Process next in queue
-            setTimeout(() => processTTSQueue(), 100);
-        };
-
-        utterance.onerror = (e) => {
-            ttsLog(`❌ Erreur TTS: ${e.error}`, 'error');
-            ttsCurrentUtterance = null;
-            setTimeout(() => processTTSQueue(), 100);
-        };
-
-        ttsCurrentUtterance = utterance;
-        ttsSynth.speak(utterance);
+    } else {
+        speakWithSystemVoice(text, user, voiceId);
     }
+}
+
+// [SYSTEM TTS] Voices installed on this computer / browser (voiceName null = any voice of the language)
+function speakWithSystemVoice(text, user, voiceName) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const langVoices = ttsVoices.filter(v => v.lang.startsWith(ttsConfig.language.substring(0, 2)));
+    const selectedVoice = (voiceName && ttsVoices.find(v => v.name === voiceName)) || (ttsConfig.randomVoice && langVoices.length ? langVoices[Math.floor(Math.random() * langVoices.length)] : null);
+    if (selectedVoice) utterance.voice = selectedVoice;
+
+    utterance.lang = ttsConfig.language;
+    utterance.rate = ttsConfig.speed;
+    utterance.pitch = ttsConfig.pitch;
+    utterance.volume = ttsConfig.volume;
+
+    utterance.onstart = () => {
+        ttsLog(`🔊 Lecture : "${text}" (${user})`, 'info');
+    };
+    utterance.onend = () => {
+        ttsLog(`✅ Terminé : "${text}"`, 'success');
+        ttsCurrentUtterance = null;
+        setTimeout(() => processTTSQueue(), 100);
+    };
+    utterance.onerror = (e) => {
+        ttsLog(`❌ Erreur TTS : ${e.error}`, 'error');
+        ttsCurrentUtterance = null;
+        setTimeout(() => processTTSQueue(), 100);
+    };
+
+    ttsCurrentUtterance = utterance;
+    ttsSynth.speak(utterance);
 }
 
 // TTS Log

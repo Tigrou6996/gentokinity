@@ -36,8 +36,17 @@ const PLANS = {
 
 const PREMIUM_ONLY_ACTION_TYPES = ['obs', 'wheel', 'streamerbot'];
 
+// A paid period that has ended no longer counts, even before the expiry job has updated the account.
+// Premium granted by hand (admin, no Stripe period) has no end date and stays active.
+function isPremiumActive(settings) {
+    if (!settings || !settings.isPremium) return false;
+    const b = settings.billing;
+    if (b && b.status === 'active' && b.currentPeriodEnd && new Date(b.currentPeriodEnd).getTime() < Date.now()) return false;
+    return true;
+}
+
 function getPlan(settingsOrPremium) {
-    const isPremium = typeof settingsOrPremium === 'boolean' ? settingsOrPremium : !!(settingsOrPremium && settingsOrPremium.isPremium);
+    const isPremium = typeof settingsOrPremium === 'boolean' ? settingsOrPremium : isPremiumActive(settingsOrPremium);
     return isPremium ? PLANS.premium : PLANS.free;
 }
 
@@ -52,4 +61,4 @@ function serializePlan(plan) {
     return out;
 }
 
-module.exports = { PLANS, PREMIUM_ONLY_ACTION_TYPES, getPlan, canUseActionType, serializePlan };
+module.exports = { PLANS, PREMIUM_ONLY_ACTION_TYPES, isPremiumActive, getPlan, canUseActionType, serializePlan };

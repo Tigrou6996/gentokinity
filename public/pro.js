@@ -245,6 +245,7 @@
                             ${row(plan.sessionHistory, 'Historique détaillé des lives')}
                         </ul>
                         ${premium && !data.premium ? `<button class="btn-primary" style="width:100%" onclick="openProModal()"><i class="fas fa-crown"></i> ${esc(t('Passer à Premium'))}</button>` : ''}
+                        ${premium && data.premium && data.billing && data.billing.currentPeriodEnd ? `<button class="btn-secondary" style="width:100%" onclick="openProModal()"><i class="fas fa-calendar-plus"></i> ${esc(t('Prolonger mon Premium'))}</button>` : ''}
                         ${premium === data.premium ? `<div style="text-align:center;color:var(--text-dim);font-size:0.85rem;">${esc(t('Votre offre actuelle'))}</div>` : ''}
                     </div>`;
                 document.getElementById('plan-grid').innerHTML = card(F, false) + card(P, true);

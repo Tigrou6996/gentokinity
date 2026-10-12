@@ -241,16 +241,14 @@
                 </div>
             </div>
 
-            <div class="pro-banner" onclick="openProModal()">
-                <div class="pro-icon">
-                    <i class="fas fa-star"></i>
-                </div>
-                <div class="pro-text">
-                    <span class="pro-title">Gentok Premium</span>
-                    <span class="pro-subtitle">Débloquez tout</span>
-                </div>
-                <i class="fas fa-chevron-right"></i>
-            </div>
+            <button type="button" class="pro-banner" id="pro-banner">
+                <span class="pro-icon"><i class="fas fa-crown"></i></span>
+                <span class="pro-text">
+                    <span class="pro-title">Passer à Premium</span>
+                    <span class="pro-subtitle">dès 6,66 €/mois</span>
+                </span>
+                <i class="fas fa-chevron-right pro-chevron"></i>
+            </button>
 
             <ul class="nav-links">
                 <li class="active scene-required">
@@ -2069,10 +2067,16 @@
                             <select id="tts-language">
                                 <option value="fr-FR">Français (France)</option>
                                 <option value="fr-CA">Français (Canada)</option>
+                                <option value="fr-BE">Français (Belgique)</option>
+                                <option value="fr-CH">Français (Suisse)</option>
                                 <option value="en-US">English (US)</option>
                                 <option value="en-GB">English (UK)</option>
-                                <option value="es-ES">Español</option>
+                                <option value="es-ES">Español (España)</option>
+                                <option value="es-MX">Español (México)</option>
                                 <option value="de-DE">Deutsch</option>
+                                <option value="it-IT">Italiano</option>
+                                <option value="pt-BR">Português (Brasil)</option>
+                                <option value="pt-PT">Português (Portugal)</option>
                             </select>
                         </div>
 
@@ -2088,9 +2092,10 @@
                                 </label>
                             </div>
                             <select id="tts-voice">
-                                <!-- Populated by JS -->
-                                <option value="default">Défaut</option>
+                                <!-- Populated by JS (loadVoices) -->
+                                <option value="">Automatique (voix naturelle)</option>
                             </select>
+                            <small class="text-dim d-block mt-1 mb-2">Voix naturelles gratuites (Microsoft Edge), générées par le serveur Gentok. Les voix de l'ordinateur restent disponibles en dessous.</small>
                         </div>
 
                         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -3761,10 +3766,11 @@
             <button class="pro-close-btn" onclick="closeProModal()"><i class="fas fa-times"></i></button>
 
             <div class="pro-modal-header">
-                <div class="pro-header-badge">OFFRE LIMITÉE</div>
+                <div class="pro-header-badge">GENTOK PREMIUM</div>
                 <h2>Passez à Gentok Premium</h2>
                 <p>Propulsez vos lives TikTok au niveau supérieur avec nos outils premium.</p>
             </div>
+            <div id="pro-modal-status" class="pro-modal-status" hidden></div>
 
             <div class="pro-pricing-grid four-cards">
                 <!-- 1 Month -->
@@ -3778,7 +3784,7 @@
                         <li><i class="fas fa-check"></i> Contrôle des jeux</li>
                         <li><i class="fas fa-check"></i> Support Prioritaire</li>
                     </ul>
-                    <button class="pro-btn-secondary" onclick="subscribePlan('1m')">Choisir</button>
+                    <button type="button" class="pro-btn-secondary" onclick="subscribePlan('1m', this)">Choisir</button>
                 </div>
 
                 <!-- 3 Months -->
@@ -3794,7 +3800,7 @@
                         <li><i class="fas fa-check"></i> Rôle Discord "Soutien"</li>
                         <li><i class="fas fa-check"></i> Priorité files d'attente</li>
                     </ul>
-                    <button class="pro-btn-secondary" onclick="subscribePlan('3m')">Choisir</button>
+                    <button type="button" class="pro-btn-secondary" onclick="subscribePlan('3m', this)">Choisir</button>
                 </div>
 
                 <!-- 6 Months -->
@@ -3810,7 +3816,7 @@
                         <li><i class="fas fa-check"></i> Accès Beta (Nouveaux jeux)</li>
                         <li><i class="fas fa-check"></i> Support dédié</li>
                     </ul>
-                    <button class="pro-btn-primary" onclick="subscribePlan('6m')">Choisir</button>
+                    <button type="button" class="pro-btn-primary" onclick="subscribePlan('6m', this)">Choisir</button>
                 </div>
 
                 <!-- 12 Months -->
@@ -3826,7 +3832,7 @@
                         <li><i class="fas fa-check"></i> Setup personnalisé</li>
                         <li><i class="fas fa-check"></i> Mises à jour garanties</li>
                     </ul>
-                    <button class="pro-btn-primary" onclick="subscribePlan('12m')">Choisir</button>
+                    <button type="button" class="pro-btn-primary" onclick="subscribePlan('12m', this)">Choisir</button>
                 </div>
             </div>
 
@@ -3841,7 +3847,7 @@
             </div>
 
             <div class="pro-modal-footer">
-                <p><i class="fas fa-lock"></i> Paiement sécurisé par Stripe • Annulable à tout moment</p>
+                <p><i class="fas fa-lock"></i> Paiement sécurisé par Stripe (carte, Revolut Pay) • Paiement unique, sans renouvellement automatique • Facture envoyée par e-mail</p>
             </div>
         </div>
     </div>
@@ -3850,6 +3856,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script src="app.js"></script>
+    <script src="premium.js"></script>
     <script src="previews.js"></script>
     <script src="router.js"></script>
     <script src="pro.js"></script>

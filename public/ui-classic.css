@@ -131,11 +131,6 @@ body.ui-classic { background: var(--bg-dark); line-height: 1.45; }
 .ui-classic #header-username { height: 38px; width: 170px; }
 .ui-classic .blob, .ui-classic .splash-bg, .ui-classic .splash-blob { display: none !important; }
 
-/* Premium promo in the sidebar: plain outlined block */
-.ui-classic .pro-banner { background: transparent !important; border: 1px solid rgba(255, 193, 7, .45) !important; border-radius: .5rem !important; box-shadow: none !important; animation: none !important; }
-.ui-classic .pro-banner::before, .ui-classic .pro-banner::after { display: none !important; }
-.ui-classic .pro-banner * { text-shadow: none !important; animation: none !important; }
-
 /* Modals & login */
 .ui-classic .modal { background: rgba(0, 0, 0, .6); backdrop-filter: none; }
 .ui-classic .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: .5rem; box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .4); padding: 1.5rem; animation: none; }

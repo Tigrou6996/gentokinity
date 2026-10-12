@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { startServer } = require('./server');
@@ -11,6 +11,15 @@ const DiscordRPC = require('discord-rpc');
 let mainWindow = null;
 let ipcHandlersRegistered = false; // ipcMain.handle() throws if a channel is registered twice
 const PORT = process.env.PORT || 3000;
+
+// Only web pages (https) can be opened in the browser from the dashboard
+function isExternalAllowed(url) {
+    try {
+        return new URL(url).protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+}
 
 // Sends a message to the dashboard window only if it still exists
 function sendToWindow(channel, payload) {
@@ -138,6 +147,12 @@ function setupAutoUpdater() {
         return app.getVersion();
     });
 
+    ipcMain.handle('open-external', (event, url) => {
+        if (!isExternalAllowed(url)) return false;
+        shell.openExternal(url);
+        return true;
+    });
+
     ipcMain.handle('get-update-state', () => updateState);
     ipcMain.handle('check-for-updates', () => checkForUpdates());
 
@@ -201,6 +216,18 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js'),
             webSecurity: false,
             allowRunningInsecureContent: true
+        }
+    });
+
+    // Payment pages and external links open in the user's browser, never inside the app window
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        if (isExternalAllowed(url)) shell.openExternal(url);
+        return { action: 'deny' };
+    });
+    mainWindow.webContents.on('will-navigate', (e, url) => {
+        if (/^https:\/\/checkout\.stripe\.com\//.test(url)) {
+            e.preventDefault();
+            shell.openExternal(url);
         }
     });
 
