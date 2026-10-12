@@ -33,6 +33,7 @@ const ActionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token
-ActionSchema.index({ token: 1, id: 1 }, { unique: true });
+// ids are unique within a scene (a scene imported or copied into another one keeps its ids)
+ActionSchema.index({ token: 1, sceneId: 1, id: 1 }, { unique: true });
 
 module.exports = mongoose.model('Action', ActionSchema);

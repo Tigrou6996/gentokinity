@@ -10,9 +10,46 @@ try { buildEnv = require('./build-env.json'); } catch (e) { }
 // Settings that each scene keeps for itself (on top of its actions / events and its goals / top stats).
 // A scene without its own copy yet inherits the settings in use when it is first opened.
 const SCENE_OWN_SETTINGS = ['tts', 'points'];
+// Per-scene values (stats / goals) and every field saveSettings may write
+const SCENE_STATS_FIELDS = ['likesGoal', 'topGift', 'topStreak', 'topCoins', 'topLikes', 'autoResetTopStats', 'autoResetLastX'];
+const SAVED_FIELDS = ['username', 'ip', 'activeSceneId', 'scenes', 'minecraft', 'obs', 'language', 'runMode', 'streamerbot',
+    'points', 'spotify', 'tts', 'lastEvents', ...SCENE_STATS_FIELDS];
 const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 function mergeTts(base, own) {
     return { ...base, ...own, allowedUsers: { ...(base.allowedUsers || {}), ...((own && own.allowedUsers) || {}) } };
+}
+
+// Actions / events as plain objects of this scene: Mongoose documents (spreading one copies its internals,
+// not its fields), another account's _id / token (imported files) and duplicates are removed.
+function cleanItems(list) {
+    const byId = new Map();
+    for (const item of Array.isArray(list) ? list : []) {
+        if (!item || typeof item !== 'object') continue;
+        const o = item.toObject ? item.toObject() : { ...item };
+        delete o._id; delete o.__v; delete o.token; delete o.sceneId; delete o.createdAt; delete o.updatedAt;
+        if (!o.id) o.id = `item_${Date.now()}_${Math.round(Math.random() * 1e9)}`;
+        byId.set(String(o.id), o);
+    }
+    return Array.from(byId.values());
+}
+
+// Replaces the items of the active scene. The new list is validated BEFORE the old one is deleted, and the
+// old one is put back if the insert fails: a bad item can no longer leave the scene empty.
+async function replaceSceneItems(Model, s, items) {
+    const docs = items.map(i => ({ ...i, token: s.token, sceneId: s.activeSceneId }));
+    for (const d of docs) {
+        const err = new Model(d).validateSync();
+        if (err) throw new Error(`Élément invalide (${d.name || d.id}) : ${err.message}`);
+    }
+    const previous = await Model.find({ token: s.token, sceneId: s.activeSceneId }).lean();
+    await Model.deleteMany({ token: s.token, sceneId: s.activeSceneId });
+    try {
+        if (docs.length) await Model.insertMany(docs, { ordered: true });
+    } catch (e) {
+        await Model.deleteMany({ token: s.token, sceneId: s.activeSceneId }).catch(() => { });
+        if (previous.length) await Model.insertMany(previous).catch(() => { });
+        throw e;
+    }
 }
 
 // Helper to get fresh default session state
@@ -144,9 +181,16 @@ const _sessions = new Map();
 let _lastActiveToken = null; // Track the last used token for legacy fallback getters
 let _settingsCache = {}; // Cache for per-token settings (10s TTL)
 
+// "Last active token" fallback: only in the desktop app (one streamer). On the VPS many streamers share the
+// server, so a request without a token must never fall back on whoever was loaded last (it exposed their
+// config, OBS password and token, and let anonymous requests change their data).
+function fallbackToken() {
+    return module.exports.isAppMode ? _lastActiveToken : null;
+}
+
 // Internal helper to get session by token
 function getSession(token) {
-    const t = token || _lastActiveToken;
+    const t = token || fallbackToken();
     if (!t) return getSessionDefaults();
     if (!_sessions.has(t)) {
         _sessions.set(t, getSessionDefaults());
@@ -168,8 +212,8 @@ module.exports = {
         const activeSceneId = settings ? settings.activeSceneId : null;
 
         const [events, actions] = await Promise.all([
-            Event.find({ token, sceneId: activeSceneId }),
-            Action.find({ token, sceneId: activeSceneId })
+            Event.find({ token, sceneId: activeSceneId }).lean(),
+            Action.find({ token, sceneId: activeSceneId }).lean()
         ]);
 
         newSession.events = events || [];
@@ -256,7 +300,7 @@ module.exports = {
         if (s.token) Settings.updateOne({ token: s.token }, { username: val }, { upsert: true }).exec();
     },
 
-    get licenseToken() { return _lastActiveToken; },
+    get licenseToken() { return fallbackToken(); },
     set licenseToken(val) { _lastActiveToken = val; },
 
     // Never hardcode credentials here: they come from .env (dev / VPS) or from
@@ -288,7 +332,7 @@ module.exports = {
     get minecraft() { return getSession().minecraft; },
 
     async getSettings(token) {
-        const t = token || _lastActiveToken;
+        const t = token || fallbackToken();
         if (!t) return getSessionDefaults();
         if (_sessions.has(t)) return _sessions.get(t);
         const CACHE_TTL = 10000;
@@ -370,6 +414,11 @@ module.exports = {
     // Returns the session of an explicit token (loading it if needed). Use this instead of the
     // "last active token" fallback whenever a request carries its own token, otherwise two users
     // hitting the server at the same time can overwrite each other's data.
+    // Session already in memory for this token (no loading), or the defaults
+    peekSession(token) {
+        return (token && _sessions.get(token)) || getSessionDefaults();
+    },
+
     async getSessionFor(token) {
         if (!token) return getSession();
         if (!_sessions.has(token)) await this.loadSession(token);
@@ -378,22 +427,20 @@ module.exports = {
 
     async saveEvents(events, token) {
         const s = await this.getSessionFor(token); if (!s.token) return;
-        s.events = (!s.isPremium && events.length > 5) ? events.slice(0, 5) : events;
-        const Event = require('./models/Event');
-        await Event.deleteMany({ token: s.token, sceneId: s.activeSceneId });
-        if (s.events.length > 0) await Event.insertMany(s.events.map(e => ({ ...e, token: s.token, sceneId: s.activeSceneId })));
+        const list = cleanItems(events);
+        s.events = (!s.isPremium && list.length > 5) ? list.slice(0, 5) : list;
+        await replaceSceneItems(require('./models/Event'), s, s.events);
     },
 
     async saveActions(actions, token) {
         const s = await this.getSessionFor(token); if (!s.token) return;
-        s.actions = (!s.isPremium && actions.length > 5) ? actions.slice(0, 5) : actions;
-        const Action = require('./models/Action');
-        await Action.deleteMany({ token: s.token, sceneId: s.activeSceneId });
-        if (s.actions.length > 0) await Action.insertMany(s.actions.map(a => ({ ...a, token: s.token, sceneId: s.activeSceneId })));
+        const list = cleanItems(actions);
+        s.actions = (!s.isPremium && list.length > 5) ? list.slice(0, 5) : list;
+        await replaceSceneItems(require('./models/Action'), s, s.actions);
     },
 
     async saveSettings(data) {
-        const t = data.token || _lastActiveToken; if (!t) return;
+        const t = data.token || fallbackToken(); if (!t) return;
         if (!_sessions.has(t)) await this.loadSession(t);
         const s = _sessions.get(t);
         const previousSceneId = s.activeSceneId;
@@ -487,26 +534,35 @@ module.exports = {
             }
         }
 
-        const updatePayload = {
-            $set: {
-                username: s.username, ip: s.ip, activeSceneId: s.activeSceneId,
-                scenes: s.scenes, minecraft: s.minecraft, obs: s.obs, language: s.language, runMode: s.runMode || 'auto', streamerbot: s.streamerbot, points: s.points, spotify: s.spotify, tts: s.tts,
-                lastEvents: s.lastEvents,
-                autoResetTopStats: s.autoResetTopStats,
-                autoResetLastX: s.autoResetLastX,
-                likesGoal: s.likesGoal,
-                topGift: s.topGift,
-                topStreak: s.topStreak,
-                topCoins: s.topCoins,
-                topLikes: s.topLikes
-            }
-        };
+        // Only the fields this call changed are written. Writing the whole session made a stale copy (e.g. the
+        // desktop app saving its live stats every few seconds) undo what was changed meanwhile on the website.
+        const touched = new Set(Object.keys(data).filter(k => data[k] !== undefined && SAVED_FIELDS.includes(k)));
+        if (isSwitching) {
+            ['activeSceneId', 'scenes', 'tts', 'points', ...SCENE_STATS_FIELDS].forEach(k => touched.add(k));
+        }
+        const $set = {};
+        touched.forEach(k => { $set[k] = k === 'runMode' ? (s.runMode || 'auto') : s[k]; });
 
         // Premium is only written when explicitly given: the Stripe webhook / expiry job (other process)
         // own it, and a stale in-memory value must never overwrite a payment made meanwhile.
-        if (data.isPremium !== undefined) updatePayload.$set.isPremium = !!data.isPremium;
+        if (data.isPremium !== undefined) $set.isPremium = !!data.isPremium;
 
-        await Settings.updateOne({ token: t }, updatePayload, { upsert: true });
+        if (Object.keys($set).length) await Settings.updateOne({ token: t }, { $set }, { upsert: true });
+
+        // The active scene's own copy of the values changed here, written in its slot only (not the whole list)
+        if (!touched.has('scenes') && !isSwitching && s.activeSceneId) {
+            const slotKeys = [...SCENE_STATS_FIELDS, ...SCENE_OWN_SETTINGS].filter(k => touched.has(k));
+            if (slotKeys.length) {
+                const doc = await Settings.findOne({ token: t }).select('scenes.id').lean();
+                const idx = doc && Array.isArray(doc.scenes) ? doc.scenes.findIndex(sc => sc.id === s.activeSceneId) : -1;
+                if (idx !== -1) {
+                    const slot = s.scenes.find(sc => sc.id === s.activeSceneId) || {};
+                    const set = {};
+                    slotKeys.forEach(k => { set[`scenes.${idx}.${k}`] = slot[k] !== undefined ? slot[k] : s[k]; });
+                    await Settings.updateOne({ token: t, [`scenes.${idx}.id`]: s.activeSceneId }, { $set: set });
+                }
+            }
+        }
         delete _settingsCache[t];
     }
 };

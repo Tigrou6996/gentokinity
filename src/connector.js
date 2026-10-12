@@ -78,12 +78,12 @@ class TikTokConnector {
             giftsBreakdown: {},
             giftsCoinsBreakdown: {},
             giftsIcons: {},
-            topGift: config.settings.topGift || {
+            topGift: config.peekSession(token).topGift || {
                 coins: 0,
                 uniqueId: 'PSEUDO',
                 nickname: 'PSEUDO'
             },
-            topStreak: config.settings.topStreak || {
+            topStreak: config.peekSession(token).topStreak || {
                 count: 0,
                 uniqueId: 'PSEUDO',
                 nickname: 'PSEUDO'
@@ -97,7 +97,7 @@ class TikTokConnector {
         this.hasConnected = false;
 
         // [NEW] Last Events Storage (Load from persisted settings if available)
-        this.lastEvents = config.settings.lastEvents || {
+        this.lastEvents = config.peekSession(token).lastEvents || {
             follower: null,
             gift: null,
             subscriber: null,
@@ -226,6 +226,12 @@ class TikTokConnector {
 
         try {
             await this.openConnection({ retries: 2 });
+            // stopped while connecting (Stop clicked): don't come back online behind the user's back
+            if (this.isStopping) {
+                try { if (this.connection) await this.connection.disconnect(); } catch (e) { }
+                this.connection = null;
+                throw new Error('Connexion annulée');
+            }
             emitStatus('online', this.token);
             this.startWatchdog();
         } catch (err) {
@@ -410,7 +416,20 @@ class TikTokConnector {
     /**
      * Stop the connection cleanly
      */
-    async stop() {
+    // stop() can be called by the user, the end of the live and an error at the same time: one run only
+    // (two runs saved the live twice in the history)
+    stop() {
+        if (!this._stopPromise) {
+            this._stopPromise = this._stop().finally(() => {
+                this._stopPromise = null;
+                // lets the server forget this connection (an ended live used to stay "running")
+                try { if (typeof this.onStopped === 'function') this.onStopped(this); } catch (e) { }
+            });
+        }
+        return this._stopPromise;
+    }
+
+    async _stop() {
         console.log(`[CONNECTOR:${this.token.substring(0, 8)}] 🛑 Stop requested...`);
 
         // Count the gifts of combos still in progress before closing the session
@@ -466,13 +485,15 @@ class TikTokConnector {
 
         this.isConnected = false;
         this.startTime = null;
-        // [NEW] Reset likes count on stop
+        // Likes goal ready for the next live: count back to 0, target back to the configured step (it used to keep
+        // the target reached during this live, e.g. 0 / 15000), and a goal hidden when reached shows again
         const settings = await config.getSettings(this.token);
         if (settings.likesGoal) {
-            await config.saveSettings({
-                token: this.token,
-                likesGoal: { ...settings.likesGoal, count: 0 }
-            });
+            const g = { ...settings.likesGoal, count: 0 };
+            const step = Number(g.goalStep || g.initialGoal) || 0;
+            if (step > 0) g.goal = step;
+            if (g.hiddenByReach) { g.enabled = true; delete g.hiddenByReach; }
+            await config.saveSettings({ token: this.token, likesGoal: g });
         }
 
         emitStatus('offline', this.token);

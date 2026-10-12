@@ -3918,13 +3918,19 @@ async function sync(type, data) {
 
     const base = getApiBase();
     try {
-        await fetch(`${base}/api/${type}`, {
+        const res = await fetch(`${base}/api/${type}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        // the save is reported instead of silently showing success while nothing was stored
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            showNotify('Enregistrement impossible', err.error || `Erreur ${res.status}`, 'error');
+        }
     } catch (e) {
         console.error(`Sync failed for ${type}: `, e);
+        showToast('Enregistrement impossible : serveur injoignable', 'error');
     }
 
     // [FIX] In App/Electron mode, ALSO sync to local server so that test-action reads updated config
@@ -5158,7 +5164,8 @@ if (window.electronAPI) {
         if (consoleEl) {
             const div = document.createElement('div');
             div.style.marginBottom = '5px';
-            div.innerHTML = `<span style="color: #666;">[${new Date().toLocaleTimeString()}]</span> ${log}`;
+            // server output can contain viewers' text (e.g. "say {comment}"): shown as text, never as HTML
+            div.innerHTML = `<span style="color: #666;">[${new Date().toLocaleTimeString()}]</span> ${escapeHtml(String(log))}`;
             consoleEl.appendChild(div);
             // Auto scroll
             consoleEl.scrollTop = consoleEl.scrollHeight;
@@ -5475,9 +5482,10 @@ window.editGlobalPreset = (id) => {
     const btnEditContent = document.getElementById('btn-edit-preset-content');
     if (btnEditContent) btnEditContent.style.display = 'block';
 
-    // For editing, we could mark which items were previously in the preset, 
-    // but usually admins want to update to their NEW current session.
+    // Editing: nothing is ticked, so only the title / description / image change. Tick items to replace
+    // the preset's content with them.
     populatePresetItems();
+    document.querySelectorAll('input[name="p-included-event"], input[name="p-included-action"]').forEach(cb => { cb.checked = false; });
     openModal('modal-publish-preset');
 };
 
@@ -5898,6 +5906,8 @@ if (formPublishPreset) {
             badge: document.getElementById('p-badge').value,
             events: selectedEvents,
             actions: selectedActions,
+            // editing with nothing ticked: keep the preset's content
+            keepContent: !!document.getElementById('p-id-hidden').value && !selectedEvents.length && !selectedActions.length,
             token: localStorage.getItem('gentok_token')
         };
 
@@ -6683,7 +6693,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
             const giftName = document.querySelector('#qs-gift-name').value;
             triggerMatch = (evt.giftName === giftName);
         } else if (triggerType === 'like') {
-            triggerMatch = (evt.likeCount === likeThreshold);
+            triggerMatch = (Number(evt.likeThreshold) === Number(likeThreshold));
         } else if (triggerType === 'chat') {
             triggerMatch = (evt.message === chatMessage);
         } else if (triggerType === 'command') {
@@ -6741,7 +6751,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
             event.giftName = document.querySelector('#qs-gift-name').value;
             event.giftId = document.querySelector('#qs-gift-id').value;
         } else if (triggerType === 'like') {
-            event.likeCount = likeThreshold;
+            event.likeThreshold = likeThreshold; // field read by the engine (was likeCount: the threshold was ignored)
         } else if (triggerType === 'chat') {
             event.message = chatMessage;
         } else if (triggerType === 'command') {
@@ -9918,8 +9928,10 @@ window.executeTailoredExport = () => {
         if (!incActions) filteredActions = filteredActions.filter(a => a.type === 'sound');
         if (!incSounds && !incActions) filteredActions = [];
 
-        payload.actions = filteredActions;
-        if (incEvents) payload.events = currentEvents || [];
+        // shared files never carry the account data (token, internal ids)
+        const strip = (list) => (list || []).map(({ token, _id, __v, sceneId, createdAt, updatedAt, ...rest }) => rest);
+        payload.actions = strip(filteredActions);
+        if (incEvents) payload.events = strip(currentEvents);
 
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -10483,7 +10495,9 @@ function parseTikFinityData(data) {
         const gentokId = `act_tf_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`;
         if (item.id) actionIdMap.set(String(item.id), gentokId);
 
-        let gentokType = 'keyboard';
+        // Unknown TikFinity action types (alert, image, TTS...) are skipped: they used to become a keyboard
+        // action pressing SPACE on the streamer's PC at every gift
+        let gentokType = null;
         const typeStr = String(item.type || item.action_type || '').toLowerCase();
 
         if (item.webhookUrl || typeStr.includes('web') || typeStr.includes('http')) {
@@ -10492,8 +10506,12 @@ function parseTikFinityData(data) {
             gentokType = 'rcon';
         } else if (item.audioUrl || typeStr.includes('sound') || typeStr.includes('audio')) {
             gentokType = 'sound';
-        } else if (item.keystrokes || typeStr.includes('key') || typeStr.includes('keyboard')) {
+        } else if ((item.keystrokes || item.key || item.shortcut) || typeStr.includes('key')) {
             gentokType = 'keyboard';
+        }
+        if (!gentokType || (gentokType === 'keyboard' && !(item.keystrokes || item.key || item.shortcut))) {
+            if (item.id) actionIdMap.delete(String(item.id));
+            return;
         }
 
         const vol = (item.dynamicConfig && item.dynamicConfig.mediaSoundVolume !== undefined)
@@ -10504,7 +10522,7 @@ function parseTikFinityData(data) {
             id: gentokId,
             name: item.name || item.title || `Action TikFinity ${idx + 1}`,
             type: gentokType,
-            key: item.keystrokes || item.key || item.shortcut || item.value || '{SPACE}',
+            key: item.keystrokes || item.key || item.shortcut || '',
             command: item.mcCmd || item.command || item.cmd || '',
             url: item.webhookUrl || item.url || item.endpoint || '',
             soundUrl: item.audioUrl || item.soundUrl || item.path || '',
@@ -10540,7 +10558,9 @@ function parseTikFinityData(data) {
         else if (triggerType.includes('like')) triggerType = 'like';
         else if (triggerType.includes('follow')) triggerType = 'follow';
         else if (triggerType.includes('sub')) triggerType = 'subscribe';
-        else if (triggerType.includes('chat') || triggerType.includes('command')) triggerType = 'command';
+        // a chat trigger with a keyword is a command, otherwise it fires on chat messages
+        else if (triggerType.includes('command') || (triggerType.includes('chat') && (item.command || item.keyword))) triggerType = 'command';
+        else if (triggerType.includes('chat')) triggerType = 'chat';
 
         const linkedActionIds = [];
         if (item.action_id || item.actionId) {
@@ -10589,7 +10609,7 @@ window.exportEventsOnly = () => {
         const payload = {
             type: 'gentok_events',
             exportDate: new Date().toISOString(),
-            events: currentEvents || []
+            events: (currentEvents || []).map(({ token, _id, __v, sceneId, createdAt, updatedAt, ...rest }) => rest)
         };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -10643,8 +10663,9 @@ function initDashboardRealtimeSocket() {
         const socket = io();
         window.dashboardSocket = socket;
 
+        // listener only (likes goal preview): it must not count as a second dashboard tab
         socket.on('connect', () => {
-            socket.emit('identify', { token: token, type: 'dashboard' });
+            socket.emit('identify', { token: token, type: 'overlay' });
         });
 
         // Real-Time Likes Goal Update on Dashboard

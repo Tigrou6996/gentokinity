@@ -186,8 +186,11 @@ class ActionManager {
         }
         for (const [times, defs] of batches) {
             const count = Math.min(MAX_RUNS_PER_TRIGGER, times);
+            // run once per gift: each run stands for ONE gift, so {repeatcount} is 1 in each
+            // (5 roses = 5 runs of "give tnt {repeatcount}" = 5 TNT, not 5 x 5)
+            const runContext = count > 1 ? { ...context, repeatCount: 1 } : context;
             for (let i = 0; i < count; i++) {
-                this.enqueueActionBatch(token, defs, triggerCode, context, connector);
+                this.enqueueActionBatch(token, defs, triggerCode, runContext, connector);
             }
         }
     }
@@ -222,8 +225,9 @@ class ActionManager {
             const anyGift = !e.giftName || e.giftName.trim() === '' || ['any gift', 'tous les cadeaux'].includes(e.giftName.toLowerCase());
             if (anyGift) return repeat;
 
-            // The gift id is exact: when both sides have one, it is the only criterion
-            if (e.giftId && context.giftId) return String(e.giftId) === String(context.giftId) ? repeat : 0;
+            // Same id: match. Different ids: still compare the names (seasonal / regional variants of a gift
+            // have their own id with the same name)
+            if (e.giftId && context.giftId && String(e.giftId) === String(context.giftId)) return repeat;
 
             const giftNameToCheck = context.giftName || (triggerCode.startsWith('gift:') ? triggerCode.substring(5) : '');
             if (!giftNameToCheck || giftNameToCheck === 'undefined') return 0;
@@ -239,7 +243,8 @@ class ActionManager {
                 // Fires every time a viewer reaches `likeThreshold` likes (accumulated per viewer)
                 const threshold = Math.max(1, parseInt(e.likeThreshold, 10) || 1);
                 const sent = Math.max(1, parseInt(context.likeCount, 10) || 1);
-                if (threshold <= 1) return Math.min(sent, MAX_RUNS_PER_TRIGGER);
+                // threshold 1: once per like message (a message often carries 15+ taps, one run per tap flooded the queue)
+                if (threshold <= 1) return 1;
                 if (!connector.likeAccumulators) connector.likeAccumulators = new Map();
                 const key = `${e.id}:${context.userId || context.uniqueId}`;
                 const total = (connector.likeAccumulators.get(key) || 0) + sent;
@@ -275,9 +280,10 @@ class ActionManager {
      */
     clearQueue(token) {
         if (this.actionQueues && this.actionQueues.has(token)) {
-            const q = this.actionQueues.get(token);
-            q.items = [];
-            q.isProcessing = false;
+            // a new queue object: the loop of the old one (maybe sleeping) stops on its own instead of
+            // running alongside the next one
+            this.actionQueues.get(token).items = [];
+            this.actionQueues.set(token, { items: [], isProcessing: false });
             logger.info(`🛑 [${token.substring(0, 8)}] File d'attente d'actions vidée.`);
         }
     }
@@ -291,6 +297,8 @@ class ActionManager {
             this.actionQueues.set(token, { items: [], isProcessing: false });
         }
         const q = this.actionQueues.get(token);
+        // likes can't pile up: past 10 waiting like actions, new ones are dropped (gifts and follows stay on time)
+        if (triggerCode === 'like' && q.items.filter(i => i.triggerCode === 'like').length >= 10) return;
         q.items.push({ actionDefs, triggerCode, context, connector });
         this.processActionQueue(token);
     }
@@ -316,9 +324,10 @@ class ActionManager {
             // Exécute TOUTES les actions associées au cadeau (Webhook + Son) EXACTEMENT EN MÊME TEMPS
             await Promise.all(actionDefs.map(async (actionDef) => {
                 try {
-                    if (actionDef.duration && typeof actionDef.duration === 'number' && actionDef.duration > maxDuration) {
-                        maxDuration = actionDef.duration;
-                    }
+                    // keyboard "duration" is the key hold time in MILLISECONDS (form: 50-2000 ms); read as seconds it
+                    // used to freeze the whole queue for 100 s (or 33 min) after a single key action
+                    const durS = Number(actionDef.duration) > 0 ? (actionDef.type === 'keyboard' ? Number(actionDef.duration) / 1000 : Number(actionDef.duration)) : 0;
+                    if (durS > maxDuration) maxDuration = Math.min(durS, 30);
                     // Optional delay (Premium): runs later without blocking the other actions of the queue
                     const delayS = plan.actionDelay ? Math.min(Math.max(Number(actionDef.delay) || 0, 0), 600) : 0;
                     if (delayS > 0) {
@@ -442,7 +451,8 @@ class ActionManager {
                 } else if (appConnected) {
                     // VPS mode: relay to Electron app via socket
                     logger.info(`📡 Relaying RCON to App (EXE) for token ${token.substring(0, 8)}...`);
-                    emitToApp(token, 'remote_rcon', { command, settings: mcSettings });
+                    // only to the desktop app: the ServerTap key must not reach overlays / dashboards
+                    emitToDesktopApp(token, 'remote_rcon', { command, settings: mcSettings });
                 } else {
                     // VPS mode, no app connected: only possible if host is not localhost
                     if (mcSettings.host && mcSettings.host !== 'localhost' && mcSettings.host !== '127.0.0.1') {

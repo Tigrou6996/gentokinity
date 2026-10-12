@@ -61,6 +61,10 @@ initSocket(server); // [NEW] Init Socket.io
 setOnAppConnected(async (token) => {
     const connector = activeConnectors.get(token);
     if (connector) {
+        // "Cloud" chosen: the live stays on the servers, the app only runs the PC actions it receives
+        let runMode = 'auto';
+        try { runMode = (await config.getSettings(token)).runMode || 'auto'; } catch (e) { }
+        if (runMode === 'cloud') return;
         if (connector.connection && !connector.isStopping) {
             console.log(`🛑 App connectée pour ${token.substring(0, 8)}, arrêt du connecteur VPS...`);
             await connector.stop();
@@ -173,6 +177,15 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
 // [CRITICAL] Body parsing middleware MUST be before all routes (except Stripe Webhook)
 app.use(express.json());
+
+// A token is always text: an object such as {"$ne": null} would match ANY account in a MongoDB query
+app.use((req, res, next) => {
+    const bad = (v) => v !== undefined && typeof v !== 'string';
+    if (bad(req.query && req.query.token) || bad(req.body && req.body.token)) {
+        return res.status(400).json({ error: 'Token invalide' });
+    }
+    next();
+});
 
 // [SECURITY] Browser Blocker: In App Mode, only allow Electron to access the dashboard
 app.use((req, res, next) => {
@@ -611,6 +624,7 @@ app.post('/api/spotify/settings', async (req, res) => {
         const token = req.body.token || req.query.token;
         if (token) await config.loadSession(token);
         await config.saveSettings(userSettings(req.body));
+        notifyAppSessionChanged(token);
         await spotifyModule.initSpotify(token);
         res.json({ success: true });
     } catch (err) {
@@ -634,7 +648,7 @@ function decodeSessionStat(stat) {
 app.get('/api/last-session-stats', async (req, res) => {
     try {
         const SessionStat = require('./models/SessionStat');
-        const token = req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
         if (token !== config.licenseToken) {
@@ -652,7 +666,7 @@ app.get('/api/last-session-stats', async (req, res) => {
 app.get('/api/session-stats', async (req, res) => {
     try {
         const SessionStat = require('./models/SessionStat');
-        const token = req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
         if (token !== config.licenseToken) {
@@ -674,7 +688,7 @@ app.get('/api/session-stats', async (req, res) => {
 app.delete('/api/session-stats/:id', async (req, res) => {
     try {
         const SessionStat = require('./models/SessionStat');
-        const token = req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
         if (token !== config.licenseToken) {
@@ -754,7 +768,7 @@ async function getFullConfig(token) {
 
 // API: Get current config
 app.get('/api/config', async (req, res) => {
-    const token = req.query.token || config.licenseToken;
+    const token = getRequestToken(req);
     const fullConfig = await getFullConfig(token);
     res.json(fullConfig);
 });
@@ -765,7 +779,7 @@ app.get('/api/leaderboard/legends', async (req, res) => {
     try {
         const Leaderboard = require('./models/Leaderboard');
         const { getFullGiftList } = require('./utils/giftPrices');
-        const token = req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
         const gifts = getFullGiftList().slice();
@@ -821,7 +835,7 @@ app.get('/api/leaderboard/legends', async (req, res) => {
 app.get('/api/leaderboard', async (req, res) => {
     try {
         const Leaderboard = require('./models/Leaderboard');
-        const token = req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
         const type = req.query.type || 'coins'; // 'coins' or 'likes'
@@ -865,7 +879,7 @@ app.get('/api/leaderboard', async (req, res) => {
 app.get('/api/leaderboard/history', async (req, res) => {
     try {
         const History = require('./models/History');
-        const token = req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
         const history = await History.find({ token, type: 'weekly' })
@@ -904,7 +918,7 @@ app.get('/api/leaderboard/history/detail', async (req, res) => {
 
 app.post('/api/leaderboard/history/save', async (req, res) => {
     try {
-        const token = req.body.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
         const { performWeeklyReset } = require('./utils/scheduler');
@@ -922,30 +936,24 @@ app.post('/api/leaderboard/history/save', async (req, res) => {
 app.post('/api/leaderboard/manual', async (req, res) => {
     try {
         const Leaderboard = require('./models/Leaderboard');
-        const { token, uniqueId, giftId, count } = req.body;
+        const { token, giftId, count } = req.body;
+        const uniqueId = String(req.body.uniqueId || '').replace(/^@/, '').trim();
         if (!token || !uniqueId || !giftId) return res.status(400).json({ error: 'Paramètres manquants' });
 
-        const giftIdStr = giftId.toString();
-        const delta = Number(count);
-        if (!Number.isFinite(delta)) return res.status(400).json({ error: 'Quantité invalide' });
+        const giftIdStr = String(giftId).replace(/[^0-9a-zA-Z_-]/g, '');
+        const delta = Math.trunc(Number(count));
+        if (!giftIdStr || !Number.isFinite(delta) || delta === 0) return res.status(400).json({ error: 'Quantité invalide' });
 
-        // Find existing user or create mock user
+        // A viewer not in the leaderboard yet is created (userId is required: it used to fail with a 500)
         let user = await Leaderboard.findOne({ token, uniqueId });
         if (!user) {
-            user = new Leaderboard({
-                token,
-                uniqueId,
-                nickname: uniqueId, // Fallback
-                totalCoins: 0,
-                totalLikes: 0,
-                gifts: new Map()
-            });
+            user = new Leaderboard({ token, uniqueId, userId: uniqueId, nickname: uniqueId, totalCoins: 0, totalLikes: 0, gifts: new Map(), weeklyGifts: new Map() });
         }
-
-        const currentCount = user.gifts.get(giftIdStr) || 0;
-        const newCount = Math.max(0, currentCount + delta);
-
+        // all time AND this week (the weekly Top Légende ignored manual donations)
+        const newCount = Math.max(0, (user.gifts.get(giftIdStr) || 0) + delta);
         user.gifts.set(giftIdStr, newCount);
+        if (!user.weeklyGifts) user.weeklyGifts = new Map();
+        user.weeklyGifts.set(giftIdStr, Math.max(0, (user.weeklyGifts.get(giftIdStr) || 0) + delta));
         user.lastUpdated = new Date();
         await user.save();
 
@@ -977,6 +985,7 @@ app.post('/api/settings', async (req, res) => {
         const oldSceneId = settingsBefore ? settingsBefore.activeSceneId : null;
 
         await config.saveSettings(userSettings(req.body));
+        notifyAppSessionChanged(token); // the app running the live reloads the new settings
 
         // [CRITICAL] If we switched scenes, we MUST reload the session to pull the new scene's stats
         // into the active memory session (s), otherwise overlays will see defaults (0).
@@ -1127,6 +1136,7 @@ app.post('/api/tts/settings', async (req, res) => {
         const { token: _token, ...ttsData } = req.body || {};
         await config.loadSession(token);
         await config.saveSettings({ tts: ttsData, token });
+        notifyAppSessionChanged(token);
         res.json({ success: true });
     } catch (err) {
         console.error('TTS settings save error:', err);
@@ -1170,7 +1180,7 @@ app.post('/api/tts/generate', async (req, res) => {
 app.get('/api/tts/settings', async (req, res) => {
     try {
         // The account asking (the VPS serves many streamers); the local app falls back to its own session
-        const token = getRequestToken(req) || config.licenseToken;
+        const token = getRequestToken(req);
         if (token) {
             const s = await config.getSettings(token);
             return res.json((s && s.tts) || {});
@@ -1214,7 +1224,12 @@ app.post('/api/events', async (req, res) => {
     }
 
     if (Array.isArray(events)) {
-        await config.saveEvents(events, token);
+        try {
+            await config.saveEvents(events, token);
+        } catch (e) {
+            console.error('[EVENTS] Enregistrement impossible:', e.message);
+            return res.status(500).json({ error: e.message });
+        }
         notifyAppSessionChanged(token);
         res.send('OK');
     } else {
@@ -1251,7 +1266,12 @@ app.post('/api/actions', async (req, res) => {
     }
 
     if (Array.isArray(actions)) {
-        await config.saveActions(actions, token);
+        try {
+            await config.saveActions(actions, token);
+        } catch (e) {
+            console.error('[ACTIONS] Enregistrement impossible:', e.message);
+            return res.status(500).json({ error: e.message });
+        }
         notifyAppSessionChanged(token);
         res.send('OK');
     } else {
@@ -1280,7 +1300,7 @@ app.get('/api/gifts/sync', async (req, res) => {
 app.get('/api/sounds', async (req, res) => {
     try {
         const query = req.query.q;
-        const token = req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         const source = req.query.source; // 'myinstants', 'uploads', or undefined (both)
 
         let externalSounds = [];
@@ -1369,7 +1389,7 @@ const uploadMulter = (req, res, next) => {
 
 const uploadHandler = async (req, res) => {
     try {
-        const token = req.body.token || req.query.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(401).json({ error: 'Token manquant' });
 
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -1405,7 +1425,7 @@ app.post('/api/sounds/upload', uploadMulter, uploadHandler);
 // API: Delete Sound
 app.delete('/api/sounds/:id', async (req, res) => {
     try {
-        const token = req.query.token || req.body.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(401).json({ error: 'Token manquant' });
 
         const sound = await Sound.findOne({ _id: req.params.id, token });
@@ -1492,6 +1512,16 @@ app.get('/api/version', (req, res) => {
 });
 
 // API: Get Presets from DB
+// Actions / events shared in a preset or an export never carry the owner's account data
+// (they used to include the streamer's token, i.e. their login)
+function cleanShared(list) {
+    return (Array.isArray(list) ? list : []).map(item => {
+        const o = item && item.toObject ? item.toObject() : { ...(item || {}) };
+        delete o.token; delete o._id; delete o.__v; delete o.sceneId; delete o.createdAt; delete o.updatedAt;
+        return o;
+    });
+}
+
 app.get('/api/presets', async (req, res) => {
     try {
         const Preset = require('./models/Preset');
@@ -1505,8 +1535,12 @@ app.get('/api/presets', async (req, res) => {
 app.get('/api/presets/:id', async (req, res) => {
     try {
         const Preset = require('./models/Preset');
-        const preset = await Preset.findOne({ id: req.params.id });
+        const preset = await Preset.findOne({ id: req.params.id }).lean();
         if (!preset) return res.status(404).json({ error: 'Preset introuvable' });
+        if (preset.content) {
+            preset.content.actions = cleanShared(preset.content.actions);
+            preset.content.events = cleanShared(preset.content.events);
+        }
         res.json(preset);
     } catch (err) {
         res.status(500).json({ error: 'Erreur serveur' });
@@ -1608,7 +1642,13 @@ app.post('/api/presets', async (req, res) => {
         const adminSession = await config.getSessionFor(token);
         let presetData = {};
 
-        if (title) {
+        const existing = id ? await Preset.findOne({ id }).select('_id').lean() : null;
+        const noItems = !Array.isArray(actions) || (actions.length === 0 && (!Array.isArray(events) || events.length === 0));
+        if (title && existing && (req.body.keepContent || noItems)) {
+            // Editing the title / description / image: the content stays as it is
+            // (it used to be replaced by the admin's current scene)
+            presetData = { $set: { title, desc, img, badge: badge || 'free' } };
+        } else if (title) {
             // Metadata update or Full creation
             presetData = {
                 id: id || `p_${Date.now()}`,
@@ -1621,8 +1661,8 @@ app.post('/api/presets', async (req, res) => {
                 rules: events ? events.length : 0,
                 overlays: 0,
                 content: {
-                    actions: actions || adminSession.actions || [],
-                    events: events || adminSession.events || [],
+                    actions: cleanShared(actions || adminSession.actions),
+                    events: cleanShared(events || adminSession.events),
                     sounds: sounds || []
                 }
             };
@@ -1630,8 +1670,8 @@ app.post('/api/presets', async (req, res) => {
             // Content only update (Preset Editor Mode)
             presetData = {
                 $set: {
-                    'content.actions': actions,
-                    'content.events': events,
+                    'content.actions': cleanShared(actions),
+                    'content.events': cleanShared(events),
                     'content.sounds': sounds || [],
                     'rules': events ? events.length : 0
                 }
@@ -1750,7 +1790,7 @@ app.post('/api/presets/install', async (req, res) => {
 const sceneSwitchQueue = new Map(); // token -> promise: switches of one account run one after the other
 app.post('/api/scenes/switch', async (req, res) => {
     const { sceneId, token: reqToken } = req.body;
-    const token = reqToken || req.query.token || config.licenseToken;
+    const token = reqToken || getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
     const previous = sceneSwitchQueue.get(token) || Promise.resolve();
@@ -1833,7 +1873,7 @@ app.post('/api/scenes/duplicate', async (req, res) => {
 // API: Delete a Scene
 app.post('/api/scenes/delete', async (req, res) => {
     const { sceneId, token: reqToken } = req.body;
-    const token = reqToken || req.query.token || config.licenseToken;
+    const token = reqToken || getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant' });
     if (!sceneId) return res.status(400).json({ error: 'sceneId manquant' });
 
@@ -1866,10 +1906,23 @@ app.post('/api/scenes/delete', async (req, res) => {
 
 // API: Start Connector
 // Allow GET to show a clear error message instead of 404
+// One start at a time per account: two quick starts (socket then HTTP fallback, double click) created two
+// TikTok connections, so every action and point was counted twice
+const startLocks = new Set();
+app.post('/api/start', (req, res, next) => {
+    const token = getRequestToken(req);
+    if (!token) return next();
+    if (startLocks.has(token)) return res.status(409).json({ error: 'ALREADY_STARTING', message: 'Connexion déjà en cours...' });
+    startLocks.add(token);
+    const release = () => startLocks.delete(token);
+    res.on('finish', release);
+    res.on('close', release);
+    next();
+});
 app.get('/api/start', (req, res) => res.status(405).json({ error: 'Method Not Allowed', message: 'Utilisez une requête POST pour démarrer le bot.' }));
 app.post('/api/start', async (req, res) => {
     const { username } = req.body;
-    const token = req.body.token || req.query.token || config.licenseToken;
+    const token = getRequestToken(req);
 
     if (!token) {
         return res.status(401).json({ error: 'Token manquant', message: 'Veuillez vous reconnecter.' });
@@ -1878,7 +1931,8 @@ app.post('/api/start', async (req, res) => {
     // Load session to ensure config.tiktokUsername and other settings are fresh for this token
     await config.loadSession(token);
 
-    const tiktokUsername = username || config.tiktokUsername;
+    // the username of THIS account (the global getter could be another streamer's on the VPS)
+    const tiktokUsername = username || (await config.getSessionFor(token)).username;
     const appConnected = isAppConnected(token);
 
     logger.info(`[API:Start] Request for ${tiktokUsername} | App Mode: ${config.isAppMode} | App Connected (Socket): ${appConnected} | Token: ${token.substring(0, 8)}...`);
@@ -1921,6 +1975,7 @@ app.post('/api/start', async (req, res) => {
 
     // 3. Normal Start (VPS or App Local)
     connector = new TikTokConnector(tiktokUsername, token);
+    connector.onStopped = (c) => { if (activeConnectors.get(token) === c) activeConnectors.delete(token); };
     activeConnectors.set(token, connector);
 
     try {
@@ -1959,7 +2014,7 @@ app.post('/api/start', async (req, res) => {
 // Allow GET to show a clear error message instead of 404
 app.get('/api/stop', (req, res) => res.status(405).json({ error: 'Method Not Allowed', message: 'Utilisez une requête POST pour arrêter le bot.' }));
 app.post('/api/stop', async (req, res) => {
-    const token = (req.body && req.body.token) || req.query.token || config.licenseToken;
+    const token = getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant', message: 'Token requis.' });
 
     try {
@@ -1995,7 +2050,7 @@ app.post('/api/stop', async (req, res) => {
 // API: Reset Specific Stats (Top Gift / Top Streak)
 app.post('/api/stats/reset', async (req, res) => {
     const { type, token: reqToken } = req.body;
-    const token = reqToken || config.licenseToken;
+    const token = reqToken || getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
     try {
@@ -2105,7 +2160,7 @@ app.post('/api/stats/reset', async (req, res) => {
 // API: Update Top Widget Title
 app.post('/api/stats/update-title', async (req, res) => {
     const { type, title, token: reqToken } = req.body;
-    const token = reqToken || config.licenseToken;
+    const token = reqToken || getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
     try {
@@ -2239,7 +2294,7 @@ app.post('/api/stats/update-title', async (req, res) => {
 // API: Test Leaderboard (Simulate info)
 app.post('/api/stats/test-leaderboard', async (req, res) => {
     const { type, token: reqToken } = req.body;
-    const token = reqToken || config.licenseToken;
+    const token = reqToken || getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
     try {
@@ -2281,7 +2336,7 @@ app.post('/api/stats/test-leaderboard', async (req, res) => {
 
 // API: Logout (Explicit)
 app.post('/api/logout', async (req, res) => {
-    const token = req.query.token || req.body.token || config.licenseToken;
+    const token = getRequestToken(req);
     try {
         const connector = activeConnectors.get(token);
         if (connector) {
@@ -2301,7 +2356,7 @@ app.post('/api/logout', async (req, res) => {
 // API: Reset / Logout
 app.post('/api/reset', async (req, res) => {
     try {
-        const token = req.query.token || req.body.token || config.licenseToken;
+        const token = getRequestToken(req);
         if (!token) return res.status(400).send('Token manquant');
 
         if (token !== config.licenseToken) {

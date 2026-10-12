@@ -69,21 +69,33 @@ function initRemoteClient() {
     });
 
     socket.on('remote_start', async (data) => {
-        logger.info(`🛰️ Remote Start Command for ${data.username}`);
+        // the web dashboard sends the typed name as uniqueId (relayed as is), the HTTP route as username
+        const username = String((data && (data.username || data.uniqueId)) || '').replace(/^@/, '').trim() || undefined;
+        logger.info(`🛰️ Remote Start Command for ${username || '(pseudo enregistré)'}`);
         try {
             const axios = require('axios');
-            // Call local API to start the connector
-            await axios.post(`${LOCAL_API}/api/start`, { username: data.username });
+            // Call local API to start the connector (for the account this app is logged into)
+            await axios.post(`${LOCAL_API}/api/start`, { username, token: config.licenseToken });
         } catch (e) {
             logger.error(`🚨 Error executing remote start: ${e.message}`);
         }
+    });
+
+    // The web dashboard took the session over: the live running on this PC stops (it used to keep running
+    // alongside a second live started from the web, doubling every action and point)
+    socket.on('force_disconnect', async (data) => {
+        logger.warn(`🔌 Session reprise depuis le site : arrêt du live sur ce PC (${(data && data.message) || ''})`);
+        try {
+            const axios = require('axios');
+            await axios.post(`${LOCAL_API}/api/stop`, { token: config.licenseToken });
+        } catch (e) { /* not running */ }
     });
 
     socket.on('remote_stop', async () => {
         logger.info('🛰️ Remote Stop Command received');
         try {
             const axios = require('axios');
-            await axios.post(`${LOCAL_API}/api/stop`);
+            await axios.post(`${LOCAL_API}/api/stop`, { token: config.licenseToken });
         } catch (e) {
             logger.error(`🚨 Error executing remote stop: ${e.message}`);
         }

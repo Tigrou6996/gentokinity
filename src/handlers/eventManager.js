@@ -834,11 +834,11 @@ function registerEvents(tiktokConnection, connector) {
 
             const step = goal.goalStep || goal.initialGoal || 1000;
 
-            // Ensure goal.goal is aligned to the next step milestone if current likes exceed goal.goal
-            if (!goal.goal || goal.goal <= currentTotalLikes) {
-                if (goal.whenReached === 'increase') {
-                    goal.goal = Math.ceil((currentTotalLikes + 1) / step) * step;
-                }
+            // Only a goal that was ALREADY behind before these likes is moved to the next milestone (e.g. left
+            // over from a previous live). A goal crossed by these likes is handled below, so its reward action runs
+            // (re-aligning first made "increase" goals jump ahead without ever triggering the action).
+            if (!goal.goal || (previousCount >= goal.goal && goal.whenReached === 'increase')) {
+                goal.goal = Math.ceil((currentTotalLikes + 1) / step) * step;
             }
 
             let triggerCount = 0;
@@ -854,6 +854,7 @@ function registerEvents(tiktokConnection, connector) {
                     goal.goal *= 2;
                 } else if (goal.whenReached === 'hide') {
                     goal.enabled = false;
+                    goal.hiddenByReach = true; // shown again at the next live
                 } else {
                     break;
                 }
@@ -861,7 +862,7 @@ function registerEvents(tiktokConnection, connector) {
             }
 
             if (triggerCount > 0 && goal.actionId && goal.actionId !== 'none') {
-                for (let i = 0; i < triggerCount; i++) {
+                for (let i = 0; i < Math.min(triggerCount, 5); i++) {
                     actionManager.executeActionById(goal.actionId, connector);
                 }
             }

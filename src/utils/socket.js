@@ -28,12 +28,24 @@ function initSocket(server) {
                 return;
             }
 
+            // Same socket identifying again (reconnect, config reload) or switching account: forget its previous
+            // registration first, so it never counts as its own duplicate nor stays in the old account's rooms
+            if (identifiedToken && clientsByToken[identifiedToken]) {
+                const old = clientsByToken[identifiedToken];
+                ['dashboard', 'app', 'overlay'].forEach(k => { if (old[k]) old[k] = old[k].filter(id => id !== socket.id); });
+                if (identifiedToken !== token) {
+                    socket.leave(`room:${identifiedToken}`);
+                    socket.leave(`app:${identifiedToken}`);
+                }
+            }
+
             identifiedToken = token;
             identifiedType = type || 'dashboard';
 
             if (!clientsByToken[token]) {
                 clientsByToken[token] = { dashboard: [], app: [], overlay: [], status: 'offline' };
             }
+            ['dashboard', 'app', 'overlay'].forEach(k => { if (clientsByToken[token][k]) clientsByToken[token][k] = clientsByToken[token][k].filter(id => id !== socket.id); });
 
             // MUTUAL EXCLUSION LOGIC
             if (identifiedType === 'app') {
@@ -69,19 +81,14 @@ function initSocket(server) {
                 if (!clientsByToken[token].overlay) clientsByToken[token].overlay = [];
                 clientsByToken[token].overlay.push(socket.id);
             } else {
-                // If Dashboard connects, check if App is already active
-                if (clientsByToken[token].app.length > 0) {
-                    socket.emit('session_duplicate', { message: 'L\'application (EXE) est déjà ouverte. Veuillez l\'utiliser.' });
-                }
-
-                // Check for duplicate dashboards
-                if (clientsByToken[token].dashboard.length > 0) {
-                    socket.emit('session_duplicate', { message: 'Une session est déjà ouverte dans un autre onglet.' });
-                }
-
-                clientsByToken[token].dashboard.push(socket.id);
+                // Another tab already open (a real, still connected one): it would play the sounds, alerts and TTS
+                // twice. The warning stays (it used to be hidden right away by session_active) until "take over".
+                // The open desktop app is not a duplicate: the header badge shows it and Cloud mode uses both.
+                const others = clientsByToken[token].dashboard.filter(id => id !== socket.id && io.sockets.sockets.get(id));
+                clientsByToken[token].dashboard = others.concat(socket.id);
                 socket.join(`room:${token}`);
-                socket.emit('session_active');
+                if (others.length > 0) socket.emit('session_duplicate', { message: 'Une session est déjà ouverte dans un autre onglet.' });
+                else socket.emit('session_active');
             }
 
             // [NEW] Send current session stats (live or persistent) immediately on identification
@@ -181,7 +188,10 @@ function initSocket(server) {
 
         relayEvents.forEach(eventName => {
             socket.on(eventName, (data) => {
-                if (identifiedToken) {
+                // only the desktop app of this account relays live events (an overlay page or a taken-over app
+                // could otherwise push fake alerts / TTS onto the streamer's live)
+                const isLiveApp = identifiedToken && identifiedType === 'app' && clientsByToken[identifiedToken] && clientsByToken[identifiedToken].app.includes(socket.id);
+                if (isLiveApp) {
                     // [NEW] Cache stats/events on VPS to help new clients sync immediately
                     if (eventName === 'session_stats') {
                         if (!socketCache[identifiedToken]) socketCache[identifiedToken] = {};
@@ -206,7 +216,9 @@ function initSocket(server) {
 
         // [LEGENDS] Show/Hide Gift Legends
         socket.on('show_gift_legend', async (data) => {
-            const { token, giftId, period } = data; // [NEW] periode support
+            // only for the account this socket identified as (any socket could push displays to any account)
+            const token = identifiedToken;
+            const { giftId, period } = data || {};
             if (!token || !giftId) return;
 
             try {
