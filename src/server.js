@@ -768,7 +768,7 @@ app.get('/api/leaderboard/legends', async (req, res) => {
         const token = req.query.token || config.licenseToken;
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
-        const gifts = getFullGiftList();
+        const gifts = getFullGiftList().slice();
         const period = req.query.period || 'all'; // 'all' or 'weekly'
         const giftField = period === 'weekly' ? 'weeklyGifts' : 'gifts';
 
@@ -777,6 +777,12 @@ app.get('/api/leaderboard/legends', async (req, res) => {
             token,
             [giftField]: { $exists: true }
         }).lean();
+
+        // gifts received but missing from the catalog (new TikTok gifts) are shown too
+        const known = new Set(gifts.map(g => String(g.id)));
+        const extra = new Set();
+        for (const u of allDonors) for (const [id, n] of Object.entries(u[giftField] || {})) if (Number(n) > 0 && !known.has(id)) extra.add(id);
+        extra.forEach(id => gifts.push({ id, name: `Cadeau #${id}`, icon: `https://tiktok.gentok.fr/img/tiktok/${id}.png`, price: 0 }));
 
         const results = gifts.map(gift => {
             const giftIdStr = gift.id.toString();
@@ -2822,9 +2828,13 @@ async function startServer() {
                     }
                 }
 
-                // [NEW] Start weekly reset scheduler (Sunday 23:00)
-                const { initScheduler } = require('./utils/scheduler');
-                initScheduler();
+                // Weekly archive of the Top Légende / top coins / top likes (Sunday 23:00).
+                // Only on the VPS: every desktop app shares the same database, if they also ran it each
+                // one would reset everybody's week and overwrite the archive with an empty one.
+                if (!config.isAppMode) {
+                    const { initScheduler } = require('./utils/scheduler');
+                    initScheduler();
+                }
 
                 resolve();
             });

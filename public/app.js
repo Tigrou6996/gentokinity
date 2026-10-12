@@ -9200,56 +9200,59 @@ window.saveCurrentWeek = async () => {
     } catch (err) { showNotify('Erreur', 'Erreur lors de la sauvegarde', 'error'); }
 };
 
+// Archived week (Top Légende, top coins, top likes): podium + one card per gift with its winners
 async function viewHistoryDetail(id) {
     try {
         const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
         const res = await fetch(`${base}/api/leaderboard/history/detail?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token || '')}`);
         const history = await res.json();
-
         if (history.error) throw new Error(history.error);
 
-        let html = `
-            <div style="text-align: left; max-height: 70vh; overflow-y: auto; padding-right: 10px;">
-                <div style="margin-bottom: 20px; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03);">
-                    <h3 style="color: #ffd700; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-coins"></i> Top 10 Pièces</h3>
-                    ${history.topCoins.map((u, i) => `
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;">
-                            <span>#${i + 1} @${escapeHtml(u.uniqueId)}</span>
-                            <span style="font-weight: 800;">${u.count.toLocaleString()} <small>coins</small></span>
-                        </div>
-                    `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
-                </div>
+        const avatar = (u, size = 34) => `<img class="hz-avatar" style="width:${size}px;height:${size}px" src="${escapeHtml(u.profilePictureUrl || '/logo.png')}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.src='/logo.png'">`;
+        const name = (u) => escapeHtml(u.nickname || u.uniqueId || '?');
+        const podium = (list, unit) => {
+            if (!list || !list.length) return '<div class="hz-empty">Aucune donnée cette semaine</div>';
+            const top = list.slice(0, 3);
+            const order = [top[1], top[0], top[2]].filter(Boolean);
+            return `
+                <div class="hz-podium">${order.map(u => {
+                    const rank = list.indexOf(u) + 1;
+                    return `<div class="hz-step rank-${rank}">${avatar(u, rank === 1 ? 64 : 50)}<b>${name(u)}</b><span>${u.count.toLocaleString()} ${unit}</span><em>${rank}</em></div>`;
+                }).join('')}</div>
+                ${list.length > 3 ? `<ol class="hz-rest" start="4">${list.slice(3).map(u => `<li>${avatar(u, 24)}<span>${name(u)}</span><b>${u.count.toLocaleString()}</b></li>`).join('')}</ol>` : ''}`;
+        };
+        const legends = (history.legends || []).slice().sort((a, b) => ((b.topUsers[0] && b.topUsers[0].count) || 0) - ((a.topUsers[0] && a.topUsers[0].count) || 0));
+        const legendCards = legends.length ? legends.map(l => `
+            <div class="hz-legend">
+                <div class="hz-gift"><img src="${base}/img/tiktok/${encodeURIComponent(l.giftId)}.png" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('i'), { className: 'fas fa-gift' }))"><span>${escapeHtml(l.giftName)}</span></div>
+                ${(l.topUsers || []).map((u, i) => `<div class="hz-winner ${i === 0 ? 'first' : ''}">${i === 0 ? '<i class="fas fa-crown"></i>' : `<small>${i + 1}</small>`}${avatar(u, 22)}<span>${name(u)}</span><b>×${u.count.toLocaleString()}</b></div>`).join('')}
+            </div>`).join('') : '<div class="hz-empty">Aucun cadeau archivé</div>';
 
-                <div style="margin-bottom: 20px; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03);">
-                    <h3 style="color: #fe2c55; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-heart"></i> Top 10 Likes</h3>
-                    ${history.topLikes.map((u, i) => `
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;">
-                            <span>#${i + 1} @${escapeHtml(u.uniqueId)}</span>
-                            <span style="font-weight: 800;">${u.count.toLocaleString()} <small>likes</small></span>
-                        </div>
-                    `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
-                </div>
-
-                <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03);">
-                    <h3 style="color: #00f2ea; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-crown"></i> Légendes (Gagnants)</h3>
-                    ${history.legends.map(l => `
-                        <div style="margin-bottom: 8px; font-size: 0.85rem;">
-                            <span style="font-weight: 700;">${l.giftName} :</span> 
-                            <span>@${escapeHtml(l.topUsers[0]?.uniqueId)} (${l.topUsers[0]?.count})</span>
-                        </div>
-                    `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
-                </div>
-            </div>
-        `;
-
+        const period = String(history.period || '').replace(/^(\d{4})-W(\d+)$/, 'Semaine $2 · $1');
         Swal.fire({
-            title: `Archive : Semaine ${history.period}`,
-            html: html,
-            width: '500px',
-            background: 'var(--bg-dark)',
-            color: '#fff',
-            confirmButtonColor: '#fe2c55'
+            title: `<i class="fas fa-crown" style="color:#ffd700"></i> ${escapeHtml(period)}`,
+            html: `
+                <div class="hz-detail">
+                    <div class="hz-tabs" role="tablist">
+                        <button type="button" class="active" data-hz="legends"><i class="fas fa-crown"></i> Top Légende <span>${legends.length}</span></button>
+                        <button type="button" data-hz="coins"><i class="fas fa-coins"></i> Pièces</button>
+                        <button type="button" data-hz="likes"><i class="fas fa-heart"></i> Likes</button>
+                    </div>
+                    <div class="hz-pane" data-pane="legends"><div class="hz-legends">${legendCards}</div></div>
+                    <div class="hz-pane" data-pane="coins" hidden>${podium(history.topCoins, 'pièces')}</div>
+                    <div class="hz-pane" data-pane="likes" hidden>${podium(history.topLikes, 'likes')}</div>
+                </div>`,
+            width: 'min(860px, 96vw)',
+            showConfirmButton: false,
+            showCloseButton: true,
+            customClass: { popup: 'hz-popup' },
+            didOpen: (el) => {
+                el.querySelectorAll('.hz-tabs button').forEach(btn => btn.addEventListener('click', () => {
+                    el.querySelectorAll('.hz-tabs button').forEach(x => x.classList.toggle('active', x === btn));
+                    el.querySelectorAll('.hz-pane').forEach(p => { p.hidden = p.dataset.pane !== btn.dataset.hz; });
+                }));
+            }
         });
     } catch (err) {
         showNotify('Erreur', 'Impossible de charger le détail', 'error');
@@ -9262,22 +9265,27 @@ async function loadHistoryList() {
     try {
         const base = getApiBase();
         const token = getToken();
-        const res = await fetch(`${base}/api/leaderboard/history?token=${token}`);
+        const res = await fetch(`${base}/api/leaderboard/history?token=${encodeURIComponent(token || '')}`);
         const data = await res.json();
-        if (data && data.length > 0) {
-            list.innerHTML = data.map(h => `
-                <div class="history-item">
-                    <div>
-                        <div style="font-weight: 800; font-size: 0.85rem;">Semaine du ${new Date(h.date).toLocaleDateString()}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.6;">${h.totalGifts} cadeaux totalisés</div>
-                    </div>
-                    <button class="btn-tab" onclick="viewHistoryDetail('${h._id}')" style="padding: 5px 10px; font-size: 0.7rem;">
-                        <i class="fas fa-eye"></i> Voir
-                    </button>
-                </div>
-            `).join('');
+        if (!Array.isArray(data) || !data.length) {
+            list.innerHTML = '<div class="hz-empty">Aucune semaine archivée pour le moment. L\'archive se fait chaque dimanche à 23 h (ou avec « Sauvegarder la semaine »).</div>';
+            return;
         }
-    } catch (e) { }
+        list.innerHTML = data.map(h => {
+            const m = String(h.period || '').match(/^(\d{4})-W(\d+)$/);
+            return `
+                <button type="button" class="history-item hz-item" onclick="viewHistoryDetail('${escapeHtml(h._id)}')">
+                    <span class="hz-week">${m ? `S${m[2]}` : '<i class="fas fa-calendar"></i>'}</span>
+                    <span class="hz-meta">
+                        <b>${m ? `Semaine ${m[2]} · ${m[1]}` : 'Semaine'}</b>
+                        <small>Archivée le ${new Date(h.date).toLocaleDateString()} · ${h.totalGifts} gagnant${h.totalGifts > 1 ? 's' : ''}</small>
+                    </span>
+                    <i class="fas fa-chevron-right"></i>
+                </button>`;
+        }).join('');
+    } catch (e) {
+        list.innerHTML = '<div class="hz-empty">Historique indisponible pour le moment.</div>';
+    }
 }
 
 window.showRankingOverlayUrls = () => {
@@ -9391,7 +9399,7 @@ function displayLegendsGrid() {
 
         card.innerHTML = `
             <div style="background: rgba(255,255,255,0.02); padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <div style="position: relative; flex-shrink: 0;"><img src="${gift.giftIcon}" style="width: 45px; height: 45px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.2));"></div>
+                <div style="position: relative; flex-shrink: 0;"><img src="${escapeHtml(gift.giftIcon || '')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='/logo.png';this.style.opacity='.35'" style="width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.2));"></div>
                 <div style="flex-grow: 1; min-width: 0;">
                     <div style="font-weight: 800; font-size: 1rem; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${gift.giftName}</div>
                     <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; display: flex; align-items: center; gap: 5px; font-weight: 600;">

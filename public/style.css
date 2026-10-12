@@ -4976,3 +4976,41 @@ table td {
 /* "Settings of the scene X" label (TTS, points) */
 .scene-scope-hint { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 600; color: var(--text-dim); background: rgba(255, 255, 255, .05); border: 1px solid var(--border); }
 .scene-scope-hint:empty { display: none; }
+
+/* Top Légende: archived weeks */
+.hz-item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--border); background: rgba(255, 255, 255, .02); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; transition: background .15s, border-color .15s; }
+.hz-item:hover { background: rgba(255, 215, 0, .06); border-color: rgba(255, 215, 0, .35); }
+.hz-week { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 10px; background: linear-gradient(135deg, #ffd700, #f59e0b); color: #1a1305; font-weight: 900; font-size: .85rem; }
+.hz-meta { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.hz-meta small { color: var(--text-dim); }
+.hz-item .fa-chevron-right { color: var(--text-dim); font-size: .75rem; }
+.hz-empty { padding: 18px; text-align: center; color: var(--text-dim); font-size: .85rem; }
+.hz-popup { background: #16161b !important; color: #fff !important; border: 1px solid rgba(255, 215, 0, .25); }
+.hz-detail { text-align: left; }
+.hz-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.hz-tabs button { border: 1px solid var(--border, #333); background: rgba(255, 255, 255, .04); color: #cfd3da; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: .85rem; cursor: pointer; }
+.hz-tabs button.active { background: #ffd700; color: #1a1305; border-color: #ffd700; }
+.hz-tabs button span { margin-left: 4px; opacity: .7; }
+.hz-legends { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 4px; }
+.hz-legend { border: 1px solid rgba(255, 255, 255, .08); border-radius: 12px; padding: 10px; background: rgba(255, 255, 255, .03); }
+.hz-gift { display: flex; align-items: center; gap: 8px; font-weight: 800; margin-bottom: 8px; }
+.hz-gift img, .hz-gift i { width: 30px; height: 30px; object-fit: contain; font-size: 1.3rem; color: #ffd700; display: inline-flex; align-items: center; justify-content: center; }
+.hz-winner { display: flex; align-items: center; gap: 7px; font-size: .85rem; padding: 3px 0; color: #cfd3da; }
+.hz-winner span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hz-winner small { width: 14px; text-align: center; opacity: .6; }
+.hz-winner.first { color: #fff; font-weight: 700; }
+.hz-winner.first .fa-crown { color: #ffd700; width: 14px; }
+.hz-avatar { border-radius: 50%; object-fit: cover; background: #222; flex-shrink: 0; }
+.hz-podium { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin: 10px 0 16px; }
+.hz-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 150px; padding: 12px 8px 30px; border-radius: 14px 14px 6px 6px; background: rgba(255, 255, 255, .04); text-align: center; }
+.hz-step b { max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hz-step span { font-size: .8rem; color: #cfd3da; }
+.hz-step em { position: absolute; bottom: 6px; font-style: normal; font-weight: 900; font-size: 1.1rem; }
+.hz-step.rank-1 { padding-bottom: 46px; background: linear-gradient(180deg, rgba(255, 215, 0, .22), rgba(255, 215, 0, .05)); border: 1px solid rgba(255, 215, 0, .45); }
+.hz-step.rank-2 { padding-bottom: 34px; background: linear-gradient(180deg, rgba(203, 213, 225, .18), rgba(203, 213, 225, .04)); }
+.hz-step.rank-3 { background: linear-gradient(180deg, rgba(217, 119, 6, .2), rgba(217, 119, 6, .04)); }
+.hz-rest { list-style: none; padding: 0; margin: 0; counter-reset: rest 3; }
+.hz-rest li { counter-increment: rest; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(255, 255, 255, .05); }
+.hz-rest li::before { content: counter(rest); width: 20px; color: var(--text-dim, #999); font-weight: 700; }
+.hz-rest li span { flex: 1; }
+@media (max-width: 600px) { .hz-step { width: 31%; } }
