@@ -26,7 +26,7 @@ Le même code tourne de deux façons :
 - Les messages envoyés avant le démarrage du bot sont ignorés.
 
 ### Déclencheurs (événements)
-Cadeau précis, cadeau à partir d'une valeur en pièces, likes, follow, partage, arrivée dans le live, abonnement, message du chat (contenant un texte), commande (`!mot` ou `mot`), **premier message d'un spectateur**, **emote d'abonné** et **question (Q&R)**.
+Cadeau précis, cadeau à partir d'une valeur en pièces, likes, follow, partage, arrivée dans le live, abonnement, message du chat (contenant un texte), commande (`!mot` ou `mot`), **premier message d'un spectateur**, **emote d'abonné**, **question (Q&R)** et **passage de niveau** (un spectateur atteint un nouveau niveau de points, avec un niveau minimum au choix).
 
 Filtres « Qui peut déclencher ? » : tout le monde, followers, abonnés, modérateurs, top donateur de la session, ou un spectateur précis.
 
@@ -56,7 +56,7 @@ Options communes à toutes les actions :
 
 Un événement peut aussi avoir un **coût en points** (Premium) : le spectateur paie avec ses points, et l'action ne se lance pas s'il n'en a pas assez (boutique de points, comme sur TikFinity).
 
-Variables disponibles dans les textes : `{nickname}`, `{username}`, `{giftname}`, `{repeatcount}`, `{combo}`, `{coins}`, `{comment}`, `{likecount}`, `{totallikecount}`, `{submonth}`, et `{playername}` pour Minecraft.
+Variables disponibles dans les textes : `{nickname}`, `{username}`, `{giftname}`, `{repeatcount}`, `{combo}`, `{coins}`, `{comment}`, `{likecount}`, `{totallikecount}`, `{submonth}`, `{level}` (passage de niveau), et `{playername}` pour Minecraft.
 
 Pour Streamer.bot, active *Servers/Clients → HTTP Server* dans Streamer.bot, puis clique sur **Tester** dans le formulaire de l'action : la liste de tes actions Streamer.bot s'affiche.
 
@@ -78,7 +78,8 @@ URL de base : `https://tiktok.gentok.fr/overlay/<nom>?token=TON_TOKEN`. Ajoute `
 | `likegoal`: objectif de likes à thèmes | `theme` (neon, glass, gradient, minimal, candy, retro), `target`, `title`, `emoji`, `footer`, `hearts`, `width`, `color`, `color2` |
 | `ranking`: top pièces / top likes / top points | `type` (coins, likes, points), `period` (live, all, weekly), `theme` (glass, neon, podium, minimal, gradient, ticker), `limit`, `avatars`, `title`, `width`, `size` |
 | `points`: carte `!score`, top `!top`, passages de niveau | `duration`, `toasts`, `levelup`, `minlevel`, `color`, `color2` |
-| `battle`: bataille d'équipes | `hold` (secondes d'affichage du gagnant) |
+| `battle`: bataille d'équipes ou sondage | `hold` (secondes d'affichage du gagnant) |
+| `social`: réseaux sociaux | `items=instagram:moncompte,youtube:MaChaine,discord:discord.gg/xxx` (tiktok, instagram, youtube, twitch, discord, x, snapchat, facebook, kick, web), `layout` (rotate, row), `theme` (pill, glass, neon, brand, minimal), `interval`, `size` |
 | Déjà existants | `goals` (objectif de likes), `gifts`, `last-*`, `top-*`, `leaderboard`, `gift_legend.html`, `gallery` |
 
 Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**. Tous les overlays acceptent `lang=fr|en|es|de|pt|it` et `font=` avec le nom d'une police Google Fonts (Bangers, Poppins, Press Start 2P, Luckiest Guy, Orbitron…). Dans le tableau de bord, la barre « Police des overlays / Couleurs » au-dessus des Overlays Pro ajoute ces paramètres aux liens. La police de l'interface elle-même se change dans **Paramètres**.
@@ -105,7 +106,7 @@ Chaque spectateur gagne des points pendant le live : pièces offertes, likes, fo
 Les limites sont définies dans `src/features/plans.js` et vérifiées côté serveur. La page **Mon offre** affiche l'utilisation actuelle.
 
 ### Batailles d'équipes
-Menu **Outils live → Batailles d'équipes**. Choisis le mode (likes, cadeaux ou les deux), la durée et 2 à 4 équipes. Chaque équipe a une commande (`!rouge`, `!bleu`…) que les spectateurs tapent pour la rejoindre, un cadeau optionnel qui fait gagner directement l'équipe, et une action lancée en cas de victoire. L'overlay `battle` affiche un tir à la corde (2 équipes) ou des barres (3-4 équipes), le chrono et le gagnant.
+Menu **Outils live → Batailles d'équipes**. Choisis le mode (likes, cadeaux, les deux, ou **sondage** : un vote par spectateur, qui peut changer d'avis), la durée et 2 à 4 équipes. Chaque équipe a une commande (`!rouge`, `!bleu`…) que les spectateurs tapent pour la rejoindre, un cadeau optionnel qui fait gagner directement l'équipe, et une action lancée en cas de victoire. L'overlay `battle` affiche un tir à la corde (2 équipes) ou des barres (3-4 équipes), le chrono et le gagnant.
 
 ### Simulateur d'événements
 Menu **Outils live → Simulateur**. Envoie un follow, un partage, un abonnement, des likes, un message (ou une `!commande`) ou un cadeau (avec ou sans combo) au nom d'un faux spectateur. Les événements simulés passent par le même moteur que les vrais (déclencheurs, actions, overlays, batailles), mais ne sont jamais enregistrés dans les classements ni dans les points.

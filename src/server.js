@@ -37,6 +37,7 @@ if (!config.isAppMode) {
 
 const app = express();
 const activeConnectors = new Map(); // token -> TikTokConnector instance (Global Map)
+require('./features/points').setConnectorLookup((token) => activeConnectors.get(token));
 
 const server = http.createServer(app); // [NEW] Create HTTP server
 initSocket(server); // [NEW] Init Socket.io
@@ -347,6 +348,7 @@ app.get('/overlay/points', (req, res) => sendOverlay(res, 'overlay_points.html')
 app.get('/overlay/battle', (req, res) => sendOverlay(res, 'overlay_battle.html'));
 app.get('/overlay/likegoal', (req, res) => sendOverlay(res, 'overlay_likegoal.html'));
 app.get('/overlay/ranking', (req, res) => sendOverlay(res, 'overlay_ranking.html'));
+app.get('/overlay/social', (req, res) => sendOverlay(res, 'overlay_social.html'));
 
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
 app.use('/pages', express.static(path.resolve(__dirname, '../classement/pages')));

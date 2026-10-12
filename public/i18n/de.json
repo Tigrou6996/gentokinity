@@ -1232,6 +1232,13 @@
   "Cadeau de l'équipe (ID, optionnel)": "Team-Geschenk (ID, optional)",
   "jusqu'au": "bis",
   "Exporter (CSV)": "Exportieren (CSV)",
-  "Actualiser": "Aktualisieren"
+  "Actualiser": "Aktualisieren",
+  "Passage de niveau (points)": "Level-Up (Punkte)",
+  "À partir du niveau": "Ab Level",
+  "Se déclenche quand un spectateur atteint un nouveau niveau grâce à ses points. Variable : {level}.": "Wird ausgelöst, wenn ein Zuschauer mit seinen Punkten ein neues Level erreicht. Variable: {level}.",
+  "🆙 Passage de niveau": "🆙 Level-Up",
+  "Sondage (1 vote par spectateur)": "Umfrage (1 Stimme pro Zuschauer)",
+  "Réseaux sociaux": "Soziale Netzwerke",
+  "Bandeau qui fait défiler vos réseaux (Instagram, YouTube, Discord…). Remplacez les pseudos dans l'URL.": "Banner, das deine Netzwerke nacheinander zeigt (Instagram, YouTube, Discord…). Ersetze die Benutzernamen in der URL."
  }
 }

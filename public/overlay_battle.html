@@ -58,26 +58,29 @@
             document.getElementById('title').textContent = state.title || '';
             const teams = state.teams;
             const total = teams.reduce((a, t) => a + t.score, 0);
+            // Poll mode: show the share of the votes
+            const val = (t) => state.mode === 'votes' ? `${total ? Math.round(t.score / total * 100) : 0}%` : G.formatNumber(t.score);
+            const who = (t) => G.t(state.mode === 'votes' ? 'battle.votes' : 'battle.members', { n: t.members });
             const body = document.getElementById('body');
             if (teams.length === 2) {
                 const [a, b] = teams;
                 const share = total > 0 ? a.score / total : 0.5;
                 body.innerHTML = `
                     <div class="tug">
-                        <div class="side" style="background:${G.escapeHtml(a.color)};flex-grow:${Math.max(0.12, share)}">${G.formatNumber(a.score)}</div>
-                        <div class="side right" style="background:${G.escapeHtml(b.color)};flex-grow:${Math.max(0.12, 1 - share)}">${G.formatNumber(b.score)}</div>
+                        <div class="side" style="background:${G.escapeHtml(a.color)};flex-grow:${Math.max(0.12, share)}">${val(a)}</div>
+                        <div class="side right" style="background:${G.escapeHtml(b.color)};flex-grow:${Math.max(0.12, 1 - share)}">${val(b)}</div>
                         <div class="vs">VS</div>
                     </div>
                     <div class="labels">
-                        <span>${G.escapeHtml(a.name)} <span class="cmd">${G.escapeHtml(G.t('battle.join', { cmd: a.command }))}</span> · ${G.escapeHtml(G.t('battle.members', { n: a.members }))}</span>
-                        <span>${G.escapeHtml(G.t('battle.members', { n: b.members }))} · <span class="cmd">${G.escapeHtml(G.t('battle.join', { cmd: b.command }))}</span> ${G.escapeHtml(b.name)}</span>
+                        <span>${G.escapeHtml(a.name)} <span class="cmd">${G.escapeHtml(G.t('battle.join', { cmd: a.command }))}</span> · ${G.escapeHtml(who(a))}</span>
+                        <span>${G.escapeHtml(who(b))} · <span class="cmd">${G.escapeHtml(G.t('battle.join', { cmd: b.command }))}</span> ${G.escapeHtml(b.name)}</span>
                     </div>`;
             } else {
                 const max = Math.max(1, ...teams.map(t => t.score));
                 body.innerHTML = `<div class="bars">${teams.map(t => `
                     <div class="bar"><span class="n" style="color:${G.escapeHtml(t.color)}">${G.escapeHtml(t.name)}</span>
                         <div class="t"><div style="width:${Math.round(t.score / max * 100)}%;background:${G.escapeHtml(t.color)}"></div></div>
-                        <span class="s">${G.formatNumber(t.score)}</span><span class="c">${G.escapeHtml(t.command)}</span></div>`).join('')}</div>`;
+                        <span class="s">${val(t)}</span><span class="c">${G.escapeHtml(t.command)}</span></div>`).join('')}</div>`;
             }
             const w = document.getElementById('winner');
             if (!state.running && state.winnerId) {

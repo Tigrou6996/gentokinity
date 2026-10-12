@@ -16,7 +16,8 @@ const EventSchema = new mongoose.Schema({
     command: String,
     message: String, // chat trigger: text the message must contain
     pointsCost: Number, // Premium points shop: points paid by the viewer to trigger it
-    minCoins: Number
+    minCoins: Number,
+    minLevel: Number // level_up trigger: only from this level
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token

@@ -1,5 +1,5 @@
 /**
- * Team battles ("likes contre likes", gifts, or both).
+ * Team battles ("likes contre likes", gifts, or both) and polls (mode "votes": one vote per viewer).
  *
  * Viewers join a team by typing its command in the chat (e.g. !rouge). Depending on the mode,
  * their likes and/or the coins of their gifts are added to the team. A gift can also be
@@ -44,7 +44,7 @@ function scheduleUpdate(token, b) {
 }
 
 /**
- * @param {object} cfg { title, mode: 'likes'|'gifts'|'both', duration (seconds), likeValue, teams: [{ name, color, command, giftId, giftName, winActionId }] }
+ * @param {object} cfg { title, mode: 'likes'|'gifts'|'both'|'votes', duration (seconds), likeValue, teams: [{ name, color, command, giftId, giftName, winActionId }] }
  */
 function start(token, cfg, maxTeams = 2) {
     stop(token, { silent: true });
@@ -55,7 +55,7 @@ function start(token, cfg, maxTeams = 2) {
         id: `${Date.now()}`,
         running: true,
         title: String(cfg.title || 'Bataille').slice(0, 60),
-        mode: ['likes', 'gifts', 'both'].includes(cfg.mode) ? cfg.mode : 'likes',
+        mode: ['likes', 'gifts', 'both', 'votes'].includes(cfg.mode) ? cfg.mode : 'likes',
         likeValue: Math.max(0, Number(cfg.likeValue) || 1),
         startedAt: Date.now(),
         endsAt: Date.now() + Math.min(Math.max(Number(cfg.duration) || 180, 10), 3 * 3600) * 1000,
@@ -105,13 +105,15 @@ function onChat(token, user, comment) {
     if (previous) b.teams.find(t => t.id === previous)?.members.delete(viewer);
     b.memberTeam.set(viewer, team.id);
     team.members.add(viewer);
+    // Poll: the score is the number of voters (a viewer can change their vote)
+    if (b.mode === 'votes') b.teams.forEach(t => { t.score = t.members.size; });
     scheduleUpdate(token, b);
     return true;
 }
 
 function onLike(token, user, likeCount) {
     const b = battles.get(token);
-    if (!b || !b.running || b.mode === 'gifts') return;
+    if (!b || !b.running || (b.mode !== 'likes' && b.mode !== 'both')) return;
     const teamId = b.memberTeam.get(user.userId || user.uniqueId);
     const team = teamId && b.teams.find(t => t.id === teamId);
     if (team) addScore(token, b, team, user, (Number(likeCount) || 1) * b.likeValue);
@@ -119,7 +121,7 @@ function onLike(token, user, likeCount) {
 
 function onGift(token, user, giftId, coins) {
     const b = battles.get(token);
-    if (!b || !b.running || b.mode === 'likes') return;
+    if (!b || !b.running || (b.mode !== 'gifts' && b.mode !== 'both')) return;
     // A gift assigned to a team always scores for it, otherwise the sender's team scores
     let team = b.teams.find(t => t.giftId && String(t.giftId) === String(giftId));
     if (!team) {

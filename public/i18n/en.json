@@ -1212,6 +1212,13 @@
   "Cadeau de l'équipe (ID, optionnel)": "Team gift (ID, optional)",
   "jusqu'au": "until",
   "Exporter (CSV)": "Export (CSV)",
-  "Actualiser": "Refresh"
+  "Actualiser": "Refresh",
+  "Passage de niveau (points)": "Level up (points)",
+  "À partir du niveau": "From level",
+  "Se déclenche quand un spectateur atteint un nouveau niveau grâce à ses points. Variable : {level}.": "Fires when a viewer reaches a new level with their points. Variable: {level}.",
+  "🆙 Passage de niveau": "🆙 Level up",
+  "Sondage (1 vote par spectateur)": "Poll (1 vote per viewer)",
+  "Réseaux sociaux": "Social media",
+  "Bandeau qui fait défiler vos réseaux (Instagram, YouTube, Discord…). Remplacez les pseudos dans l'URL.": "Banner that cycles through your social accounts (Instagram, YouTube, Discord…). Replace the usernames in the URL."
  }
 }

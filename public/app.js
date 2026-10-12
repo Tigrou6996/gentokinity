@@ -2328,12 +2328,12 @@ function renderSoundLinks() {
                 const icons = {
                     like: 'fa-heart', follow: 'fa-user-plus', share: 'fa-share',
                     member: 'fa-door-open', subscribe: 'fa-star', chat: 'fa-comment',
-                    command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag'
+                    command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag', level_up: 'fa-arrow-up-wide-short'
                 };
                 const labels = {
                     like: 'Like', follow: 'Follow', share: 'Partage',
                     member: 'Rejoint', subscribe: 'Abonnement', chat: 'Chat',
-                    command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur'
+                    command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur', level_up: 'Niveau'
                 };
                 triggerHtml = `
                     <div class="trigger-box" onclick="editItem('event', '${event.id}')" style="cursor:pointer;">
@@ -2540,12 +2540,12 @@ function renderEvents() {
             const icons = {
                 like: 'fa-heart', follow: 'fa-user-plus', share: 'fa-share',
                 member: 'fa-door-open', subscribe: 'fa-star', chat: 'fa-comment',
-                command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag'
+                command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag', level_up: 'fa-arrow-up-wide-short'
             };
             const labels = {
                 like: 'Like', follow: 'Follow', share: 'Partage',
                 member: 'Rejoint', subscribe: 'Abonnement', chat: 'Chat',
-                command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur'
+                command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur', level_up: 'Niveau'
             };
 
             triggerHtml = `
@@ -2729,7 +2729,7 @@ function formatDetails(a) {
 const TRIGGER_LABELS = {
     like: '❤️ Likes', follow: '➕ Follow', share: '🔁 Partage', member: '🚪 Rejoint le live', subscribe: '⭐ Abonnement',
     chat: '💬 Chat', command: '⌨️ Commande', gift_min: '💰 Cadeau (valeur min.)', first_message: '👋 Premier message',
-    emote: '😀 Emote', question: '❓ Question'
+    emote: '😀 Emote', question: '❓ Question', level_up: '🆙 Passage de niveau'
 };
 
 function formatTrigger(e) {
@@ -2738,6 +2738,7 @@ function formatTrigger(e) {
     if (e.triggerType === 'like' && e.likeThreshold > 1) label += ` ×${e.likeThreshold}`;
     if (e.triggerType === 'command' && e.command) label += ` !${e.command.replace(/^!/, '')}`;
     if (e.triggerType === 'gift_min' && e.minCoins) label += ` ≥ ${e.minCoins}`;
+    if (e.triggerType === 'level_up' && e.minLevel) label += ` ≥ ${e.minLevel}`;
     return label;
 }
 
@@ -3198,7 +3199,7 @@ function updateActionFields() {
             <div class="placeholder-hint-panel">
                 <div class="placeholder-hint-title"><i class="fas fa-tags"></i> Paramètres Dynamiques</div>
                 <div class="ph-tags">
-                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}']
+                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}', '{level}']
                         .map(p => `<span class="ph-tag" onclick="insertPlaceholder('f-text','${p}')">${p}</span>`).join('')}
                 </div>
             </div>
@@ -3210,7 +3211,7 @@ function updateActionFields() {
             <div class="placeholder-hint-panel">
                 <div class="placeholder-hint-title"><i class="fas fa-tags"></i> Paramètres Dynamiques</div>
                 <div class="ph-tags">
-                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}']
+                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}', '{level}']
                         .map(p => `<span class="ph-tag" onclick="insertPlaceholder('f-text','${p}')">${p}</span>`).join('')}
                 </div>
             </div>
@@ -3394,6 +3395,14 @@ async function updateEventFields(eventToEdit = null) {
             <div class="form-group">
                 <label>Valeur minimum (pièces)</label>
                 <input type="number" id="f-min-coins" min="1" value="${(eventToEdit && eventToEdit.minCoins) || ''}" placeholder="ex: 100" required>
+            </div>
+        `;
+    } else if (type === 'level_up') {
+        container.innerHTML = `
+            <div class="form-group">
+                <label>À partir du niveau</label>
+                <input type="number" id="f-min-level" min="1" value="${(eventToEdit && eventToEdit.minLevel) || 1}" placeholder="ex: 5">
+                <small style="color: var(--text-dim); font-size: 0.8rem;">Se déclenche quand un spectateur atteint un nouveau niveau grâce à ses points. Variable : {level}.</small>
             </div>
         `;
     }
@@ -3753,6 +3762,10 @@ async function saveNewEvent(e) {
         event.minCoins = parseInt(document.querySelector('#f-min-coins').value);
     }
 
+    if (event.triggerType === 'level_up') {
+        event.minLevel = Math.max(1, parseInt(document.querySelector('#f-min-level').value) || 1);
+    }
+
     // Points shop (Premium): cost paid by the viewer
     event.pointsCost = Math.max(0, parseInt(document.querySelector('#event-points-cost')?.value) || 0);
     if (event.pointsCost > 0 && !isPremiumUser) {
@@ -3783,6 +3796,10 @@ async function saveNewEvent(e) {
 
         if (event.triggerType === 'gift_min') {
             return evt.minCoins === event.minCoins;
+        }
+
+        if (event.triggerType === 'level_up') {
+            return evt.minLevel === event.minLevel;
         }
 
         if (event.triggerType === 'follow' || event.triggerType === 'share' || event.triggerType === 'join' || event.triggerType === 'subscribe') {

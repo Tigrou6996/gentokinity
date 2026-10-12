@@ -26,6 +26,7 @@ function buildPlaceholders(context = {}, extra = {}) {
         '{likecount}': context.likeCount || '',
         '{totallikecount}': context.totalLikeCount || '',
         '{submonth}': context.subMonth || '',
+        '{level}': context.level || '',
         ...extra
     };
     for (const key of Object.keys(values)) {
@@ -262,6 +263,8 @@ class ActionManager {
                 const unitPrice = context.unitPrice || 0;
                 return (!e.minCoins || unitPrice >= e.minCoins) ? repeat : 0;
             }
+            case 'level_up':
+                return (!e.minLevel || Number(context.level) >= e.minLevel) ? 1 : 0;
             default:
                 return 1;
         }

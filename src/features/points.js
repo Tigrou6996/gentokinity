@@ -138,12 +138,20 @@ async function flushToken(token) {
     }
 }
 
+// Set by server.js (it owns the live connectors): avoids a circular require
+let getConnector = () => null;
+function setConnectorLookup(fn) {
+    if (typeof fn === 'function') getConnector = fn;
+}
+
 /** Tells the overlays which viewers just reached a new level (the "Points & !score" overlay celebrates it) */
 async function announceLevelUps(token, transactions, factor) {
     const gained = new Map(transactions.map(t => [t.uniqueId, t.delta]));
     const docs = await ViewerPoints.find({ token, uniqueId: { $in: [...gained.keys()] } },
         { uniqueId: 1, nickname: 1, profilePictureUrl: 1, points: 1, levelPoints: 1 }).lean();
     const { emitEvent } = require('../utils/socket');
+    // "Passage de niveau" events of the dashboard run on the live connector, when one is active
+    const connector = getConnector(token);
     let sent = 0;
     for (const d of docs) {
         const level = levelFromPoints(d.levelPoints, factor);
@@ -152,6 +160,12 @@ async function announceLevelUps(token, transactions, factor) {
             uniqueId: d.uniqueId, nickname: d.nickname || d.uniqueId, profilePictureUrl: d.profilePictureUrl,
             level, points: Math.floor(d.points)
         }, token);
+        if (connector && !connector.isStopping) {
+            const actionManager = require('../actions/actionManager');
+            actionManager.executeAction('level_up', {
+                uniqueId: d.uniqueId, nickname: d.nickname || d.uniqueId, profilePictureUrl: d.profilePictureUrl, level
+            }, connector).catch(err => logger.warn(`[POINTS] Événement « passage de niveau » : ${err.message}`));
+        }
         if (++sent >= 10) break; // a burst (e.g. after a long disconnection) must not flood the overlay
     }
 }
@@ -237,5 +251,5 @@ async function reset(token) {
 
 module.exports = {
     DEFAULT_SETTINGS, getSettings, award, flushToken, flushAll, getViewer, getTop, spend, adjust, reset,
-    levelFromPoints, pointsForLevel, decorate, countUsers
+    levelFromPoints, pointsForLevel, decorate, countUsers, setConnectorLookup
 };

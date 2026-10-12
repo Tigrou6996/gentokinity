@@ -1761,6 +1761,17 @@
                                     <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : hold=10 (secondes d'affichage du gagnant)</p>
                                 </div>
                                 <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-share-nodes" style="width: 22px; color: #e1306c;"></i> Réseaux sociaux</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Bandeau qui fait défiler vos réseaux (Instagram, YouTube, Discord…). Remplacez les pseudos dans l'URL.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/social?items=instagram:moncompte,youtube:MaChaine,discord:discord.gg/xxx&theme=pill" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">items= tiktok · instagram · youtube · twitch · discord · x · snapchat · facebook · kick · web — layout= rotate · row — theme= pill · glass · neon · brand · minimal — interval=6 · size=26</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
                                     <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-cloud-showers-heavy" style="width: 22px; color: #38bdf8;"></i> Pluie de cadeaux</label>
                                     <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Les cadeaux reçus tombent à l'écran (un par cadeau), cœurs pour les likes.</p>
                                     <div class="input-group" style="display: flex; gap: 5px;">
@@ -2266,7 +2277,7 @@
                 <div class="pro-form-grid" style="margin-bottom: 14px;">
                     <div class="pro-field"><label>Titre</label><input type="text" id="battle-title" value="Bataille de likes"></div>
                     <div class="pro-field"><label>Mode</label><select id="battle-mode">
-                        <option value="likes">Likes</option><option value="gifts">Cadeaux (pièces)</option><option value="both">Likes + Cadeaux</option></select></div>
+                        <option value="likes">Likes</option><option value="gifts">Cadeaux (pièces)</option><option value="both">Likes + Cadeaux</option><option value="votes">Sondage (1 vote par spectateur)</option></select></div>
                     <div class="pro-field"><label>Durée (minutes)</label><input type="number" id="battle-duration" min="1" max="180" value="3"></div>
                     <div class="pro-field"><label>Valeur d'un like</label><input type="number" id="battle-like-value" min="0" step="0.1" value="1"><small>En mode « Likes + Cadeaux », 1 pièce = 1 point</small></div>
                     <div class="pro-field"><label>Nombre d'équipes</label><select id="battle-team-count"><option value="2">2</option><option value="3">3 (Premium)</option><option value="4">4 (Premium)</option></select></div>
@@ -3281,6 +3292,8 @@
                             <div class="custom-option" data-value="emote"><i class="fas fa-smile"></i> Emote d'abonné</div>
                             <div class="custom-option" data-value="question"><i class="fas fa-question-circle"></i>
                                 Question posée (Q&amp;R)</div>
+                            <div class="custom-option" data-value="level_up"><i class="fas fa-arrow-up-wide-short"></i>
+                                Passage de niveau (points)</div>
                         </div>
                     </div>
                     <select id="event-trigger-type" style="display: none;">
@@ -3297,6 +3310,7 @@
                         <option value="first_message">Premier message d'un spectateur</option>
                         <option value="emote">Emote d'abonné</option>
                         <option value="question">Question posée (Q&amp;R)</option>
+                        <option value="level_up">Passage de niveau (points)</option>
                     </select>
                 </div>
                 <div id="event-trigger-details">
