@@ -370,6 +370,9 @@ app.get('/overlay/cannon', (req, res) => sendPremiumOverlay(req, res, 'overlay_c
 app.get('/overlay/fountain', (req, res) => sendPremiumOverlay(req, res, 'overlay_fountain.html'));
 app.get('/overlay/firework', (req, res) => sendPremiumOverlay(req, res, 'overlay_firework.html'));
 app.get('/overlay/snow', (req, res) => sendOverlay(res, 'overlay_snow.html'));
+app.get('/overlay/songs', (req, res) => sendOverlay(res, 'overlay_songs.html'));
+app.get('/overlay/giveaway', (req, res) => sendOverlay(res, 'overlay_giveaway.html'));
+app.get('/overlay/pointsdrop', (req, res) => sendOverlay(res, 'overlay_pointsdrop.html'));
 app.get('/overlay/emojify', (req, res) => sendOverlay(res, 'overlay_emojify.html'));
 
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
@@ -2299,8 +2302,10 @@ async function updateSpotifyOverlay() {
                 currentGrace++;
                 trackStopGraceCounts.set(token, currentGrace);
 
+                // Nothing playing: start the first request once. Never again after that, or a pause
+                // of the streamer would be undone every 2 seconds.
                 const localQueue = spotifyModule.getQueue(token);
-                if (localQueue.length > 0 && (!state || !state.is_playing)) {
+                if (localQueue.length > 0 && !localQueue[0].isQueuedInSpotify && (!state || !state.is_playing)) {
                     try {
                         const devices = await api.getMyDevices();
                         if (devices.body.devices.some(d => d.is_active)) {
@@ -2318,6 +2323,8 @@ async function updateSpotifyOverlay() {
                             id: t.id,
                             title: t.title,
                             artist: t.artist,
+                            albumArt: t.albumArt,
+                            duration: t.duration,
                             requestedBy: t.requestedBy
                         }))
                     });
@@ -2382,6 +2389,8 @@ async function updateSpotifyOverlay() {
                     id: t.id,
                     title: t.title,
                     artist: t.artist,
+                    albumArt: t.albumArt,
+                    duration: t.duration,
                     requestedBy: t.requestedBy
                 }))
             };

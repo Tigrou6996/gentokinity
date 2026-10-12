@@ -2823,7 +2823,7 @@ function setupEventListeners() {
                 });
                 const result = await res.json();
                 if (result.success) {
-                    showToast('Succès', 'Spotify connecté avec succès !', 'success');
+                    showToast('Spotify connecté avec succès !', 'success');
                     fetchData(); // Refresh to show "Connecté" status
                 } else {
                     throw new Error(result.error);
@@ -4545,7 +4545,7 @@ window.showSection = (sectionId) => {
     }
 
     // Hide all sections
-    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games', 'points', 'premium', 'battle', 'simulator', 'gallery'];
+    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games', 'points', 'premium', 'battle', 'simulator', 'gallery', 'giveaway'];
     sections.forEach(s => {
         const el = document.getElementById(`${s}-section`);
         if (el) el.style.display = 'none';
@@ -4579,7 +4579,8 @@ window.showSection = (sectionId) => {
             'premium': 'Mon offre',
             'battle': "Batailles d'équipes",
             'simulator': "Simulateur d'événements",
-            'gallery': "Galerie d'overlays"
+            'gallery': "Galerie d'overlays",
+            'giveaway': 'Giveaway & Points Drop'
         };
         headerTitle.textContent = titles[sectionId] || 'Gentok';
     }

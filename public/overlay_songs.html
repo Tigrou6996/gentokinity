@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Song Requests</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --accent: #1DB954; --size: 18px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: #fff; }
+        .list { display: flex; flex-direction: column; gap: 10px; padding: 10px; font-size: var(--size); }
+        .song { display: flex; align-items: center; gap: 12px; animation: in .4s ease-out; }
+        .song img { width: 3.2em; height: 3.2em; border-radius: 6px; object-fit: cover; background: #222; box-shadow: 0 4px 12px rgba(0,0,0,.5); flex-shrink: 0; }
+        .song.current img { width: 4em; height: 4em; }
+        .info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .title { font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 4px rgba(0,0,0,.8), 0 0 2px #000; }
+        .song.current .title { font-size: 1.15em; }
+        .meta { font-weight: 800; color: var(--accent); text-shadow: 0 2px 4px rgba(0,0,0,.8); font-variant-numeric: tabular-nums; }
+        .song:not(.current) .meta { text-transform: uppercase; font-size: .85em; }
+        .by { font-size: .78em; opacity: .85; font-weight: 600; text-shadow: 0 1px 3px #000; }
+        .bar { height: 4px; border-radius: 3px; background: rgba(255,255,255,.2); overflow: hidden; margin-top: 3px; width: min(260px, 50vw); }
+        .bar div { height: 100%; background: var(--accent); }
+        .empty { padding: 10px; opacity: .7; font-weight: 700; text-shadow: 0 2px 4px #000; }
+        @keyframes in { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+    </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
+</head>
+
+<body>
+    <div class="list" id="list"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Song Requests (Spotify) : la musique en cours et la file d'attente (!play), comme sur TikFinity.
+        // URL parameters: max=3 (musiques affichées), requester=1 (« demandé par »), progress=1, empty=1 (texte si rien ne joue),
+        //                 size=18, color=1DB954, theme, font, lang, demo=1
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#1DB954'));
+        document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 18), 10), 48)}px`);
+        const MAX = Math.min(Math.max(G.numParam('max', 3), 1), 10);
+        const showRequester = G.boolParam('requester', true);
+        const showProgress = G.boolParam('progress', true);
+        const showEmpty = G.boolParam('empty', false);
+        let data = null, receivedAt = 0;
+        const fmt = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+        const img = (u) => G.escapeHtml(G.safeUrl(u) || '/logo.png');
+
+        function render() {
+            const list = document.getElementById('list');
+            if (!data) { list.innerHTML = showEmpty ? `<div class="empty">🎵 ${G.escapeHtml(G.t('songs.empty'))}</div>` : ''; return; }
+            const rows = [];
+            let startIn = 0;
+            if (data.isPlaying && data.current) {
+                const c = data.current;
+                const progress = Math.min(c.duration, c.progress + (Date.now() - receivedAt));
+                startIn = c.duration - progress;
+                rows.push(`<div class="song current ov-surface"><img src="${img(c.albumArt)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">
+                    <div class="info"><span class="title">${G.escapeHtml(c.title)} - ${G.escapeHtml(c.artist)}</span>
+                    <span class="meta">${fmt(progress)} / ${fmt(c.duration)}</span>
+                    ${showProgress ? `<div class="bar"><div style="width:${(progress / c.duration * 100).toFixed(1)}%"></div></div>` : ''}
+                    ${showRequester && c.requestedBy ? `<span class="by">${G.escapeHtml(G.t('songs.by', { name: c.requestedBy }))}</span>` : ''}</div></div>`);
+            }
+            for (const q of (data.queue || [])) {
+                if (rows.length >= MAX) break;
+                rows.push(`<div class="song ov-surface"><img src="${img(q.albumArt)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">
+                    <div class="info"><span class="title">${G.escapeHtml(q.title)} - ${G.escapeHtml(q.artist)}</span>
+                    <span class="meta">${G.escapeHtml(G.t('songs.startIn', { t: fmt(startIn) }))}</span>
+                    ${showRequester && q.requestedBy ? `<span class="by">${G.escapeHtml(G.t('songs.by', { name: q.requestedBy }))}</span>` : ''}</div></div>`);
+                startIn += Number(q.duration) || 0;
+            }
+            list.innerHTML = rows.join('') || (showEmpty ? `<div class="empty">🎵 ${G.escapeHtml(G.t('songs.empty'))}</div>` : '');
+        }
+        setInterval(render, 1000);
+
+        const socket = G.connect();
+        socket.on('overlayUpdate', (d) => { data = d; receivedAt = Date.now(); render(); });
+        render();
+
+        if (G.isDemo) {
+            data = { isPlaying: true, current: { title: 'River', artist: 'Eminem', albumArt: '/logo.png', duration: 221000, progress: 66000, requestedBy: 'Léa 🎮' },
+                queue: [{ title: 'Hello', artist: 'Pop Smoke', albumArt: '/logo.png', duration: 191000, requestedBy: 'Max' },
+                    { title: 'Bye Bye Bye', artist: '*NSYNC', albumArt: '/logo.png', duration: 200000, requestedBy: 'Sarah' }] };
+            receivedAt = Date.now();
+            render();
+        }
+    </script>
+</body>
+
+</html>

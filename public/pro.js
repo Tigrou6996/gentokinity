@@ -364,6 +364,86 @@
     };
     document.addEventListener('change', (e) => { if (e.target.id === 'battle-team-count') Battle.renderTeams(); });
 
+    // ------------------------------------------------------------------ giveaway & points drop
+    const val = (id) => (document.getElementById(id) || {}).value;
+    const checked = (id) => !!(document.getElementById(id) || {}).checked;
+    const avatarHtml = (p) => `<img src="${esc(p.profilePictureUrl || '/logo.png')}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">`;
+
+    const Giveaway = {
+        timer: null,
+        async start() {
+            try {
+                await api('/api/giveaway/start', { method: 'POST', body: {
+                    title: val('gw-title'), prize: val('gw-prize'), keyword: val('gw-keyword'), duration: Number(val('gw-duration')),
+                    coinsPerTicket: Number(val('gw-coins')) || 0, followersOnly: checked('gw-followers'), subscribersOnly: checked('gw-subs')
+                } });
+                showToast(t('Inscriptions ouvertes !'), 'success');
+                this.poll();
+            } catch (e) { showToast('❌ ' + e.message, 'error'); }
+        },
+        async cmd(c) {
+            try { await api(`/api/giveaway/${c}`, { method: 'POST' }); this.refresh(); } catch (e) { showToast('❌ ' + e.message, 'error'); }
+        },
+        async draw() {
+            try {
+                const r = await api('/api/giveaway/draw', { method: 'POST', body: { count: Number(val('gw-count')) || 1 } });
+                if (r.drawn && r.drawn.length) showToast(`🎉 ${r.drawn.map(w => w.nickname).join(', ')}`, 'success');
+                else showToast(t('Aucun participant à tirer au sort.'), 'error');
+                this.refresh();
+            } catch (e) { showToast('❌ ' + e.message, 'error'); }
+        },
+        async refresh() {
+            const box = document.getElementById('gw-live');
+            if (!box) return;
+            try {
+                const st = await api('/api/giveaway/state');
+                if (st.status === 'idle') { box.innerHTML = `<span class="text-dim">${esc(t('Aucun giveaway en cours.'))}</span>`; return; }
+                box.innerHTML = `<div class="gw-head"><b>${esc(st.title)}</b>${st.prize ? ` — ${esc(st.prize)}` : ''}
+                    <span class="gw-status ${st.status}">${esc(t(st.status === 'open' ? 'Inscriptions ouvertes' : 'Inscriptions fermées'))}</span></div>
+                    <div class="gw-stats"><span>👥 ${fmt(st.count)} ${esc(t('participants'))}</span>${st.coinsPerTicket ? `<span>🎟️ ${fmt(st.tickets)} tickets</span>` : ''}
+                    ${st.endsAt && st.status === 'open' ? `<span>⏱️ ${Math.max(0, Math.ceil((st.endsAt - Date.now()) / 1000))}s</span>` : ''}</div>
+                    ${st.winners.length ? `<div class="gw-winners">🏆 ${st.winners.map(w => `<span class="gw-user">${avatarHtml(w)}${esc(w.nickname)}</span>`).join('')}</div>` : ''}
+                    <div class="gw-people">${st.participants.map(p => `<span class="gw-user">${avatarHtml(p)}${esc(p.nickname)}${p.tickets > 1 ? ` <small>×${p.tickets}</small>` : ''}</span>`).join('') || `<span class="text-dim">${esc(t('En attente des participants…'))}</span>`}</div>`;
+            } catch (e) { box.innerHTML = `<span class="text-dim">❌ ${esc(e.message)}</span>`; }
+        },
+        poll() {
+            clearInterval(this.timer);
+            this.refresh();
+            Drop.refresh();
+            this.timer = setInterval(() => {
+                if (document.getElementById('giveaway-section')?.style.display === 'none') { clearInterval(this.timer); this.timer = null; return; }
+                this.refresh(); Drop.refresh();
+            }, 1500);
+        }
+    };
+
+    const Drop = {
+        async start() {
+            try {
+                await api('/api/pointsdrop/start', { method: 'POST', body: {
+                    amount: Number(val('pd-amount')), keyword: val('pd-keyword'), duration: Number(val('pd-duration')), maxCatchers: Number(val('pd-max'))
+                } });
+                showToast(t('Points lâchés !'), 'success');
+                Giveaway.poll();
+            } catch (e) { showToast('❌ ' + e.message, 'error'); }
+        },
+        async stop() {
+            try { await api('/api/pointsdrop/stop', { method: 'POST' }); this.refresh(); } catch (e) { showToast('❌ ' + e.message, 'error'); }
+        },
+        async refresh() {
+            const box = document.getElementById('pd-live');
+            if (!box) return;
+            try {
+                const st = await api('/api/pointsdrop/state');
+                if (!st.id) { box.innerHTML = `<span class="text-dim">${esc(t('Aucun drop en cours.'))}</span>`; return; }
+                box.innerHTML = `<div class="gw-head"><b>🪙 ${fmt(st.perViewer)} points</b> · ${esc(st.keyword)}
+                    <span class="gw-status ${st.running ? 'open' : 'closed'}">${esc(t(st.running ? 'En cours' : 'Terminé'))}</span></div>
+                    <div class="gw-stats"><span>🙋 ${st.catchers.length} / ${st.maxCatchers}</span>${st.running ? `<span>⏱️ ${Math.max(0, Math.ceil((st.endsAt - Date.now()) / 1000))}s</span>` : ''}</div>
+                    <div class="gw-people">${st.catchers.map(c => `<span class="gw-user">${avatarHtml(c)}${esc(c.nickname)} <small>+${fmt(c.points)}</small></span>`).join('')}</div>`;
+            } catch (e) { box.innerHTML = `<span class="text-dim">❌ ${esc(e.message)}</span>`; }
+        }
+    };
+
     // ------------------------------------------------------------------ simulator
     const Sim = {
         gifts: [],
@@ -553,6 +633,7 @@
     // ------------------------------------------------------------------ init
     function onSection(id) {
         if (id === 'gallery' && window.GentokGallery) window.GentokGallery.render();
+        if (id === 'giveaway') Giveaway.poll();
         if (id === 'points') { Points.load(); Points.loadSettings(); }
         if (id === 'premium') Plan.load();
         if (id === 'battle') { if (!document.querySelector('#battle-teams .battle-team')) Battle.renderTeams(); Battle.poll(); }
@@ -566,5 +647,5 @@
         setupOverlayStyleBar();
     });
 
-    window.GentokPro = { onSection, points: Points, plan: Plan, battle: Battle, sim: Sim, api };
+    window.GentokPro = { onSection, points: Points, plan: Plan, battle: Battle, sim: Sim, giveaway: Giveaway, drop: Drop, api };
 })();

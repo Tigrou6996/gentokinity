@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Giveaway</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --accent: #fe2c55; --accent2: #fbbf24; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: #fff; }
+        .gw { width: min(440px, calc(100vw - 20px)); margin: 10px auto; padding: 16px 18px; border-radius: 18px; background: rgba(14,14,22,.88);
+            border: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); box-shadow: 0 14px 40px rgba(0,0,0,.45); text-align: center;
+            opacity: 0; transform: translateY(16px) scale(.96); transition: all .45s cubic-bezier(.2,1.3,.4,1); }
+        .gw.show { opacity: 1; transform: none; }
+        .gw h2 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+        .prize { margin-top: 4px; font-size: 18px; font-weight: 800; color: var(--accent2); }
+        .join { margin: 12px auto 4px; display: inline-block; padding: 8px 18px; border-radius: 999px; font-size: 20px; font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #7c3aed)); animation: pulse 1.6s ease-in-out infinite; }
+        .rules { font-size: 13px; opacity: .8; margin-top: 4px; }
+        .stats { display: flex; justify-content: center; gap: 16px; margin-top: 10px; font-weight: 800; }
+        .stats span { opacity: .75; font-weight: 600; margin-left: 4px; }
+        .faces { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 10px; min-height: 34px; }
+        .faces img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.8); background: #222; animation: pop .35s ease-out; }
+        .timer { margin-top: 8px; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; opacity: .9; }
+        .closed { margin-top: 10px; color: var(--accent2); font-weight: 800; }
+        .roulette { margin: 16px 0 6px; height: 54px; overflow: hidden; border-radius: 12px; background: rgba(255,255,255,.08); position: relative; }
+        .roulette .name { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; }
+        .winner img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent2); box-shadow: 0 0 26px var(--accent2); margin-top: 12px; animation: pop .6s cubic-bezier(.2,1.6,.4,1); }
+        .winner .n { font-size: 30px; font-weight: 900; margin-top: 6px; }
+        .winner .t { color: var(--accent2); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .confetti { position: fixed; top: -10px; width: 9px; height: 14px; border-radius: 2px; pointer-events: none; animation: drop linear forwards; }
+        @keyframes pulse { 50% { transform: scale(1.06); } }
+        @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+        @keyframes drop { to { transform: translateY(110vh) rotate(720deg); opacity: .7; } }
+    </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
+</head>
+
+<body>
+    <div class="gw ov-surface" id="gw"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Giveaway (tirage au sort). Lancez-le depuis Outils live > Giveaway & Points Drop.
+        // URL parameters: hold=15 (secondes d'affichage du gagnant), faces=1 (avatars des participants), theme, color, color2, font, lang, demo=1
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        document.documentElement.style.setProperty('--accent2', G.colorParam('color2', '#fbbf24'));
+        const hold = Math.min(Math.max(G.numParam('hold', 15), 3), 300);
+        const withFaces = G.boolParam('faces', true);
+        const el = document.getElementById('gw');
+        let state = { status: 'idle' };
+        let drawing = false, hideTimer = null;
+        const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+        function render() {
+            if (drawing) return;
+            if (!state || state.status === 'idle') { el.classList.remove('show'); return; }
+            const rules = [state.followersOnly ? G.t('gw.followers') : '', state.subscribersOnly ? G.t('gw.subs') : '',
+                state.coinsPerTicket ? G.t('gw.bonus', { n: state.coinsPerTicket }) : ''].filter(Boolean).join(' · ');
+            el.innerHTML = `<h2>🎁 ${G.escapeHtml(state.title || 'Giveaway')}</h2>
+                ${state.prize ? `<div class="prize">${G.escapeHtml(state.prize)}</div>` : ''}
+                ${state.status === 'open' ? `<div class="join">${G.escapeHtml(G.t('gw.type', { cmd: state.keyword }))}</div>` : `<div class="closed">🔒 ${G.escapeHtml(G.t('gw.closed'))}</div>`}
+                ${rules ? `<div class="rules">${G.escapeHtml(rules)}</div>` : ''}
+                <div class="stats"><div>${G.formatNumber(state.count || 0)}<span>${G.escapeHtml(G.t('gw.entries'))}</span></div>
+                    ${state.coinsPerTicket ? `<div>${G.formatNumber(state.tickets || 0)}<span>${G.escapeHtml(G.t('gw.tickets'))}</span></div>` : ''}</div>
+                ${withFaces ? `<div class="faces">${(state.participants || []).slice(0, 14).map(p => `<img src="${G.escapeHtml(G.avatarOf(p))}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'" title="${G.escapeHtml(p.nickname)}">`).join('')}</div>` : ''}
+                <div class="timer" id="gw-timer"></div>`;
+            el.classList.add('show');
+            tick();
+        }
+        function tick() {
+            const t = document.getElementById('gw-timer');
+            if (t) t.textContent = state.status === 'open' && state.endsAt ? `⏱️ ${fmt(state.endsAt - Date.now())}` : '';
+        }
+        setInterval(tick, 500);
+
+        function confetti() {
+            const colors = ['#fe2c55', '#25f4ee', '#fbbf24', '#4ade80', '#a78bfa', '#fff'];
+            for (let i = 0; i < 90; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti'; c.style.left = Math.random() * 100 + 'vw'; c.style.background = colors[i % colors.length];
+                c.style.animationDuration = (2 + Math.random() * 2) + 's'; c.style.animationDelay = (Math.random() * .6) + 's';
+                document.body.appendChild(c); setTimeout(() => c.remove(), 5000);
+            }
+        }
+
+        function onDraw(d) {
+            if (!d || !d.drawn || !d.drawn.length) { state = d || state; render(); return; }
+            drawing = true;
+            clearTimeout(hideTimer);
+            const names = (d.names && d.names.length ? d.names : d.drawn.map(w => w.nickname));
+            el.innerHTML = `<h2>🎁 ${G.escapeHtml(d.title || 'Giveaway')}</h2>${d.prize ? `<div class="prize">${G.escapeHtml(d.prize)}</div>` : ''}
+                <div class="roulette"><div class="name" id="gw-name"></div></div>`;
+            el.classList.add('show');
+            const nameEl = document.getElementById('gw-name');
+            let i = 0, delay = 60;
+            const spin = () => {
+                nameEl.textContent = names[i++ % names.length];
+                delay *= 1.09;
+                if (delay < 420) return setTimeout(spin, delay);
+                const w = d.drawn[0];
+                el.innerHTML = `<h2>🎁 ${G.escapeHtml(d.title || 'Giveaway')}</h2>${d.prize ? `<div class="prize">${G.escapeHtml(d.prize)}</div>` : ''}
+                    <div class="winner"><img src="${G.escapeHtml(G.avatarOf(w))}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">
+                    <div class="t">🏆 ${G.escapeHtml(G.t(d.drawn.length > 1 ? 'gw.winners' : 'gw.winner'))}</div>
+                    <div class="n">${d.drawn.map(x => G.escapeHtml(x.nickname)).join(', ')}</div></div>`;
+                confetti();
+                hideTimer = setTimeout(() => { drawing = false; state = { ...d }; render(); }, hold * 1000);
+            };
+            spin();
+        }
+
+        const socket = G.connect();
+        socket.on('giveaway_update', (s) => { if (s) { state = s; render(); } });
+        socket.on('giveaway_draw', onDraw);
+        if (G.token && !G.isDemo) fetch(`/api/giveaway/state?token=${encodeURIComponent(G.token)}`).then(r => r.json()).then(s => { if (s) { state = s; render(); } }).catch(() => { });
+
+        if (G.isDemo) {
+            const people = [];
+            state = { status: 'open', title: 'Giveaway', prize: 'Carte cadeau 20 €', keyword: '!join', followersOnly: true, coinsPerTicket: 10, endsAt: Date.now() + 45000, count: 0, tickets: 0, participants: [] };
+            render();
+            setInterval(() => {
+                if (drawing) return;
+                if (state.status === 'open' && people.length < 40) {
+                    const u = { ...G.demoUser(), tickets: 1 };
+                    people.unshift(u);
+                    state = { ...state, count: people.length, tickets: people.length + 7, participants: people };
+                    render();
+                }
+                if (Date.now() > state.endsAt && state.status === 'open') {
+                    onDraw({ ...state, status: 'closed', drawn: [people[Math.floor(Math.random() * people.length)]], names: people.map(p => p.nickname) });
+                    state = { ...state, status: 'open', endsAt: Date.now() + 45000 + hold * 1000 };
+                }
+            }, 900);
+        }
+    </script>
+</body>
+
+</html>

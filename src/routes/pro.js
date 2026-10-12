@@ -8,6 +8,8 @@ const points = require('../features/points');
 const battle = require('../features/battle');
 const simulator = require('../features/simulator');
 const coinmatch = require('../features/coinmatch');
+const giveaway = require('../features/giveaway');
+const pointsdrop = require('../features/pointsdrop');
 const ViewerPoints = require('../models/ViewerPoints');
 const PointTransaction = require('../models/PointTransaction');
 
@@ -195,6 +197,39 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
             case 'winners': return res.json(coinmatch.showWinners(token));
             default: return res.status(404).json({ error: 'Commande inconnue' });
         }
+    }));
+
+    // ---------------- Giveaway (prize draw) ----------------
+    app.get('/api/giveaway/state', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        res.json(giveaway.getState(token));
+    }));
+    app.post('/api/giveaway/:command', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        const b = req.body || {};
+        switch (req.params.command) {
+            case 'start': return res.json(giveaway.start(token, {
+                title: b.title, prize: b.prize, keyword: b.keyword, duration: b.duration,
+                followersOnly: b.followersOnly, subscribersOnly: b.subscribersOnly, coinsPerTicket: b.coinsPerTicket
+            }));
+            case 'close': return res.json(giveaway.close(token));
+            case 'draw': return res.json(giveaway.draw(token, parseInt(b.count, 10) || 1));
+            case 'reset': return res.json(giveaway.reset(token));
+            default: return res.status(404).json({ error: 'Commande inconnue' });
+        }
+    }));
+
+    // ---------------- Points Drop ----------------
+    app.get('/api/pointsdrop/state', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        res.json(pointsdrop.getState(token));
+    }));
+    app.post('/api/pointsdrop/:command', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        const b = req.body || {};
+        if (req.params.command === 'start') return res.json(pointsdrop.start(token, { amount: b.amount, keyword: b.keyword, duration: b.duration, maxCatchers: b.maxCatchers }));
+        if (req.params.command === 'stop') return res.json(pointsdrop.stop(token));
+        res.status(404).json({ error: 'Commande inconnue' });
     }));
 
     // ---------------- Dashboard buttons for an overlay ----------------

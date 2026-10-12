@@ -164,6 +164,10 @@ function initSocket(server) {
             'coinmatch_update', // Coin Match (gift auction)
             'coinmatch_end',
             'overlay_command',  // dashboard buttons for an overlay (e.g. empty the gift jar)
+            'giveaway_update',  // giveaway (prize draw)
+            'giveaway_draw',
+            'pointsdrop_update', // points drop
+            'pointsdrop_catch',
             'emote'             // subscriber emotes (Emojify overlay)
         ];
 

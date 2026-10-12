@@ -49,6 +49,8 @@
             params: [{ key: 'stat', label: 'Statistique', type: 'select', options: ['follows', ...STATS.filter(x => x !== 'follows')] }, { key: 'target', label: 'Objectif', type: 'number', def: 100 }, { key: 'step', label: 'Palier suivant (+)', type: 'number', def: 0 }, { key: 'title', label: 'Titre', type: 'text' }, { key: 'layout', label: 'Forme', type: 'select', options: ['bar', 'slant'] }, theme, color, color2] },
         { id: 'likegoal', cat: 'goals', icon: 'fa-heart-circle-check', name: 'Objectif de likes', desc: 'Barre animée avec cœurs qui s\'envolent. Suit l\'objectif du tableau de bord quand il est activé.', h: 160, test: { type: 'like', likeCount: 100 },
             params: [{ key: 'theme', label: 'Style', type: 'select', options: ['neon', 'glass', 'gradient', 'minimal', 'candy', 'retro'] }, { key: 'target', label: 'Objectif', type: 'number', def: 10000 }, { key: 'title', label: 'Titre', type: 'text' }, { key: 'hearts', label: 'Cœurs', type: 'bool', def: true }, color, color2] },
+        { id: 'songs', cat: 'goals', icon: 'fa-music', name: 'Song Requests (Spotify)', desc: "La musique en cours et la file d'attente des !play, avec pochettes et « démarre dans ». Nécessite le module Spotify.", h: 300,
+            params: [{ key: 'max', label: 'Musiques affichées', type: 'number', def: 3 }, { key: 'requester', label: 'Demandé par', type: 'bool', def: true }, { key: 'progress', label: 'Barre de progression', type: 'bool', def: true }, size(18), theme, { key: 'color', label: 'Couleur', type: 'color', def: '#1DB954' }] },
         { id: 'counter', cat: 'goals', icon: 'fa-eye', name: 'Compteur', desc: 'Un nombre en direct : spectateurs, likes, pièces, follows… Idéal pour le multistream.', h: 120, test: { type: 'like', likeCount: 20 },
             params: [{ key: 'stat', label: 'Statistique', type: 'select', options: ['viewers', ...STATS.filter(x => x !== 'viewers')] }, { key: 'label', label: 'Texte', type: 'text' }, { key: 'icon', label: 'Icône', type: 'text', def: '👁️' }, size(48), theme, color] },
         { id: 'timer', cat: 'goals', icon: 'fa-hourglass-half', name: 'Timer subathon', desc: 'Compte à rebours qui s\'allonge avec les pièces, follows, abonnements et partages.', h: 160, test: BIG_GIFT,
@@ -59,6 +61,10 @@
             params: [size(520), { key: 'hold', label: 'Affichage du résultat (s)', type: 'number', def: 5 }, { key: 'stand', label: 'Pied', type: 'bool', def: true }, color] },
         { id: 'coinmatch', cat: 'games', icon: 'fa-gavel', name: 'Coin Match', desc: 'Enchère en direct : les spectateurs misent avec leurs cadeaux pour être en tête.', h: 420, test: BIG_GIFT, controls: 'coinmatch', premium: true,
             params: [{ key: 'limit', label: 'Lignes', type: 'number', def: 5 }, { key: 'hold', label: 'Affichage des gagnants (s)', type: 'number', def: 12 }, { key: 'title', label: 'Titre', type: 'text' }, theme, color, color2] },
+        { id: 'giveaway', cat: 'games', icon: 'fa-gift', name: 'Giveaway', desc: 'Tirage au sort : les spectateurs tapent !join, puis roulette des pseudos et gagnant avec confettis. Se pilote dans Outils live › Giveaway.', h: 380, controls: 'giveaway',
+            params: [{ key: 'hold', label: 'Affichage du gagnant (s)', type: 'number', def: 15 }, { key: 'faces', label: 'Avatars des participants', type: 'bool', def: true }, theme, color, color2] },
+        { id: 'pointsdrop', cat: 'games', icon: 'fa-parachute-box', name: 'Points Drop', desc: 'Des pièces tombent : les premiers qui tapent !catch gagnent des points. Se lance dans Outils live › Giveaway & Points Drop.', h: 300, scale: true, controls: 'giveaway',
+            params: [{ key: 'coins', label: 'Pièces par seconde', type: 'number', def: 40 }] },
         { id: 'jar', cat: 'games', icon: 'fa-jar', name: 'Pot à cadeaux', desc: 'Le bocal se remplit avec les cadeaux de vos spectateurs.', h: 420, test: GIFT, controls: 'jar', premium: true,
             params: [{ key: 'style', label: 'Bocal', type: 'select', options: ['glass', 'neon', 'wood', 'gold'] }, size(34, 'Taille des cadeaux'), { key: 'width', label: 'Largeur', type: 'number', def: 420 }, { key: 'bubble', label: 'Bulle « a offert »', type: 'bool', def: true }, { key: 'top', label: 'Meilleur donateur', type: 'bool', def: true }, { key: 'likes', label: 'Cœurs avec les likes', type: 'bool', def: false }, color] },
         { id: 'battle', cat: 'games', icon: 'fa-people-pulling', name: "Bataille d'équipes", desc: "La bataille ou le sondage lancé dans Outils live › Batailles d'équipes.", h: 200, controls: 'battle',
@@ -127,6 +133,9 @@
         }
         if (o.controls === 'jar') {
             return `<div class="gal-controls"><button class="btn-secondary" data-jar="reset"><i class="fas fa-rotate-left"></i> ${esc(t('Vider le pot'))}</button></div>`;
+        }
+        if (o.controls === 'giveaway') {
+            return `<div class="gal-controls"><button class="btn-secondary" onclick="showSection('giveaway')"><i class="fas fa-gift"></i> ${esc(t('Ouvrir Giveaway & Points Drop'))}</button></div>`;
         }
         if (o.controls === 'battle') {
             return `<div class="gal-controls"><button class="btn-secondary" onclick="showSection('battle')"><i class="fas fa-fist-raised"></i> ${esc(t("Ouvrir les batailles"))}</button></div>`;

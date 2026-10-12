@@ -624,7 +624,8 @@ function registerEvents(tiktokConnection, connector) {
                 const spotifyModule = require('../utils/spotifyModule');
 
                 const playCmd = (spotify.commands.play || '!play').toLowerCase();
-                if (lowerComment.startsWith(playCmd) && spotify.playEnabled !== false) {
+                const firstWord = lowerComment.split(/\s+/)[0];
+                if (firstWord === playCmd && spotify.playEnabled !== false) {
                     const query = comment.substring(playCmd.length).trim();
                     const result = await spotifyModule.playTrack(token, query, data.userId, data.uniqueId, isMod, isSub);
                     if (result && result.success) {
@@ -632,6 +633,8 @@ function registerEvents(tiktokConnection, connector) {
                     } else if (result) {
                         const reasonMap = {
                             'disabled': 'Le système Spotify est désactivé.',
+                            'not_connected': "Spotify n'est pas connecté (Paramètres > Spotify > Se connecter).",
+                            'queue_full': "La file d'attente est pleine.",
                             'limit_reached': `Vous avez atteint votre limite (${spotify.maxTracksPerUser} musiques).`,
                             'query_too_short': 'La recherche est trop courte.',
                             'not_found': `Musique introuvable pour "${query}".`,

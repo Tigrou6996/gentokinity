@@ -7,6 +7,8 @@ const logger = require('../utils/logger');
 const points = require('./points');
 const battle = require('./battle');
 const coinmatch = require('./coinmatch');
+const giveaway = require('./giveaway');
+const pointsdrop = require('./pointsdrop');
 
 const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
@@ -88,6 +90,8 @@ async function onChat(connector, data) {
         const s = points.getSettings(settings);
         markActive(connector, data);
         battle.onChat(connector.token, userOf(data), data.comment);
+        giveaway.onChat(connector.token, { ...userOf(data), isSubscriber: !!data.isSubscriber, followRole: data.followRole }, data.comment);
+        pointsdrop.onChat(connector, userOf(data), data.comment);
 
         if (s.enabled && canPersist(connector)) {
             if (!connector.chatPointsAt) connector.chatPointsAt = new Map();
@@ -107,6 +111,7 @@ async function onGifts(connector, data, count, coins) {
         markActive(connector, data);
         battle.onGift(connector.token, userOf(data), data.giftId, coins);
         coinmatch.onGift(connector.token, userOf(data), coins);
+        giveaway.onGift(connector.token, userOf(data), coins);
         if (!canPersist(connector)) return;
         const s = points.getSettings(await config.getSettings(connector.token));
         if (s.enabled) points.award(connector.token, userOf(data), coins * s.perCoin, 'gift', { coins, gifts: count });
