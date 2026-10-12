@@ -6155,6 +6155,8 @@ window.switchScene = async (sceneId) => {
     // If we want to switch to "User First Scene", sceneId must be provided.
 
     if (sceneId === 'default' || !sceneId) sceneId = null;
+    // Two quick clicks: only the last choice may update the screen (answers can come back in any order)
+    const seq = (window.__sceneSwitchSeq = (window.__sceneSwitchSeq || 0) + 1);
     try {
         const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
@@ -6164,6 +6166,7 @@ window.switchScene = async (sceneId) => {
             body: JSON.stringify({ sceneId, token })
         });
         const result = await res.json();
+        if (seq !== window.__sceneSwitchSeq) return;
         if (result.success) {
             // [FIX] Update data dynamically instead of reloading the whole page
             activeSceneId = result.activeSceneId;
@@ -6212,21 +6215,23 @@ window.updateSceneUI = () => {
         div.innerHTML = `
             <span style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding-right: 10px;">
                 <i class="fas fa-layer-group" style="flex-shrink: 0;"></i> 
-                <span class="scene-title-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">${s.title}</span>
+                <span class="scene-title-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">${escapeHtml(s.title)}</span>
                 ${badge}
             </span>
             <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
-                <div class="scene-action-btn edit" onclick="renameScene('${s.id}', '${s.title.replace(/'/g, "\\'")}', event)" title="Renommer">
+                <div class="scene-action-btn edit" onclick="renameScene(this.closest('.custom-option').dataset.sceneId, this.closest('.custom-option').dataset.title, event)" title="Renommer">
                     <i class="fas fa-pen"></i>
                 </div>
-                <div class="scene-delete-btn" onclick="deleteScene('${s.id}', event)" title="Supprimer">
+                <div class="scene-delete-btn" onclick="deleteScene(this.closest('.custom-option').dataset.sceneId, event)" title="Supprimer">
                     <i class="fas fa-trash-alt"></i>
                 </div>
             </div>
         `;
+        div.dataset.sceneId = s.id;
+        div.dataset.title = s.title;
         div.onclick = (e) => {
             if (e.target.closest('.scene-delete-btn') || e.target.closest('.scene-action-btn')) return;
-            selectCustomOption('cs-active-scene', s.id, `<i class="fas fa-layer-group"></i> ${s.title}${badge}`);
+            selectCustomOption('cs-active-scene', s.id, `<i class="fas fa-layer-group"></i> ${escapeHtml(s.title)}${badge}`);
             switchScene(s.id);
         };
         optionsGrid.appendChild(div);
@@ -6250,7 +6255,7 @@ window.updateSceneUI = () => {
                 `<span style="font-size: 0.6rem; background: #8a2be2; color: white; padding: 2px 4px; border-radius: 4px; margin-left: 5px; font-weight: bold;">PRESET</span>` :
                 ``;
 
-            triggerSpan.innerHTML = `<i class="fas fa-layer-group"></i> ${active.title}${badge}`;
+            triggerSpan.innerHTML = `<i class="fas fa-layer-group"></i> ${escapeHtml(active.title)}${badge}`;
             triggerSpan.title = active.title;
         } else if (triggerSpan) {
             // Fallback if deleted or not found

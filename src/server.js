@@ -18,7 +18,19 @@ const multer = require('multer');
 const logger = require('./utils/logger');
 const config = require('./config');
 const TikTokConnector = require('./connector');
-const { initSocket, setOnAppConnected, isAppConnected, emitToApp, emitEvent } = require('./utils/socket'); // [RESTORED]
+const { initSocket, setOnAppConnected, isAppConnected, emitToApp, emitToDesktopApp, emitEvent } = require('./utils/socket'); // [RESTORED]
+
+// The Windows app runs the live with its own copy of the scene (events / actions): it must reload it
+// when the dashboard changes them on the server, otherwise the live keeps the old scene.
+// Settings sent by the dashboard: never the fields owned by the server (Premium comes from Stripe / admin)
+function userSettings(body) {
+    const { isPremium, billing, ip, ...rest } = body || {};
+    return rest;
+}
+
+function notifyAppSessionChanged(token) {
+    if (!config.isAppMode && token) emitToDesktopApp(token, 'app_reload_session', { at: Date.now() });
+}
 const connectDB = require('./utils/db'); // [RESTORED]
 const Global = require('./models/Global');
 const Sound = require('./models/Sound');
@@ -587,7 +599,7 @@ app.post('/api/spotify/settings', async (req, res) => {
     try {
         const token = req.body.token || req.query.token;
         if (token) await config.loadSession(token);
-        await config.saveSettings(req.body);
+        await config.saveSettings(userSettings(req.body));
         await spotifyModule.initSpotify(token);
         res.json({ success: true });
     } catch (err) {
@@ -934,7 +946,7 @@ app.post('/api/settings', async (req, res) => {
         const settingsBefore = token ? await config.getSettings(token) : null;
         const oldSceneId = settingsBefore ? settingsBefore.activeSceneId : null;
 
-        await config.saveSettings(req.body);
+        await config.saveSettings(userSettings(req.body));
 
         // [CRITICAL] If we switched scenes, we MUST reload the session to pull the new scene's stats
         // into the active memory session (s), otherwise overlays will see defaults (0).
@@ -1173,6 +1185,7 @@ app.post('/api/events', async (req, res) => {
 
     if (Array.isArray(events)) {
         await config.saveEvents(events, token);
+        notifyAppSessionChanged(token);
         res.send('OK');
     } else {
         res.status(400).json({ error: 'Invalid events format' });
@@ -1209,6 +1222,7 @@ app.post('/api/actions', async (req, res) => {
 
     if (Array.isArray(actions)) {
         await config.saveActions(actions, token);
+        notifyAppSessionChanged(token);
         res.send('OK');
     } else {
         res.status(400).json({ error: 'Invalid actions format' });
@@ -1693,6 +1707,7 @@ app.post('/api/presets/install', async (req, res) => {
         });
 
         await config.saveEvents([...currentEvents, ...newEvents], token);
+        notifyAppSessionChanged(token);
 
         res.json({ success: true, actionsInstalled: newActions.length, eventsInstalled: newEvents.length, activeSceneId: session.activeSceneId });
     } catch (err) {
@@ -1702,11 +1717,17 @@ app.post('/api/presets/install', async (req, res) => {
 });
 
 // API: Switch Active Scene
+const sceneSwitchQueue = new Map(); // token -> promise: switches of one account run one after the other
 app.post('/api/scenes/switch', async (req, res) => {
     const { sceneId, token: reqToken } = req.body;
     const token = reqToken || req.query.token || config.licenseToken;
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
+    const previous = sceneSwitchQueue.get(token) || Promise.resolve();
+    let release;
+    const current = new Promise(r => { release = r; });
+    sceneSwitchQueue.set(token, previous.then(() => current));
+    await previous;
     try {
         if (token !== config.licenseToken) {
             await config.loadSession(token);
@@ -1719,11 +1740,14 @@ app.post('/api/scenes/switch', async (req, res) => {
         const freshConfig = await getFullConfig(token);
         emitEvent('sync_config', freshConfig, token);
         emitEvent('remote_reload', { sceneId }, token); // Keep for overlays to reload if they want
+        notifyAppSessionChanged(token);
 
         res.json({ success: true, activeSceneId: (await config.getSessionFor(token)).activeSceneId });
     } catch (err) {
         console.error('Switch scene error:', err);
         res.status(500).json({ error: 'Erreur lors du changement de scène' });
+    } finally {
+        release();
     }
 });
 
@@ -1752,6 +1776,7 @@ app.post('/api/scenes/delete', async (req, res) => {
             await config.saveSettings({ activeSceneId: null, token });
             await config.loadSession(token);
         }
+        notifyAppSessionChanged(token);
 
         res.json({ success: true, activeSceneId: (await config.getSessionFor(token)).activeSceneId });
     } catch (err) {

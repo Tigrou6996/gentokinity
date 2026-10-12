@@ -41,6 +41,21 @@ function initRemoteClient() {
         });
     });
 
+    // The scene, its events or its actions were changed from the dashboard: reload them for the live
+    let reloadTimer = null;
+    socket.on('app_reload_session', () => {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(async () => {
+            try {
+                if (!config.licenseToken) return;
+                await config.loadSession(config.licenseToken);
+                logger.info('🔄 Scène / actions / événements rechargés depuis le tableau de bord.');
+            } catch (e) {
+                logger.warn(`⚠️ Rechargement de la scène impossible : ${e.message}`);
+            }
+        }, 400);
+    });
+
     socket.on('remote_keyboard', (data) => {
         logger.info(`📥 Remote Key received from VPS: ${data.key} (dur: ${data.duration || 100}ms)`);
         // FORCE EXECUTION: Even if local detection (isAppMode) is shaky,
