@@ -96,6 +96,11 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Escapes text coming from TikTok viewers before it is put into innerHTML
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
         const socket = io();
         const container = document.getElementById('gift-container');
 
@@ -129,16 +134,16 @@
             const count = data.repeatCount || 1;
 
             const iconHtml = data.url
-                ? `<img src="${data.url}" style="width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));">`
+                ? `<img src="${escapeHtml(data.url)}" style="width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));">`
                 : `<i class="fas fa-gift gift-icon"></i>`;
 
             item.innerHTML = `
                 ${iconHtml}
                 <div class="gift-info">
-                    <span class="gift-user">${name}</span>
-                    <span class="gift-name">a envoyé ${giftName}</span>
+                    <span class="gift-user">${escapeHtml(name)}</span>
+                    <span class="gift-name">a envoyé ${escapeHtml(giftName)}</span>
                 </div>
-                <div class="gift-badge">x${count}</div>
+                <div class="gift-badge">x${escapeHtml(count)}</div>
             `;
 
             container.prepend(item);

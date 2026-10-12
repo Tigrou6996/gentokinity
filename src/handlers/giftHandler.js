@@ -1,6 +1,4 @@
-const logger = require('../utils/logger');
 const actionManager = require('../actions/actionManager');
-const { translateGift } = require('../utils/giftTranslator');
 const { resolveGiftName } = require('../utils/giftPrices');
 
 /**

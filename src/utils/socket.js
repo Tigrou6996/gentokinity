@@ -282,34 +282,9 @@ function initSocket(server) {
             }
         });
 
-        // [REMOTE CONTROL] Handle keyboard actions from VPS
-        socket.on('remote_keyboard', (data) => {
-            const { key } = data;
-            if (key) {
-                console.log(`⌨️ Action Clavier distante reçue : ${key}`);
-                try {
-                    const { pressKey } = require('../actions/keyboardAction');
-                    pressKey(key);
-                } catch (e) {
-                    console.error('Erreur exécution touche distante:', e);
-                }
-            }
-        });
-
-        // [REMOTE CONTROL] Handle RCON (Minecraft) actions relayed from VPS
-        socket.on('remote_rcon', async (data) => {
-            const { command, settings: mcSettings } = data;
-            if (command && mcSettings) {
-                console.log(`🎮 Remote RCON reçu : ${command}`);
-                try {
-                    const { sendRconCommand } = require('../actions/rconAction');
-                    await sendRconCommand(command, mcSettings);
-                    console.log(`✅ Remote RCON exécuté : ${command}`);
-                } catch (e) {
-                    console.error('Erreur Remote RCON:', e.message);
-                }
-            }
-        });
+        // NOTE: 'remote_keyboard' / 'remote_rcon' are sent BY this server TO the desktop app
+        // (handled in remoteClient.js). They must never be accepted from incoming sockets,
+        // otherwise any page or LAN device could press keys / run commands on the PC.
 
         // [NEW] Relay Connection Commands (Dashboard -> App)
         socket.on('setUniqueId', (data, callback) => {
@@ -450,15 +425,18 @@ function emitLog(level, message, token = null) {
             message,
             timestamp: new Date().toLocaleTimeString()
         };
+        const config = require('../config');
         if (token) {
             io.to(`room:${token}`).emit('log', payload);
-        } else {
+        } else if (config.isAppMode) {
+            // Desktop app: a single local user, broadcasting is fine
             io.emit('log', payload);
         }
+        // On the shared VPS, token-less logs stay server-side: broadcasting them would
+        // leak every streamer's activity to every connected dashboard.
 
         // [RELAY]
         try {
-            const config = require('../config');
             if (config.isAppMode) {
                 const { emitRemote } = require('./remoteClient');
                 emitRemote('log', payload);
@@ -548,12 +526,7 @@ function emitEvent(eventName, data, token = null) {
  */
 function emitToApp(token, event, data) {
     if (io && token) {
-        const roomName = `room:${token}`;
-        const room = io.sockets.adapter.rooms.get(roomName);
-        const count = room ? room.size : 0;
-
-        io.to(roomName).emit(event, data);
-        // console.log(`📡 Broadcast to ${roomName.substring(0, 13)}... [event: ${event}, clients: ${count}]`);
+        io.to(`room:${token}`).emit(event, data);
     }
 }
 

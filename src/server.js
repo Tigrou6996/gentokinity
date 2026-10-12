@@ -14,7 +14,6 @@ const axios = require('axios'); // [NEW] For gift fetching
 const fs = require('fs');
 const os = require('os'); // [NEW] For machine-specific tokens
 
-console.log('[DEBUG] Loading .env from:', path.resolve(__dirname, '../.env'));
 const multer = require('multer');
 const logger = require('./utils/logger');
 const config = require('./config');
@@ -87,17 +86,10 @@ const upload = multer({
 app.disable('x-powered-by'); // Hide Express version
 
 app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    // [CORS] Dynamic origin mirroring or '*' without credentials
-    if (origin) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-    } else {
-        res.header('Access-Control-Allow-Origin', '*');
-        // Do NOT set Allow-Credentials when using '*' as it will break fetch in OBS/Electron
-    }
-
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    // [CORS] Public API used by OBS / Electron / the web dashboard. No cookies are used,
+    // so '*' without credentials is enough (and safer than mirroring the Origin).
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
     // Security Headers
@@ -143,17 +135,21 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         const token = session.client_reference_id || (session.metadata ? session.metadata.token : null);
 
         if (token) {
-            const months = session.metadata ? parseInt(session.metadata.months) : 1;
+            const parsedMonths = session.metadata ? parseInt(session.metadata.months, 10) : 1;
+            const months = [1, 3, 6, 12].includes(parsedMonths) ? parsedMonths : 1;
             console.log(`💰 [STRIPE] Payment success for token: ${token.substring(0, 8)}... Plan: ${months}m`);
 
             const Settings = require('./models/Settings');
 
-            // Calculate end date
-            const endDate = new Date();
-            endDate.setMonth(endDate.getMonth() + months);
-
             try {
-                const updateResult = await Settings.updateOne(
+                // Extend from the current end date if the subscription is still running,
+                // so renewing early never makes the customer lose paid days.
+                const existing = await Settings.findOne({ token }).select('billing.currentPeriodEnd').lean();
+                const currentEnd = existing?.billing?.currentPeriodEnd ? new Date(existing.billing.currentPeriodEnd) : null;
+                const endDate = (currentEnd && currentEnd > new Date()) ? currentEnd : new Date();
+                endDate.setMonth(endDate.getMonth() + months);
+
+                await Settings.updateOne(
                     { token },
                     {
                         $set: {
@@ -178,8 +174,8 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                 );
                 console.log(`💎 [STRIPE] Premium & Billing updated for ${token.substring(0, 8)}.`);
 
-                // Clear session cache if needed
-                await config.loadSession(token);
+                // Refresh cached data for this user
+                await config.invalidate(token);
             } catch (dbErr) {
                 console.error(`🚨 [STRIPE] DB Update Error:`, dbErr.message);
             }
@@ -190,18 +186,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
     res.json({ received: true });
 });
-
-// [CORS] Allow cross-origin requests from Local App / OBS
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(204);
-    }
-    next();
-});
-
 
 // [CRITICAL] Body parsing middleware MUST be before all routes (except Stripe Webhook)
 app.use(express.json());
@@ -363,7 +347,7 @@ app.get('/api/verify-license', async (req, res) => {
         const token = req.query.token;
         if (!token) return res.status(400).json({ error: 'Token manquant' });
 
-        const response = await axios.get(`https://gentok.fr/api/clientData?token=${token}`);
+        const response = await axios.get(`https://gentok.fr/api/clientData?token=${encodeURIComponent(token)}`, { timeout: 10000 });
 
         // Sync config with MongoDB for this token
         await config.loadSession(token);
@@ -401,11 +385,18 @@ app.get('/api/verify-license', async (req, res) => {
             return res.json({ error: 'Token invalide ou introuvable.' });
         }
         console.error('License check error:', err.message);
-        res.status(500).json({ error: 'Erreur vérification licence', details: err.message });
+        res.status(500).json({ error: 'Erreur vérification licence' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
+/**
+ * Token sent by the client (query string or JSON body).
+ * The "last active token" fallback is only safe in the single-user desktop app:
+ * on the shared VPS it would make a request act on someone else's account.
+ */
+function getRequestToken(req) {
+    return req.query?.token || req.body?.token || (config.isAppMode ? config.licenseToken : null);
+}
 
 // =======================
 // LOGIN API (Email/Password)
@@ -422,9 +413,11 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Find user by email
-        const user = await User.findOne({ email: email.toLowerCase() });
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ error: 'Email et mot de passe requis' });
+        }
 
-
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
 
         if (!user) {
             return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
@@ -437,8 +430,17 @@ app.post('/api/login', async (req, res) => {
             // Password is bcrypt hash
             isValidPassword = await bcrypt.compare(password, user.passwordHash);
         } else if (user.passwordHash) {
-            // Password is plain-text (fallback for existing data)
+            // Legacy plain-text password: accept it once, then store a bcrypt hash instead
             isValidPassword = (password === user.passwordHash);
+            if (isValidPassword) {
+                try {
+                    const hash = await bcrypt.hash(password, 10);
+                    await User.updateOne({ _id: user._id }, { $set: { passwordHash: hash } });
+                    console.log(`[LOGIN] Mot de passe migré vers bcrypt pour ${user.email}`);
+                } catch (e) {
+                    console.error('[LOGIN] Password migration failed:', e.message);
+                }
+            }
         } else {
             return res.status(401).json({ error: 'Mot de passe non configuré' });
         }
@@ -457,7 +459,7 @@ app.post('/api/login', async (req, res) => {
         });
     } catch (err) {
         console.error('Login error:', err.message);
-        res.status(500).json({ error: 'Erreur lors de la connexion', details: err.message });
+        res.status(500).json({ error: 'Erreur lors de la connexion' });
     }
 });
 
@@ -472,14 +474,14 @@ app.get('/api/spotify/auth-url', async (req, res) => {
         const token = req.query.token;
         if (token) await config.loadSession(token);
 
-        const settings = config.spotify;
+        const settings = token ? (await config.getSessionFor(token)).spotify : config.spotify;
         if (!settings.clientId || !settings.clientSecret) {
             return res.status(400).json({ error: 'Client ID ou Secret manquant.' });
         }
 
         const scopes = ['user-read-playback-state', 'user-modify-playback-state', 'user-read-currently-playing'];
-        const state = config.licenseToken;
-        const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${settings.clientId}&scope=${encodeURIComponent(scopes.join(' '))}&redirect_uri=${encodeURIComponent(`${config.remoteDashboardUrl}/api/spotify/callback`)}&state=${state}`;
+        const state = token || config.licenseToken || '';
+        const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${encodeURIComponent(settings.clientId)}&scope=${encodeURIComponent(scopes.join(' '))}&redirect_uri=${encodeURIComponent(`${config.remoteDashboardUrl}/api/spotify/callback`)}&state=${encodeURIComponent(state)}`;
 
         res.json({ url: authUrl });
     } catch (err) {
@@ -488,13 +490,16 @@ app.get('/api/spotify/auth-url', async (req, res) => {
 });
 
 // API: Spotify Callback (GET - Redirected from Spotify)
+// Serialises a value for safe embedding inside an inline <script>
+const toInlineJson = (value) => JSON.stringify(String(value ?? '')).replace(/</g, '\\u003c');
+
 app.get('/api/spotify/callback', (req, res) => {
     const { code, error } = req.query;
 
     if (error) {
         return res.send(`
             <script>
-                window.opener.postMessage({ type: 'spotify_auth_error', error: '${error}' }, '*');
+                window.opener.postMessage({ type: 'spotify_auth_error', error: ${toInlineJson(error)} }, '*');
                 window.close();
             </script>
         `);
@@ -508,7 +513,7 @@ app.get('/api/spotify/callback', (req, res) => {
                     <p>Vous pouvez fermer cette fenêtre si elle ne se ferme pas automatiquement.</p>
                 </div>
                 <script>
-                    window.opener.postMessage({ type: 'spotify_auth_success', code: '${code}' }, '*');
+                    window.opener.postMessage({ type: 'spotify_auth_success', code: ${toInlineJson(code)} }, '*');
                     setTimeout(() => window.close(), 1000);
                 </script>
             </body>
@@ -521,8 +526,8 @@ app.post('/api/spotify/callback', async (req, res) => {
     const { code, token } = req.body;
 
     try {
-        if (token) await config.loadSession(token);
-        const settings = config.spotify;
+        if (!code) return res.status(400).json({ error: 'Code Spotify manquant.' });
+        const settings = token ? (await config.getSessionFor(token)).spotify : config.spotify;
         const SpotifyWebApi = require('spotify-web-api-node');
         const spotifyApi = new SpotifyWebApi({
             clientId: settings.clientId,
@@ -534,6 +539,7 @@ app.post('/api/spotify/callback', async (req, res) => {
         const refreshToken = data.body['refresh_token'];
 
         await config.saveSettings({
+            token,
             spotify: { ...settings, refreshToken, enabled: true }
         });
 
@@ -631,13 +637,11 @@ async function getFullConfig(token) {
         if (!config.licenseToken) config.licenseToken = token;
         await config.loadSession(token);
         const User = require('./models/User');
-        console.log('[DEBUG] getFullConfig: Checking account data for token:', token.substring(0, 10));
         try {
             const user = await User.findOne({ token }).maxTimeMS(3000);
             if (user) {
                 isAdmin = user.isAdmin || false;
                 accountUsername = user.username;
-                console.log('[DEBUG] getFullConfig: User found, accountUsername:', accountUsername);
             } else {
                 console.warn('[DEBUG] getFullConfig: No user found for token');
             }
@@ -751,7 +755,7 @@ app.get('/api/leaderboard', async (req, res) => {
             sortField = type === 'likes' ? 'weeklyLikes' : 'weeklyCoins';
         }
 
-        const limit = parseInt(req.query.limit) || 100;
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 100, 1), 500);
 
         const results = await Leaderboard.find({ token, [sortField]: { $gt: 0 } })
             .sort({ [sortField]: -1 })
@@ -806,9 +810,13 @@ app.get('/api/leaderboard/history/detail', async (req, res) => {
     try {
         const History = require('./models/History');
         const { id } = req.query;
+        const token = getRequestToken(req);
         if (!id) return res.status(400).json({ error: 'ID manquant' });
+        if (!token) return res.status(401).json({ error: 'Token manquant' });
+        if (!/^[a-f0-9]{24}$/i.test(String(id))) return res.status(400).json({ error: 'ID invalide' });
 
-        const history = await History.findById(id);
+        // Only the owner of the history can read it
+        const history = await History.findOne({ _id: id, token });
         if (!history) return res.status(404).json({ error: 'Historique introuvable' });
 
         res.json(history);
@@ -841,6 +849,8 @@ app.post('/api/leaderboard/manual', async (req, res) => {
         if (!token || !uniqueId || !giftId) return res.status(400).json({ error: 'Paramètres manquants' });
 
         const giftIdStr = giftId.toString();
+        const delta = Number(count);
+        if (!Number.isFinite(delta)) return res.status(400).json({ error: 'Quantité invalide' });
 
         // Find existing user or create mock user
         let user = await Leaderboard.findOne({ token, uniqueId });
@@ -856,7 +866,7 @@ app.post('/api/leaderboard/manual', async (req, res) => {
         }
 
         const currentCount = user.gifts.get(giftIdStr) || 0;
-        const newCount = Math.max(0, currentCount + count);
+        const newCount = Math.max(0, currentCount + delta);
 
         user.gifts.set(giftIdStr, newCount);
         user.lastUpdated = new Date();
@@ -874,26 +884,6 @@ app.get('/api/gifts', async (req, res) => {
         const { getFullGiftList } = require('./utils/giftPrices');
         const gifts = getFullGiftList();
         res.json(gifts);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// API: History Save (Placeholder for complex logic)
-app.post('/api/leaderboard/history/save', async (req, res) => {
-    try {
-        // This would typically copy the current scores to a "History" collection and reset current ones
-        // For now, let's just return success
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// API: Get History List
-app.get('/api/leaderboard/history', async (req, res) => {
-    try {
-        res.json([]); // Empty for now as it's a placeholder
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1137,7 +1127,12 @@ app.get('/api/tts/settings', async (req, res) => {
 
 // ... (existing routes) ...
 // API: Manage Events
-app.get('/api/events', (req, res) => res.json(config.events));
+app.get('/api/events', async (req, res) => {
+    const token = getRequestToken(req);
+    if (!token) return res.json([]);
+    const session = await config.getSessionFor(token);
+    res.json(session.events || []);
+});
 app.post('/api/events', async (req, res) => {
     let events = req.body;
     let token = req.query.token || req.body.token;
@@ -1160,7 +1155,7 @@ app.post('/api/events', async (req, res) => {
     }
 
     if (Array.isArray(events)) {
-        await config.saveEvents(events);
+        await config.saveEvents(events, token);
         res.send('OK');
     } else {
         res.status(400).json({ error: 'Invalid events format' });
@@ -1168,7 +1163,12 @@ app.post('/api/events', async (req, res) => {
 });
 
 // API: Manage Actions
-app.get('/api/actions', (req, res) => res.json(config.actionDefinitions));
+app.get('/api/actions', async (req, res) => {
+    const token = getRequestToken(req);
+    if (!token) return res.json([]);
+    const session = await config.getSessionFor(token);
+    res.json(session.actions || []);
+});
 app.post('/api/actions', async (req, res) => {
     let actions = req.body;
     let token = req.query.token || req.body.token;
@@ -1191,7 +1191,7 @@ app.post('/api/actions', async (req, res) => {
     }
 
     if (Array.isArray(actions)) {
-        await config.saveActions(actions);
+        await config.saveActions(actions, token);
         res.send('OK');
     } else {
         res.status(400).json({ error: 'Invalid actions format' });
@@ -1402,27 +1402,78 @@ app.get('/api/presets/:id', async (req, res) => {
     }
 });
 
+// Refuses URLs pointing to the server itself or to a private network (SSRF protection)
+async function assertPublicHttpUrl(rawUrl) {
+    let parsed;
+    try { parsed = new URL(rawUrl); } catch (e) { throw new Error('URL invalide'); }
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Seules les URL http(s) sont acceptées');
+
+    const dns = require('dns').promises;
+    const net = require('net');
+    const host = parsed.hostname.replace(/^\[|\]$/g, '');
+    const addresses = net.isIP(host) ? [{ address: host }] : await dns.lookup(host, { all: true });
+
+    const isPrivate = (ip) => {
+        if (ip.startsWith('::ffff:')) ip = ip.slice(7);
+        if (net.isIPv4(ip)) {
+            const [a, b] = ip.split('.').map(Number);
+            return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) ||
+                (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127);
+        }
+        const low = ip.toLowerCase();
+        return low === '::1' || low === '::' || low.startsWith('fc') || low.startsWith('fd') || low.startsWith('fe80');
+    };
+
+    if (addresses.length === 0 || addresses.some(a => isPrivate(a.address))) {
+        throw new Error('Adresse non autorisée');
+    }
+    return parsed.toString();
+}
+
 // API: Proxy Import via URL (TikFinity or Gentok JSON)
 app.get('/api/proxy-import', async (req, res) => {
     try {
         const { url } = req.query;
-        if (!url) return res.status(400).json({ error: 'URL manquante' });
-        
-        let targetUrl = decodeURIComponent(url);
+        if (!url || typeof url !== 'string') return res.status(400).json({ error: 'URL manquante' });
+
+        let targetUrl = url;
         if (targetUrl.includes('tikfinity.zerody.one') && !targetUrl.includes('/api/')) {
             const match = targetUrl.match(/([a-f0-9-]{36})/i) || targetUrl.match(/\/([^\/]+)$/);
             if (match && match[1]) {
-                targetUrl = `https://tikfinity.zerody.one/api/export/${match[1]}`;
+                targetUrl = `https://tikfinity.zerody.one/api/export/${encodeURIComponent(match[1])}`;
             }
         }
 
-        const fetchRes = await fetch(targetUrl);
-        if (!fetchRes.ok) {
-            return res.status(fetchRes.status).json({ error: `Erreur HTTP ${fetchRes.status}` });
+        // Follow up to 3 redirects manually so that every hop is checked
+        let response;
+        for (let hop = 0; hop < 4; hop++) {
+            try {
+                targetUrl = await assertPublicHttpUrl(targetUrl);
+            } catch (e) {
+                return res.status(400).json({ error: e.message });
+            }
+
+            response = await axios.get(targetUrl, {
+                timeout: 10000,
+                maxRedirects: 0,
+                maxContentLength: 5 * 1024 * 1024,
+                responseType: 'text',
+                transformResponse: [d => d],
+                validateStatus: () => true
+            });
+
+            const location = response.headers.location;
+            if (response.status >= 300 && response.status < 400 && location) {
+                targetUrl = new URL(location, targetUrl).toString();
+                continue;
+            }
+            break;
         }
-        const text = await fetchRes.text();
+        if (response.status < 200 || response.status >= 300) {
+            return res.status(502).json({ error: `Erreur HTTP ${response.status}` });
+        }
         res.setHeader('Content-Type', 'application/json');
-        res.send(text);
+        res.send(response.data);
     } catch (err) {
         res.status(500).json({ error: 'Échec proxy import: ' + err.message });
     }
@@ -1430,7 +1481,7 @@ app.get('/api/proxy-import', async (req, res) => {
 
 // API: Save Preset (Admin Only)
 app.post('/api/presets', async (req, res) => {
-    const token = config.licenseToken;
+    const token = getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
     try {
@@ -1443,6 +1494,7 @@ app.post('/api/presets', async (req, res) => {
         const { id, title, desc, img, badge, type, creator, actions, events, sounds } = req.body;
 
         const Preset = require('./models/Preset');
+        const adminSession = await config.getSessionFor(token);
         let presetData = {};
 
         if (title) {
@@ -1458,8 +1510,8 @@ app.post('/api/presets', async (req, res) => {
                 rules: events ? events.length : 0,
                 overlays: 0,
                 content: {
-                    actions: actions || config.actionDefinitions,
-                    events: events || config.events,
+                    actions: actions || adminSession.actions || [],
+                    events: events || adminSession.events || [],
                     sounds: sounds || []
                 }
             };
@@ -1493,7 +1545,7 @@ app.post('/api/presets', async (req, res) => {
 
 // API: Delete Preset (Admin Only)
 app.delete('/api/presets/:id', async (req, res) => {
-    const token = config.licenseToken;
+    const token = getRequestToken(req);
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
     try {
@@ -1520,7 +1572,7 @@ app.delete('/api/presets/:id', async (req, res) => {
 // API: Install a Preset
 app.post('/api/presets/install', async (req, res) => {
     const { presetId, asNewScene } = req.body;
-    const token = config.licenseToken;
+    const token = getRequestToken(req);
 
     if (!token) return res.status(401).json({ error: 'Token manquant' });
 
@@ -1534,16 +1586,17 @@ app.post('/api/presets/install', async (req, res) => {
             return res.status(400).json({ error: 'Le preset ne contient pas de configuration valide' });
         }
 
-        const targetSceneId = asNewScene ? presetId : config.activeSceneId;
+        let session = await config.getSessionFor(token);
 
         if (asNewScene) {
-            // If requested as a new scene, we first update the active scene
-            await config.saveSettings({ activeSceneId: targetSceneId, token });
+            // Install into a new scene named after the preset
+            await config.saveSettings({ activeSceneId: presetId, token });
             await config.loadSession(token);
+            session = await config.getSessionFor(token);
         }
 
         // Clone actions
-        const currentActions = asNewScene ? [] : config.actionDefinitions;
+        const currentActions = asNewScene ? [] : (session.actions || []);
         const baseTimestamp = Date.now();
         const newActions = preset.content.actions.map((a, index) => {
             const { _id, ...actionData } = a;
@@ -1559,24 +1612,22 @@ app.post('/api/presets/install', async (req, res) => {
             idMap[a.id] = newActions[i].id;
         });
 
-        const finalActions = [...currentActions, ...newActions];
-        await config.saveActions(finalActions);
+        await config.saveActions([...currentActions, ...newActions], token);
 
         // Clone events
-        const currentEvents = asNewScene ? [] : config.events;
+        const currentEvents = asNewScene ? [] : (session.events || []);
         const newEvents = preset.content.events.map((e, index) => {
             const { _id, ...eventData } = e;
             return {
                 ...eventData,
                 id: `evt_${baseTimestamp}_${index}_${Math.round(Math.random() * 999999)}`,
-                actions: e.actions ? e.actions.map(oldId => idMap[oldId]) : []
+                actions: e.actions ? e.actions.map(oldId => idMap[oldId]).filter(Boolean) : []
             };
         });
 
-        const finalEvents = [...currentEvents, ...newEvents];
-        await config.saveEvents(finalEvents);
+        await config.saveEvents([...currentEvents, ...newEvents], token);
 
-        res.json({ success: true, actionsInstalled: newActions.length, eventsInstalled: newEvents.length, activeSceneId: config.activeSceneId });
+        res.json({ success: true, actionsInstalled: newActions.length, eventsInstalled: newEvents.length, activeSceneId: session.activeSceneId });
     } catch (err) {
         console.error('Install preset error:', err);
         res.status(500).json({ error: 'Installation échouée: ' + err.message });
@@ -1602,7 +1653,7 @@ app.post('/api/scenes/switch', async (req, res) => {
         emitEvent('sync_config', freshConfig, token);
         emitEvent('remote_reload', { sceneId }, token); // Keep for overlays to reload if they want
 
-        res.json({ success: true, activeSceneId: config.activeSceneId });
+        res.json({ success: true, activeSceneId: (await config.getSessionFor(token)).activeSceneId });
     } catch (err) {
         console.error('Switch scene error:', err);
         res.status(500).json({ error: 'Erreur lors du changement de scène' });
@@ -1629,12 +1680,13 @@ app.post('/api/scenes/delete', async (req, res) => {
         ]);
 
         // If the deleted scene was active, reset to default
-        if (config.activeSceneId === sceneId) {
-            await config.saveSettings({ activeSceneId: null });
+        const session = await config.getSessionFor(token);
+        if (session.activeSceneId === sceneId) {
+            await config.saveSettings({ activeSceneId: null, token });
             await config.loadSession(token);
         }
 
-        res.json({ success: true, activeSceneId: config.activeSceneId });
+        res.json({ success: true, activeSceneId: (await config.getSessionFor(token)).activeSceneId });
     } catch (err) {
         console.error('Delete scene error:', err);
         res.status(500).json({ error: 'Erreur lors de la suppression de la scène' });
@@ -1735,9 +1787,14 @@ app.post('/api/stop', async (req, res) => {
         const appConnected = isAppConnected(token);
 
         if (connector) {
-            console.log(`[API:Stop] Stopping direct VPS connector for token ${token}...`);
+            console.log(`[API:Stop] Stopping direct connector for token ${token.substring(0, 8)}...`);
             await connector.stop();
             activeConnectors.delete(token);
+
+            // Stop Spotify too if it was playing
+            try {
+                await spotifyModule.pausePlayback(token);
+            } catch (e) { }
         }
 
         if (!config.isAppMode && appConnected) {
@@ -2040,35 +2097,6 @@ app.post('/api/stats/test-leaderboard', async (req, res) => {
     }
 });
 
-// API: Stop Connector
-app.post('/api/stop', async (req, res) => {
-    const token = req.query.token || req.body.token || config.licenseToken;
-    if (!token) return res.status(401).json({ error: 'Token manquant' });
-
-    // 1. SMART RELAY: Check if an App (EXE) is connected via Socket
-    if (!config.isAppMode && isAppConnected(token)) {
-        console.log(`📡 Relais de la commande d'arrêt à l'App pour ${token.substring(0, 8)}...`);
-        emitToApp(token, 'remote_stop');
-        return res.status(202).json({ success: true, relayed: true });
-    }
-
-    const connector = activeConnectors.get(token);
-    if (connector) {
-        await connector.stop();
-        activeConnectors.delete(token);
-
-        // [NEW] Stop Spotify if active
-        try {
-            await spotifyModule.pausePlayback(token);
-        } catch (e) { }
-
-        logger.info(`🛑 Connecteur arrêté pour ${token.substring(0, 8)}`);
-        res.json({ success: true, message: 'Bot arrêté.' });
-    } else {
-        res.status(400).send('Not running');
-    }
-});
-
 // API: Logout (Explicit)
 app.post('/api/logout', async (req, res) => {
     const token = req.query.token || req.body.token || config.licenseToken;
@@ -2113,8 +2141,8 @@ app.post('/api/reset', async (req, res) => {
         const lastTokenKey = config.isAppMode ? `lastActiveToken_${os.hostname()}` : 'lastActiveToken';
         await Global.deleteOne({ key: lastTokenKey });
 
-        // Clear settings
-        await config.saveSettings({}); // This clears the session
+        // Re-read this user's data from the database
+        await config.invalidate(token);
         logger.info('🔄 Application réinitialisée (Logout)');
         res.send('Reset OK');
     } catch (e) {
@@ -2268,7 +2296,7 @@ async function updateSpotifyOverlay() {
                 if (matchIndex !== -1) {
                     const playedTracks = localQueue.splice(0, matchIndex + 1);
                     const played = playedTracks[playedTracks.length - 1];
-                    logger.info(`[Spotify:${token}] Now Playing (Match): ${track.name} [by ${played.requestedBy}]`);
+                    logger.info(`[Spotify:${String(token).substring(0, 8)}] Now Playing (Match): ${track.name} [by ${played.requestedBy}]`);
                     spotifyModule.setCurrentTrack(token, track.id, track.name, played.requestedBy, played.userId);
 
                     const userTracksCount = spotifyModule.getUserTracksCount(token);
@@ -2321,7 +2349,6 @@ async function requireAdmin(req, res) {
     }
 
     try {
-        console.log('[AUTH] Checking token:', token.substring(0, 8));
         const User = require('./models/User');
         const user = await User.findOne({ token }).maxTimeMS(3000).exec();
 
@@ -2331,7 +2358,6 @@ async function requireAdmin(req, res) {
             return null;
         }
 
-        console.log('[AUTH] OK:', user.username);
         return user;
     } catch (err) {
         console.error('[AUTH] DB Timeout or Error:', err.message);
@@ -2386,9 +2412,10 @@ app.post('/api/admin/users/toggle-premium', async (req, res) => {
         const admin = await requireAdmin(req, res); if (!admin) return;
         const { userToken, isPremium } = req.body || {};
         const Settings = require('./models/Settings');
+        if (!userToken) return res.status(400).json({ error: 'userToken manquant' });
         await Settings.updateOne({ token: userToken }, { $set: { isPremium: !!isPremium } }, { upsert: true });
-        // Clear cache
-        delete config._settingsCache?.[userToken];
+        // Make the change visible immediately (otherwise the cached session keeps the old value)
+        await config.invalidate(userToken);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2494,7 +2521,7 @@ app.post('/api/admin/clear-cache', async (req, res) => {
     try {
         const admin = await requireAdmin(req, res); if (!admin) return;
         // Clear internal caches
-        if (config._settingsCache) config._settingsCache = {};
+        await config.clearCache();
         res.json({ success: true, message: 'Cache vidé avec succès' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2547,21 +2574,25 @@ async function startServer() {
             const PORT = process.env.PORT || 3000;
 
             // PERSIST: Load last active token on start (Scoped by machine in App Mode)
-            const lastTokenKey = config.isAppMode ? `lastActiveToken_${os.hostname()}` : 'lastActiveToken';
-            const lastToken = await Global.findOne({ key: lastTokenKey });
-            if (lastToken && lastToken.value) {
-                logger.info(`✨ Restauration de la session (${config.isAppMode ? 'Locale' : 'VPS'}) pour : ${lastToken.value}`);
-                await config.loadSession(lastToken.value);
-                
-                // [RELAY] Connect to remote server as soon as token is restored
-                initRemoteClient();
+            // A failure here (e.g. database offline) must not prevent the server from starting
+            try {
+                const lastTokenKey = config.isAppMode ? `lastActiveToken_${os.hostname()}` : 'lastActiveToken';
+                const lastToken = await Global.findOne({ key: lastTokenKey }).maxTimeMS(5000);
+                if (lastToken && lastToken.value) {
+                    logger.info(`✨ Restauration de la session (${config.isAppMode ? 'Locale' : 'VPS'}) pour : ${String(lastToken.value).substring(0, 8)}...`);
+                    await config.loadSession(lastToken.value);
+
+                    // [RELAY] Connect to remote server as soon as token is restored
+                    initRemoteClient();
+                }
+            } catch (restoreErr) {
+                logger.warn(`⚠️ Session précédente non restaurée : ${restoreErr.message}`);
             }
 
             server.listen(PORT, async () => {
-                logger.info(`ðŸŒ Dashboard disponible sur : http://localhost:${PORT}`);
+                logger.info(`🌐 Dashboard disponible sur : http://localhost:${PORT}`);
 
                 // [GUI] Auto-launch browser in App Mode
-                console.log('--- IS APP MODE:', config.isAppMode, '---'); // DEBUG
                 if (config.isAppMode) {
                     if (process.versions.electron) {
                         logger.info('📱 Application lancée dans une fenêtre dédiée.');

@@ -525,6 +525,11 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Escapes text coming from TikTok viewers before it is put into innerHTML
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
         const socket = io();
         const lbContainer = document.getElementById('leaderboard');
         const listEl = document.getElementById('lb-list');
@@ -675,9 +680,9 @@
                 item.className = 'leaderboard-item';
                 item.innerHTML = `
                     <div class="rank rank-${rank}">${rank}.</div>
-                    <img src="${user.profilePictureUrl || '/logo.png'}" class="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/logo.png';">
+                    <img src="${escapeHtml(user.profilePictureUrl || '/logo.png')}" class="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/logo.png';">
                     <div class="user-info">
-                        <div class="username">${user.nickname || user.uniqueId}</div>
+                        <div class="username">${escapeHtml(user.nickname || user.uniqueId)}</div>
                         <div class="score">
                             <i class="fas ${type === 'coins' ? 'fa-coins' : 'fa-heart'} score-icon"></i>
                             <span class="score-val">${prevScore}</span>

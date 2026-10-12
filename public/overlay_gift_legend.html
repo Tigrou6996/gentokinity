@@ -214,6 +214,11 @@
     </div>
 
     <script>
+        // Escapes text coming from TikTok viewers before it is put into innerHTML
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
         const socket = io();
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
@@ -364,7 +369,7 @@
           <div class="focusEntry ${podiumClass}" style="animation-delay: ${i * 0.1}s">
             <div class="rank">${medal}</div>
             <img src="${r.profilePictureUrl || '/logo.png'}" onerror="this.src='/logo.png'" class="pfp">
-            <div class="pseudo">@${r.uniqueId}</div>
+            <div class="pseudo">@${escapeHtml(r.uniqueId)}</div>
             <div class="count">x${r.count}</div>
           </div>`;
             }).join("");

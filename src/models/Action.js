@@ -12,7 +12,10 @@ const ActionSchema = new mongoose.Schema({
     command: String,
     soundName: String,
     soundUrl: String,
-    volume: Number
+    volume: Number,
+    duration: Number, // keyboard: how long the key is held (ms)
+    method: String,   // webhook: GET / POST
+    data: mongoose.Schema.Types.Mixed // webhook: payload
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token

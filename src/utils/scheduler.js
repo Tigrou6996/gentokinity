@@ -1,7 +1,6 @@
 const cron = require('node-cron');
 const Leaderboard = require('../models/Leaderboard');
 const History = require('../models/History');
-const Settings = require('../models/Settings');
 const { getFullGiftList } = require('./giftPrices');
 const logger = require('./logger');
 
@@ -114,13 +113,13 @@ async function performWeeklyReset(onlyToken = null) {
 
                 logger.info(`✅ [SCHEDULER] Reset hebdomadaire terminé pour le token : ${token.substring(0, 8)}...`);
             } catch (err) {
-                logger.error(`❌ [SCHEDULER] Échec du reset pour le token ${token}:`, err.message);
+                logger.error(`❌ [SCHEDULER] Échec du reset pour le token ${token.substring(0, 8)}... : ${err.message}`);
             }
         }
 
         logger.info('🎉 [SCHEDULER] Reset hebdomadaire global terminé !');
     } catch (err) {
-        logger.error('🚨 [SCHEDULER] Erreur fatale dans le reset hebdomadaire:', err.message);
+        logger.error(`🚨 [SCHEDULER] Erreur fatale dans le reset hebdomadaire : ${err.message}`);
     }
 }
 

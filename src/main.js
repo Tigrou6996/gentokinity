@@ -3,11 +3,21 @@ const path = require('path');
 const fs = require('fs');
 const { startServer } = require('./server');
 const logger = require('./utils/logger');
-const config = require('./config');
 const axios = require('axios');
 const { autoUpdater } = require('electron-updater');
 const { ipcMain } = require('electron');
 const DiscordRPC = require('discord-rpc');
+
+let mainWindow = null;
+let ipcHandlersRegistered = false; // ipcMain.handle() throws if a channel is registered twice
+const PORT = process.env.PORT || 3000;
+
+// Sends a message to the dashboard window only if it still exists
+function sendToWindow(channel, payload) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(channel, payload);
+    }
+}
 
 // Configure autoUpdater
 autoUpdater.autoDownload = true; // [AUTO] Download immediately
@@ -21,9 +31,9 @@ function setupAutoUpdater() {
 
     autoUpdater.on('update-available', (info) => {
         logger.info(`📦 Mise à jour disponible : ${info.version}. Téléchargement automatique...`);
-        mainWindow.webContents.send('update-available', info);
+        sendToWindow('update-available', info);
         // Window is hidden by default, we'll show it only to show progress if needed
-        mainWindow.show();
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
     });
 
     autoUpdater.on('update-not-available', () => {
@@ -40,7 +50,7 @@ function setupAutoUpdater() {
             logger.info('ℹ️ Aucun fichier de mise à jour trouvé (Normal).');
         } else {
             logger.error(`❌ Erreur Auto-Updater : ${err.message}`);
-            mainWindow.webContents.send('update-error', err.message);
+            sendToWindow('update-error', err.message);
         }
         // Even on error, we show the app so the user isn't stuck
         if (mainWindow && !mainWindow.isVisible()) {
@@ -49,7 +59,7 @@ function setupAutoUpdater() {
     });
 
     autoUpdater.on('download-progress', (progressObj) => {
-        mainWindow.webContents.send('update-progress', progressObj);
+        sendToWindow('update-progress', progressObj);
     });
 
     autoUpdater.on('update-downloaded', (info) => {
@@ -65,7 +75,7 @@ function setupAutoUpdater() {
             }).show();
         }
 
-        mainWindow.webContents.send('update-downloaded', info);
+        sendToWindow('update-downloaded', info);
 
         // Auto-install after 4 seconds to let the user see the notification/UI message
         setTimeout(() => {
@@ -102,7 +112,7 @@ function setupAutoUpdater() {
 // ==========================================
 // [NEW] DISCORD RICH PRESENCE
 // ==========================================
-const clientId = '1481929370355630120'; // Replace with a real Client ID if available
+const clientId = '1481929370355630120'; // Discord application ID (public, not a secret)
 DiscordRPC.register(clientId);
 
 const rpc = new DiscordRPC.Client({ transport: 'ipc' });
@@ -157,7 +167,9 @@ function createWindow() {
         }
     });
 
-    setupAutoUpdater();
+    const registerHandlers = !ipcHandlersRegistered;
+    ipcHandlersRegistered = true;
+    if (registerHandlers) setupAutoUpdater();
 
     // [CACHE CLEAR] Clear cache AND cookies on startup to ensure fresh TikTok connection
     const { session } = require('electron');
@@ -170,13 +182,14 @@ function createWindow() {
     logger.info('🚀 Démarrage du serveur interne...');
     startServer().then(() => {
         // Load the Launcher (Splash Screen) from LOCAL server when ready
-        const launcherUrl = 'http://localhost:3000/launcher.html?mode=app';
+        const launcherUrl = `http://localhost:${PORT}/launcher.html?mode=app`;
         logger.info(`🌐 Chargement du launcher local : ${launcherUrl}`);
         mainWindow.loadURL(launcherUrl);
         mainWindow.show(); // [NEW] Show window immediately to see the launcher progress
     }).catch(err => {
         logger.error(`🚨 Fatal: Le serveur interne n'a pas pu démarrer: ${err.message}`);
-        // Optionally show an error page or message
+        const { dialog } = require('electron');
+        dialog.showErrorBox('Gentok', `Le serveur interne n'a pas pu démarrer :\n${err.message}`);
     });
 
     mainWindow.on('closed', function () {
@@ -188,7 +201,6 @@ function createWindow() {
     // ==========================================
     const GENTOK_DIR = path.join(app.getPath('appData'), 'Gentok');
     const MC_DIR = path.join(GENTOK_DIR, 'minecraft', 'GentokBoxTNT');
-    const fs = require('fs'); // Added fs require
     const { exec, spawn } = require('child_process');
     const { promisify } = require('util');
     const execAsync = promisify(exec);
@@ -217,6 +229,9 @@ function createWindow() {
             writer.on('error', reject);
         });
     }
+
+    // Everything below registers IPC handlers: only do it for the first window
+    if (!registerHandlers) return;
 
     ipcMain.handle('install-jdk21', async (event) => {
         logger.info('🛠️ Starting real JDK 21 Installation...');
@@ -334,13 +349,20 @@ function createWindow() {
 
         // Structure check: Temurin zip extracts to a subfolder like jdk-21.0.1+12
         const jdkBase = path.join(MC_DIR, 'jdk21');
-        const subdirs = fs.readdirSync(jdkBase);
+        const subdirs = fs.existsSync(jdkBase) ? fs.readdirSync(jdkBase) : [];
         const jdkRoot = subdirs.find(d => d.includes('jdk'));
         const javaPath = jdkRoot ? path.join(jdkBase, jdkRoot, 'bin', 'java.exe') : 'java';
 
         event.sender.send('mc-log', `Utilisation de: ${javaPath}`);
 
         mcProcess = spawn(javaPath, ['-Xmx2G', '-jar', 'server.jar', '--nogui'], { cwd: MC_DIR });
+
+        mcProcess.on('error', (err) => {
+            // e.g. Java not installed: without this handler the whole app crashes
+            logger.error(`🚨 Minecraft process error: ${err.message}`);
+            event.sender.send('mc-log', `❌ Impossible de lancer Java : ${err.message}`);
+            mcProcess = null;
+        });
 
         mcProcess.stdout.on('data', (data) => {
             const line = data.toString().trim();
@@ -377,7 +399,8 @@ function createWindow() {
 
     ipcMain.handle('send-minecraft-command', async (event, command) => {
         if (!mcProcess) return { success: false, message: 'Le serveur n\'est pas lancé' };
-        mcProcess.stdin.write(command + '\n');
+        // One command per call: a line break would let a single call run several commands
+        mcProcess.stdin.write(String(command).replace(/[\r\n]+/g, ' ') + '\n');
         return { success: true };
     });
 

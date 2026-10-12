@@ -254,6 +254,10 @@ class ActionManager {
         try {
             if (action.type === 'webhook') {
                 let url = action.url;
+                if (!url) {
+                    logger.warn(`⚠️ [${token.substring(0, 8)}] Webhook ignoré : URL manquante (${action.name || action.id}).`);
+                    return;
+                }
                 if (context.uniqueId) {
                     url = url.replace(/{user}/g, context.uniqueId);
                     url = url.replace(/{username}/g, context.uniqueId);
@@ -277,7 +281,11 @@ class ActionManager {
                     });
                 }
             } else if (action.type === 'rcon') {
-                let command = action.command;
+                let command = action.command || '';
+                if (!command.trim()) {
+                    logger.warn(`⚠️ [${token.substring(0, 8)}] Commande Minecraft vide (${action.name || action.id}).`);
+                    return;
+                }
 
                 // Get Minecraft settings for THIS token first (needed for {playername})
                 const settings = await config.getSettings(token);
@@ -301,9 +309,10 @@ class ActionManager {
                         '{playername}': mcPlayerName // Minecraft Player Name
                     };
 
-                    // Replace all placeholders
+                    // Replace all placeholders. Values come from TikTok viewers, so line breaks
+                    // are removed: they would let a viewer chain extra server commands.
                     Object.keys(replacements).forEach(key => {
-                        const val = String(replacements[key]);
+                        const val = String(replacements[key]).replace(/[\r\n]+/g, ' ');
                         // Global replace
                         command = command.split(key).join(val);
                     });

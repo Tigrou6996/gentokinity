@@ -1,7 +1,10 @@
-const mongoose = require('mongoose');
 const Action = require('./models/Action');
 const Event = require('./models/Event');
 const Settings = require('./models/Settings');
+
+// Values baked into the desktop build (see scripts/write-build-env.js). Missing in dev.
+let buildEnv = {};
+try { buildEnv = require('./build-env.json'); } catch (e) { }
 
 // Helper to get fresh default session state
 const getSessionDefaults = () => ({
@@ -223,10 +226,12 @@ module.exports = {
     get licenseToken() { return _lastActiveToken; },
     set licenseToken(val) { _lastActiveToken = val; },
 
-    mongodbUri: process.env.MONGODB_URI || 'mongodb+srv://tigrou:v5HsbHa0dsNN5ENZ@tigroubot.roazyat.mongodb.net/gentok',
+    // Never hardcode credentials here: they come from .env (dev / VPS) or from
+    // src/build-env.json, generated at build time by scripts/write-build-env.js.
+    mongodbUri: process.env.MONGODB_URI || buildEnv.MONGODB_URI || null,
     sessionId: null, proxyUrl: null,
     remoteServerUrl: process.env.REMOTE_SERVER || 'https://tiktok.gentok.fr',
-    remoteDashboardUrl: process.env.DASHBOARD_URL || 'https://tiktok.gentok.fr',
+    remoteDashboardUrl: process.env.DASHBOARD_URL || buildEnv.DASHBOARD_URL || 'https://tiktok.gentok.fr',
     reconnectInterval: 5000, maxRetries: 10, enableLogging: true,
 
     get isAppMode() {
@@ -294,6 +299,22 @@ module.exports = {
         return result;
     },
 
+    // Re-read a user's data from MongoDB (used after admin / billing changes).
+    // Loaded sessions are reloaded rather than dropped: live connectors read their
+    // events and actions from them.
+    async invalidate(token) {
+        if (!token) return;
+        delete _settingsCache[token];
+        if (_sessions.has(token)) await this.loadSession(token);
+    },
+
+    async clearCache() {
+        _settingsCache = {};
+        for (const token of Array.from(_sessions.keys())) {
+            await this.loadSession(token);
+        }
+    },
+
     get spotify() { return getSession().spotify; },
     get settings() {
         const s = getSession();
@@ -309,16 +330,25 @@ module.exports = {
     get activeSceneId() { return getSession().activeSceneId; },
     set activeSceneId(val) { getSession().activeSceneId = val; },
 
-    async saveEvents(events) {
-        const s = getSession(); if (!s.token) return;
+    // Returns the session of an explicit token (loading it if needed). Use this instead of the
+    // "last active token" fallback whenever a request carries its own token, otherwise two users
+    // hitting the server at the same time can overwrite each other's data.
+    async getSessionFor(token) {
+        if (!token) return getSession();
+        if (!_sessions.has(token)) await this.loadSession(token);
+        return _sessions.get(token);
+    },
+
+    async saveEvents(events, token) {
+        const s = await this.getSessionFor(token); if (!s.token) return;
         s.events = (!s.isPremium && events.length > 5) ? events.slice(0, 5) : events;
         const Event = require('./models/Event');
         await Event.deleteMany({ token: s.token, sceneId: s.activeSceneId });
         if (s.events.length > 0) await Event.insertMany(s.events.map(e => ({ ...e, token: s.token, sceneId: s.activeSceneId })));
     },
 
-    async saveActions(actions) {
-        const s = getSession(); if (!s.token) return;
+    async saveActions(actions, token) {
+        const s = await this.getSessionFor(token); if (!s.token) return;
         s.actions = (!s.isPremium && actions.length > 5) ? actions.slice(0, 5) : actions;
         const Action = require('./models/Action');
         await Action.deleteMany({ token: s.token, sceneId: s.activeSceneId });

@@ -1,5 +1,4 @@
 const axios = require('axios');
-const logger = require('./logger');
 
 const userCache = new Map();
 const pendingRequests = new Map();
@@ -32,7 +31,7 @@ async function getUserInfo(uniqueId, existingData = null) {
 
     const request = (async () => {
         try {
-            const url = `https://tikfinity.zerody.one/api/tiktok/user-room?uniqueId=${uniqueId}`;
+            const url = `https://tikfinity.zerody.one/api/tiktok/user-room?uniqueId=${encodeURIComponent(uniqueId)}`;
             const response = await axios.get(url, { timeout: 5000 });
 
             if (response.data && response.data.data && response.data.data.user) {

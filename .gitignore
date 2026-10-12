@@ -1,8 +1,28 @@
+# Dependencies (reinstall with: npm install)
 node_modules/
+
+# Secrets — never commit these
 .env
+src/build-env.json
+
+# Runtime output
 logs/
+*.log
+
+# Builds / installers (publish them as GitHub Releases instead)
 APP/
+dist/
 *.exe
+*.blockmap
 *.rar
 *.zip
-*.blockmap
+
+# Files uploaded by users at runtime
+public/sounds/*
+!public/sounds/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

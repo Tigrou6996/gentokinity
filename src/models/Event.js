@@ -4,6 +4,7 @@ const EventSchema = new mongoose.Schema({
     token: { type: String, required: true, index: true },
     sceneId: { type: String, default: null, index: true },
     id: { type: String, required: true },
+    name: String,
     active: { type: Boolean, default: true },
     who: { type: String, default: 'everyone' },
     specificUser: String,
@@ -13,6 +14,7 @@ const EventSchema = new mongoose.Schema({
     giftId: String,
     likeThreshold: Number,
     command: String,
+    message: String, // chat trigger: text the message must contain
     minCoins: Number
 }, { timestamps: true });
 

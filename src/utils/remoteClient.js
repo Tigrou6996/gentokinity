@@ -5,6 +5,7 @@ const { pressKey } = require('../actions/keyboardAction');
 const { sendRconCommand } = require('../actions/rconAction');
 
 let socket = null;
+const LOCAL_API = `http://localhost:${process.env.PORT || 3000}`;
 
 /**
  * Initializes a connection to the remote server to listen for remote commands.
@@ -55,7 +56,7 @@ function initRemoteClient() {
         try {
             const axios = require('axios');
             // Call local API to start the connector
-            await axios.post('http://localhost:3000/api/start', { username: data.username });
+            await axios.post(`${LOCAL_API}/api/start`, { username: data.username });
         } catch (e) {
             logger.error(`🚨 Error executing remote start: ${e.message}`);
         }
@@ -65,7 +66,7 @@ function initRemoteClient() {
         logger.info('🛰️ Remote Stop Command received');
         try {
             const axios = require('axios');
-            await axios.post('http://localhost:3000/api/stop');
+            await axios.post(`${LOCAL_API}/api/stop`);
         } catch (e) {
             logger.error(`🚨 Error executing remote stop: ${e.message}`);
         }
@@ -75,7 +76,7 @@ function initRemoteClient() {
         logger.info(`🛰️ Remote Stats Reset Command received: ${data.type}`);
         try {
             const axios = require('axios');
-            await axios.post('http://localhost:3000/api/stats/reset', { type: data.type });
+            await axios.post(`${LOCAL_API}/api/stats/reset`, { type: data.type });
         } catch (e) {
             logger.error(`🚨 Error executing remote stats reset: ${e.message}`);
         }

@@ -64,7 +64,7 @@ async function safeRefresh(token, force = false) {
         return true;
     } catch (err) {
         if (Date.now() - inst.lastErrorLogTime > 60000) {
-            logger.error(`[Spotify:${token}] Refresh Error:`, err.message);
+            logger.error(`[Spotify:${String(token).substring(0, 8)}] Refresh Error: ${err.message}`);
             inst.lastErrorLogTime = Date.now();
         }
         return false;
@@ -121,7 +121,7 @@ module.exports = {
 
         const currentCount = inst.userTracksCount.get(userId) || 0;
         if (!isModerator && !isSubscriber && currentCount >= spotifySettings.maxTracksPerUser) {
-            logger.info(`[Spotify:${token}] Limite atteinte pour ${userName}`);
+            logger.info(`[Spotify:${String(token).substring(0, 8)}] Limite atteinte pour ${userName}`);
             return { success: false, reason: 'limit_reached' };
         }
 
@@ -162,10 +162,10 @@ module.exports = {
             });
 
             inst.userTracksCount.set(userId, currentCount + 1);
-            logger.info(`[Spotify:${token}] ${userName} a ajouté : ${track.name}`);
+            logger.info(`[Spotify:${String(token).substring(0, 8)}] ${userName} a ajouté : ${track.name}`);
             return { success: true, track };
         } catch (err) {
-            logger.error(`[Spotify:${token}] Error search/play:`, err.message);
+            logger.error(`[Spotify:${String(token).substring(0, 8)}] Error search/play: ${err.message}`);
             return { success: false, reason: 'api_error' };
         }
     },
@@ -256,7 +256,7 @@ module.exports = {
                     throw apiErr;
                 }
             } catch (err) {
-                logger.error(`[Spotify:${token}] Skip Error:`, err.message);
+                logger.error(`[Spotify:${String(token).substring(0, 8)}] Skip Error: ${err.message}`);
                 return { success: false, reason: 'api_error', message: err.message };
             }
         }

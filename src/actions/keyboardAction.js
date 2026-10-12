@@ -8,11 +8,22 @@ const config = require('../config');
  * @param {string} key The key to press (e.g., "{SPACE}", "W", "{F5}", "a")
  * @param {boolean} force If true, bypasses the isAppMode check (used for remote commands)
  */
+// Allowed formats: optional modifiers (^ ! +) followed by a single character
+// or a key name such as SPACE, F5, {ENTER}. Anything else is rejected because the
+// value is written into an AutoIt script that gets executed on the streamer's PC.
+const KEY_PATTERN = /^[\^!+]*(\{[A-Za-z0-9_ ]{1,30}\}|[A-Za-z0-9_]{1,30}|[^"\r\n{}\^!+])$/;
+
 function pressKey(key, force = false, duration = 100) {
     if (!config.isAppMode && !force) {
         logger.warn(`⚠️ Keystroke blocked: Keyboard simulation is only available in the STANDALONE APP version.`);
         return;
     }
+
+    if (typeof key !== 'string' || !KEY_PATTERN.test(key)) {
+        logger.warn(`⚠️ Touche clavier refusée (format invalide) : ${String(key).slice(0, 40)}`);
+        return;
+    }
+    duration = Math.min(Math.max(parseInt(duration, 10) || 100, 10), 10000);
 
     const fs = require('fs');
     const path = require('path');

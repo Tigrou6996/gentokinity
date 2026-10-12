@@ -13,9 +13,11 @@ console.log(`🌐 Dashboard URL : ${dashboardUrl}\n`);
 const command = `npx cross-env DASHBOARD_URL=${dashboardUrl} electron-builder build --win -c.directories.output=APP/v${version}`;
 
 try {
+    // Bake the runtime secrets (from .env) into src/build-env.json before packaging
+    execSync(`node scripts/write-build-env.js --dashboard-url=${dashboardUrl}`, { stdio: 'inherit' });
     execSync(command, { stdio: 'inherit' });
     console.log(`\n✅ Build terminé avec succès !`);
-    console.log(`📂 Tes fichiers sont dans : GENTOK_APP/v${version}\n`);
+    console.log(`📂 Tes fichiers sont dans : APP/v${version}\n`);
 } catch (error) {
     console.error(`\n❌ Erreur lors du build :`, error.message);
     process.exit(1);

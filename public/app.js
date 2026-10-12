@@ -164,6 +164,11 @@ const statDiamonds = document.querySelector('#stat-diamonds');
 const statusIndicator = document.querySelector('#status-indicator'); // Assuming you have one
 const statusText = document.querySelector('#status-text');
 
+// Escapes text coming from TikTok viewers / external APIs before it is put into innerHTML
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // [CONSOLE] Add log entry function
 let logsCount = 0;
 function addLog(msg, type = '') {
@@ -220,7 +225,7 @@ async function init() {
             // addLog(`👤 Profil détecté : ${data.username}`, 'info');
         }
     } catch (e) {
-        console.error("âŒ Pre-init FetchData failed:", e.message);
+        console.error("❌ Pre-init FetchData failed:", e.message);
     }
 
     setupEventListeners();
@@ -777,7 +782,7 @@ if (searchInput) {
 
 function connectToRemote() {
     if (socket) socket.disconnect();
-    console.log('ðŸŒ Connecting to Remote VPS...');
+    console.log('🌐 Connecting to Remote VPS...');
     socket = io('https://tiktok.gentok.fr', {
         reconnection: true,
         reconnectionAttempts: 15,
@@ -818,7 +823,7 @@ function connectToLocal() {
     setupSocketListeners();
 
     socket.on('connect_error', (err) => {
-        console.warn('âŒ Socket Connection Error (App Local):', err.message);
+        console.warn('❌ Socket Connection Error (App Local):', err.message);
 
         // If we are strictly in App Mode, just keep retrying local
         const urlParams = new URLSearchParams(window.location.search);
@@ -972,13 +977,13 @@ function setupSocketListeners() {
         console.error(`Socket Connection Error (${contextName}):`, err);
         // Don't log every error to avoid spam, or log only if not local detection
         if (!isLocalMode) {
-            addLog(`âŒ Erreur connexion socket : ${err.message}`, 'error');
+            addLog(`❌ Erreur connexion socket : ${err.message}`, 'error');
         }
     });
 
     socket.on('disconnect', (reason) => {
         console.log(`Socket Disconnected (${contextName}): ${reason}`);
-        addLog(`â Œ Déconnecté du serveur (${contextName})`, 'error');
+        addLog(`❌ Déconnecté du serveur (${contextName})`, 'error');
         updateStatus('offline');
 
         // Only fallback to remote if NOT in App Mode
@@ -1188,10 +1193,10 @@ function setupSocketListeners() {
                     <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
                         <div style="width: 20px; height: 20px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--text-dim); font-weight: 700;">${i + 1}</div>
                         <div style="flex: 1; min-width: 0;">
-                            <div style="font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.title}</div>
-                            <div style="font-size: 0.65rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.artist}</div>
+                            <div style="font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.title)}</div>
+                            <div style="font-size: 0.65rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.artist)}</div>
                         </div>
-                        ${t.requestedBy ? `<div style="font-size: 0.6rem; background: rgba(29, 185, 84, 0.1); color: #1DB954; padding: 2px 6px; border-radius: 4px;">${t.requestedBy}</div>` : ''}
+                        ${t.requestedBy ? `<div style="font-size: 0.6rem; background: rgba(29, 185, 84, 0.1); color: #1DB954; padding: 2px 6px; border-radius: 4px;">${escapeHtml(t.requestedBy)}</div>` : ''}
                     </div>
                 `).join('');
             }
@@ -1268,7 +1273,7 @@ function initLocalAppDetection() {
     if (appGroup) appGroup.style.display = 'flex';
 
     // Try to connect to local WebSocket server
-    console.log('ðŸ” Checking for Local App...');
+    console.log('🔍 Checking for Local App...');
     // [RE-ENABLED]
     const tempSocket = io('http://localhost:3000', {
         reconnection: false, // Don't retry indefinitely if not there
@@ -1369,7 +1374,7 @@ function applyConfigUI(config) {
     // [MIGRATION] Persist local scenes to DB if empty on server
     const localScenes = JSON.parse(localStorage.getItem('gentok_user_scenes') || '[]');
     if (userScenes.length === 0 && localScenes.length > 0) {
-        console.log('â†» Migration des scènes locales vers le serveur...');
+        console.log('↻ Migration des scènes locales vers le serveur...');
         userScenes = localScenes;
         saveUserScenes(userScenes);
         localStorage.removeItem('gentok_user_scenes');
@@ -1392,7 +1397,7 @@ function applyConfigUI(config) {
 
     if (isPremiumUser) {
         if (!window._premiumLogged) {
-            console.log('ðŸŒŸ Compte Premium détecté, déblocage des fonctionnalités.');
+            console.log('🌟 Compte Premium détecté, déblocage des fonctionnalités.');
             window._premiumLogged = true;
         }
         if (premiumBadge) premiumBadge.classList.remove('hidden');
@@ -1516,7 +1521,7 @@ function applyConfigUI(config) {
         }
         updateLikesGoalActionSelect();
     } catch (err) {
-        console.error("â Œ Error initializing Leaderboards/Goals UI:", err);
+        console.error("❌ Error initializing Leaderboards/Goals UI:", err);
     }
 
     if (config.token) {
@@ -2558,8 +2563,8 @@ function formatDetails(a) {
 }
 
 function formatTrigger(e) {
-    if (e.triggerType === 'gift') return `ðŸŽ Gift: ${e.giftName}`;
-    return `âš¡ ${e.triggerType.charAt(0).toUpperCase() + e.triggerType.slice(1)}`;
+    if (e.triggerType === 'gift') return `🎁 Gift: ${e.giftName}`;
+    return `⚡ ${e.triggerType.charAt(0).toUpperCase() + e.triggerType.slice(1)}`;
 }
 
 function updateActionSelect() {
@@ -4198,7 +4203,7 @@ window.showSection = (sectionId) => {
     // Check if section is locked (Premium only)
     const navItem = document.querySelector(`.nav-links a[href="#${sectionId}"]`)?.parentElement;
     if (navItem && navItem.classList.contains('locked')) {
-        showNotify("ðŸŒŸ Gentok Pro", "Cette fonctionnalité nécessite un compte Gentok Pro !", 'info');
+        showNotify("🌟 Gentok Pro", "Cette fonctionnalité nécessite un compte Gentok Pro !", 'info');
         return;
     }
 
@@ -5068,7 +5073,7 @@ window.editGlobalPreset = (id) => {
     document.getElementById('p-badge').value = preset.badge || 'gratuit';
 
     const modalTitle = document.querySelector('#modal-publish-preset h2');
-    if (modalTitle) modalTitle.innerText = "âœï¸ Modifier le Preset";
+    if (modalTitle) modalTitle.innerText = "✏️ Modifier le Preset";
 
     const btnEditContent = document.getElementById('btn-edit-preset-content');
     if (btnEditContent) btnEditContent.style.display = 'block';
@@ -5137,6 +5142,7 @@ window.savePresetContentChanges = async () => {
     showToast('Sauvegarde du pack...', 'info');
 
     try {
+        const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
         const res = await fetch(`${base}/api/presets?token=${token || ''}`, {
             method: 'POST',
@@ -5249,6 +5255,7 @@ window.deleteGlobalPreset = async (presetId) => {
     if (!confirmed) return;
 
     try {
+        const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
         const res = await fetch(`${base}/api/presets/${presetId}?token=${token || ''}`, { method: 'DELETE' });
         const data = await res.json();
@@ -5282,6 +5289,7 @@ window.installPreset = async (presetId, title) => {
     showToast('Installation en cours...', 'info');
 
     try {
+        const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
         const res = await fetch(`${base}/api/presets/install?token=${token || ''}`, {
             method: 'POST',
@@ -5298,7 +5306,7 @@ window.installPreset = async (presetId, title) => {
                 saveUserScenes(scenes);
             }
 
-            addLog(`ðŸ“¦ Preset "${title}" installé avec succès !`, 'success');
+            addLog(`📦 Preset "${title}" installé avec succès !`, 'success');
             showNotify('Succès', `Le preset a été installé. ${result.actionsInstalled} actions et ${result.eventsInstalled} événements ajoutés.`, 'success');
 
             // Refresh data from server
@@ -5492,7 +5500,8 @@ if (formPublishPreset) {
             img: document.getElementById('p-img').value,
             badge: document.getElementById('p-badge').value,
             events: selectedEvents,
-            actions: selectedActions
+            actions: selectedActions,
+            token: localStorage.getItem('gentok_token')
         };
 
         showToast('Sauvegarde...', 'info');
@@ -5925,7 +5934,7 @@ window.addLocalSoundToUI = (sound) => {
         el.style.animation = 'fadeIn 0.5s ease-out';
         el.innerHTML = `
             <div class="sound-badge">${sound.isUploading ? '<i class="fas fa-spinner fa-spin"></i>' : 'UPLOAD'}</div>
-            <span class="sound-info">${sound.title}</span>
+            <span class="sound-info">${escapeHtml(sound.title)}</span>
             <div class="sound-actions">
                 <button class="btn-icon preview" onclick="previewSound('${safeUrl}')" title="Écouter"><i class="fas fa-play"></i></button>
                 ${sound.isUploading ? '' : `<button class="btn-icon quick" onclick="openQuickSound('${encodedData}')" title="Lien Rapide"><i class="fas fa-bolt"></i></button>`}
@@ -5952,7 +5961,7 @@ window.addLocalSoundToUI = (sound) => {
                 ${sound.isUploading ? '<i class="fas fa-spinner fa-spin" style="color: var(--secondary); font-size: 0.7rem;"></i>' : '<i class="fas fa-upload" style="color: var(--secondary); font-size: 0.7rem;"></i>'}
             </div>
              <div style="display:flex; flex-direction:column; flex:1; min-width:0;">
-                <span class="sound-name" title="${sound.title}">${sound.title}</span>
+                <span class="sound-name" title="${escapeHtml(sound.title)}">${escapeHtml(sound.title)}</span>
             </div>
             <div class="sound-actions">
                 <button class="btn-mini btn-mini-play" onclick="previewSound('${safeUrl}', this)">
@@ -7107,7 +7116,7 @@ function handleChatForTTS(data) {
 
     // Check if user is allowed
     if (!isUserAllowedForTTS(data)) {
-        ttsLog(`âŒ ${uniqueId}: Non autorisé`, 'dim');
+        ttsLog(`❌ ${uniqueId}: Non autorisé`, 'dim');
         return;
     }
 
@@ -7120,7 +7129,7 @@ function handleChatForTTS(data) {
     const now = Date.now();
     const lastTime = ttsUserCooldowns.get(userId) || 0;
     if (now - lastTime < ttsConfig.cooldown * 1000) {
-        ttsLog(`â±ï¸ ${uniqueId}: Cooldown actif`, 'dim');
+        ttsLog(`⏱️ ${uniqueId}: Cooldown actif`, 'dim');
         return;
     }
 
@@ -7147,13 +7156,13 @@ function handleChatForTTS(data) {
 
     // Add to queue
     if (ttsQueue.length >= ttsConfig.maxQueue) {
-        ttsLog(`ðŸ“¦ Queue pleine (${ttsQueue.length}/${ttsConfig.maxQueue})`, 'warning');
+        ttsLog(`📦 Queue pleine (${ttsQueue.length}/${ttsConfig.maxQueue})`, 'warning');
         return;
     }
 
     ttsQueue.push({ text, user: uniqueId, userId });
     ttsUserCooldowns.set(userId, now);
-    ttsLog(`✅ ${uniqueId}: "${text}" ajouté à  la queue`, 'success');
+    ttsLog(`✅ ${uniqueId}: "${text}" ajouté à la queue`, 'success');
 
     // Process queue
     processTTSQueue();
@@ -7290,7 +7299,7 @@ async function speakText(text, user) {
 
             audio.onerror = () => {
                 console.error('[TTS] Audio playback error');
-                ttsLog(`âŒ Erreur Audio Playback`, 'error');
+                ttsLog(`❌ Erreur Audio Playback`, 'error');
                 isTTSPlaying = false;
                 processTTSQueue();
             };
@@ -7299,7 +7308,7 @@ async function speakText(text, user) {
 
         } catch (err) {
             console.error('[TTS] Failed to play custom voice:', err);
-            ttsLog(`âŒ Erreur Gen TTS: ${err.message}`, 'error');
+            ttsLog(`❌ Erreur Gen TTS: ${err.message}`, 'error');
             isTTSPlaying = false;
             // Fallback to system voice or skip?
             // Let's try to fallback to system voice if custom fails
@@ -7343,7 +7352,7 @@ async function speakText(text, user) {
         };
 
         utterance.onerror = (e) => {
-            ttsLog(`âŒ Erreur TTS: ${e.error}`, 'error');
+            ttsLog(`❌ Erreur TTS: ${e.error}`, 'error');
             ttsCurrentUtterance = null;
             setTimeout(() => processTTSQueue(), 100);
         };
@@ -7966,7 +7975,6 @@ async function handleSaveLikesGoal() {
 
         if (response.ok) {
             showToast('Objectif enregistré avec succès !', 'success');
-            updateLikesGoalPreview();
         } else {
             showToast('Erreur lors de la sauvegarde', 'error');
         }
@@ -7994,7 +8002,6 @@ async function handleResetLikesCounter() {
 
         if (response.ok) {
             showToast('Compteur réinitialisé à 0 !', 'success');
-            updateLikesGoalPreview();
         } else {
             showToast('Erreur lors de la réinitialisation', 'error');
         }
@@ -8625,7 +8632,8 @@ window.saveCurrentWeek = async () => {
 async function viewHistoryDetail(id) {
     try {
         const base = getApiBase();
-        const res = await fetch(`${base}/api/leaderboard/history/detail?id=${id}`);
+        const token = localStorage.getItem('gentok_token');
+        const res = await fetch(`${base}/api/leaderboard/history/detail?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token || '')}`);
         const history = await res.json();
 
         if (history.error) throw new Error(history.error);
@@ -8636,7 +8644,7 @@ async function viewHistoryDetail(id) {
                     <h3 style="color: #ffd700; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-coins"></i> Top 10 Pièces</h3>
                     ${history.topCoins.map((u, i) => `
                         <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;">
-                            <span>#${i + 1} @${u.uniqueId}</span>
+                            <span>#${i + 1} @${escapeHtml(u.uniqueId)}</span>
                             <span style="font-weight: 800;">${u.count.toLocaleString()} <small>coins</small></span>
                         </div>
                     `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
@@ -8646,7 +8654,7 @@ async function viewHistoryDetail(id) {
                     <h3 style="color: #fe2c55; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-heart"></i> Top 10 Likes</h3>
                     ${history.topLikes.map((u, i) => `
                         <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;">
-                            <span>#${i + 1} @${u.uniqueId}</span>
+                            <span>#${i + 1} @${escapeHtml(u.uniqueId)}</span>
                             <span style="font-weight: 800;">${u.count.toLocaleString()} <small>likes</small></span>
                         </div>
                     `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
@@ -8657,7 +8665,7 @@ async function viewHistoryDetail(id) {
                     ${history.legends.map(l => `
                         <div style="margin-bottom: 8px; font-size: 0.85rem;">
                             <span style="font-weight: 700;">${l.giftName} :</span> 
-                            <span>@${l.topUsers[0]?.uniqueId} (${l.topUsers[0]?.count})</span>
+                            <span>@${escapeHtml(l.topUsers[0]?.uniqueId)} (${l.topUsers[0]?.count})</span>
                         </div>
                     `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
                 </div>
@@ -8803,7 +8811,7 @@ function displayLegendsGrid() {
                     <img src="${pfp}" onerror="this.src='/logo.png'" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${idx < 3 ? rankColor : 'rgba(255,255,255,0.1)'};">
                 </div>
                 <div style="flex-grow: 1; min-width: 0;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9;">${user.uniqueId}</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9;">${escapeHtml(user.uniqueId)}</div>
                 </div>
                 <div style="font-weight: 800; color: #ffd700; font-size: 0.85rem; flex-shrink: 0;">x${user.count}</div>
             </div>
@@ -8867,8 +8875,8 @@ async function renderRankingTable() {
                     <div style="display: flex; align-items: center; gap: 12px; padding: 5px 0;">
                         <img src="${getPfp(entry.uniqueId, entry.profilePictureUrl)}" onerror="this.src='/logo.png'" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid ${index < 3 ? rankColor : 'var(--border)'}; object-fit: cover;">
                         <div style="text-align: left;">
-                            <div style="font-weight: 700; color: #fff; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${entry.nickname || entry.uniqueId}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-dim);">@${entry.uniqueId}</div>
+                            <div style="font-weight: 700; color: #fff; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(entry.nickname || entry.uniqueId)}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim);">@${escapeHtml(entry.uniqueId)}</div>
                         </div>
                     </div>
                 </td>

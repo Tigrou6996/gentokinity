@@ -14,8 +14,8 @@
     "dev": "electron .",
     "build:local": "node build.js",
     "build:prod": "node build.js --prod",
-    "installer": "electron-builder build --win nsis",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "installer": "node scripts/write-build-env.js && electron-builder build --win nsis",
+    "check": "node scripts/check.js"
   },
   "keywords": [],
   "author": "",

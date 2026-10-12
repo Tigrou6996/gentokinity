@@ -6,7 +6,6 @@ const config = require('../config');
 const { translateGift } = require('../utils/giftTranslator');
 const { getUserInfo } = require('../utils/tiktokApi');
 const Leaderboard = require('../models/Leaderboard');
-const Activity = require('../models/Activity');
 const Session = require('../models/Session');
 const fs = require('fs');
 const path = require('path');
@@ -161,6 +160,7 @@ async function flushLeaderboardBuffer() {
         const sessionUpdateSet = {};
 
         for (const [uniqueId, data] of Object.entries(users)) {
+            const sKey = safeKey(uniqueId);
             // 1. Prepare Leaderboard Bulk Ops
             const updateObj = {
                 $inc: {
@@ -184,8 +184,8 @@ async function flushLeaderboardBuffer() {
                     updateObj.$inc[`weeklyGifts.${giftId}`] = count;
 
                     // Session Update (Gifts)
-                    sessionUpdateInc[`users.${uniqueId}.gifts.${giftId}`] = count;
-                    sessionUpdateInc[`users.${uniqueId}.weeklyGifts.${giftId}`] = count;
+                    sessionUpdateInc[`users.${sKey}.gifts.${giftId}`] = count;
+                    sessionUpdateInc[`users.${sKey}.weeklyGifts.${giftId}`] = count;
                 }
             }
 
@@ -199,19 +199,19 @@ async function flushLeaderboardBuffer() {
 
             // 2. Prepare Session Update (Aggregated)
             if (data.coins) {
-                sessionUpdateInc[`users.${uniqueId}.totalCoins`] = data.coins;
-                sessionUpdateInc[`users.${uniqueId}.weeklyCoins`] = data.coins;
+                sessionUpdateInc[`users.${sKey}.totalCoins`] = data.coins;
+                sessionUpdateInc[`users.${sKey}.weeklyCoins`] = data.coins;
             }
             if (data.likes) {
-                sessionUpdateInc[`users.${uniqueId}.totalLikes`] = data.likes;
-                sessionUpdateInc[`users.${uniqueId}.weeklyLikes`] = data.likes;
+                sessionUpdateInc[`users.${sKey}.totalLikes`] = data.likes;
+                sessionUpdateInc[`users.${sKey}.weeklyLikes`] = data.likes;
             }
 
-            sessionUpdateSet[`users.${uniqueId}.userId`] = data.user.userId;
-            sessionUpdateSet[`users.${uniqueId}.uniqueId`] = uniqueId;
-            sessionUpdateSet[`users.${uniqueId}.nickname`] = data.user.nickname;
-            sessionUpdateSet[`users.${uniqueId}.profilePictureUrl`] = data.user.profilePictureUrl;
-            sessionUpdateSet[`users.${uniqueId}.lastUpdated`] = new Date();
+            sessionUpdateSet[`users.${sKey}.userId`] = data.user.userId;
+            sessionUpdateSet[`users.${sKey}.uniqueId`] = uniqueId;
+            sessionUpdateSet[`users.${sKey}.nickname`] = data.user.nickname;
+            sessionUpdateSet[`users.${sKey}.profilePictureUrl`] = data.user.profilePictureUrl;
+            sessionUpdateSet[`users.${sKey}.lastUpdated`] = new Date();
         }
 
         sessionUpdateSet[`lastUpdated`] = new Date();
@@ -267,11 +267,23 @@ function queueLeaderboardUpdate(token, user, coins = 0, likes = 0, giftId = null
     }
 }
 
-// [DEBOUNCE] Timers for top stats saves
-let topGiftSaveTimeout = null;
-let topStreakSaveTimeout = null;
-let topCoinsSaveTimeout = null;
-let topLikesSaveTimeout = null;
+// [DEBOUNCE] One timer per token AND per kind of save. Single module-level timers made one
+// streamer's events cancel another streamer's pending save when several lives run on the VPS.
+const saveTimers = new Map();
+function debounceSave(token, kind, delayMs, fn) {
+    const key = `${token}:${kind}`;
+    if (saveTimers.has(key)) clearTimeout(saveTimers.get(key));
+    saveTimers.set(key, setTimeout(() => {
+        saveTimers.delete(key);
+        fn();
+    }, delayMs));
+}
+
+// MongoDB treats '.' as a path separator and '$' as an operator: TikTok @ids such as
+// "jean.pierre" would otherwise be split into nested objects in the Session document.
+function safeKey(key) {
+    return String(key).replace(/\./g, '\uFF0E').replace(/^\$/, '\uFF04');
+}
 
 function updateStats(connector, key, value = 1, isAbsolute = false) {
     if (!connector || !connector.stats) return;
@@ -298,9 +310,6 @@ function checkUniqueViewer(connector, uniqueId) {
 
 
 // Helper to update last event and persist it
-let lastEventSaveTimeout = null;
-let pendingLastEventsSave = false;
-
 function updateLastEvent(connector, type, data) {
     if (!connector || !connector.lastEvents) return;
     connector.lastEvents[type] = data;
@@ -327,18 +336,11 @@ function updateLastEvent(connector, type, data) {
     */
 
     // [DEBOUNCE] Only save to DB settings every 5 seconds to avoid spam
-    pendingLastEventsSave = true;
-
-    if (lastEventSaveTimeout) {
-        clearTimeout(lastEventSaveTimeout);
-    }
-
-    lastEventSaveTimeout = setTimeout(() => {
-        if (pendingLastEventsSave && connector.lastEvents) {
+    debounceSave(connector.token, 'lastEvents', 5000, () => {
+        if (connector.lastEvents) {
             config.saveSettings({ token: connector.token, lastEvents: connector.lastEvents });
-            pendingLastEventsSave = false;
         }
-    }, 5000); // 5 second debounce
+    });
 }
 
 function registerEvents(tiktokConnection, connector) {
@@ -542,7 +544,7 @@ function registerEvents(tiktokConnection, connector) {
         handleGift(data, connector);
 
         if (connector.stats) {
-            const streakKey = `${data.uniqueId}_${data.giftId}`;
+            const streakKey = `${connector.token}_${data.uniqueId}_${data.giftId}`;
             const previousCount = giftStreakTracker.get(streakKey) || 0;
             const newGifts = data.repeatCount - previousCount;
 
@@ -588,13 +590,12 @@ function registerEvents(tiktokConnection, connector) {
                     .sort((a, b) => b.coins - a.coins)
                     .slice(0, limitCoins);
 
-                if (topCoinsSaveTimeout) clearTimeout(topCoinsSaveTimeout);
-                topCoinsSaveTimeout = setTimeout(() => {
+                debounceSave(connector.token, 'topCoins', 3000, () => {
                     config.saveSettings({
                         token: connector.token,
                         topCoins: connector.stats.topCoins // [FIX] No more ".data" wrapper
                     });
-                }, 3000);
+                });
 
                 // Stats updated via updateStats (debounced)
 
@@ -607,10 +608,9 @@ function registerEvents(tiktokConnection, connector) {
                         giftName: giftName,
                         giftIcon: giftIcon
                     };
-                    if (topGiftSaveTimeout) clearTimeout(topGiftSaveTimeout);
-                    topGiftSaveTimeout = setTimeout(() => {
+                    debounceSave(connector.token, 'topGift', 3000, () => {
                         config.saveSettings({ token: connector.token, topGift: connector.stats.topGift });
-                    }, 3000);
+                    });
                 }
 
                 if (data.repeatCount > (connector.stats.topStreak?.count || 0)) {
@@ -622,10 +622,9 @@ function registerEvents(tiktokConnection, connector) {
                         giftName: giftName,
                         giftIcon: giftIcon
                     };
-                    if (topStreakSaveTimeout) clearTimeout(topStreakSaveTimeout);
-                    topStreakSaveTimeout = setTimeout(() => {
+                    debounceSave(connector.token, 'topStreak', 3000, () => {
                         config.saveSettings({ token: connector.token, topStreak: connector.stats.topStreak });
-                    }, 3000);
+                    });
                 }
             }
         }
@@ -711,13 +710,12 @@ function registerEvents(tiktokConnection, connector) {
             .sort((a, b) => b.count - a.count)
             .slice(0, limitLikes);
 
-        if (topLikesSaveTimeout) clearTimeout(topLikesSaveTimeout);
-        topLikesSaveTimeout = setTimeout(() => {
+        debounceSave(connector.token, 'topLikes', 5000, () => {
             config.saveSettings({
                 token: connector.token,
                 topLikes: connector.stats.topLikes
             });
-        }, 5000);
+        });
 
         broadcastStats(connector);
 

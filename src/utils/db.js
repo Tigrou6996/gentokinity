@@ -6,7 +6,7 @@ const connectDB = async () => {
     try {
         const uri = config.mongodbUri;
         if (!uri) {
-            throw new Error('MONGODB_URI non définie dans config.js');
+            throw new Error('MONGODB_URI non définie (fichier .env ou src/build-env.json)');
         }
 
         await mongoose.connect(uri, {
@@ -25,7 +25,7 @@ const connectDB = async () => {
             logger.info(`✨ Migration Premium : ${result.modifiedCount} profils mis à jour.`);
         }
     } catch (err) {
-        logger.error('❌ Erreur de connexion MongoDB:', err.message);
+        logger.error(`❌ Erreur de connexion MongoDB : ${err.message}`);
         if (config.isAppMode) {
             logger.warn('⚠️ Mode Application local : continuation en mode hors-ligne sans MongoDB cloud.');
         } else {
