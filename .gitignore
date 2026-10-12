@@ -8,3 +8,7 @@ APP/
 *.blockmap
 node_modules/
 lbs-video/LBS-promo-draft.mp4
+lbs-video/*_seg*.mp4
+lbs-video/*_silent.mp4
+lbs-video/render3.log
+lbs-video/audio/*.raw
