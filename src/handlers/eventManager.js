@@ -899,6 +899,8 @@ function registerEvents(tiktokConnection, connector) {
         updateViewerCountIfPresent(connector, data);
         liveFeatures.onSocial(connector, 'member', data);
         actionManager.executeAction('member', data, connector);
+        // small payload: the dashboard can welcome viewers out loud (TTS)
+        emitStats('member', { uniqueId: data.uniqueId, nickname: data.nickname || data.uniqueId, userId: data.userId }, connector.token);
     });
 
     tiktokConnection.on('subscribe', (data) => {

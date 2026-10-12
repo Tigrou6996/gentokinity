@@ -1518,6 +1518,7 @@
                                             <div class="input-group"
                                                 style="display: flex; gap: 5px; margin-bottom:10px;">
                                                 <input type="text" id="topLikesUrl" readonly
+                                                    value="https://tiktok.gentok.fr/overlay/leaderboard?type=likes&amp;limit=10&amp;style=1&amp;transparent=true&amp;showTitle=true&amp;rtl=false"
                                                     style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.75rem;">
                                                 <button class="btn-secondary" style="padding: 0 10px;"
                                                     onclick="copyOverlayUrl(document.getElementById('topLikesUrl').value)"><i
@@ -1612,6 +1613,7 @@
                                             <div class="input-group"
                                                 style="display: flex; gap: 5px; margin-bottom:10px;">
                                                 <input type="text" id="topCoinsUrl" readonly
+                                                    value="https://tiktok.gentok.fr/overlay/leaderboard?type=coins&amp;limit=10&amp;style=1&amp;transparent=true&amp;showTitle=true&amp;rtl=false"
                                                     style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.75rem;">
                                                 <button class="btn-secondary" style="padding: 0 10px;"
                                                     onclick="copyOverlayUrl(document.getElementById('topCoinsUrl').value)"><i
@@ -2206,6 +2208,20 @@
                             style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; height: 150px; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: #eee;">
                             <div style="opacity: 0.5;">[System] TTS Prêt. En attente de commentaires...</div>
                         </div>
+                    </div>
+
+                    <!-- Spoken announcements of live events (built by app.js: renderTTSEvents) -->
+                    <div class="card tts-events-card" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); grid-column: 1 / -1;">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <h3 style="color: var(--secondary); margin-bottom: 4px; font-size: 1rem;">Que lire à voix haute ?</h3>
+                                <p class="text-dim small mb-0">Le TTS peut aussi annoncer les cadeaux, follows, partages… avec la voix choisie. Variables : <code>{pseudo}</code>, <code>{cadeau}</code>, <code>{nombre}</code>, <code>{pieces}</code>.</p>
+                            </div>
+                            <label class="d-flex align-items-center gap-2 small fw-semibold mb-0">
+                                <input type="checkbox" id="tts-read-chat"> Lire les messages du chat
+                            </label>
+                        </div>
+                        <div id="tts-events-list" class="tts-events-list"></div>
                     </div>
 
                 </div>

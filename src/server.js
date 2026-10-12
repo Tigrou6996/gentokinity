@@ -1080,9 +1080,11 @@ app.post('/api/scenes/rename', async (req, res) => {
 // API: Update TTS Settings
 app.post('/api/tts/settings', async (req, res) => {
     try {
-        const token = req.body.token || req.query.token;
-        if (token) await config.loadSession(token);
-        await config.saveSettings({ tts: req.body, token });
+        const token = getRequestToken(req);
+        if (!token) return res.status(400).json({ error: 'Token manquant' });
+        const { token: _token, ...ttsData } = req.body || {};
+        await config.loadSession(token);
+        await config.saveSettings({ tts: ttsData, token });
         res.json({ success: true });
     } catch (err) {
         console.error('TTS settings save error:', err);
@@ -1125,16 +1127,11 @@ app.post('/api/tts/generate', async (req, res) => {
 // API: Get TTS Settings
 app.get('/api/tts/settings', async (req, res) => {
     try {
-        // Try to get token from session cache or last active token
-        let tokenToUse = config.licenseToken;
-
-        if (!tokenToUse) {
-            const lastToken = await Global.findOne({ key: 'lastActiveToken' });
-            if (lastToken && lastToken.value) {
-                tokenToUse = lastToken.value;
-                // Load session for this token
-                await config.loadSession(tokenToUse);
-            }
+        // The account asking (the VPS serves many streamers); the local app falls back to its own session
+        const token = getRequestToken(req) || config.licenseToken;
+        if (token) {
+            const s = await config.getSettings(token);
+            return res.json((s && s.tts) || {});
         }
 
         const settings = config.settings.tts || {};

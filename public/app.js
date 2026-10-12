@@ -194,6 +194,15 @@ function addLog(msg, type = '') {
 
 
 async function init() {
+    // Safety net: the dashboard never runs inside one of its own preview frames
+    // (it would connect a second time and repeat sounds, alerts, TTS and history).
+    try {
+        if (window.top !== window && window.top.location.origin === window.location.origin && window.top.document.getElementById('tts-chat-section')) {
+            document.documentElement.innerHTML = '';
+            return;
+        }
+    } catch (e) { /* different origin: not our own frame */ }
+
     // The return from Stripe (?payment=success / cancel) is handled by premium.js
 
     // [DETECTION] Are we running in the Electron App?
@@ -1036,6 +1045,7 @@ function setupSocketListeners() {
     });
 
     socket.on('stats', ({ type, data }) => {
+        if (typeof handleEventForTTS === 'function') handleEventForTTS(type, data);
         // [MODIFIED] Using session_stats for counters, this event is now for per-event animations if needed
         if (type === 'gift') {
             playAlert('gift');
@@ -4755,6 +4765,9 @@ function updateOverlayLinks() {
     const inputs = document.querySelectorAll('#overlays-section input[readonly]');
     inputs.forEach(input => {
         let url = input.value;
+        // Field not filled yet (its config hasn't loaded): an empty URL would make the preview
+        // iframe load "?token=..." i.e. the dashboard itself, which then plays every alert and TTS again
+        if (!/\/overlay[/_]/.test(url)) return;
         // Strip existing token if present (matches both ?token= and &token=)
         if (url.includes('token=')) {
             const separator = url.includes('?token=') ? '?token=' : '&token=';
@@ -7117,7 +7130,9 @@ let ttsConfig = {
     maxLength: 100,
     filterSpam: true,
     filterMentions: true,
-    filterCommands: true
+    filterCommands: true,
+    readChat: true,
+    events: {}
 };
 
 let ttsQueue = [];
@@ -7154,7 +7169,8 @@ async function initTTS() {
                 ttsConfig = {
                     ...ttsConfig,
                     ...saved,
-                    allowedUsers: { ...ttsConfig.allowedUsers, ...(saved.allowedUsers || {}) }
+                    allowedUsers: { ...ttsConfig.allowedUsers, ...(saved.allowedUsers || {}) },
+                    events: (saved.events && typeof saved.events === 'object') ? saved.events : {}
                 };
                 console.log('[TTS] Config loaded from MongoDB:', ttsConfig);
 
@@ -7322,8 +7338,15 @@ function bindTTSUI() {
     if (elements.language) elements.language.addEventListener('change', (e) => {
         ttsConfig.language = e.target.value;
         loadVoices();
+        renderTTSEvents(); // default announcement texts follow the language
         saveTTSConfig();
     });
+    const readChatEl = document.getElementById('tts-read-chat');
+    if (readChatEl) {
+        readChatEl.checked = ttsConfig.readChat !== false;
+        readChatEl.addEventListener('change', saveTTSConfig);
+    }
+    renderTTSEvents();
     if (elements.voice) elements.voice.addEventListener('change', saveTTSConfig);
     if (elements.randomVoice) elements.randomVoice.addEventListener('change', saveTTSConfig);
     if (elements.speed) elements.speed.addEventListener('change', saveTTSConfig);
@@ -7410,6 +7433,10 @@ function updateTTSUI() {
     const typeRadio = document.querySelector(`input[name="tts-type"][value="${ttsConfig.commentType}"]`);
     if (typeRadio) typeRadio.checked = true;
 
+    const readChat = document.getElementById('tts-read-chat');
+    if (readChat) readChat.checked = ttsConfig.readChat !== false;
+    renderTTSEvents();
+
     console.log('[TTS] UI updated with config');
 }
 
@@ -7420,7 +7447,8 @@ async function saveTTSConfig() {
     ttsConfig.voice = document.getElementById('tts-voice')?.value || null;
     ttsConfig.randomVoice = document.getElementById('tts-random-voice')?.checked || false;
     ttsConfig.speed = parseFloat(document.getElementById('tts-speed')?.value) || 1.0;
-    ttsConfig.pitch = parseFloat(document.getElementById('tts-pitch')?.value) || 1.0;
+    const pitchValue = parseFloat(document.getElementById('tts-pitch')?.value);
+    ttsConfig.pitch = Number.isFinite(pitchValue) ? pitchValue : 1.0; // 0 = lowest voice, not "normal"
     ttsConfig.volume = parseFloat(document.getElementById('tts-volume')?.value) || 1.0;
     ttsConfig.allowedUsers.all = document.getElementById('tts-allow-all')?.checked || false;
     ttsConfig.allowedUsers.followers = document.getElementById('tts-allow-followers')?.checked || false;
@@ -7443,6 +7471,10 @@ async function saveTTSConfig() {
         ttsConfig.commentType = selectedType.value;
     }
 
+    const readChat = document.getElementById('tts-read-chat');
+    if (readChat) ttsConfig.readChat = readChat.checked;
+    if (document.getElementById('tts-events-list')?.children.length) ttsConfig.events = readTTSEventsForm();
+
     // Save to MongoDB via API
     try {
         const base = getApiBase();
@@ -7463,9 +7495,126 @@ async function saveTTSConfig() {
     }
 }
 
+// ---------------------------------------------------------------- spoken event announcements
+// "Que lire à voix haute ?": gifts, follows, shares, subscriptions and arrivals, with the TTS voice.
+const TTS_EVENT_TYPES = [
+    { type: 'gift', label: 'Cadeaux', icon: 'fa-gift', minCoins: true },
+    { type: 'follow', label: 'Follows', icon: 'fa-user-plus' },
+    { type: 'share', label: 'Partages', icon: 'fa-share-nodes' },
+    { type: 'subscribe', label: 'Abonnements (Super Fan)', icon: 'fa-star' },
+    { type: 'member', label: 'Arrivées dans le live', icon: 'fa-door-open', note: '1 annonce toutes les 15 s maximum' }
+];
+const TTS_EVENT_TEXTS = {
+    fr: { gift: '{pseudo} a envoyé {nombre} {cadeau}, merci !', follow: 'Merci {pseudo} pour le follow !', share: 'Merci {pseudo} pour le partage !', subscribe: "Merci {pseudo} pour l'abonnement !", member: 'Bienvenue {pseudo} !' },
+    en: { gift: '{pseudo} sent {nombre} {cadeau}, thank you!', follow: 'Thanks {pseudo} for the follow!', share: 'Thanks {pseudo} for sharing!', subscribe: 'Thanks {pseudo} for subscribing!', member: 'Welcome {pseudo}!' },
+    es: { gift: '{pseudo} envió {nombre} {cadeau}, ¡gracias!', follow: '¡Gracias {pseudo} por seguirme!', share: '¡Gracias {pseudo} por compartir!', subscribe: '¡Gracias {pseudo} por la suscripción!', member: '¡Bienvenido {pseudo}!' },
+    de: { gift: '{pseudo} hat {nombre} {cadeau} geschickt, danke!', follow: 'Danke {pseudo} fürs Folgen!', share: 'Danke {pseudo} fürs Teilen!', subscribe: 'Danke {pseudo} fürs Abonnieren!', member: 'Willkommen {pseudo}!' },
+    it: { gift: '{pseudo} ha inviato {nombre} {cadeau}, grazie!', follow: 'Grazie {pseudo} per il follow!', share: 'Grazie {pseudo} per la condivisione!', subscribe: "Grazie {pseudo} per l'abbonamento!", member: 'Benvenuto {pseudo}!' },
+    pt: { gift: '{pseudo} enviou {nombre} {cadeau}, obrigado!', follow: 'Valeu {pseudo} pelo follow!', share: 'Valeu {pseudo} por compartilhar!', subscribe: 'Valeu {pseudo} pela inscrição!', member: 'Bem-vindo {pseudo}!' }
+};
+const TTS_MEMBER_INTERVAL_MS = 15000;
+const ttsGiftCombos = new Map(); // user|gift -> { count, coins, data, timer }
+let ttsLastMemberAt = 0;
+
+function ttsEventDefaultText(type) {
+    const lang = (ttsConfig.language || 'fr-FR').slice(0, 2);
+    return (TTS_EVENT_TEXTS[lang] || TTS_EVENT_TEXTS.fr)[type] || '';
+}
+
+function ttsEventSettings(type) {
+    const e = (ttsConfig.events && ttsConfig.events[type]) || {};
+    const min = Number(e.minCoins);
+    return { enabled: !!e.enabled, minCoins: Number.isFinite(min) && min >= 0 ? min : 1, text: typeof e.text === 'string' ? e.text : '' };
+}
+
+function renderTTSEvents() {
+    const list = document.getElementById('tts-events-list');
+    if (!list) return;
+    list.innerHTML = TTS_EVENT_TYPES.map(def => {
+        const e = ttsEventSettings(def.type);
+        return `
+            <div class="tts-event-row" data-type="${def.type}">
+                <label class="tts-event-toggle">
+                    <input type="checkbox" data-field="enabled" ${e.enabled ? 'checked' : ''}>
+                    <i class="fas ${def.icon}"></i> <span>${escapeHtml(def.label)}</span>
+                </label>
+                <input type="text" class="form-control form-control-sm" data-field="text" maxlength="200" value="${escapeHtml(e.text)}" placeholder="${escapeHtml(ttsEventDefaultText(def.type))}">
+                <div class="tts-event-extra">
+                    ${def.minCoins ? `<label class="small text-dim mb-0">Dès <input type="number" class="form-control form-control-sm d-inline-block" data-field="minCoins" min="0" step="1" value="${e.minCoins}" style="width:80px"> pièces</label>` : `<span class="small text-dim">${def.note ? escapeHtml(def.note) : ''}</span>`}
+                </div>
+            </div>`;
+    }).join('');
+    list.querySelectorAll('input').forEach(el => el.addEventListener('change', saveTTSConfig));
+}
+
+function readTTSEventsForm() {
+    const events = {};
+    document.querySelectorAll('#tts-events-list .tts-event-row').forEach(row => {
+        const get = (f) => row.querySelector(`[data-field="${f}"]`);
+        const minEl = get('minCoins');
+        events[row.dataset.type] = {
+            enabled: !!get('enabled')?.checked,
+            text: (get('text')?.value || '').trim().slice(0, 200),
+            ...(minEl ? { minCoins: Math.max(0, parseInt(minEl.value, 10) || 0) } : {})
+        };
+    });
+    return events;
+}
+
+function fillTTSEventText(template, v) {
+    const map = { pseudo: v.name, user: v.name, cadeau: v.gift, gift: v.gift, nombre: v.count, count: v.count, pieces: v.coins, coins: v.coins };
+    return template.replace(/\{(\w+)\}/g, (m, k) => (map[k] !== undefined && map[k] !== null ? String(map[k]) : m));
+}
+
+function queueTTSAnnouncement(type, values) {
+    const e = ttsEventSettings(type);
+    const text = fillTTSEventText(e.text || ttsEventDefaultText(type), values).trim();
+    if (!text) return;
+    // announcements may go a little over the chat queue limit, never far over it
+    if (ttsQueue.length >= (ttsConfig.maxQueue || 5) + 3) {
+        ttsLog(`📦 Queue pleine, annonce ignorée`, 'warning');
+        return;
+    }
+    // gifts are read before waiting chat messages
+    if (type === 'gift') ttsQueue.unshift({ text, user: values.name });
+    else ttsQueue.push({ text, user: values.name });
+    processTTSQueue();
+}
+
+// Called for every "stats" socket event (gift, follow, share, subscribe, member...)
+function handleEventForTTS(type, data) {
+    if (!ttsConfig.enabled || !data || !TTS_EVENT_TYPES.some(d => d.type === type)) return;
+    const e = ttsEventSettings(type);
+    if (!e.enabled) return;
+    const name = data.nickname || data.uniqueId || '';
+
+    if (type === 'gift') {
+        // a combo arrives in several parts: one announcement once it is over
+        const key = `${data.userId || data.uniqueId}|${data.giftName}`;
+        const combo = ttsGiftCombos.get(key) || { count: 0, coins: 0 };
+        combo.count += parseInt(data.repeatCount, 10) || 1;
+        combo.coins += parseInt(data.coins, 10) || 0;
+        combo.data = data;
+        clearTimeout(combo.timer);
+        combo.timer = setTimeout(() => {
+            ttsGiftCombos.delete(key);
+            if (combo.coins < e.minCoins) return;
+            queueTTSAnnouncement('gift', { name, gift: data.giftName || '', count: combo.count, coins: combo.coins });
+        }, 3000);
+        ttsGiftCombos.set(key, combo);
+        return;
+    }
+    if (type === 'member') {
+        const now = Date.now();
+        if (now - ttsLastMemberAt < TTS_MEMBER_INTERVAL_MS) return;
+        ttsLastMemberAt = now;
+    }
+    queueTTSAnnouncement(type, { name });
+}
+
 // Handle incoming chat for TTS
 function handleChatForTTS(data) {
-    if (!ttsConfig.enabled) return;
+    if (!ttsConfig.enabled || ttsConfig.readChat === false) return;
 
     const { uniqueId, comment, userId, isModerator, isSubscriber, isFollower } = data;
 

@@ -4924,3 +4924,11 @@ table td {
 }
 /* The update window is opened by adding .active (app.js): without this rule it stayed hidden */
 #update-modal.active { display: flex; }
+
+/* TTS: "Que lire à voix haute ?" (one row per live event) */
+.tts-events-list { display: flex; flex-direction: column; gap: 8px; }
+.tts-event-row { display: grid; grid-template-columns: 230px 1fr 190px; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255, 255, 255, .02); }
+.tts-event-toggle { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; cursor: pointer; }
+.tts-event-toggle i { width: 18px; text-align: center; color: var(--secondary); }
+.tts-event-row input[type=text] { width: 100%; }
+@media (max-width: 900px) { .tts-event-row { grid-template-columns: 1fr; } }

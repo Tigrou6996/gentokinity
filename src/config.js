@@ -85,7 +85,9 @@ const getSessionDefaults = () => ({
         maxLength: 100,
         filterSpam: true,
         filterMentions: true,
-        filterCommands: true
+        filterCommands: true,
+        readChat: true,
+        events: {}
     },
     autoResetTopStats: false,
     autoResetLastX: false,

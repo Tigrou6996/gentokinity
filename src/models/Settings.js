@@ -99,7 +99,10 @@ const SettingsSchema = new mongoose.Schema({
         maxLength: { type: Number, default: 100 },
         filterSpam: { type: Boolean, default: true },
         filterMentions: { type: Boolean, default: true },
-        filterCommands: { type: Boolean, default: true }
+        filterCommands: { type: Boolean, default: true },
+        readChat: { type: Boolean, default: true }, // read chat messages (events can be read without the chat)
+        // Spoken announcements of live events: { gift: { enabled, minCoins, text }, follow: {...}, share, subscribe, member }
+        events: { type: Object, default: {} }
     },
     lastEvents: {
         follower: { type: Object, default: null },
