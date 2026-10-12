@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Compteur</title>
+    <style>
+        :root { --accent: #fe2c55; --size: 48px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .counter {
+            display: inline-flex; align-items: center; gap: 14px; padding: 10px 22px; margin: 8px;
+            border-radius: 18px; background: rgba(0, 0, 0, .55); color: #fff;
+            font-size: var(--size); font-weight: 900; text-shadow: 0 2px 8px rgba(0,0,0,.8);
+        }
+        .counter.nobg { background: transparent; }
+        .icon { font-size: .9em; }
+        .label { font-size: .45em; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; display: block; }
+        .value.bump { animation: bump .35s ease; }
+        @keyframes bump { 50% { transform: scale(1.15); color: var(--accent); } }
+    </style>
+</head>
+
+<body>
+    <div class="counter" id="counter">
+        <span class="icon" id="icon"></span>
+        <span><span class="label" id="label"></span><span class="value" id="value">0</span></span>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters:
+        //   stat=viewers    viewers | likes | diamonds | gifts | follows | shares | subscribers | chats | cumulativeViewers
+        //   label=...       texte au-dessus du nombre (défaut selon la stat), icon=👁️
+        //   short=1         format court (12,3k), bg=1, size=48, color=fe2c55, demo=1
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 48), 12), 200)}px`);
+
+        const DEFAULTS = {
+            viewers: ['👁️', 'Spectateurs'], likes: ['❤️', 'Likes'], diamonds: ['🪙', 'Pièces'], gifts: ['🎁', 'Cadeaux'],
+            follows: ['➕', 'Nouveaux follows'], shares: ['🔁', 'Partages'], subscribers: ['⭐', 'Abonnés'],
+            chats: ['💬', 'Messages'], cumulativeViewers: ['👥', 'Viewers uniques']
+        };
+        const stat = G.param('stat', 'viewers');
+        const key = stat === 'viewers' ? 'viewerCount' : stat;
+        const [defIcon, defLabel] = DEFAULTS[stat] || ['', stat];
+        document.getElementById('icon').textContent = G.param('icon', defIcon);
+        document.getElementById('label').textContent = G.param('label', defLabel);
+        if (!G.boolParam('bg', true)) document.getElementById('counter').classList.add('nobg');
+        const short = G.boolParam('short', true);
+        const valueEl = document.getElementById('value');
+        let current = 0;
+
+        function render(n) {
+            valueEl.textContent = short ? G.formatNumber(n) : Number(n).toLocaleString('fr-FR');
+        }
+
+        function setValue(target) {
+            target = Number(target) || 0;
+            if (target === current) return;
+            const from = current;
+            current = target;
+            valueEl.classList.remove('bump'); void valueEl.offsetWidth; valueEl.classList.add('bump');
+            const start = performance.now();
+            const step = (t) => {
+                const p = Math.min((t - start) / 600, 1);
+                render(Math.round(from + (target - from) * p));
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        render(0);
+        const socket = G.connect();
+        socket.on('session_stats', (s) => { if (s && s[key] !== undefined) setValue(s[key]); });
+        socket.on('stats', (p) => { if (stat === 'viewers' && p && p.type === 'viewers') setValue(p.data); });
+
+        if (G.isDemo) {
+            let n = 120;
+            setInterval(() => setValue(n += Math.floor(Math.random() * 40)), 1500);
+        }
+    </script>
+</body>
+
+</html>

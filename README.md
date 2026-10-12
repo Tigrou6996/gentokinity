@@ -11,6 +11,48 @@ Le même code tourne de deux façons :
 
 `src/index.js` détecte automatiquement le mode : Electron → application, Node → serveur.
 
+## Fonctionnalités
+
+### Connexion au live TikTok
+- **Reconnexion automatique** quand la connexion saute : jusqu'à 10 essais pendant environ 7 minutes, sans perdre les compteurs. Elle s'arrête si le live est terminé ou si tu cliques sur Arrêter.
+- **Surveillance** : si TikTok n'envoie plus rien pendant 3 minutes alors que le live tourne, la connexion est relancée.
+- **Nouvel essai au démarrage** en cas d'erreur passagère (limite de requêtes, délai dépassé).
+- **Clé `SIGN_API_KEY`** (Euler Stream, optionnelle) : à ajouter dans `.env` pour éviter la plupart des refus de connexion de TikTok.
+
+### Zéro double comptage
+- **Combos de cadeaux** (« strike ») : chaque cadeau est compté **une seule fois**, même si TikTok renvoie des paquets en double, en retard, ou oublie le paquet de fin. Une action liée à un cadeau se déclenche une fois par cadeau reçu.
+- **Messages TikTok reçus deux fois** (y compris après une reconnexion) : ignorés grâce à leur identifiant unique.
+- **Follow / abonnement** : comptés une seule fois par spectateur et par live, même si quelqu'un se désabonne puis se réabonne.
+- Les messages envoyés avant le démarrage du bot sont ignorés.
+
+### Actions
+| Type | Effet |
+|---|---|
+| Webhook | Appel HTTP (GET/POST). |
+| Clavier | Appui sur une touche (AutoIt, application Windows). |
+| Minecraft | Commande ServerTap. |
+| Son | Lecture d'un son. |
+| **Alerte à l'écran** | Texte et image, GIF ou vidéo dans l'overlay *Alertes*. |
+| **Synthèse vocale** | Texte lu à voix haute par le tableau de bord. |
+
+Toutes les actions acceptent un **cooldown**, c'est-à-dire un délai minimum entre deux exécutions. Variables disponibles dans les textes : `{nickname}`, `{username}`, `{giftname}`, `{repeatcount}`, `{combo}`, `{coins}`, `{comment}`, `{likecount}`, `{totallikecount}`, `{submonth}`, et `{playername}` pour Minecraft.
+
+### Overlays OBS / TikTok Live Studio
+URL de base : `https://tiktok.gentok.fr/overlay/<nom>?token=TON_TOKEN`. Ajoute `&demo=1` pour avoir un aperçu sans être en live.
+
+| Overlay | Paramètres principaux |
+|---|---|
+| `alerts`: alertes animées | `events=follow,gift,subscribe,share`, `mingift`, `duration`, `actions`, `color` |
+| `chat`: chat en direct | `max`, `fade`, `avatars`, `badges`, `bg`, `size` |
+| `feed`: fil d'activité | `events`, `max`, `mingift`, `size` |
+| `goal`: objectif | `stat` (likes, diamonds, gifts, follows, shares, subscribers, chats, viewers), `target`, `step`, `title` |
+| `counter`: compteur | `stat`, `label`, `icon`, `short`, `size` |
+| `timer`: timer subathon | `start` (minutes), `coin`, `follow`, `sub`, `share`, `like` (secondes ajoutées), `maxh`, `reset=1` |
+| `rain`: pluie de cadeaux | `gifts`, `likes`, `follows`, `shares`, `size`, `max` |
+| Déjà existants | `goals` (objectif de likes), `gifts`, `last-*`, `top-*`, `leaderboard`, `gift_legend.html`, `gallery` |
+
+Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**.
+
 ## Installation
 
 Prérequis : **Node.js 20+** et un accès à une base **MongoDB** (MongoDB Atlas).

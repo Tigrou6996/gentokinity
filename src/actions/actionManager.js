@@ -6,9 +6,59 @@ const { sendRconCommand } = require('./rconAction');
 const { emitToApp, isAppConnected, emitEvent } = require('../utils/socket');
 const { translateGift } = require('../utils/giftTranslator');
 
+/**
+ * Values available in action texts / commands, e.g. "Merci {nickname} pour {repeatcount} {giftname} !"
+ * Line breaks are removed: values come from TikTok viewers and a line break could chain
+ * extra Minecraft commands.
+ */
+function buildPlaceholders(context = {}, extra = {}) {
+    const values = {
+        '{user}': context.uniqueId || '',
+        '{username}': context.uniqueId || '', // TikTok @username
+        '{nickname}': context.nickname || context.uniqueId || '',
+        '{comment}': context.comment || context.message || '',
+        '{giftname}': context.giftName || '',
+        '{coins}': context.diamondCount || context.coins || '',
+        '{repeatcount}': context.repeatCount || '1',
+        '{combo}': context.comboCount || context.repeatCount || '1',
+        '{likecount}': context.likeCount || '',
+        '{totallikecount}': context.totalLikeCount || '',
+        '{submonth}': context.subMonth || '',
+        ...extra
+    };
+    for (const key of Object.keys(values)) {
+        values[key] = String(values[key]).replace(/[\r\n]+/g, ' ');
+    }
+    return values;
+}
+
+function fillPlaceholders(template, context, extra) {
+    let out = String(template || '');
+    const values = buildPlaceholders(context, extra);
+    for (const [key, val] of Object.entries(values)) {
+        out = out.split(key).join(val);
+    }
+    return out;
+}
+
 class ActionManager {
     constructor() {
         this.donors = new Map(); // token -> Map(uniqueId -> totalDiamonds)
+        this.lastRunAt = new Map(); // `${token}:${actionId}` -> timestamp (cooldowns)
+    }
+
+    /**
+     * Optional per-action cooldown (seconds): returns false if the action ran too recently.
+     */
+    passesCooldown(token, action) {
+        const cooldownS = Number(action.cooldown) || 0;
+        if (cooldownS <= 0) return true;
+        const key = `${token}:${action.id}`;
+        const now = Date.now();
+        const last = this.lastRunAt.get(key) || 0;
+        if (now - last < cooldownS * 1000) return false;
+        this.lastRunAt.set(key, now);
+        return true;
     }
 
     /**
@@ -244,6 +294,11 @@ class ActionManager {
         if (!connector || !connector.token) return;
         const token = connector.token;
 
+        if (!this.passesCooldown(token, action)) {
+            logger.info(`⏳ [${token.substring(0, 8)}] Action "${action.name || action.id}" ignorée (cooldown).`);
+            return;
+        }
+
         // [NEW] Actions Breakdown tracking
         if (connector.stats) {
             if (!connector.stats.actionsBreakdown) connector.stats.actionsBreakdown = {};
@@ -292,33 +347,8 @@ class ActionManager {
                 const mcSettings = settings.minecraft || {};
                 const mcPlayerName = mcSettings.playerName || mcSettings.currentPlayerName || '';
 
-                // Advanced Placeholder Replacement
-                if (context) {
-                    // Normalize context keys to lowercase for matching if needed, but usually we map explicitly
-                    const replacements = {
-                        '{user}': context.uniqueId || '',
-                        '{username}': context.uniqueId || '', // TikTok Username
-                        '{nickname}': context.nickname || '',
-                        '{comment}': context.comment || '',
-                        '{giftname}': context.giftName || '',
-                        '{coins}': context.diamondCount || context.coins || '', // diamondCount is usually coins in TikTok Live libs
-                        '{repeatcount}': context.repeatCount || '1',
-                        '{likecount}': context.likeCount || '',
-                        '{totallikecount}': context.totalLikeCount || '',
-                        '{submonth}': context.subMonth || '',
-                        '{playername}': mcPlayerName // Minecraft Player Name
-                    };
-
-                    // Replace all placeholders. Values come from TikTok viewers, so line breaks
-                    // are removed: they would let a viewer chain extra server commands.
-                    Object.keys(replacements).forEach(key => {
-                        const val = String(replacements[key]).replace(/[\r\n]+/g, ' ');
-                        // Global replace
-                        command = command.split(key).join(val);
-                    });
-                }
-
-
+                // Placeholders ({username}, {giftname}, {playername}...)
+                command = fillPlaceholders(command, context, { '{playername}': mcPlayerName });
 
                 if (!mcSettings || !mcSettings.host) {
                     logger.warn(`⚠️ [${token.substring(0, 8)}] Minecraft action skipped: No settings configured.`);
@@ -358,6 +388,21 @@ class ActionManager {
 
             } else if (action.type === 'sound') {
                 // Handled below by audioUrl check
+            } else if (action.type === 'alert') {
+                // On-screen alert shown by the "Alertes" overlay (image / GIF / video + text)
+                emitEvent('overlay_alert', {
+                    text: fillPlaceholders(action.text || '', context),
+                    mediaUrl: action.mediaUrl || '',
+                    duration: Math.min(Math.max(Number(action.alertDuration) || 5, 1), 60),
+                    nickname: context.nickname || context.uniqueId || '',
+                    uniqueId: context.uniqueId || '',
+                    profilePictureUrl: context.profilePictureUrl || '',
+                    giftIcon: context.url || context.giftIcon || ''
+                }, token);
+            } else if (action.type === 'tts') {
+                // Text read aloud by the dashboard (same voice settings as the chat TTS)
+                const text = fillPlaceholders(action.text || '', context).trim();
+                if (text) emitEvent('tts_speak', { text: text.slice(0, 300), user: context.uniqueId || 'action' }, token);
             } else {
                 logger.warn(`⚠️ Type d'action inconnu : ${action.type}`);
             }
@@ -392,3 +437,4 @@ class ActionManager {
 }
 
 module.exports = new ActionManager();
+module.exports.fillPlaceholders = fillPlaceholders;

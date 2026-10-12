@@ -45,6 +45,9 @@ function normalizeGift(data) {
     data.giftId      = data.giftId      ?? data.gift_id      ?? (data.gift && data.gift.gift_id)      ?? null;
     data.repeatCount = data.repeatCount ?? data.repeat_count ?? (data.gift && data.gift.repeat_count) ?? 1;
     data.repeatEnd   = (data.repeatEnd !== undefined && data.repeatEnd !== null) ? !!data.repeatEnd : !!(data.gift && data.gift.repeat_end);
+    // 1 = combo gift (sent click by click). Captured from TikTok's gift struct in connector.js
+    data.giftType    = data.giftType ?? (data.gift && data.gift.gift_type) ?? null;
+    data.groupId     = (data.groupId !== undefined && data.groupId !== null) ? String(data.groupId) : null;
     if (data.createTime && typeof data.createTime === 'string') data.createTime = parseInt(data.createTime, 10) || null;
     return data;
 }

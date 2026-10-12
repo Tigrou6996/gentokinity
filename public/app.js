@@ -966,6 +966,15 @@ function setupSocketListeners() {
         processSoundQueue();
     });
 
+    // [ACTION] "Synthèse vocale" actions: read the text with the TTS voice settings
+    socket.on('tts_speak', (data) => {
+        if (!data || !data.text) return;
+        if (typeof ttsQueue === 'undefined' || typeof processTTSQueue !== 'function') return;
+        if (ttsQueue.length >= 20) return;
+        ttsQueue.push({ text: String(data.text).slice(0, 300), user: data.user || 'action' });
+        processTTSQueue();
+    });
+
     // [TTS] Listen for chat
     socket.on('chat', (data) => {
         if (typeof handleChatForTTS === 'function') {
@@ -2037,7 +2046,10 @@ function renderActions() {
         sound: 'fa-music',
         web: 'fa-globe',
         default: 'fa-bolt',
-        rcon: 'fa-cube' // Cube icon for Minecraft
+        rcon: 'fa-cube', // Cube icon for Minecraft
+        webhook: 'fa-globe',
+        alert: 'fa-bell',
+        tts: 'fa-volume-up'
     };
 
     const labels = {
@@ -2047,7 +2059,10 @@ function renderActions() {
         command: 'Commande',
         sound: 'Son',
         web: 'Webhook',
-        rcon: 'Minecraft Serveur'
+        webhook: 'Webhook',
+        rcon: 'Minecraft Serveur',
+        alert: 'Alerte écran',
+        tts: 'Synthèse vocale'
     };
 
     otherActions.forEach(action => {
@@ -2353,7 +2368,10 @@ function renderEvents() {
         sound: 'fa-music',
         web: 'fa-globe',
         default: 'fa-bolt',
-        rcon: 'fa-cube'
+        rcon: 'fa-cube',
+        webhook: 'fa-globe',
+        alert: 'fa-bell',
+        tts: 'fa-volume-up'
     };
 
     const labels = {
@@ -2363,7 +2381,10 @@ function renderEvents() {
         command: 'Commande',
         sound: 'Son',
         web: 'Webhook',
-        rcon: 'Minecraft Serveur'
+        webhook: 'Webhook',
+        rcon: 'Minecraft Serveur',
+        alert: 'Alerte écran',
+        tts: 'Synthèse vocale'
     };
 
     currentEvents.forEach(event => {
@@ -2494,6 +2515,14 @@ window.editItem = async (type, id) => {
                 if (window.updateKeyPreview) window.updateKeyPreview();
             }
             if (action.type === 'rcon') document.querySelector('#f-cmd').value = action.command;
+            if (action.type === 'alert') {
+                document.querySelector('#f-text').value = action.text || '';
+                document.querySelector('#f-media-url').value = action.mediaUrl || '';
+                document.querySelector('#f-alert-duration').value = action.alertDuration || 5;
+            }
+            if (action.type === 'tts') document.querySelector('#f-text').value = action.text || '';
+            const cooldownInput = document.querySelector('#action-cooldown');
+            if (cooldownInput) cooldownInput.value = action.cooldown || 0;
             if (action.type === 'sound') {
                 document.querySelector('#f-sound-name').value = action.soundName;
                 document.querySelector('#f-sound-url').value = action.soundUrl;
@@ -2559,6 +2588,8 @@ function formatDetails(a) {
         return display;
     }
     if (a.type === 'rcon') return a.command;
+    if (a.type === 'alert') return a.text || a.mediaUrl || 'Alerte';
+    if (a.type === 'tts') return `🔊 ${a.text || ''}`;
     return '';
 }
 
@@ -3015,6 +3046,32 @@ function updateActionFields() {
                 </div>
             </div>
         `;
+    } else if (type === 'alert') {
+        container.innerHTML = `
+            <div class="form-group"><label>Texte affiché</label><input type="text" id="f-text" placeholder="Merci {nickname} pour {repeatcount} {giftname} !"></div>
+            <div class="form-group"><label>Image, GIF ou vidéo (URL, optionnel)</label><input type="text" id="f-media-url" placeholder="https://.../animation.gif ou .mp4"></div>
+            <div class="form-group"><label>Durée d'affichage (secondes)</label><input type="number" id="f-alert-duration" min="1" max="60" value="5" style="width: 100px;"></div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> S'affiche dans l'overlay <b>Alertes animées</b> (menu Overlays → Overlays Pro).</p>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-tags"></i> Paramètres Dynamiques</div>
+                <div class="ph-tags">
+                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}']
+                        .map(p => `<span class="ph-tag" onclick="insertPlaceholder('f-text','${p}')">${p}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    } else if (type === 'tts') {
+        container.innerHTML = `
+            <div class="form-group"><label>Texte à lire</label><input type="text" id="f-text" placeholder="Merci {nickname} pour le follow !" required></div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> Lu par le tableau de bord avec la voix choisie dans le module TTS.</p>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-tags"></i> Paramètres Dynamiques</div>
+                <div class="ph-tags">
+                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}']
+                        .map(p => `<span class="ph-tag" onclick="insertPlaceholder('f-text','${p}')">${p}</span>`).join('')}
+                </div>
+            </div>
+        `;
     } else if (type === 'sound') {
         container.innerHTML = `
             <div class="form-group">
@@ -3353,6 +3410,17 @@ async function saveNewAction(e) {
         action.duration = parseInt(document.querySelector('#f-duration').value) || 100;
     }
     if (action.type === 'rcon') action.command = document.querySelector('#f-cmd').value;
+    if (action.type === 'alert') {
+        action.text = document.querySelector('#f-text').value;
+        action.mediaUrl = document.querySelector('#f-media-url').value.trim();
+        action.alertDuration = parseInt(document.querySelector('#f-alert-duration').value) || 5;
+        if (!action.text && !action.mediaUrl) {
+            showToast("Ajoutez un texte ou une image/vidéo pour l'alerte !", 'error');
+            return;
+        }
+    }
+    if (action.type === 'tts') action.text = document.querySelector('#f-text').value;
+    action.cooldown = Math.max(0, parseInt(document.querySelector('#action-cooldown')?.value) || 0);
     if (action.type === 'sound') {
         action.soundName = document.querySelector('#f-sound-name').value;
         action.soundUrl = document.querySelector('#f-sound-url').value;

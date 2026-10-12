@@ -149,6 +149,8 @@ async function refreshGiftPrices() {
 }
 
 function getGiftPrice(data) {
+    // Price sent by TikTok with the gift itself: always up to date, even for brand new gifts
+    if (data && Number(data.giftDiamondCount) > 0) return Number(data.giftDiamondCount);
     const gift = getGiftMetadata(data);
     return gift ? gift.diamond_count : (data.diamondCount || 0);
 }

@@ -150,7 +150,10 @@ function initSocket(server) {
             'updateLeaderboard', // [NEW] Sync Legend details
             'displayGift',    // [NEW] Sync Legend displays
             'hideGift',       // [NEW] Sync Legend hides
-            'status'          // [NEW] Relay status (online/offline) to VPS
+            'status',         // [NEW] Relay status (online/offline) to VPS
+            'tiktok_alert',   // follow / gift / sub / share alerts for the Alerts overlay
+            'overlay_alert',  // "Alerte" actions
+            'tts_speak'       // "Synthèse vocale" actions
         ];
 
         relayEvents.forEach(eventName => {

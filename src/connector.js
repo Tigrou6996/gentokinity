@@ -1,11 +1,42 @@
-let WebcastPushConnection = null;
+let GentokPushConnection = null;
 async function getWebcastPushConnection() {
-    if (!WebcastPushConnection) {
+    if (!GentokPushConnection) {
         const mod = await import('tiktok-live-connector/legacy');
-        WebcastPushConnection = mod.WebcastPushConnection;
+
+        // The legacy "simplified" format overwrites the gift struct sent by TikTok, losing the
+        // gift type (combo or not), its real price and its picture. We copy them first so the
+        // gift engine can count combos exactly once.
+        GentokPushConnection = class extends mod.WebcastPushConnection {
+            async processProtoMessageFetchResult(fetchResult) {
+                for (const message of fetchResult?.messages || []) {
+                    const data = message?.decodedData?.data;
+                    if (message.method === 'WebcastGiftMessage' && data && data.gift) {
+                        const gift = data.gift;
+                        data.giftType = gift.type;
+                        data.giftCombo = gift.combo;
+                        data.giftDiamondCount = gift.diamondCount;
+                        data.giftPictureUrl = gift.image?.urlList?.[0] || gift.icon?.urlList?.[0] || undefined;
+                    }
+                }
+                return super.processProtoMessageFetchResult(fetchResult);
+            }
+        };
     }
-    return WebcastPushConnection;
+    return GentokPushConnection;
 }
+
+// Errors for which retrying is pointless (user offline, wrong @, private account...)
+function isFatalConnectError(message) {
+    const m = String(message || '').toLowerCase();
+    return m.includes("isn't online") || m.includes('not online') || m.includes('offline') ||
+        m.includes('not live') || m.includes('live has ended') || m.includes('ended') ||
+        m.includes('not found') || m.includes('cannot find') || m.includes('invalid') ||
+        m.includes('private') || m.includes('already connected');
+}
+
+const RECONNECT_DELAYS_S = [2, 5, 10, 15, 30, 30, 60, 60, 120, 120]; // ~7.5 minutes in total
+const WATCHDOG_INTERVAL_MS = 30000;
+const SILENCE_LIMIT_MS = 3 * 60 * 1000; // no message at all for 3 min while live = frozen socket
 const logger = require('./utils/logger');
 const config = require('./config');
 const spotifyModule = require('./utils/spotifyModule');
@@ -23,6 +54,12 @@ class TikTokConnector {
         this.reconnectInterval = config.reconnectInterval;
         this.isStopping = false;
         this.isConnected = false;
+        this.isReconnecting = false;
+        this.streamEnded = false;
+        this.reconnectAttempt = 0;
+        this.reconnectTimer = null;
+        this.watchdogTimer = null;
+        this.lastMessageAt = 0;
 
         this.startTime = null;
 
@@ -72,10 +109,10 @@ class TikTokConnector {
      * Start the connection
      */
     async start() {
-        this.isStopping = false;
         if (this.connection) {
             await this.stop();
         }
+        this.isStopping = false;
 
         // Fetch settings for THIS specific token
         const settings = await config.getSettings(this.token);
@@ -110,6 +147,7 @@ class TikTokConnector {
             viewerCountMax: 0,
             cumulativeViewers: 0,
             chats: 0,
+            subscribers: 0,
             actionsBreakdown: {},
             giftsBreakdown: {},
             topGift: previousTopGift || { ...defaultTopStat },
@@ -171,40 +209,19 @@ class TikTokConnector {
         }
         emitEvent('initialLastEvents', this.lastEvents, this.token);
 
-        const options = {
-            processInitialData: false,
-            enableExtendedGiftInfo: false,
-            clientParams: {
-                app_language: 'fr-FR',
-                browser_language: 'fr-FR',
-                browser_version: '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'
-            },
-            requestHeaders: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'
-            },
-            requestOptions: {
-                timeout: 15000
-            }
-        };
-
-        if (config.sessionId) {
-            options.sessionId = config.sessionId;
-        }
-
-        if (config.proxyUrl) {
-            logger.info(`🛡️ Utilisation du proxy : ${config.proxyUrl.replace(/:[^:]*@/, ':****@')}`);
-            options.requestOptions.proxy = config.proxyUrl;
-        }
-
-        // Create a FRESH instance
-        const WebcastPushClass = await getWebcastPushConnection();
-        this.connection = new WebcastPushClass(this.username, options);
-
-        registerEvents(this.connection, this);
+        // Per-session de-duplication state (see handlers/eventManager.js)
+        this.giftTracker = null;
+        this.seenMsgIds = new Set();
+        this.seenMsgOrder = [];
+        this.followedUsers = new Set();
+        this.subscribedUsers = new Set();
+        this.streamEnded = false;
+        this.reconnectAttempt = 0;
 
         try {
-            await this.connect();
+            await this.openConnection({ retries: 2 });
             emitStatus('online', this.token);
+            this.startWatchdog();
         } catch (err) {
             let errorMsg = 'Erreur de connexion';
             if (err && err.message) errorMsg = err.message;
@@ -214,6 +231,8 @@ class TikTokConnector {
             const lowerError = errorMsg.toLowerCase();
             if (lowerError.includes('captcha')) {
                 errorMsg = "TikTok demande un Captcha. La connexion sur VPS est bloquée. Utilisez l'Application Gentok sur votre PC.";
+            } else if (lowerError.includes('rate limit') || lowerError.includes('ratelimit') || lowerError.includes('429')) {
+                errorMsg = "Trop de connexions vers TikTok en peu de temps. Patientez une minute puis réessayez (ou ajoutez une clé SIGN_API_KEY).";
             } else if (lowerError.includes('blocked') || lowerError.includes('ip address') || lowerError.includes('room id') || lowerError.includes('all sources') || lowerError.includes('error while connecting')) {
                 errorMsg = "Connexion bloquée par TikTok (IP du Serveur bannie). Lancez l'Application sur votre PC pour relayer la connexion.";
             } else if (lowerError.includes('not found') || lowerError.includes('invalid') || lowerError.includes('cannot find')) {
@@ -241,6 +260,136 @@ class TikTokConnector {
         }
     }
 
+    /**
+     * Creates a fresh TikTok connection and connects it.
+     * Stats, leaderboards and de-duplication state are kept, so it is safe for reconnections.
+     */
+    async openConnection({ retries = 0 } = {}) {
+        // Drop the previous socket (if any) without triggering our own reconnection logic
+        if (this.connection) {
+            const old = this.connection;
+            this.connection = null;
+            try { old.removeAllListeners(); } catch (e) { }
+            try { await Promise.race([old.disconnect(), new Promise(r => setTimeout(r, 3000))]); } catch (e) { }
+        }
+
+        const options = {
+            processInitialData: false, // never replay messages sent before we connected
+            enableExtendedGiftInfo: false
+        };
+        if (config.signApiKey) options.signApiKey = config.signApiKey;
+
+        let lastError = null;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            if (this.isStopping) throw new Error('Arrêt demandé');
+
+            const WebcastPushClass = await getWebcastPushConnection();
+            const connection = new WebcastPushClass(this.username, options);
+            this.connection = connection;
+            registerEvents(connection, this);
+
+            // Any decoded message proves the socket is alive (used by the watchdog)
+            connection.on('decodedData', () => { this.lastMessageAt = Date.now(); });
+
+            try {
+                await this.connect();
+                this.lastMessageAt = Date.now();
+                return;
+            } catch (err) {
+                lastError = err;
+                try { connection.removeAllListeners(); } catch (e) { }
+                if (this.connection === connection) this.connection = null;
+
+                const msg = (err && (err.message || err.info)) || String(err);
+                if (isFatalConnectError(msg) || attempt === retries) break;
+
+                const waitS = attempt === 0 ? 2 : 5;
+                logger.warn(`[CONNECTOR] Tentative ${attempt + 1} échouée (${msg}). Nouvel essai dans ${waitS}s...`);
+                await new Promise(r => setTimeout(r, waitS * 1000));
+            }
+        }
+        throw lastError || new Error('Erreur de connexion');
+    }
+
+    /**
+     * Called when the TikTok socket closes. Reconnects automatically unless the live really ended
+     * or the streamer pressed stop.
+     */
+    handleDisconnect(reason = '') {
+        if (this.isStopping || this.streamEnded) return;
+        this.isConnected = false;
+        this.scheduleReconnect(reason);
+    }
+
+    scheduleReconnect(reason = '') {
+        if (this.isStopping || this.streamEnded || this.reconnectTimer || this.isReconnecting) return;
+
+        if (this.reconnectAttempt >= RECONNECT_DELAYS_S.length) {
+            logger.error(`[CONNECTOR] Reconnexion abandonnée après ${this.reconnectAttempt} essais.`);
+            emitEvent('notification', {
+                type: 'error',
+                title: 'Connexion perdue',
+                message: 'Impossible de se reconnecter au live TikTok. Relancez la connexion.'
+            }, this.token);
+            this.stop();
+            return;
+        }
+
+        const delayS = RECONNECT_DELAYS_S[this.reconnectAttempt];
+        this.reconnectAttempt++;
+        logger.warn(`🔄 Connexion TikTok perdue${reason ? ` (${reason})` : ''}. Reconnexion dans ${delayS}s (essai ${this.reconnectAttempt}/${RECONNECT_DELAYS_S.length})...`);
+        emitEvent('notification', {
+            type: 'info',
+            title: 'Reconnexion au live...',
+            message: `Connexion TikTok perdue, nouvel essai dans ${delayS}s (essai ${this.reconnectAttempt}).`
+        }, this.token);
+
+        this.reconnectTimer = setTimeout(async () => {
+            this.reconnectTimer = null;
+            if (this.isStopping || this.streamEnded) return;
+            this.isReconnecting = true;
+            try {
+                await this.openConnection();
+                this.reconnectAttempt = 0;
+                logger.info(`✅ Reconnecté au live de ${this.username}.`);
+                emitStatus('online', this.token);
+                emitEvent('notification', { type: 'success', message: 'Reconnecté au live TikTok ✅' }, this.token);
+            } catch (err) {
+                const msg = (err && (err.message || err.info)) || String(err);
+                if (isFatalConnectError(msg)) {
+                    logger.warn(`[CONNECTOR] Le live n'est plus disponible (${msg}). Arrêt.`);
+                    this.streamEnded = true;
+                    this.stop();
+                } else {
+                    this.isReconnecting = false;
+                    this.scheduleReconnect(msg);
+                    return;
+                }
+            }
+            this.isReconnecting = false;
+        }, delayS * 1000);
+    }
+
+    /**
+     * Detects "zombie" connections: the socket looks open but TikTok stopped sending anything.
+     */
+    startWatchdog() {
+        this.stopWatchdog();
+        this.watchdogTimer = setInterval(() => {
+            if (!this.isConnected || this.isStopping || this.isReconnecting || this.reconnectTimer) return;
+            if (this.lastMessageAt && Date.now() - this.lastMessageAt > SILENCE_LIMIT_MS) {
+                logger.warn('[CONNECTOR] Aucun message de TikTok depuis 3 minutes, reconnexion préventive...');
+                this.isConnected = false;
+                this.scheduleReconnect('connexion figée');
+            }
+        }, WATCHDOG_INTERVAL_MS);
+    }
+
+    stopWatchdog() {
+        if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+        this.watchdogTimer = null;
+    }
+
     async connect() {
         try {
             await this.connection.connect();
@@ -257,7 +406,16 @@ class TikTokConnector {
      */
     async stop() {
         console.log(`[CONNECTOR:${this.token.substring(0, 8)}] 🛑 Stop requested...`);
+
+        // Count the gifts of combos still in progress before closing the session
+        if (this.giftTracker) {
+            try { this.giftTracker.closeAll(); } catch (e) { }
+            this.giftTracker = null;
+        }
         this.isStopping = true;
+        this.stopWatchdog();
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
 
         if (this.connection) {
             // [CRITICAL] Stop processing new events IMMEDIATELY
@@ -266,8 +424,8 @@ class TikTokConnector {
             } catch (e) { }
         }
 
-        // Save stats before clearing
-        if (this.connection && this.startTime) {
+        // Save stats before clearing (even if we were between two reconnection attempts)
+        if (this.startTime) {
             try {
                 await this.saveSessionStats();
             } catch (e) {
@@ -358,13 +516,6 @@ class TikTokConnector {
         }
     }
 
-    /**
-     * Handles reconnection with exponential backoff
-     */
-    handleReconnection(isStreamEnd = false) {
-        // [DISABLED] Manual connection only as requested
-        return;
-    }
 }
 
 module.exports = TikTokConnector;

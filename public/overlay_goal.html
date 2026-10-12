@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Objectif</title>
+    <style>
+        :root { --accent: #fe2c55; --accent2: #ff8a00; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .goal { margin: 10px; padding: 14px 18px; border-radius: 18px; background: rgba(0, 0, 0, .6); color: #fff; }
+        .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+        .title { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 6px #000; }
+        .numbers { font-size: 22px; font-weight: 800; white-space: nowrap; }
+        .numbers b { color: var(--accent); }
+        .bar { position: relative; height: 26px; border-radius: 13px; background: rgba(255,255,255,.12); overflow: hidden; }
+        .fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 13px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .8s cubic-bezier(.2,.8,.2,1);
+            box-shadow: 0 0 18px var(--accent); }
+        .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; text-shadow: 0 1px 3px #000; }
+        .goal.done .fill { animation: glow 1s ease-in-out 3; }
+        @keyframes glow { 50% { filter: brightness(1.6); } }
+    </style>
+</head>
+
+<body>
+    <div class="goal" id="goal">
+        <div class="top"><span class="title" id="title"></span><span class="numbers"><b id="cur">0</b> / <span id="target">0</span></span></div>
+        <div class="bar"><div class="fill" id="fill"></div><div class="pct" id="pct">0%</div></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters:
+        //   stat=follows     likes | diamonds | gifts | follows | shares | subscribers | chats | viewers
+        //   target=100       objectif
+        //   step=0           une fois atteint, l'objectif augmente de X (0 = reste atteint)
+        //   title=...        texte affiché, color=fe2c55, color2=ff8a00, demo=1
+        // Les valeurs sont celles du live en cours (remises à zéro à chaque nouveau live).
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        document.documentElement.style.setProperty('--accent2', G.colorParam('color2', '#ff8a00'));
+
+        const TITLES = { likes: 'Objectif likes', diamonds: 'Objectif pièces', gifts: 'Objectif cadeaux', follows: 'Objectif follows', shares: 'Objectif partages', subscribers: 'Objectif abonnés', chats: 'Objectif messages', viewers: 'Objectif spectateurs' };
+        const stat = G.param('stat', 'follows');
+        const key = stat === 'viewers' ? 'viewerCount' : stat;
+        let target = Math.max(1, G.numParam('target', 100));
+        const step = Math.max(0, G.numParam('step', 0));
+        document.getElementById('title').textContent = G.param('title', TITLES[stat] || 'Objectif');
+
+        const goalEl = document.getElementById('goal');
+        let value = 0;
+
+        function render() {
+            while (step > 0 && value >= target) target += step;
+            const pct = Math.min(100, Math.floor((value / target) * 100));
+            document.getElementById('cur').textContent = G.formatNumber(value);
+            document.getElementById('target').textContent = G.formatNumber(target);
+            document.getElementById('fill').style.width = pct + '%';
+            document.getElementById('pct').textContent = pct + '%';
+            const done = value >= target;
+            if (done && !goalEl.classList.contains('done')) goalEl.classList.add('done');
+            if (!done) goalEl.classList.remove('done');
+        }
+
+        render();
+        const socket = G.connect();
+        socket.on('session_stats', (s) => {
+            if (s && s[key] !== undefined) { value = Number(s[key]) || 0; render(); }
+        });
+
+        if (G.isDemo) setInterval(() => { value += Math.ceil(target / 12); render(); }, 1200);
+    </script>
+</body>
+
+</html>

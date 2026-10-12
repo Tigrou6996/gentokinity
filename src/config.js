@@ -229,7 +229,8 @@ module.exports = {
     // Never hardcode credentials here: they come from .env (dev / VPS) or from
     // src/build-env.json, generated at build time by scripts/write-build-env.js.
     mongodbUri: process.env.MONGODB_URI || buildEnv.MONGODB_URI || null,
-    sessionId: null, proxyUrl: null,
+    // Optional Euler Stream key: raises TikTok signature rate limits (fewer connection failures)
+    signApiKey: process.env.SIGN_API_KEY || buildEnv.SIGN_API_KEY || null,
     remoteServerUrl: process.env.REMOTE_SERVER || 'https://tiktok.gentok.fr',
     remoteDashboardUrl: process.env.DASHBOARD_URL || buildEnv.DASHBOARD_URL || 'https://tiktok.gentok.fr',
     reconnectInterval: 5000, maxRetries: 10, enableLogging: true,

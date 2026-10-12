@@ -334,6 +334,15 @@ app.get('/overlay/leaderboard', (req, res) => sendOverlay(res, 'overlay_leaderbo
 // [NEW] Ranking System Overlay
 app.get('/overlay/gift_legend.html', (req, res) => sendOverlay(res, 'overlay_gift_legend.html'));
 
+// Pro overlays (configured through URL parameters, see the dashboard "Overlays Pro" panel)
+app.get('/overlay/alerts', (req, res) => sendOverlay(res, 'overlay_alerts.html'));
+app.get('/overlay/chat', (req, res) => sendOverlay(res, 'overlay_chat.html'));
+app.get('/overlay/counter', (req, res) => sendOverlay(res, 'overlay_counter.html'));
+app.get('/overlay/goal', (req, res) => sendOverlay(res, 'overlay_goal.html'));
+app.get('/overlay/rain', (req, res) => sendOverlay(res, 'overlay_rain.html'));
+app.get('/overlay/timer', (req, res) => sendOverlay(res, 'overlay_timer.html'));
+app.get('/overlay/feed', (req, res) => sendOverlay(res, 'overlay_feed.html'));
+
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
 app.use('/pages', express.static(path.resolve(__dirname, '../classement/pages')));
 

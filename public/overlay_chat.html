@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Chat</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --accent: #fe2c55; --size: 18px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        #chat { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .msg {
+            display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 14px;
+            background: rgba(0, 0, 0, .55); color: #fff; font-size: var(--size); line-height: 1.35;
+            animation: pop .3s ease-out; transition: opacity .6s ease;
+        }
+        .msg.fade { opacity: 0; }
+        .msg.nobg { background: transparent; text-shadow: 0 2px 4px #000, 0 0 2px #000; }
+        .avatar { width: calc(var(--size) * 1.9); height: calc(var(--size) * 1.9); border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #333; }
+        .body { min-width: 0; }
+        .name { font-weight: 800; color: var(--accent); margin-right: 6px; }
+        .tag { display: inline-block; font-size: .65em; font-weight: 800; padding: 1px 6px; border-radius: 6px; margin-right: 5px; vertical-align: middle; }
+        .tag.mod { background: #2f80ed; }
+        .tag.sub { background: #f2994a; }
+        .text { word-break: break-word; }
+        @keyframes pop { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+
+<body>
+    <div id="chat"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters:
+        //   max=10        nombre de messages affichés
+        //   fade=0        disparition après X secondes (0 = jamais)
+        //   avatars=1     afficher les photos de profil
+        //   badges=1      afficher MOD / SUB
+        //   bg=1          fond semi-transparent derrière chaque message
+        //   size=18       taille du texte (px), color=fe2c55, font=..., demo=1
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 18), 10), 60)}px`);
+
+        const max = Math.min(Math.max(G.numParam('max', 10), 1), 50);
+        const fade = G.numParam('fade', 0);
+        const showAvatars = G.boolParam('avatars', true);
+        const showBadges = G.boolParam('badges', true);
+        const withBg = G.boolParam('bg', true);
+        const box = document.getElementById('chat');
+
+        function addMessage(d) {
+            if (!d || !d.comment) return;
+            const el = document.createElement('div');
+            el.className = 'msg' + (withBg ? '' : ' nobg');
+            const avatar = G.safeUrl(d.profilePictureUrl) || '/logo.png';
+            const tags = showBadges
+                ? `${d.isModerator ? '<span class="tag mod">MOD</span>' : ''}${d.isSubscriber ? '<span class="tag sub">SUB</span>' : ''}`
+                : '';
+            el.innerHTML = `
+                ${showAvatars ? `<img class="avatar" src="${G.escapeHtml(avatar)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">` : ''}
+                <div class="body">${tags}<span class="name">${G.escapeHtml(d.nickname || d.uniqueId)}</span><span class="text">${G.escapeHtml(d.comment)}</span></div>`;
+            box.appendChild(el);
+            while (box.children.length > max) box.firstChild.remove();
+            if (fade > 0) {
+                setTimeout(() => el.classList.add('fade'), fade * 1000);
+                setTimeout(() => el.remove(), fade * 1000 + 700);
+            }
+        }
+
+        const socket = G.connect();
+        socket.on('chat', addMessage);
+
+        if (G.isDemo) {
+            const lines = ['Salut tout le monde 👋', 'GG !!!', 'Trop fort ce live 🔥', 'On est là 💪', 'Première fois ici, top !'];
+            setInterval(() => addMessage({ ...G.demoUser(), comment: lines[Math.floor(Math.random() * lines.length)], isModerator: Math.random() < .2, isSubscriber: Math.random() < .3 }), 1800);
+        }
+    </script>
+</body>
+
+</html>

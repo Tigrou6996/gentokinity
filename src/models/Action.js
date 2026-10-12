@@ -15,7 +15,11 @@ const ActionSchema = new mongoose.Schema({
     volume: Number,
     duration: Number, // keyboard: how long the key is held (ms)
     method: String,   // webhook: GET / POST
-    data: mongoose.Schema.Types.Mixed // webhook: payload
+    data: mongoose.Schema.Types.Mixed, // webhook: payload
+    text: String,          // alert / tts: text with {placeholders}
+    mediaUrl: String,      // alert: image, GIF or video shown on the Alerts overlay
+    alertDuration: Number, // alert: seconds on screen
+    cooldown: Number       // any action: minimum seconds between two executions
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token

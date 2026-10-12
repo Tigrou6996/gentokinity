@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-const KEYS = ['MONGODB_URI'];
+const KEYS = ['MONGODB_URI', 'SIGN_API_KEY'];
 const out = {};
 for (const key of KEYS) {
     if (process.env[key]) out[key] = process.env[key];

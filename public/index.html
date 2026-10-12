@@ -1580,6 +1580,103 @@
                         </div>
                     </div>
 
+                    <!-- Pro Overlays (configured through URL parameters) -->
+                    <div id="overlay-item-pro" class="overlay-item"
+                        style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                        <div class="overlay-header" onclick="toggleOverlayAccordion(this)"
+                            style="padding: 18px 20px; background: rgba(255,255,255,0.03); cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: white;">
+                            <span style="font-weight: 600; font-size: 1.05rem;"><i class="fas fa-magic"
+                                    style="width: 24px; color: #fe2c55;"></i> Overlays Pro (Alertes, Chat, Objectifs, Timer…)</span>
+                            <i class="fas fa-chevron-right transition-icon" style="font-size: 0.9rem;"></i>
+                        </div>
+                        <div class="overlay-body"
+                            style="display: none; padding: 20px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border);">
+                            <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--text-dim);">
+                                Ajoutez l'URL dans OBS / TikTok Live Studio comme <b>source navigateur</b>. Personnalisez en ajoutant des
+                                paramètres à la fin de l'URL (ex : <code>&amp;color=00ff99</code>). Ajoutez <code>&amp;demo=1</code> pour voir un aperçu sans être en live.
+                            </p>
+                            <div class="overlay-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-bell" style="width: 22px; color: #fe2c55;"></i> Alertes animées</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Follow, cadeaux (combo compté une fois), abonnements, partages + vos actions « Alerte ».</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/alerts" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : events=follow,gift,subscribe,share · mingift=10 · duration=5 · color=fe2c55</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-comments" style="width: 22px; color: #60a5fa;"></i> Chat en direct</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Messages du live avec avatars et badges MOD / SUB.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/chat" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : max=10 · fade=30 · avatars=1 · badges=1 · bg=1 · size=18</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-stream" style="width: 22px; color: #4ade80;"></i> Fil d'activité</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Liste des derniers follows, cadeaux, abonnements et partages.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/feed" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : events=follow,gift · max=6 · mingift=0 · size=18</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-bullseye" style="width: 22px; color: #fbbf24;"></i> Objectif personnalisable</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Barre de progression pour n'importe quelle stat du live.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/goal?stat=follows&target=100" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">stat= likes · diamonds · gifts · follows · shares · subscribers · chats · viewers — target=100 · step=50 · title=...</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-tachometer-alt" style="width: 22px; color: #a78bfa;"></i> Compteur</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Un nombre en direct : spectateurs, likes, pièces, follows…</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/counter?stat=viewers" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">stat= viewers · likes · diamonds · gifts · follows · shares · subscribers · chats — label=... · icon=👁️ · size=48</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-hourglass-half" style="width: 22px; color: #f97316;"></i> Timer Subathon</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Compte à rebours qui s'allonge avec les pièces, follows, abonnements et partages.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/timer?start=60&coin=5&follow=30&sub=300&share=10" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">start (min) · coin, follow, sub, share (secondes ajoutées) · like (par 100 likes) · maxh · reset=1</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-cloud-showers-heavy" style="width: 22px; color: #38bdf8;"></i> Pluie de cadeaux</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Les cadeaux reçus tombent à l'écran (un par cadeau), cœurs pour les likes.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/rain" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : gifts=1 · likes=1 · follows=1 · shares=1 · size=64 · max=80</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Last X Overlays -->
                     <div id="overlay-item-lastx" class="overlay-item"
                         style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
@@ -2797,6 +2894,10 @@
                                 (Touches)</div>
                             <div class="custom-option" data-value="rcon"><i class="fas fa-cube"></i> Minecraft (Serveur)
                             </div>
+                            <div class="custom-option" data-value="alert"><i class="fas fa-bell"></i> Alerte à l'écran
+                                (Overlay)</div>
+                            <div class="custom-option" data-value="tts"><i class="fas fa-volume-up"></i> Synthèse vocale
+                                (TTS)</div>
 
                         </div>
                     </div>
@@ -2805,11 +2906,18 @@
                         <option value="webhook">Webhook (HTTP)</option>
                         <option value="keyboard">Clavier (Touches)</option>
                         <option value="rcon">Minecraft (Serveur)</option>
+                        <option value="alert">Alerte à l'écran (Overlay)</option>
+                        <option value="tts">Synthèse vocale (TTS)</option>
 
                     </select>
                 </div>
                 <div id="action-details-container">
                     <!-- Dynamic fields here -->
+                </div>
+                <div class="form-group">
+                    <label>Cooldown (secondes) <span style="opacity: 0.6; font-weight: 400;">— délai minimum entre deux
+                            exécutions, 0 = aucun</span></label>
+                    <input type="number" id="action-cooldown" min="0" max="3600" value="0" style="width: 120px;">
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-ghost" onclick="closeModal('modal-action')">Annuler</button>
