@@ -221,6 +221,14 @@ function createWindow() {
 
     // Payment pages and external links open in the user's browser, never inside the app window
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        // Gentok's own pages (Overlay Custom editor, overlay previews) open in an app window,
+        // everything else (Stripe, help, download) in the user's browser
+        try {
+            const u = new URL(url);
+            if ((u.hostname === 'localhost' || u.hostname === '127.0.0.1') && String(u.port || '80') === String(PORT)) {
+                return { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, icon: path.join(__dirname, '../public/logo.png') } };
+            }
+        } catch (e) { /* not a URL */ }
         if (isExternalAllowed(url)) shell.openExternal(url);
         return { action: 'deny' };
     });

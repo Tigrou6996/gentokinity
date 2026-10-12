@@ -69,7 +69,8 @@ const showToast = (message, type = 'success') => {
             toast.onmouseleave = Swal.resumeTimer;
         }
     });
-    Toast.fire({ icon: type, title: message });
+    // plain text: toasts show server messages and viewers' nicknames, which must never be read as HTML
+    Toast.fire({ icon: type, titleText: String(message ?? '') });
 };
 
 // [NEW] DISCORD RICH PRESENCE HELPER
@@ -111,7 +112,7 @@ function updateDiscordPresence() {
 
 const showNotify = (title, message, type = 'info') => {
     Swal.fire({
-        title: title.toUpperCase(),
+        titleText: String(title ?? '').toUpperCase(),
         text: message,
         icon: type,
         background: '#0a0b0d',
@@ -182,7 +183,8 @@ function addLog(msg, type = '') {
     if (!logConsole) return;
     const div = document.createElement('div');
     div.className = `log-entry ${type}`;
-    div.innerHTML = `<span class="time">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+    // text only: messages can contain viewers' nicknames (a nickname with "<" must not become HTML)
+    div.innerHTML = `<span class="time">[${new Date().toLocaleTimeString()}]</span> ${escapeHtml(String(msg))}`;
     logConsole.prepend(div);
 
     // Limit console to 100 entries
@@ -1021,9 +1023,13 @@ function setupSocketListeners() {
     });
 
     // [NEW] Log Relay Listener
+    // Server messages (Spotify requests, points, actions...) in the Console page, at most 20 per second
+    let logBudget = 20;
+    setInterval(() => { logBudget = 20; }, 1000);
     socket.on('log', (data) => {
-        // console.log('Server Log:', data);
-        // addLog(data.message, data.level);
+        if (!data || !data.message || logBudget <= 0) return;
+        logBudget--;
+        addLog(String(data.message), ['error', 'warn', 'warning', 'success', 'system'].includes(data.level) ? data.level : 'info');
     });
 
     socket.on('status', (status) => {
@@ -4446,7 +4452,7 @@ async function startBotHttp(username, base, token, silent = false) {
             // RELAYED TO APP (via VPS)
             btnStart.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Connexion...</span>';
             addLog('📡 Commande relayée à l\'application locale.', 'info');
-            showToast('Relais Actif', 'Démarrage lancé en local');
+            showToast('Relais actif : démarrage lancé sur votre PC', 'success');
             return { success: true };
         }
 

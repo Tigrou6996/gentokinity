@@ -122,8 +122,15 @@ document.addEventListener('DOMContentLoaded', () => {
             GIFT_DATA = (Array.isArray(data) ? data : (data.gifts || [])).map(g => ({
                 id: g.id, name: g.name, icon: g.url ? `https://images.weserv.nl/?url=${encodeURIComponent(g.url.replace(/^https?:\/\//, ''))}` : '', price: g.diamond_count || 0
             }));
-            renderModalGiftLibrary();
-        } catch (e) {}
+        } catch (e) { GIFT_DATA = []; }
+        // Gift API unreachable: use the gift list of the Gentok server (same origin, so images export fine)
+        if (!GIFT_DATA.length) {
+            try {
+                const list = await (await fetch('/api/gifts')).json();
+                GIFT_DATA = (Array.isArray(list) ? list : []).map(g => ({ id: g.id, name: g.name, icon: `/img/tiktok/${g.id}.png`, price: g.price || 0 }));
+            } catch (e) { /* offline: the editor still works with its default icons */ }
+        }
+        renderModalGiftLibrary();
     }
 
     async function fetchFonts() {
