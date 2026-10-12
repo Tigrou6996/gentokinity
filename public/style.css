@@ -1462,6 +1462,7 @@ body.ui-compact h2 {
 /* Tables */
 .table-container {
     margin-top: 1rem;
+    overflow-x: auto; /* wide tables (live history) scroll instead of overflowing the card */
 }
 
 table {
@@ -4932,3 +4933,11 @@ table td {
 .tts-event-toggle i { width: 18px; text-align: center; color: var(--secondary); }
 .tts-event-row input[type=text] { width: 100%; }
 @media (max-width: 900px) { .tts-event-row { grid-template-columns: 1fr; } }
+
+/* Live details: gifts received */
+.sd-gifts-table { max-height: 320px; overflow-y: auto; }
+.sd-gift-name { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.sd-gift-name img { width: 26px; height: 26px; object-fit: contain; }
+
+/* The sidebar Premium button already shows the plan: the old badge above it is redundant */
+#premium-badge { display: none !important; }

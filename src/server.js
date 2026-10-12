@@ -607,6 +607,18 @@ app.post('/api/spotify/settings', async (req, res) => {
     }
 });
 
+// Gift / action names are stored with safe keys (see utils/mapKeys): give them back as typed
+function decodeSessionStat(stat) {
+    const { decodeKeys } = require('./utils/mapKeys');
+    return {
+        ...stat,
+        giftsBreakdown: decodeKeys(stat.giftsBreakdown),
+        giftsCoinsBreakdown: decodeKeys(stat.giftsCoinsBreakdown),
+        giftsIcons: decodeKeys(stat.giftsIcons),
+        actionsBreakdown: decodeKeys(stat.actionsBreakdown)
+    };
+}
+
 // API: Get Last Session Stats (for comparison)
 app.get('/api/last-session-stats', async (req, res) => {
     try {
@@ -618,8 +630,8 @@ app.get('/api/last-session-stats', async (req, res) => {
             await config.loadSession(token);
         }
 
-        const lastSession = await SessionStat.findOne({ token }).sort({ date: -1 });
-        res.json(lastSession || {});
+        const lastSession = await SessionStat.findOne({ token }).sort({ date: -1 }).lean();
+        res.json(lastSession ? decodeSessionStat(lastSession) : {});
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -636,13 +648,13 @@ app.get('/api/session-stats', async (req, res) => {
             await config.loadSession(token);
         }
 
-        // [PREMIUM CHECK] Only allow if user is premium
-        if (!config.settings.isPremium) {
+        // [PREMIUM CHECK] Only allow if user is premium (this account, not the last one loaded)
+        if (!isPremiumActive(await config.getSettings(token))) {
             return res.status(403).json({ error: 'PREMIUM_ONLY', message: 'Cette fonctionnalité est réservée aux membres Gentok Pro.' });
         }
 
-        const history = await SessionStat.find({ token }).sort({ date: -1 }).limit(50);
-        res.json(history);
+        const history = await SessionStat.find({ token }).sort({ date: -1 }).limit(50).lean();
+        res.json(history.map(decodeSessionStat));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1943,6 +1955,8 @@ app.post('/api/stats/reset', async (req, res) => {
                 chats: 0,
                 actionsBreakdown: {},
                 giftsBreakdown: {},
+                giftsCoinsBreakdown: {},
+                giftsIcons: {},
                 topGift: resetValues.topGift,
                 topStreak: resetValues.topStreak
             };
@@ -2751,4 +2765,11 @@ async function startServer() {
     });
 }
 
-module.exports = { startServer, getConnector: (token) => token ? activeConnectors.get(token) : null };
+// Stops every live connection (each one saves its history). Used when the app closes.
+async function stopAllConnectors() {
+    const all = Array.from(activeConnectors.values());
+    await Promise.all(all.map(c => c.stop().catch(e => logger.warn(`⚠️ Arrêt de la connexion impossible : ${e.message}`))));
+    activeConnectors.clear();
+}
+
+module.exports = { startServer, stopAllConnectors, getConnector: (token) => token ? activeConnectors.get(token) : null };

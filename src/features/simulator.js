@@ -27,7 +27,7 @@ function getSimConnector(token) {
         stats: {
             diamonds: 0, gifts: 0, likes: 0, shares: 0, follows: 0, subscribers: 0, chats: 0,
             viewerCount: 0, viewerCountMax: 0, cumulativeViewers: 0,
-            actionsBreakdown: {}, giftsBreakdown: {}, topCoins: [], topLikes: [],
+            actionsBreakdown: {}, giftsBreakdown: {}, giftsCoinsBreakdown: {}, giftsIcons: {}, topCoins: [], topLikes: [],
             topGift: { coins: 0, uniqueId: 'PSEUDO', nickname: 'PSEUDO' },
             topStreak: { count: 0, uniqueId: 'PSEUDO', nickname: 'PSEUDO' }
         },

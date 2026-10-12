@@ -423,6 +423,11 @@ function handleNewGifts(connector, data, count) {
 
     if (!connector.stats.giftsBreakdown) connector.stats.giftsBreakdown = {};
     connector.stats.giftsBreakdown[giftName] = (connector.stats.giftsBreakdown[giftName] || 0) + count;
+    // gift history of the live: coins and picture per gift
+    if (!connector.stats.giftsCoinsBreakdown) connector.stats.giftsCoinsBreakdown = {};
+    connector.stats.giftsCoinsBreakdown[giftName] = (connector.stats.giftsCoinsBreakdown[giftName] || 0) + (coinsAdded || 0);
+    if (!connector.stats.giftsIcons) connector.stats.giftsIcons = {};
+    if (giftIcon && !connector.stats.giftsIcons[giftName]) connector.stats.giftsIcons[giftName] = String(giftIcon).slice(0, 500);
 
     // Session "top coins" leaderboard
     if (!connector.topCoinsMap) connector.topCoinsMap = new Map();

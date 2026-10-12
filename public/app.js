@@ -1968,6 +1968,30 @@ window.viewSessionDetails = async (id) => {
             });
         }
 
+        // Gift history of the live: every gift with its picture, count and coins (most valuable first)
+        const giftsTable = document.getElementById('sd-gifts-table');
+        if (giftsTable) {
+            const counts = session.giftsBreakdown || {};
+            const coins = session.giftsCoinsBreakdown || {};
+            const icons = session.giftsIcons || {};
+            const rows = Object.keys(counts).map(name => ({ name, count: Number(counts[name]) || 0, coins: Number(coins[name]) || 0, icon: icons[name] || '' }))
+                .sort((a, b) => (b.coins - a.coins) || (b.count - a.count));
+            const hasCoins = rows.some(r => r.coins > 0);
+            giftsTable.innerHTML = rows.length ? `
+                <table class="stats-history-table">
+                    <thead><tr><th style="text-align:left">Cadeau</th><th>Nombre</th>${hasCoins ? '<th>Pièces</th>' : ''}</tr></thead>
+                    <tbody>${rows.map(r => `
+                        <tr>
+                            <td style="text-align:left"><span class="sd-gift-name">${r.icon ? `<img src="${escapeHtml(r.icon)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : '<i class="fas fa-gift"></i>'} ${escapeHtml(r.name)}</span></td>
+                            <td>×${r.count.toLocaleString()}</td>
+                            ${hasCoins ? `<td>${r.coins.toLocaleString()}</td>` : ''}
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+                ${hasCoins ? '' : '<p class="text-dim small mt-2 mb-0">Le détail des pièces par cadeau est enregistré à partir des prochains lives.</p>'}`
+                : '<p class="text-dim mb-0">Aucun cadeau reçu pendant ce live.</p>';
+        }
+
         // Gifts Chart
         const giftsData = session.giftsBreakdown || {};
         const giftLabels = Object.keys(giftsData);
@@ -9678,15 +9702,8 @@ function showDesktopNotification(title, body) {
 // [IMPORT / EXPORT SYSTEM - GENTOK & TIKFINITY]
 // ==========================================
 
-window.openModal = (id) => {
-    const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'flex';
-};
-
-window.closeModal = (id) => {
-    const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'none';
-};
+// openModal / closeModal are defined once, above (they also handle the "hidden" class: a second,
+// simpler copy here used to replace them and some windows, like the live analysis, never opened).
 
 window.openImportModal = () => {
     openModal('modal-import-settings');

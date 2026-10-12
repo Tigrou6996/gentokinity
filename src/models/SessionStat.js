@@ -18,7 +18,9 @@ const SessionStatSchema = new mongoose.Schema({
     cumulativeViewers: { type: Number, default: 0 },
     duration: { type: Number, default: 0 }, // duration in seconds
     actionsBreakdown: { type: Map, of: Number, default: {} },
-    giftsBreakdown: { type: Map, of: Number, default: {} }
+    giftsBreakdown: { type: Map, of: Number, default: {} },     // gift name -> number of gifts
+    giftsCoinsBreakdown: { type: Map, of: Number, default: {} }, // gift name -> coins
+    giftsIcons: { type: Map, of: String, default: {} }           // gift name -> picture
 });
 
 module.exports = mongoose.model('SessionStat', SessionStatSchema);

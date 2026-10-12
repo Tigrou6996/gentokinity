@@ -1,7 +1,7 @@
 const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { startServer } = require('./server');
+const { startServer, stopAllConnectors } = require('./server');
 const logger = require('./utils/logger');
 const axios = require('axios');
 const { autoUpdater } = require('electron-updater');
@@ -562,6 +562,16 @@ app.on('ready', async () => {
     logger.info(`🚀 Gentok v${app.getVersion()} - Vérification initiale des mises à jour...`);
     checkForUpdates();
     setInterval(checkForUpdates, UPDATE_CHECK_INTERVAL);
+});
+
+// Closing the app during a live: stop the connection first so the live is saved in the history
+let quitting = false;
+app.on('before-quit', (e) => {
+    if (quitting) return;
+    quitting = true;
+    e.preventDefault();
+    const timeout = new Promise(r => setTimeout(r, 5000));
+    Promise.race([stopAllConnectors(), timeout]).catch(() => { }).finally(() => app.quit());
 });
 
 app.on('window-all-closed', function () {

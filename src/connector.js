@@ -76,6 +76,8 @@ class TikTokConnector {
             chats: 0, // [NEW] Track chat activity for history
             actionsBreakdown: {},
             giftsBreakdown: {},
+            giftsCoinsBreakdown: {},
+            giftsIcons: {},
             topGift: config.settings.topGift || {
                 coins: 0,
                 uniqueId: 'PSEUDO',
@@ -150,6 +152,8 @@ class TikTokConnector {
             subscribers: 0,
             actionsBreakdown: {},
             giftsBreakdown: {},
+            giftsCoinsBreakdown: {},
+            giftsIcons: {},
             topGift: previousTopGift || { ...defaultTopStat },
             topStreak: previousTopStreak || { ...defaultTopStat },
             topCoins: previousTopCoins,
@@ -478,6 +482,7 @@ class TikTokConnector {
     async saveSessionStats() {
         try {
             const SessionStat = require('./models/SessionStat');
+            const { encodeKeys } = require('./utils/mapKeys');
             const duration = this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0;
 
             // [CRITICAL] Skip saving if session was too short or had NO activity
@@ -511,8 +516,11 @@ class TikTokConnector {
                 viewerCountMax: this.stats.viewerCountMax || 0,
                 cumulativeViewers: this.stats.cumulativeViewers || 0,
                 duration: duration,
-                actionsBreakdown: this.stats.actionsBreakdown || {},
-                giftsBreakdown: this.stats.giftsBreakdown || {}
+                // names may contain "." or "$" (refused by MongoDB maps): stored with safe look-alikes
+                actionsBreakdown: encodeKeys(this.stats.actionsBreakdown),
+                giftsBreakdown: encodeKeys(this.stats.giftsBreakdown),
+                giftsCoinsBreakdown: encodeKeys(this.stats.giftsCoinsBreakdown),
+                giftsIcons: encodeKeys(this.stats.giftsIcons, true)
             });
             await stat.save();
             logger.info(`📊 Session stats saved for ${this.username} (Duration: ${duration}s)`);
