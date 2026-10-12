@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gentok Overlay Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #fe2c55;
+            --bg-dark: #0f1012;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background-color: var(--bg-dark);
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 50px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .gallery-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(254, 44, 85, 0.2);
+        }
+
+        .preview-box {
+            height: 180px;
+            background: #1a1b1e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .preview-box i {
+            transition: all 0.5s ease;
+        }
+
+        .gallery-item:hover .preview-box i {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .item-info {
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .item-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .item-desc {
+            font-size: 0.9rem;
+            color: #aaa;
+            line-height: 1.4;
+        }
+
+        .item-footer {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+    <meta name="referrer" content="no-referrer">
+</head>
+
+<body>
+
+    <h1>Galerie d'Overlays</h1>
+    <p class="subtitle">Choisissez un overlay pour booster votre stream TikTok Live.</p>
+
+    <div class="gallery-grid">
+
+        <!-- Last Followers -->
+        <div class="gallery-item">
+            <div class="preview-box"><i class="fas fa-user-plus"></i></div>
+            <div class="item-info">
+                <span class="item-title">Dernier Follower</span>
+                <p class="item-desc">Affiche le nom du dernier utilisateur qui s'est abonné à votre compte en temps
+                    réel.</p>
+            </div>
+            <div class="item-footer">
+                <a href="#" class="btn btn-primary">Configurer</a>
+                <a href="/overlay/last-follower" target="_blank" class="btn btn-secondary">Démo</a>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="gallery-item">
+            <div class="preview-box"><i class="fas fa-tasks"></i></div>
+            <div class="item-info">
+                <span class="item-title">Barre d'Objectif</span>
+                <p class="item-desc">Une barre de progression dynamique pour vos objectifs de follows, likes ou cadeaux.
+                </p>
+            </div>
+            <div class="item-footer">
+                <a href="#" class="btn btn-primary">Configurer</a>
+                <a href="/overlay/goals" target="_blank" class="btn btn-secondary">Démo</a>
+            </div>
+        </div>
+
+        <!-- Gift Alerts -->
+        <div class="gallery-item">
+            <div class="preview-box"><i class="fas fa-gift"></i></div>
+            <div class="item-info">
+                <span class="item-title">Alertes de Cadeaux</span>
+                <p class="item-desc">Des notifications élégantes qui apparaissent à chaque fois qu'un spectateur vous
+                    offre un cadeau.</p>
+            </div>
+            <div class="item-footer">
+                <a href="#" class="btn btn-primary">Configurer</a>
+                <a href="/overlay/gifts" target="_blank" class="btn btn-secondary">Démo</a>
+            </div>
+        </div>
+
+        <!-- Chat Overlay -->
+        <div class="gallery-item">
+            <div class="preview-box"><i class="fas fa-comments"></i></div>
+            <div class="item-info">
+                <span class="item-title">Chat de Stream</span>
+                <p class="item-desc">Affiche les messages du chat TikTok directement sur votre stream avec un style
+                    premium.</p>
+            </div>
+            <div class="item-footer">
+                <a href="#" class="btn btn-primary">Configurer</a>
+                <a href="/overlay/last-chatter" target="_blank" class="btn btn-secondary">Démo</a>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
+
+

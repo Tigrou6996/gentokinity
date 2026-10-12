@@ -1,0 +1,5 @@
+{
+    "version": "1.0.6",
+    "buildDate": "2026-09-01",
+    "changelog": "AutoIt fix in Electron (Mixed Content) & Username Management UI."
+}

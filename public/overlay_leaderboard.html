@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Gentok Leaderboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Outfit:wght@400;600;800&family=Bebas+Neue&family=Orbitron:wght@400;900&family=Press+Start+2P&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: transparent;
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+        }
+
+        /* [NEW] Centering ONLY for Dashboard Preview */
+        body.preview-mode {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 12px;
+            overflow-y: auto;
+            box-sizing: border-box;
+            max-height: 100vh;
+        }
+
+        .leaderboard-container {
+            width: 100%;
+            max-width: 400px;
+            background: transparent;
+            border-radius: 12px;
+            padding: 5px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+            transition: all 0.3s;
+        }
+
+        /* Transparency option */
+        .not-transparent {
+            background: rgba(0, 0, 0, 0.8) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .leaderboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard-title {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0 #000;
+            margin: 0;
+            text-align: center;
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .rank {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 1.2rem;
+            width: 30px;
+            text-align: center;
+            margin-right: 8px;
+            color: #ccc;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .rank-1 {
+            color: #FFD700;
+            font-size: 1.8rem;
+        }
+
+        .rank-2 {
+            color: #C0C0C0;
+            font-size: 1.7rem;
+        }
+
+        .rank-3 {
+            color: #CD7F32;
+            font-size: 1.6rem;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            margin-right: 10px;
+        }
+
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .username {
+            font-weight: 800;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .score {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .score-val {
+            font-weight: 700;
+            color: white;
+        }
+
+        /* RTL ALIGNMENT */
+        .rtl .leaderboard-item {
+            flex-direction: row-reverse;
+        }
+
+        .rtl .rank {
+            margin-right: 0;
+            margin-left: 10px;
+        }
+
+        .rtl .avatar {
+            margin-right: 0;
+            margin-left: 12px;
+        }
+
+        .rtl .username,
+        .rtl .score {
+            text-align: right;
+            justify-content: flex-end;
+        }
+
+        /* STYLE 2 - GHOST NEON (Refined) */
+        .style-2 .leaderboard-container {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .style-2 .leaderboard-item {
+            background: transparent;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0;
+            margin-bottom: 0;
+            padding: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .type-coins.style-2 .leaderboard-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+            box-shadow: inset 2px 0 0 #FFD700;
+        }
+
+        .type-likes.style-2 .leaderboard-item:hover {
+            background: rgba(254, 44, 85, 0.1);
+            box-shadow: inset 2px 0 0 #fe2c55;
+        }
+
+        .style-2 .leaderboard-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .style-2 .rank {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* STYLE 3 - GLASS */
+        .style-3 .leaderboard-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .style-3 .leaderboard-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .style-3 .leaderboard-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+        }
+
+        /* STYLE 4 - MINIMAL */
+        .style-4 .leaderboard-item {
+            background: transparent;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0;
+            padding: 5px 0;
+        }
+
+        .style-4 .avatar {
+            border: none;
+            width: 30px;
+            height: 30px;
+        }
+
+        .style-4 .leaderboard-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.2rem;
+        }
+
+        /* STYLE 5 - RETRO / GAMING */
+        .style-5 .leaderboard-item {
+            background: #111;
+            border: 3px solid #333;
+            border-radius: 0;
+            image-rendering: pixelated;
+        }
+
+        .style-5 .rank,
+        .style-5 .username,
+        .style-5 .score-val,
+        .style-5 .leaderboard-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.6rem;
+            text-shadow: none;
+        }
+
+        .style-5 .rank {
+            font-size: 0.8rem;
+            width: 45px;
+        }
+
+        .style-5 .avatar {
+            border-radius: 0;
+            border: 2px solid #555;
+        }
+
+        .style-5 .leaderboard-title {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Type branding */
+        .type-coins .leaderboard-title {
+            color: #FFD700;
+        }
+
+        .type-coins .score-icon {
+            color: #FFD700;
+        }
+
+        .type-likes .leaderboard-title {
+            color: #ff2c55;
+        }
+
+        .type-likes .score-icon {
+            color: #ff2c55;
+        }
+
+        /* STYLE 6 - MODERN DARK GLASS (Refined) */
+        .style-6 .leaderboard-container {
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .style-6 .leaderboard-item {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 100%);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .style-6 .leaderboard-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .style-6 .rank {
+            font-weight: 900;
+            font-style: italic;
+            opacity: 0.9;
+        }
+
+        .style-6 .rank-1 {
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
+        .style-6 .rank-2 {
+            color: #E0E0E0;
+            text-shadow: 0 0 10px rgba(224, 224, 224, 0.3);
+        }
+
+        .style-6 .rank-3 {
+            color: #CD7F32;
+            text-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
+        }
+
+        /* STYLE 7 - NEON BORDER GRADIENT (Refined) */
+        .style-7 .leaderboard-container {
+            background: rgba(10, 10, 10, 0.9);
+            border-radius: 20px;
+            position: relative;
+            padding: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Animated Border */
+        .style-7 .leaderboard-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            padding: 3px;
+            background: linear-gradient(135deg, #fe2c55, #25f4ee, #fe2c55);
+            background-size: 200% 200%;
+            animation: borderRotate 4s linear infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        @keyframes borderRotate {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .style-7 .leaderboard-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .style-7 .leaderboard-item::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #fff;
+            opacity: 0.5;
+        }
+
+        .type-coins.style-7 .leaderboard-item::after {
+            background: #FFD700;
+            box-shadow: 0 0 10px #FFD700;
+        }
+
+        .type-likes.style-7 .leaderboard-item::after {
+            background: #fe2c55;
+            box-shadow: 0 0 10px #fe2c55;
+        }
+
+        .style-7 .leaderboard-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #fe2c55, #25f4ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-align: left;
+            padding-left: 10px;
+        }
+
+        .style-7 .leaderboard-header {
+            justify-content: flex-start;
+        }
+
+        /* STYLE 8 - BUBBLE POP (Refined "Comic") */
+        .style-8 .leaderboard-container {
+            background: #fff;
+            border: 5px solid #000;
+            box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            overflow: hidden;
+            color: #000;
+            text-shadow: none;
+        }
+
+        .style-8 .leaderboard-header {
+            background: #fe2c55;
+            border-bottom: 5px solid #000;
+            padding: 10px;
+            justify-content: center;
+        }
+
+        .type-coins.style-8 .leaderboard-header {
+            background: #FFD700;
+        }
+
+        .style-8 .leaderboard-title {
+            font-family: 'Luckiest Guy', cursive;
+            color: #fff;
+            text-shadow: 3px 3px 0 #000;
+            font-size: 1.8rem;
+            margin: 0;
+            -webkit-text-stroke: 2px #000;
+        }
+
+        .style-8 .leaderboard-list {
+            padding: 10px;
+            gap: 8px;
+        }
+
+        .style-8 .leaderboard-item {
+            background: #f0f0f0;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            color: #000;
+            transform: skewX(-2deg);
+        }
+
+        .style-8 .username {
+            color: #000;
+            font-weight: 900;
+            font-size: 1.1rem;
+        }
+
+        .style-8 .score-val {
+            color: #000;
+            font-weight: 900;
+        }
+
+        .style-8 .rank {
+            color: #000 !important;
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 1.4rem;
+        }
+
+        .style-8 .score {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .style-8 #header-icon {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="leaderboard" class="leaderboard-container">
+        <div id="lb-header" class="leaderboard-header">
+            <i id="header-icon" class="fas fa-trophy" style="font-size: 1.5rem;"></i>
+            <h1 id="lb-title" class="leaderboard-title">TOP CLASSEMENT</h1>
+        </div>
+        <div id="lb-list" class="leaderboard-list">
+            <!-- Items generated here -->
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const lbContainer = document.getElementById('leaderboard');
+        const listEl = document.getElementById('lb-list');
+        const titleEl = document.getElementById('lb-title');
+        const headerEl = document.getElementById('lb-header');
+        const headerIcon = document.getElementById('header-icon');
+        const PRODUCTION_URL = 'https://tiktok.gentok.fr';
+
+        // [ALWAYS VPS] Always use the VPS for config and leaderboard data,
+        // even in app mode, to guarantee consistent data access.
+        function getApiBase() {
+            return PRODUCTION_URL;
+        }
+
+        // Params
+        const urlParams = new URLSearchParams(window.location.search);
+        let type = urlParams.get('type') || 'coins';
+        let limitParam = parseInt(urlParams.get('limit')) || 10;
+        let styleParam = parseInt(urlParams.get('style')) || 1;
+        let transparentParam = urlParams.get('transparent') === 'true';
+        let showTitleParam = urlParams.get('showTitle') !== 'false';
+        let rtlParam = urlParams.get('rtl') === 'true';
+        let isPreview = urlParams.get('preview') === 'true';
+
+        // Apply style class
+        lbContainer.classList.add(`style-${styleParam}`);
+
+        // [NEW] Dashboard Preview - Center
+        if (isPreview) {
+            document.body.classList.add('preview-mode');
+        }
+
+        // RTL
+        if (rtlParam) lbContainer.classList.add('rtl');
+
+        // Transparency
+        if (!transparentParam) {
+            lbContainer.classList.add('not-transparent');
+        } else {
+            lbContainer.classList.remove('not-transparent');
+        }
+
+        // Show/Hide title
+        if (!showTitleParam) {
+            headerEl.style.display = 'none';
+        }
+
+        // Initial setup
+        if (type === 'coins') {
+            lbContainer.classList.add('type-coins');
+            titleEl.textContent = 'TOP COINS';
+            headerIcon.className = 'fas fa-coins';
+            headerIcon.style.color = '#FFD700';
+        } else {
+            lbContainer.classList.add('type-likes');
+            titleEl.textContent = 'TOP LIKES';
+            headerIcon.className = 'fas fa-heart';
+            headerIcon.style.color = '#ff2c55';
+        }
+
+        const previousScoresMap = new Map();
+
+        function animateScoreValue(element, startVal, endVal, duration = 600) {
+            if (startVal === endVal) {
+                element.textContent = endVal;
+                return;
+            }
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const current = Math.floor(progress * (endVal - startVal) + startVal);
+                element.textContent = current;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    element.textContent = endVal;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function updateList(stats) {
+            if (!stats) return;
+
+            let data = [];
+            let displayTitle = '';
+            let serverLimit = 10;
+
+            if (type === 'coins') {
+                data = stats.topCoins || [];
+                displayTitle = stats.topCoinsTitle;
+                serverLimit = stats.topCoinsLimit || 10;
+            } else {
+                data = stats.topLikes || [];
+                displayTitle = stats.topLikesTitle;
+                serverLimit = stats.topLikesLimit || 10;
+            }
+
+            const effectiveLimit = Math.min(limitParam || serverLimit, serverLimit);
+            const slicedData = data.slice(0, effectiveLimit);
+
+            if (displayTitle && showTitleParam) titleEl.textContent = displayTitle;
+
+            // [NEW] Real-time style/transparency sync from server
+            const serverStyle = type === 'coins' ? stats.topCoinsStyle : stats.topLikesStyle;
+            const serverTransparent = type === 'coins' ? stats.topCoinsTransparent : stats.topLikesTransparent;
+            const serverShowTitle = type === 'coins' ? stats.topCoinsShowTitle : stats.topLikesShowTitle;
+            const serverFont = type === 'coins' ? stats.topCoinsFont : stats.topLikesFont;
+
+            if (serverFont) applyCustomFont(serverFont);
+
+            if (serverStyle !== undefined) {
+                // Remove old styles
+                for (let i = 1; i <= 20; i++) lbContainer.classList.remove(`style-${i}`);
+                lbContainer.classList.add(`style-${serverStyle}`);
+            }
+
+            if (serverTransparent !== undefined) {
+                if (serverTransparent) lbContainer.classList.remove('not-transparent');
+                else lbContainer.classList.add('not-transparent');
+            }
+
+            if (serverShowTitle !== undefined) {
+                headerEl.style.display = serverShowTitle ? 'flex' : 'none';
+            }
+
+            const serverRtl = type === 'coins' ? stats.topCoinsRtl : stats.topLikesRtl;
+            if (serverRtl !== undefined) {
+                if (serverRtl) lbContainer.classList.add('rtl');
+                else lbContainer.classList.remove('rtl');
+            }
+
+            listEl.innerHTML = '';
+
+            if (slicedData.length === 0) {
+                listEl.innerHTML = '';
+                return;
+            }
+
+            slicedData.forEach((user, index) => {
+                const rank = index + 1;
+                const score = type === 'coins' ? (user.coins || 0) : (user.count || 0);
+                const userKey = `${user.uniqueId || user.nickname || index}_${type}`;
+                const prevScore = previousScoresMap.has(userKey) ? previousScoresMap.get(userKey) : score;
+
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <div class="rank rank-${rank}">${rank}.</div>
+                    <img src="${user.profilePictureUrl || '/logo.png'}" class="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/logo.png';">
+                    <div class="user-info">
+                        <div class="username">${user.nickname || user.uniqueId}</div>
+                        <div class="score">
+                            <i class="fas ${type === 'coins' ? 'fa-coins' : 'fa-heart'} score-icon"></i>
+                            <span class="score-val">${prevScore}</span>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(item);
+
+                const scoreEl = item.querySelector('.score-val');
+                if (scoreEl && prevScore !== score) {
+                    animateScoreValue(scoreEl, prevScore, score, 600);
+                }
+                previousScoresMap.set(userKey, score);
+            });
+        }
+
+        const token = urlParams.get('token');
+
+        const periodParam = urlParams.get('period'); // 'weekly' or 'all'
+
+        // ... existing setup ...
+
+        // [NEW] Fetch API Data for All-Time / Weekly
+        async function fetchLeaderboardData() {
+            if (!periodParam || periodParam === 'session') return;
+            try {
+                // Determiné API type
+                const apiType = type === 'likes' ? 'likes' : 'coins';
+                const base = getApiBase();
+                const res = await fetch(`${base}/api/leaderboard?token=${token}&type=${apiType}&period=${periodParam}&limit=${limitParam}`, { credentials: 'omit' });
+                const data = await res.json();
+
+                if (Array.isArray(data)) {
+                    // Map API format to Internal format
+                    const mapped = data.map(u => ({
+                        nickname: u.nickname,
+                        uniqueId: u.uniqueId,
+                        profilePictureUrl: u.profilePictureUrl,
+                        // Use the appropriate field based on type/period
+                        coins: (periodParam === 'weekly' ? u.weeklyCoins : u.totalCoins),
+                        count: (periodParam === 'weekly' ? u.weeklyLikes : u.totalLikes)
+                    }));
+
+                    window.mappedData = mapped;
+                    // Merge array data with cached styles
+                    const statsObj = Object.assign({}, window.globalStats || {});
+                    if (type === 'coins') {
+                        statsObj.topCoins = mapped;
+                    } else {
+                        statsObj.topLikes = mapped;
+                    }
+                    updateList(statsObj);
+
+                    // Update Title to reflect period
+                    const periodText = periodParam === 'weekly' ? 'SEMAINE' : 'ALL-TIME';
+                    const baseTitle = type === 'coins' ? 'TOP COINS' : 'TOP LIKES';
+                    if (showTitleParam) titleEl.textContent = `${baseTitle} (${periodText})`;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // [SOCKET] Config comes via session_stats socket event on identify (no HTTP fetch needed)
+        socket.on('connect', () => {
+            socket.emit('identify', { token, type: 'overlay' });
+            // For period-based leaderboards (weekly/all-time), fetch data from VPS API
+            if (periodParam) fetchLeaderboardData();
+            // Session mode config is pushed via session_stats event automatically by the server
+        });
+
+        window.globalStats = {};
+
+        socket.on('session_stats', (stats) => {
+            if (!stats) return;
+            // Always cache styles from the server
+            Object.assign(window.globalStats, stats);
+            
+            // Only update DATA from session stats if NOT using a specific period (aka Session Mode)
+            if (!periodParam || periodParam === 'session') {
+                updateList(window.globalStats);
+            } else {
+                // If we are in period mode and we already fetched the API data, re-render to apply new styles
+                if (window.mappedData) {
+                    const tempStats = Object.assign({}, window.globalStats);
+                    if (type === 'coins') tempStats.topCoins = window.mappedData;
+                    else tempStats.topLikes = window.mappedData;
+                    updateList(tempStats);
+                }
+            }
+        });
+
+        socket.on('leaderboard_sync', () => {
+            if (periodParam) fetchLeaderboardData();
+        });
+
+        socket.on('remote_reload', () => {
+            window.location.reload();
+        });
+
+        function applyCustomFont(font) {
+            if (!font) return;
+            const googleFonts = ['Luckiest Guy', 'Outfit', 'Bebas Neue', 'Orbitron', 'Press Start 2P', 'Inter', 'Roboto', 'Fasthand'];
+            const isGoogle = googleFonts.includes(font);
+
+            if (isGoogle) {
+                const fontId = 'google-font-' + font.replace(/ /g, '-').toLowerCase();
+                if (!document.getElementById(fontId)) {
+                    const link = document.createElement('link');
+                    link.id = fontId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}&display=swap`;
+                    document.head.appendChild(link);
+                }
+                document.body.style.setProperty('font-family', `'${font}', cursive, sans-serif`, 'important');
+            } else {
+                const fontUrl = `https://gentok.fr/polices/${font}.ttf`;
+                const fontFace = new FontFace(font, `url(${fontUrl})`);
+                fontFace.load().then(loadedFace => {
+                    document.fonts.add(loadedFace);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                }).catch(err => {
+                    console.error('Font load error:', err);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                });
+            }
+        }
+
+        const fontParam = urlParams.get('font');
+        if (fontParam) applyCustomFont(fontParam);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Overlay Légende Cadeau</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --main-color: #ffd700;
+            --bg-card: rgba(18, 19, 22, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            background: transparent;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlayContainer {
+            text-align: center;
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 24px;
+            border: 2px solid var(--main-color);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.2);
+            min-width: 450px;
+            backdrop-filter: blur(15px);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .overlayContainer.visible {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        #historyInfo {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--main-color);
+            color: #000;
+            padding: 6px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+            display: none;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .giftFocus img {
+            width: 100px;
+            height: 100px;
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
+            margin-bottom: 10px;
+        }
+
+        .giftFocus span {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+            display: block;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .modeLabel {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+            color: var(--main-color);
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .focusList {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .focusEntry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            animation: slideIn 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .podium-1 {
+            border: 2px solid #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .podium-2 {
+            border: 1px solid #c0c0c0;
+            background: rgba(192, 192, 192, 0.05);
+        }
+
+        .podium-3 {
+            border: 1px solid #cd7f32;
+            background: rgba(205, 127, 50, 0.05);
+        }
+
+        .focusEntry .rank {
+            font-weight: 900;
+            width: 45px;
+            text-align: center;
+            font-size: 18px;
+            color: var(--main-color);
+        }
+
+        .focusEntry .pfp {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 12px;
+            border: 2px solid var(--border-color);
+            object-fit: cover;
+        }
+
+        .focusEntry .pseudo {
+            flex: 1;
+            text-align: left;
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .focusEntry .count {
+            font-weight: 900;
+            background: var(--main-color);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+        }
+
+        .first-up {
+            animation: pulseWinner 1.5s infinite alternate;
+        }
+
+        @keyframes pulseWinner {
+            from {
+                box-shadow: 0 0 10px var(--main-color);
+            }
+
+            to {
+                box-shadow: 0 0 30px var(--main-color);
+            }
+        }
+
+        .gentok-signature {
+            margin-top: 25px;
+            opacity: 0.4;
+            display: flex;
+            justify-content: center;
+        }
+
+        .gentok-signature img {
+            height: 25px;
+        }
+    </style>
+    <meta name="referrer" content="no-referrer">
+</head>
+
+<body>
+    <div id="overlay" class="overlayContainer">
+        <div id="historyInfo">Historique</div>
+        <div class="giftFocus">
+            <img id="giftImage" src="">
+            <span id="giftTitle">Chargement...</span>
+            <div id="modeLabel" class="modeLabel">Légendes All-Time</div>
+        </div>
+        <div id="ranking" class="focusList"></div>
+
+        <div class="gentok-signature">
+            <img src="/logo.png" alt="Gentok Logo">
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const targetGiftId = urlParams.get('giftId'); // Fixed gift display
+
+        let leaderboard = {};
+        let giftData = {};
+        let currentGiftId = targetGiftId;
+        let rankingPeriod = urlParams.get('period') || 'all'; // 'all' or 'weekly'
+        let hideTimeout = null;
+
+        if (token) {
+            socket.emit('identify', { token, type: 'overlay' });
+        }
+
+        socket.on("setColors", color => {
+            document.documentElement.style.setProperty("--main-color", color);
+        });
+
+        socket.on("updateLeaderboard", data => {
+            leaderboard = data.leaderboard || {};
+            giftData = data.giftData || {};
+            if (data.period) rankingPeriod = data.period;
+
+            const modeLabel = document.getElementById("modeLabel");
+            if (modeLabel) {
+                modeLabel.textContent = rankingPeriod === 'weekly' ? 'Légendes de la semaine' : 'Légendes All-Time';
+                modeLabel.style.color = rankingPeriod === 'weekly' ? '#fe2c55' : 'var(--main-color)';
+            }
+
+            if (currentGiftId) renderGift(true);
+        });
+
+        function getApiBase() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'https://tiktok.gentok.fr'; // [FIX] Fetch from VPS even when running locally
+            }
+            return '';
+        }
+
+        // Reusable fetch function
+        async function fetchLegends() {
+            if (!token) return;
+            try {
+                const base = getApiBase();
+                const res = await fetch(`${base}/api/leaderboard/legends?token=${token}&period=${rankingPeriod}`);
+                const data = await res.json();
+
+                if (Array.isArray(data)) {
+                    const giftDataMap = {};
+                    data.forEach(g => {
+                        giftDataMap[g.giftId] = {
+                            name: g.giftName,
+                            image: g.giftIcon,
+                            topUsers: g.topUsers
+                        };
+                    });
+                    giftData = giftDataMap;
+
+                    // Update UI Labels
+                    const modeLabel = document.getElementById("modeLabel");
+                    if (modeLabel) {
+                        modeLabel.textContent = rankingPeriod === 'weekly' ? 'Légendes de la semaine' : 'Légendes All-Time';
+                        modeLabel.style.color = rankingPeriod === 'weekly' ? '#fe2c55' : 'var(--main-color)';
+                    }
+
+                    // Render if we have a current gift
+                    if (currentGiftId) {
+                        const overlay = document.getElementById("overlay");
+                        // If overlay is already visible or we are forcing it (handled by caller usually, but safe here)
+                        // Actually, let's just update without forcing visibility
+                        renderGift(false);
+                    }
+                }
+            } catch (e) {
+                console.error("Fetch legends failed:", e);
+            }
+        }
+
+        socket.on("displayGift", async (payload) => {
+            let giftId = typeof payload === 'object' ? payload.gift : payload;
+            let duration = typeof payload === 'object' ? (payload.time * 1000) : 30000;
+
+            currentGiftId = giftId;
+
+            // Force display loading state or cached state immediately
+            document.getElementById("overlay").classList.add('visible');
+            renderGift(true);
+
+            // IMMEDIATELY fetch fresh data to ensure we aren't showing empty/stale content
+            await fetchLegends();
+            // Render again with fresh data
+            renderGift(true);
+
+            if (duration > 0 && !targetGiftId) {
+                if (hideTimeout) clearTimeout(hideTimeout);
+                hideTimeout = setTimeout(hideGift, duration);
+            }
+        });
+
+        socket.on("hideGift", hideGift);
+
+        function hideGift() {
+            if (targetGiftId) return; // Don't hide if fixed
+            document.getElementById("overlay").classList.remove('visible');
+            currentGiftId = null;
+        }
+
+        // Initial load
+        window.onload = () => {
+            if (token) {
+                if (targetGiftId) currentGiftId = targetGiftId;
+                fetchLegends();
+            }
+        };
+
+        // Update renderGift to handle topUsers array from API
+        function renderGift(forceVisible = true) {
+            if (!currentGiftId) return;
+            const gift = giftData[currentGiftId];
+            if (!gift) return;
+
+            const imgEl = document.getElementById("giftImage");
+            if (imgEl) imgEl.src = gift.image.startsWith('http') ? gift.image : ('https://tiktok.gentok.fr' + gift.image);
+
+            const titleEl = document.getElementById("giftTitle");
+            if (titleEl) titleEl.textContent = gift.name;
+
+            let ranking = [];
+
+            if (gift.topUsers) {
+                // Data from API format
+                ranking = gift.topUsers;
+            } else {
+                // Data from legacy socket format
+                Object.values(leaderboard).forEach(user => {
+                    const count = user.gifts?.[currentGiftId] || 0;
+                    if (count > 0) ranking.push({ pseudo: user.pseudo, profile: user.profile, count });
+                });
+                ranking.sort((a, b) => b.count - a.count);
+            }
+
+            const listHtml = (gift.topUsers || []).slice(0, 5).map((r, i) => {
+                let podiumClass = i === 0 ? "podium-1" : (i === 1 ? "podium-2" : (i === 2 ? "podium-3" : ""));
+                let medal = i === 0 ? "!" : (i === 1 ? "" : (i === 2 ? "0" : `#${i + 1}`));
+
+                return `
+          <div class="focusEntry ${podiumClass}" style="animation-delay: ${i * 0.1}s">
+            <div class="rank">${medal}</div>
+            <img src="${r.profilePictureUrl || '/logo.png'}" onerror="this.src='/logo.png'" class="pfp">
+            <div class="pseudo">@${r.uniqueId}</div>
+            <div class="count">x${r.count}</div>
+          </div>`;
+            }).join("");
+
+            document.getElementById("ranking").innerHTML = listHtml || "<p style='opacity:0.5'>Aucune légende pour le moment</p>";
+
+            if (forceVisible) {
+                document.getElementById("overlay").classList.add('visible');
+            }
+        }
+
+        // Real-time sync
+        socket.on('leaderboard_sync', () => {
+            fetchLegends();
+        });
+
+        function applyCustomFont(font) {
+            if (!font) return;
+            const googleFonts = ['Luckiest Guy', 'Outfit', 'Bebas Neue', 'Orbitron', 'Press Start 2P', 'Inter', 'Roboto', 'Fasthand'];
+            const isGoogle = googleFonts.includes(font);
+
+            if (isGoogle) {
+                const fontId = 'google-font-' + font.replace(/ /g, '-').toLowerCase();
+                if (!document.getElementById(fontId)) {
+                    const link = document.createElement('link');
+                    link.id = fontId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}&display=swap`;
+                    document.head.appendChild(link);
+                }
+                document.body.style.setProperty('font-family', `'${font}', cursive, sans-serif`, 'important');
+            } else {
+                const fontUrl = `https://gentok.fr/polices/${font}.ttf`;
+                const fontFace = new FontFace(font, `url(${fontUrl})`);
+                fontFace.load().then(loadedFace => {
+                    document.fonts.add(loadedFace);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                }).catch(err => {
+                    console.error('Font load error:', err);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                });
+            }
+        }
+
+        const fontParam = urlParams.get('font');
+        if (fontParam) applyCustomFont(fontParam);
+    </script>
+</body>
+
+</html>
+

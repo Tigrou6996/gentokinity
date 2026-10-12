@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Télécharger Gentok App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: block;
+            /* Changed from flex to allow scrolling */
+            overflow-x: hidden;
+            overflow-y: auto;
+            /* Ensure vertical scroll is possible */
+            position: relative;
+        }
+
+        /* Background Effects */
+        .bg-blob {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(254, 44, 85, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -300px;
+            left: -200px;
+            z-index: -1;
+            filter: blur(80px);
+            animation: pulseBlob 10s infinite alternate;
+        }
+
+        .bg-blob-2 {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(37, 244, 238, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -300px;
+            right: -200px;
+            z-index: -1;
+            filter: blur(80px);
+            animation: pulseBlob 15s infinite alternate-reverse;
+        }
+
+        @keyframes pulseBlob {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .main-wrapper {
+            max-width: 1100px;
+            width: 95%;
+            margin: 50px auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .logo-large {
+            width: 140px;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .logo-large img {
+            width: 70%;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(254, 44, 85, 0.5));
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 700px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .download-card {
+            background: rgba(18, 19, 22, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            margin-bottom: 60px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .download-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding: 20px 50px;
+            border-radius: 50px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(254, 44, 85, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(254, 44, 85, 0.6);
+            background: #ff4769;
+        }
+
+        .cta-button i {
+            font-size: 1.6rem;
+        }
+
+        .version-info {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .version-badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Features Grid */
+        .features-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .feature-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-box:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .color-primary {
+            color: var(--primary);
+            background: rgba(254, 44, 85, 0.1);
+        }
+
+        .color-secondary {
+            color: var(--secondary);
+            background: rgba(37, 244, 238, 0.1);
+        }
+
+        .color-gold {
+            color: #FFD700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .color-purple {
+            color: #bd59ff;
+            background: rgba(189, 89, 255, 0.1);
+        }
+
+        .color-green {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .feature-box h3 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .feature-box p {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .back-link a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 1rem;
+            transition: color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-link a:hover {
+            color: white;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .main-wrapper {
+                margin: 30px auto;
+            }
+
+            .features-section {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-box {
+                grid-column: span 1 !important;
+            }
+
+            .download-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+    <meta name="referrer" content="no-referrer">
+</head>
+
+<body>
+
+    <div class="bg-blob"></div>
+    <div class="bg-blob-2"></div>
+
+    <div class="main-wrapper">
+        <div class="hero-section">
+            <div class="logo-large">
+                <img src="https://gentok.fr/img/logo.png" alt="Gentok Logo">
+            </div>
+            <h1>Le Compagnon Ultime.</h1>
+            <p class="subtitle">
+                Gentok pour PC Windows libère tout le potentiel de vos lives TikTok.<br>
+                Contrôle clavier, Zéro latence, Soundboard locale et intégrations avancées.
+            </p>
+        </div>
+
+        <div class="download-card">
+            <a href="/app/v1.0.5/Gentok Setup 1.0.5.exe" class="cta-button">
+                <i class="fab fa-windows"></i>
+                <span>TÉLÉCHARGER POUR WINDOWS</span>
+            </a>
+            <div class="version-info">
+                <span class="version-badge"><i class="fas fa-code-branch"></i> v1.0.5 Stable</span>
+                <span><i class="fas fa-check-circle" style="color: var(--success);"></i> Signé & Sécurisé</span>
+                <span><i class="fas fa-server"></i> 64-bit</span>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <!-- Feature 1: Keyboard Control -->
+            <div class="feature-box">
+                <div class="feature-icon-wrapper color-primary">
+                    <i class="fas fa-keyboard"></i>
+                </div>
+                <h3>Contrôle Clavier (AutoIt)</h3>
+                <p>
+                    L'application simule de vraies touches sur votre PC (Z, Q, S, D, Espace...) en réponse aux cadeaux
+                    TikTok.
+                    Compatible avec Minecraft (Walking), GTA, et tous vos jeux favoris.
+                </p>
+            </div>
+
+            <!-- Feature 2: Zero Latency -->
+            <div class="feature-box">
+                <div class="feature-icon-wrapper color-secondary">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>Latence Zéro (Local)</h3>
+                <p>
+                    En tournant directement sur votre PC, Gentok communique instantanément via WebSocket local
+                    (localhost:3000).
+                    Fini les délais de transmission pour une réactivité parfaite en jeu.
+                </p>
+            </div>
+
+            <!-- Feature 3: Soundboard -->
+            <div class="feature-box">
+                <div class="feature-icon-wrapper color-purple">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h3>Soundboard Intégrée</h3>
+                <p>
+                    Jouez vos sons, mèmes et musiques directement sur la sortie audio de votre PC, sans passer par le
+                    navigateur.
+                    Idéal pour réagir aux événements ou ambiancer votre live.
+                </p>
+            </div>
+
+            <!-- Feature 4: Integrations -->
+            <div class="feature-box">
+                <div class="feature-icon-wrapper color-green">
+                    <i class="fas fa-plug"></i>
+                </div>
+                <h3>Intégrations Natives</h3>
+                <p>
+                    Connectez vos outils préférés : Minecraft (RCON & ServerTap), Spotify (Now Playing), et bientôt plus
+                    encore.
+                    Gérez tout depuis une interface unique.
+                </p>
+            </div>
+
+            <!-- Feature 5: Overlays & Admin -->
+            <div class="feature-box">
+                <div class="feature-icon-wrapper color-gold">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3>Overlays & Gestion</h3>
+                <p>
+                    Profitez de tous les overlays (Objectifs, Leaderboards, Alertes) avec une synchronisation parfaite
+                    entre l'App et OBS.
+                    Gérez vos scènes et presets en un clic.
+                </p>
+            </div>
+
+            <!-- Feature 6: TTS -->
+            <div class="feature-box">
+                <div class="feature-icon-wrapper" style="color: #ff9f43; background: rgba(255, 159, 67, 0.1);">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <h3>TTS Chat & Events</h3>
+                <p>
+                    Faites lire vos messages de chat et vos alertes de dons par une voix de synthèse (TTS) directement
+                    depuis l'application,
+                    pour ne rien rater de l'interaction.
+                </p>
+            </div>
+
+            <!-- Feature 7: Streaming Integration -->
+            <div class="feature-box"
+                style="grid-column: span 3; text-align: center; background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border-color: rgba(59, 130, 246, 0.2);">
+                <div class="feature-icon-wrapper"
+                    style="color: #3b82f6; background: rgba(59, 130, 246, 0.1); margin: 0 auto 20px auto;">
+                    <i class="fas fa-video"></i>
+                </div>
+                <h3 style="color: #60a5fa;">Compatible OBS & TikTok Live Studio</h3>
+                <p style="max-width: 600px; margin: 0 auto;">
+                    Intégrez vos sources en quelques clics. Gentok génère des liens de navigateur optimisés pour
+                    <strong>OBS Studio</strong>, <strong>Streamlabs</strong> et <strong>TikTok Live Studio</strong>.
+                    Vos overlays restent fluides et synchronisés, sans impacter les performances de votre stream.
+                </p>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="/">
+                <i class="fas fa-arrêt"></i> Retour au tableau de bord web
+            </a>
+        </div>
+    </div>
+
+</body>
+
+</html>

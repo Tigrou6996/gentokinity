@@ -1,0 +1,83 @@
+{
+  "name": "gentok",
+  "version": "1.0.6",
+  "description": "",
+  "main": "src/index.js",
+  "bin": "src/index.js",
+  "scripts": {
+    "start": "electron .",
+    "local": "cross-env DASHBOARD_URL=http://localhost:3000 electron .",
+    "prod": "cross-env DASHBOARD_URL=https://tiktok.gentok.fr electron .",
+    "server": "node src/index.js",
+    "server:local": "cross-env DASHBOARD_URL=http://localhost:3000 node src/index.js",
+    "server:prod": "cross-env DASHBOARD_URL=https://tiktok.gentok.fr node src/index.js",
+    "dev": "electron .",
+    "build:local": "node build.js",
+    "build:prod": "node build.js --prod",
+    "installer": "electron-builder build --win nsis",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.13.5",
+    "bcrypt": "^6.0.0",
+    "discord-rpc": "^4.0.1",
+    "dotenv": "^17.2.4",
+    "electron-updater": "^6.7.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.6",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "rcon-client": "^4.2.5",
+    "sharp": "^0.34.5",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "spotify-web-api-node": "^5.0.2",
+    "stripe": "^20.3.1",
+    "tiktok-live-connector": "^2.4.4",
+    "winston": "^3.19.0"
+  },
+  "build": {
+    "appId": "electron.gentok",
+    "productName": "Gentok",
+    "directories": {
+      "output": "APP"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "public/logo.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Gentok"
+    },
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://tiktok.gentok.fr/app"
+      }
+    ],
+    "asar": true
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "pkg": "^5.8.1"
+  }
+}

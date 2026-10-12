@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENTOK - TikTok Overlay Maker</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;700&family=Outfit:wght@400;700;900&family=Poppins:wght@400;700&family=Recursive:wght@300;900&family=Rubik:wght@400;900&family=Silkscreen&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="app-navbar">
+        <div class="nav-brand">
+            <i class="fas fa-magic"></i>
+            <span>GENTOK Canvas</span>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="layout"><i class="fas fa-th"></i> Configuration</button>
+            <button class="nav-tab" data-tab="theme"><i class="fas fa-palette"></i> Design & Fond</button>
+        </div>
+
+        <div class="nav-actions">
+            <select id="export-format" class="mini-select" style="width: 80px;">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPEG</option>
+            </select>
+            <button id="download-btn" class="primary-btn"><i class="fas fa-download"></i> Télécharger</button>
+            <button id="reset-btn" class="secondary-btn"><i class="fas fa-redo-alt"></i> RAZ</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="controls-overlay">
+            <div class="tab-content" id="layout-tab">
+                <div class="horizontal-controls">
+                    <div class="control-group">
+                        <label>Colonnes</label>
+                        <input type="range" id="grid-columns" min="1" max="10" value="5">
+                        <span class="value-display" id="columns-val">5</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Actions</label>
+                        <input type="number" id="grid-total-items" min="1" max="50" value="10">
+                    </div>
+                    <div class="control-group">
+                        <label>Gap</label>
+                        <input type="range" id="grid-gap" min="0" max="50" value="20">
+                        <span class="value-display" id="gap-val">20px</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Padding</label>
+                        <input type="range" id="grid-padding" min="0" max="100" value="40">
+                        <span class="value-display" id="padding-val">40px</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Taille Icônes</label>
+                        <input type="range" id="icon-size" min="40" max="150" value="80">
+                        <span class="value-display" id="icon-val">80px</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="theme-tab">
+                <div class="horizontal-controls">
+                    <div class="control-group">
+                        <label>Modèles</label>
+                        <div class="presets-mini">
+                            <div class="preset-dot active gamer-bg" data-theme="dark-gamer" title="Dark Gamer"></div>
+                            <div class="preset-dot agency-bg" data-theme="light-agency" title="Light Agency"></div>
+                            <div class="preset-dot glass-bg" data-theme="glass-clean" title="Glass Clean"></div>
+                            <div class="preset-dot neon-bg" data-theme="neon-vibe" title="Neon Vibe"></div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Police</label>
+                        <select id="font-family" style="padding: 5px; font-size: 12px;">
+                            <option value="'Inter', sans-serif">Inter</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Style Texte</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div class="button-group-mini">
+                                <button id="btn-bold" class="icon-toggle" title="Gras"><i class="fas fa-bold"></i></button>
+                                <button id="btn-italic" class="icon-toggle" title="Italique"><i class="fas fa-italic"></i></button>
+                                <button id="btn-underline" class="icon-toggle" title="Souligné"><i class="fas fa-underline"></i></button>
+                                <button id="btn-strike" class="icon-toggle" title="Barré"><i class="fas fa-strikethrough"></i></button>
+                                <button id="btn-upper" class="icon-toggle" title="Majuscules"><i class="fas fa-font"></i></button>
+                            </div>
+                            <div class="button-group-mini">
+                                <button id="btn-align-left" class="icon-toggle" title="Aligner à gauche"><i class="fas fa-align-left"></i></button>
+                                <button id="btn-align-center" class="icon-toggle active" title="Centrer"><i class="fas fa-align-center"></i></button>
+                                <button id="btn-align-right" class="icon-toggle" title="Aligner à droite"><i class="fas fa-align-right"></i></button>
+                            </div>
+                            <div style="display: flex; gap: 4px;">
+                                <input type="color" id="text-color-1" value="#ffffff" title="Couleur Nom">
+                                <input type="color" id="text-color-2" value="#00ffff" title="Couleur Action">
+                                <input type="color" id="outline-color" value="#000000" title="Contour">
+                            </div>
+                            <input type="range" id="outline-width" min="0" max="10" step="0.1" value="1.5" style="width: 40px;" title="Taille contour">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Effets & Opacité</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-circle-half-stroke" style="font-size: 12px; color: var(--text-muted);"></i>
+                                <input type="range" id="item-opacity" min="0" max="100" value="100" style="width: 50px;" title="Opacité">
+                                <span id="opacity-val" style="font-size: 10px; min-width: 20px;">100</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Taille & Espacement</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="range" id="font-size" min="10" max="40" value="18" style="width: 60px;" title="Taille">
+                            <input type="range" id="letter-spacing" min="-5" max="20" value="0" style="width: 60px;" title="Espacement">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Fond</label>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="mini-btn" id="bg-upload-trigger" title="Upload"><i class="fas fa-upload"></i></button>
+                            <input type="file" id="bg-file-input" accept="image/*" hidden>
+                            <button id="remove-bg-btn" class="mini-btn hidden" title="Retirer"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Filtres</label>
+                        <div style="display: flex; gap: 10px;">
+                            <div title="Luminosité"><input type="range" id="bg-darkness" min="0" max="1" step="0.1" value="0.5" style="width: 60px;"></div>
+                            <div title="Flou"><input type="range" id="bg-blur" min="0" max="20" value="0" style="width: 60px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main class="workspace">
+            <div id="capture-area" class="preview-container dark-gamer">
+                <div id="custom-bg-layer" class="bg-layer"></div>
+                <div id="bg-overlay-layer" class="bg-overlay"></div>
+                <div id="overlay-grid" class="overlay-grid"></div>
+                <div class="watermark">GENTOK Canvas - Designer</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container" class="modal-overlay hidden">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="modal-title">Modifier l'action</h2>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </header>
+            
+            <div id="modal-gift-view" class="modal-body hidden">
+                <div class="modal-controls">
+                    <div class="search-container" style="flex: 1; margin-bottom: 0;">
+                        <input type="text" id="modal-gift-search" placeholder="Rechercher un cadeau TikTok...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <select id="modal-gift-sort" class="sort-select" style="width: auto;">
+                        <option value="name">Nom</option>
+                        <option value="price-asc">Prix ↑</option>
+                        <option value="price-desc">Prix ↓</option>
+                    </select>
+                </div>
+                <div class="gift-library modal-grid" id="modal-gift-library">
+                    <!-- Loaded via API -->
+                </div>
+            </div>
+
+            <div id="modal-text-view" class="modal-body hidden">
+                <div class="control-group">
+                    <label>Ligne 1 (Titre/Nom)</label>
+                    <input type="text" id="modal-text-1" placeholder="Ex: TP">
+                </div>
+                <div class="control-group">
+                    <label>Ligne 2 (Action)</label>
+                    <input type="text" id="modal-text-2" placeholder="Ex: AEROPORT">
+                </div>
+                <div class="control-group">
+                    <label>Badge (Optionnel)</label>
+                    <input type="text" id="modal-badge" placeholder="Ex: 200+">
+                </div>
+                <button id="save-modal-text" class="primary-btn" style="margin-top: 1rem;">Enregistrer les modifications</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

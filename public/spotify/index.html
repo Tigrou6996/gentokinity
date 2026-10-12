@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Spotify Bridge - Gentok</title>
+    <link rel="icon" type="image/png" href="../logo.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+</head>
+
+<body>
+    <div id="player" class="hidden">
+        <div id="skip-notification" class="hidden">
+            <div class="skip-content">
+                <span class="skip-label">MUSIQUE SKIPPÉE PAR</span>
+                <span id="skip-user"></span>
+            </div>
+        </div>
+        <div id="content-wrapper">
+            <!-- Left: Album Art -->
+            <div id="art-container">
+                <img id="albumArt" src="" alt="Album Art" />
+            </div>
+
+            <!-- Right: Info Blocks -->
+            <div id="info-container">
+                <div id="top-block" class="glass-block">
+                    <div id="title"></div>
+                    <div id="artist"></div>
+                    <div id="requester" class="hidden"></div>
+                </div>
+
+                <div id="bottom-block" class="glass-block">
+                    <span id="curr-time">00:00</span>
+                    <div id="visualizer-mock">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <span id="total-time">00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom: Progress Bar -->
+        <div id="progress-container">
+            <div id="progress-bar">
+                <div id="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="queue-wrapper" class="hidden">
+        <div id="queue-header">PROCHAINES MUSIQUES</div>
+        <div id="queue-list"></div>
+    </div>
+
+    <div id="flash-overlay"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="overlay.js"></script>
+</body>
+
+</html>

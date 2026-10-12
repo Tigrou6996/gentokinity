@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gentok Gifts Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            height: 100vh;
+        }
+
+        .gift-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+        }
+
+        .gift-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border-left: 4px solid #9b59b6;
+            color: #fff;
+            animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .gift-icon {
+            font-size: 1.5rem;
+            color: #9b59b6;
+        }
+
+        .gift-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gift-user {
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        .gift-name {
+            font-size: 0.8rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .gift-badge {
+            background: #9b59b6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: auto;
+        }
+    </style>
+    <meta name="referrer" content="no-referrer">
+</head>
+
+<body>
+
+    <div class="gift-container" id="gift-container">
+        <!-- Gifts will appear here -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const container = document.getElementById('gift-container');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        socket.on('connect', () => {
+            console.log('Connected to Gifts Overlay');
+            socket.emit('identify', { token, type: 'overlay' });
+        });
+
+        socket.on('lastEvent', (payload) => {
+            if (payload.type === 'gift') {
+                addGift(payload.data);
+            }
+        });
+
+        // Also handle initial state
+        socket.on('initialLastEvents', (events) => {
+            if (events && events.gift) {
+                addGift(events.gift);
+            }
+        });
+
+        function addGift(data) {
+            const item = document.createElement('div');
+            item.className = 'gift-item';
+
+            const name = data.nickname || data.uniqueId || 'Anonyme';
+            const giftName = data.giftName || 'Cadeau';
+            const count = data.repeatCount || 1;
+
+            const iconHtml = data.url
+                ? `<img src="${data.url}" style="width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));">`
+                : `<i class="fas fa-gift gift-icon"></i>`;
+
+            item.innerHTML = `
+                ${iconHtml}
+                <div class="gift-info">
+                    <span class="gift-user">${name}</span>
+                    <span class="gift-name">a envoyé ${giftName}</span>
+                </div>
+                <div class="gift-badge">x${count}</div>
+            `;
+
+            container.prepend(item);
+
+            // Remove older gifts if too many
+            if (container.children.length > 5) {
+                container.lastElementChild.remove();
+            }
+
+            // Remove after 10 seconds
+            setTimeout(() => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-20px)';
+                item.style.transition = 'all 0.5s ease';
+                setTimeout(() => {
+                    if (item.parentNode) item.remove();
+                }, 500);
+            }, 10000);
+        }
+
+        // [NEW] Support simulations via postMessage
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'simulation') {
+                addGift(event.data.data);
+            }
+        });
+
+        socket.on('remote_reload', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+
+</html>
+

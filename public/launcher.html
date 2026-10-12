@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gentok Launcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #060709;
+            --card-bg: rgba(13, 13, 13, 0.7);
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            --primary: #fe2c55;
+            --primary-rgb: 254, 44, 85;
+            --secondary: #00f2ea;
+            --secondary-rgb: 0, 242, 234;
+            --progress-bg: rgba(255, 255, 255, 0.05);
+            --success: #10b981;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://gentok.fr/img/background.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .launcher-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            width: 460px;
+            padding: 50px;
+            border-radius: 32px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo-section {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            z-index: 2;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.1));
+        }
+
+        .logo-glow {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, rgba(var(--primary-rgb), 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
+            animation: breathe 3s infinite ease-in-out;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .status-container {
+            margin-bottom: 50px;
+        }
+
+        .status-text {
+            color: var(--secondary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            height: 1.4rem;
+            transition: color 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .result-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            height: 1.4rem;
+        }
+
+        .progress-wrapper {
+            width: 100%;
+            height: 6px;
+            background: var(--progress-bg);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.6;
+            }
+        }
+
+        .searching {
+            animation: pulse 1.5s infinite;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bg-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            border-radius: 50%;
+        }
+    </style>
+    <meta name="referrer" content="no-referrer">
+</head>
+
+<body>
+
+    <div class="launcher-card">
+        <div class="bg-glow"></div>
+
+        <div class="logo-section">
+            <img src="/logo.png" alt="Gentok Logo" class="app-logo">
+            <div class="logo-glow"></div>
+        </div>
+
+        <h1>Mise à jour</h1>
+
+        <div class="status-container">
+            <div id="status" class="status-text searching">Vérification des serveurs...</div>
+        </div>
+
+        <div id="result" class="result-text" style="opacity: 0; text-align: left; margin-bottom: 12px;">Application à
+            jour</div>
+
+        <div class="progress-wrapper">
+            <div id="bar" class="progress-bar"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const statusEl = document.getElementById('status');
+        const barEl = document.getElementById('bar');
+        const resultEl = document.getElementById('result');
+
+        // Connect to local socket to catch startup errors
+        const socket = io('http://localhost:3000');
+        let hasError = false;
+
+        socket.on('log', (data) => {
+            if (data.level === 'error') {
+                statusEl.textContent = data.message;
+                statusEl.style.color = '#ef4444';
+                statusEl.classList.remove('searching');
+                hasError = true;
+            }
+        });
+
+        socket.on('notification', (data) => {
+            if (data.type === 'error') {
+                statusEl.textContent = data.message;
+                statusEl.style.color = '#ef4444';
+                statusEl.classList.remove('searching');
+                hasError = true;
+            }
+        });
+
+        async function simulateUpdate() {
+            // Stage 1: Connecting
+            await sleep(800);
+            if (!hasError) {
+                statusEl.textContent = 'Connexion au serveur...';
+                updateProgress(20);
+            }
+
+            // Stage 2: Fetching version info
+            await sleep(1200);
+            if (!hasError) {
+                statusEl.textContent = 'Comparaison des versions...';
+                updateProgress(55);
+            }
+
+            // Stage 3: Finalizing
+            await sleep(1000);
+            if (!hasError) {
+                statusEl.textContent = 'Vérification de l\'intégrité...';
+                updateProgress(85);
+            }
+
+            // Stage 4: Finished
+            await sleep(800);
+
+            if (hasError) {
+                // If error, wait a bit then continue to dashboard anyway so user can fix it
+                await sleep(3000);
+            }
+
+            updateProgress(100);
+
+            if (!hasError) {
+                statusEl.classList.remove('searching');
+                statusEl.textContent = 'Vérification terminée';
+                statusEl.style.color = '#10b981'; // Success green
+            }
+
+            resultEl.style.opacity = '1';
+            resultEl.classList.add('fade-in');
+
+            // Redirect to main app after success, preserving query parameters (like ?mode=app)
+            await sleep(1800);
+            window.location.href = '/' + window.location.search;
+        }
+
+        function updateProgress(val) {
+            barEl.style.width = val + '%';
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Start the process
+        simulateUpdate();
+    </script>
+</body>
+
+</html>

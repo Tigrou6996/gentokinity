@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gentok Goals Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Luckiest+Guy&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .goal-container {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .goal-container.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* [NEW] Style Variants */
+        .style-1 {
+            background: rgba(18, 18, 18, 0.95);
+            border: 2px solid #25f4ee;
+            box-shadow: 0 0 20px rgba(37, 244, 238, 0.3);
+        }
+
+        .style-1 .progress-bar {
+            background: linear-gradient(90deg, #25f4ee, #fe2c55);
+        }
+
+        .style-2 {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #fe2c55;
+            box-shadow: 0 0 20px rgba(254, 44, 85, 0.4);
+        }
+
+        .style-2 .progress-bar {
+            background: linear-gradient(90deg, #fe2c55, #ff8c00);
+        }
+
+        .style-3 {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .style-3 .progress-bar {
+            background: #fff;
+            box-shadow: 0 0 15px #fff;
+        }
+
+        .style-4 {
+            background: rgba(108, 92, 231, 0.9);
+            border: 2px solid #a29bfe;
+            box-shadow: 0 0 20px rgba(162, 155, 254, 0.4);
+        }
+
+        .style-4 .progress-bar {
+            background: linear-gradient(90deg, #a29bfe, #6c5ce7);
+        }
+
+        .style-5 {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(0, 0, 0, 0.9));
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .style-5 .progress-bar {
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+        }
+
+        /* Style 6: Futuriste Slanted Blue */
+        .style-6 {
+            background: rgba(0, 0, 0, 0.85);
+            border-left: 6px solid #00f2ff;
+            transform: skewX(-15deg);
+            border-radius: 4px !important;
+        }
+
+        .style-6>div {
+            transform: skewX(15deg);
+        }
+
+        .style-6 .progress-bar {
+            background: #00f2ff;
+            opacity: 0.6;
+        }
+
+        /* Style 7: Full Transparent Logo (Reference Image 4) */
+        .style-7 {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .style-7 .progress-bar {
+            background: rgba(255, 255, 255, 1);
+            height: 4px !important;
+            top: auto !important;
+            bottom: 0 !important;
+            filter: drop-shadow(0 0 5px #fff);
+        }
+
+        .style-7 #goal-title,
+        .style-7 #goal-count {
+            font-family: 'Luckiest Guy', cursive !important;
+            font-size: 1.8rem !important;
+            text-shadow: 4px 4px 0px #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000 !important;
+        }
+
+        /* Style 8: Glass Neon Pink */
+        .style-8 {
+            background: rgba(254, 44, 85, 0.1) !important;
+            backdrop-filter: blur(12px);
+            border: 2px solid #fe2c55 !important;
+            box-shadow: 0 0 25px rgba(254, 44, 85, 0.4) !important;
+        }
+
+        .style-8 .progress-bar {
+            background: #fe2c55;
+        }
+
+        /* Style 9: Ghost Borders (Reference Image 2) */
+        .style-9 {
+            background: rgba(0, 0, 0, 0.5) !important;
+            border: 3px solid #00f2ff !important;
+            border-image: linear-gradient(to right, #00f2ff, #fe2c55) 1;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5) !important;
+            border-radius: 0 !important;
+        }
+
+        .style-9 .progress-bar {
+            background: linear-gradient(90deg, #00f2ff, #fe2c55);
+            opacity: 0.3;
+        }
+
+        /* Style 10: Comic Bold (User's reference) */
+        .style-10 {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .style-10 .progress-bar {
+            display: none !important;
+        }
+
+        .style-10 #goal-title {
+            font-family: 'Luckiest Guy', cursive !important;
+            color: #fff;
+            font-size: 2.2rem !important;
+            text-shadow: 5px 5px 0px #000;
+            letter-spacing: 2px;
+        }
+
+        .style-10 #goal-count {
+            font-family: 'Luckiest Guy', cursive !important;
+            color: #ffd700;
+            font-size: 2.5rem !important;
+            text-shadow: 5px 5px 0px #000;
+        }
+
+        .style-10 #goal-footer {
+            display: none !important;
+        }
+
+        /* Style 11: HUD Slim (Modern minimal) */
+        .style-11 {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px !important;
+            height: 45px !important;
+        }
+
+        .style-11 .progress-bar {
+            background: #fff;
+            border-radius: 50px;
+            opacity: 0.2;
+        }
+
+        .style-11 #goal-title {
+            font-size: 0.75rem !important;
+            letter-spacing: 3px !important;
+            opacity: 0.8;
+        }
+
+        /* STYLE 12 - MINIMAL LINE (Refined) */
+        .style-12 {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            height: auto !important;
+            padding: 5px 0 !important;
+        }
+
+        .style-12 .progress-bar {
+            height: 4px !important;
+            bottom: 0 !important;
+            top: auto !important;
+            background: #fff !important;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            border-radius: 2px;
+        }
+
+        .style-12 #goal-title {
+            font-family: 'Outfit', sans-serif !important;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            font-size: 0.85rem !important;
+            margin-bottom: 8px;
+            font-weight: 700;
+            opacity: 0.9;
+        }
+
+        .style-12 #goal-count {
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 300;
+            font-size: 0.85rem !important;
+            opacity: 0.7;
+        }
+
+        /* Style 12 Footer hidden */
+        .style-12 #goal-footer {
+            display: none !important;
+        }
+
+        /* STYLE 13 - BOXY RETRO (Refined) */
+        .style-13 {
+            background: #000;
+            border: 4px solid #fff;
+            box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.5);
+            border-radius: 0 !important;
+            padding: 8px !important;
+        }
+
+        .style-13::after {
+            /* Pixel corner effect simulation */
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border: 2px solid transparent;
+            /* box-shadow: inset 0 0 0 2px #000; */
+        }
+
+        .style-13 .progress-bar {
+            background: repeating-linear-gradient(-45deg,
+                    #fe2c55,
+                    #fe2c55 10px,
+                    #25f4ee 10px,
+                    #25f4ee 20px);
+            border-right: 4px solid #fff;
+            height: 100% !important;
+            top: 0 !important;
+        }
+
+        .style-13 #goal-title {
+            font-family: 'Press Start 2P', cursive !important;
+            text-transform: uppercase;
+            font-size: 0.7rem !important;
+            line-height: 1.5;
+            margin-bottom: 5px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #fe2c55;
+        }
+
+        .style-13 #goal-count {
+            font-family: 'Press Start 2P', cursive !important;
+            font-size: 0.7rem !important;
+            color: #25f4ee;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .style-13 #goal-footer {
+            font-family: 'Press Start 2P', cursive !important;
+            font-size: 0.5rem !important;
+            margin-top: 8px;
+            color: #aaa !important;
+        }
+
+        .style-11 #goal-count {
+            font-size: 1.1rem !important;
+        }
+
+        .style-11 #goal-footer {
+            display: none !important;
+        }
+
+        @keyframes neonGradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 200% 50%;
+            }
+        }
+
+        .style-10 .progress-bar {
+            background: linear-gradient(90deg, #00f2ff, #fe2c55);
+            opacity: 0.8;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .goal-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .goal-count {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ddd;
+        }
+
+        .progress-wrapper {
+            width: 100%;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 12px;
+            transition: width 0.8s cubic-bezier(0.1, 0.7, 1.0, 0.1);
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .goal-footer {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+    <meta name="referrer" content="no-referrer">
+</head>
+
+<body>
+
+    <div class="goal-container" id="goal-container"
+        style="width: 700px; background: transparent; border: none; box-shadow: none; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+
+        <div id="likes-bar-root" class="style-1"
+            style="width: 100%; height: 65px; border-radius: 15px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(0,0,0,0.3);">
+
+            <!-- Fill Layer -->
+            <div id="progress-bar" class="progress-bar"
+                style="position: absolute; left: 0; top: 0; height: 100%; width: 0%; transition: width 1s cubic-bezier(0.1, 0.7, 1.0, 0.1); z-index: 1;">
+            </div>
+
+            <!-- Content Layer Centered -->
+            <div id="content-layer"
+                style="position: relative; z-index: 10; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+
+                <div id="content-wrapper"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;">
+                    <span id="goal-title" class="goal-title"
+                        style="font-weight: 800; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase;">CHARGEMENT...</span>
+
+                    <span id="goal-count"
+                        style="font-weight: 900; color: #fff; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-size: 1.6rem; letter-spacing: 1.5px;">0
+                        / 0</span>
+
+                    <span id="goal-action"
+                        style="font-size: 0.65rem; font-weight: 800; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1px;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="goal-footer"
+            style="margin-top: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; text-shadow: 1px 1px 2px #000;">
+            PRÊT POUR LES LIKES !</div>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const container = document.getElementById('goal-container');
+        const rootBar = document.getElementById('likes-bar-root');
+        const titleEl = document.getElementById('goal-title');
+        const actionEl = document.getElementById('goal-action');
+        const countEl = document.getElementById('goal-count');
+        const progressBar = document.getElementById('progress-bar');
+        const footerEl = document.getElementById('goal-footer');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        // [SOCKET] Config/goal comes via likes_goal_update socket event on identify (no HTTP fetch needed)
+        socket.on('connect', () => {
+            console.log('Connected to Goal Overlay');
+            if (token) {
+                socket.emit('identify', { token, type: 'overlay' });
+                // The server will automatically push likes_goal_update via socket on identify
+            }
+        });
+
+
+        let currentLikesGoal = null;
+
+        // Handle specific Likes Goal updates
+        socket.on('likes_goal_update', (goal) => {
+            currentLikesGoal = goal;
+            updateUI(goal);
+        });
+
+        // Also listen to session_stats for real-time room likes
+        socket.on('session_stats', (stats) => {
+            if (!stats) return;
+            if (stats.likesGoal) {
+                currentLikesGoal = stats.likesGoal;
+            }
+            if (currentLikesGoal) {
+                if (typeof stats.likes === 'number' && stats.likes > (currentLikesGoal.count || 0)) {
+                    currentLikesGoal.count = stats.likes;
+                }
+                updateUI(currentLikesGoal);
+            } else if (typeof stats.likes === 'number') {
+                const targetGoal = parseInt(urlParams.get('goal')) || 10000;
+                const style = parseInt(urlParams.get('style')) || 1;
+                updateUI({
+                    enabled: true,
+                    style: style,
+                    count: stats.likes,
+                    goal: targetGoal,
+                    title: 'OBJECTIF LIKES'
+                });
+            }
+        });
+
+        // Handle simulation/test mode URL parameters
+        if (urlParams.has('like') || urlParams.has('test')) {
+            setTimeout(() => {
+                const isSimMode = urlParams.get('s') === 'true';
+                const count = isSimMode ? (parseInt(urlParams.get('count')) || 6500) : 0;
+                const goal = parseInt(urlParams.get('goal')) || 10000;
+                const title = urlParams.get('title') !== null ? urlParams.get('title') : 'OBJECTIF LIKES';
+                const action = urlParams.get('action') || (isSimMode ? 'EXEMPLE ACTION' : '');
+
+                updateUI({
+                    enabled: true,
+                    style: parseInt(urlParams.get('style')) || 1,
+                    count: count,
+                    goal: goal,
+                    title: title,
+                    actionName: action
+                });
+            }, 500);
+        }
+
+        let previousGoalCount = null;
+
+        function animateGoalCount(startVal, endVal, targetVal, duration = 400) {
+            if (startVal === endVal) {
+                countEl.textContent = `${endVal.toLocaleString()} / ${targetVal.toLocaleString()}`;
+                return;
+            }
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const current = Math.floor(progress * (endVal - startVal) + startVal);
+                countEl.textContent = `${current.toLocaleString()} / ${targetVal.toLocaleString()}`;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    countEl.textContent = `${endVal.toLocaleString()} / ${targetVal.toLocaleString()}`;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function updateUI(goal) {
+            if (!goal || !goal.enabled) {
+                container.classList.remove('visible');
+                return;
+            }
+
+            const wrapper = document.getElementById('content-wrapper');
+            const style = goal.style || 1;
+
+            // Apply Style to the root bar element
+            rootBar.className = `style-${style}`;
+            container.classList.add('visible');
+
+            const current = goal.count || 0;
+            const target = goal.goal || 10000;
+            const percent = Math.min((current / target) * 100, 100);
+
+            // Clean title formatting - Hide completely if empty or hyphen
+            let titleText = (goal.title || '').trim();
+            if (titleText === '-' || titleText === '') {
+                titleEl.textContent = '';
+                titleEl.style.display = 'none';
+            } else {
+                titleEl.style.display = 'inline';
+                if (style === 7 || style === 10) {
+                    titleEl.textContent = titleText + ' - ';
+                } else {
+                    titleEl.textContent = titleText;
+                }
+            }
+
+            // Real-time smooth score animation
+            if (previousGoalCount !== null && previousGoalCount !== current) {
+                animateGoalCount(previousGoalCount, current, target, 400);
+            } else {
+                countEl.textContent = `${current.toLocaleString()} / ${target.toLocaleString()}`;
+            }
+            previousGoalCount = current;
+
+            progressBar.style.width = `${percent}%`;
+
+            // Respect showFooter setting
+            footerEl.style.display = (goal.showFooter !== false) ? 'block' : 'none';
+
+            const remaining = Math.max(target - current, 0);
+            footerEl.textContent = remaining > 0 ? `Plus que ${remaining.toLocaleString()} likes !` : 'Objectif Atteint !';
+
+            // Apply Font
+            if (goal.font) {
+                applyCustomFont(goal.font);
+            }
+        }
+
+        function applyCustomFont(font) {
+            if (!font) return;
+            const googleFonts = ['Luckiest Guy', 'Outfit', 'Bebas Neue', 'Orbitron', 'Press Start 2P', 'Inter', 'Roboto', 'Fasthand'];
+            const isGoogle = googleFonts.includes(font);
+
+            if (isGoogle) {
+                const fontId = 'google-font-' + font.replace(/ /g, '-').toLowerCase();
+                if (!document.getElementById(fontId)) {
+                    const link = document.createElement('link');
+                    link.id = fontId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}&display=swap`;
+                    document.head.appendChild(link);
+                }
+                document.body.style.setProperty('font-family', `'${font}', cursive, sans-serif`, 'important');
+            } else {
+                const fontUrl = `https://gentok.fr/polices/${font}.ttf`;
+                const fontFace = new FontFace(font, `url(${fontUrl})`);
+                fontFace.load().then(loadedFace => {
+                    document.fonts.add(loadedFace);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                }).catch(err => {
+                    console.error('Font load error:', err);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                });
+            }
+        }
+
+        // Handle URL parameter font
+        const fontParam = urlParams.get('font');
+        if (fontParam) applyCustomFont(fontParam);
+
+        // [NEW] Support simulations via postMessage (from dashboard)
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'simulation') {
+                updateUI({
+                    enabled: true,
+                    style: 1,
+                    title: 'SIMULATION',
+                    actionName: 'ACTION EXEMPLE',
+                    count: 7500,
+                    goal: 10000
+                });
+            }
+        });
+
+        socket.on('remote_reload', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+
+</html>

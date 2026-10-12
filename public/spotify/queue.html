@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <style>
+        /* Optional Override to move queue up if used standalone */
+        #queue-wrapper {
+            top: 20px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Player Removed -->
+
+    <div id="queue-wrapper" class="hidden">
+        <div id="queue-header">PROCHAINES MUSIQUES</div>
+        <div id="queue-list"></div>
+    </div>
+
+    <!-- Flash Overlay maintained for consistency, though skip flash might not be needed here if player is gone. 
+         But if skip happens, flash is a global effect. -->
+    <div id="flash-overlay"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="overlay.js"></script>
+</body>
+
+</html>

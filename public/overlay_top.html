@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gentok Top Widgets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Luckiest Guy', cursive;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .widget-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 20px;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .gift-icon-container {
+            position: relative;
+            margin-bottom: -15px;
+            /* Slight overlap with text for style */
+            z-index: 2;
+        }
+
+        .gift-img {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.4));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-2deg);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(2deg);
+            }
+        }
+
+        .username {
+            font-size: 3.8rem;
+            color: white;
+            text-shadow:
+                3px 3px 0 #000,
+                -3px -3px 0 #000,
+                3px -3px 0 #000,
+                -3px 3px 0 #000,
+                0 0 10px rgba(0, 0, 0, 0.5);
+            margin: 0;
+            padding: 0;
+            line-height: 1;
+            z-index: 3;
+            text-transform: uppercase;
+        }
+
+        .value-box {
+            font-size: 2.2rem;
+            color: #FFD700;
+            /* Bright yellow */
+            text-shadow:
+                2px 2px 0 #000,
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        /* Variantes par type */
+        .top-gift .value-box {
+            color: #FFD700;
+        }
+
+        .top-streak .value-box {
+            color: #FF2C55;
+        }
+
+        .top-likes .value-box {
+            color: #FF2C55;
+        }
+
+        #container.top-likes #widget {
+            border-bottom: 5px solid #FF2C55;
+        }
+
+        .overlay-title {
+            font-size: 2.2rem;
+            color: #fff;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow:
+                2px 2px 0 #000,
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000;
+        }
+
+        /* Type specific branding */
+        .top-gift .gift-img {
+            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+        }
+
+        .top-gift .overlay-title {
+            color: #00f2ff;
+        }
+
+        .top-streak .gift-img {
+            filter: drop-shadow(0 0 15px rgba(254, 44, 85, 0.4));
+        }
+
+        .top-streak .overlay-title {
+            color: #ff2c55;
+        }
+    </style>
+    <meta name="referrer" content="no-referrer">
+</head>
+
+<body>
+
+    <div id="widget" class="widget-card">
+        <div id="overlay-title" class="overlay-title">TOP</div>
+        <div class="gift-icon-container">
+            <img id="gift-icon" src="https://tiktok.gentok.fr/img/tiktok/5655.png" class="gift-img">
+        </div>
+        <div id="username" class="username">PSEUDO</div>
+        <div id="value" class="value-box">0 COINS</div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const widget = document.getElementById('widget');
+        const iconEl = document.getElementById('gift-icon');
+        const usernameEl = document.getElementById('username');
+        const valueEl = document.getElementById('value');
+        const titleEl = document.getElementById('overlay-title');
+
+        // Determiné type from URL params OR path for backward compatibility
+        const urlParams = new URLSearchParams(window.location.search);
+        const typeParam = urlParams.get('type');
+        const path = window.location.pathname;
+
+        let type;
+        if (typeParam) {
+            type = typeParam;
+        } else {
+            if (path.includes('top-likes')) type = 'topLikes';
+            else if (path.includes('top-score') || path.includes('top-coins')) type = 'topCoins';
+            else if (path.includes('top-gift')) type = 'topGift';
+            else type = 'topStreak';
+        }
+
+        const isGift = type === 'topGift' || type === 'topCoins';
+        const isLikes = type === 'topLikes';
+
+        // Default icons
+        const DEFAULT_GIFT_ICON = 'https://tiktok.gentok.fr/img/tiktok/5655.png';
+        const DEFAULT_STREAK_ICON = 'https://tiktok.gentok.fr/img/tiktok/5655.png';
+        const DEFAULT_LIKE_ICON = 'https://tiktok.gentok.fr/img/tiktok/5655.png';
+
+        if (type === 'topGift') {
+            widget.classList.add('top-gift');
+            titleEl.innerHTML = 'TOP GIFT';
+            iconEl.src = DEFAULT_GIFT_ICON;
+        } else if (type === 'topCoins') {
+            widget.classList.add('top-gift');
+            titleEl.innerHTML = 'TOP SCORE';
+            iconEl.src = DEFAULT_GIFT_ICON;
+        } else if (isLikes) {
+            widget.classList.add('top-likes'); // Need CSS for this?
+            titleEl.innerHTML = '❤️ TOP LIKES';
+            iconEl.src = DEFAULT_LIKE_ICON;
+        } else {
+            widget.classList.add('top-streak');
+            titleEl.innerHTML = 'TOP STREAK';
+            iconEl.src = DEFAULT_STREAK_ICON;
+        }
+
+        usernameEl.textContent = 'PSEUDO';
+        valueEl.textContent = '0';
+
+        function updateDisplay(stats) {
+            if (!stats || !stats[type]) return;
+
+            let data = stats[type];
+            // [NEW] If it's a leaderboard array, take the #1
+            if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    usernameEl.textContent = 'PSEUDO';
+                    valueEl.textContent = (isGift || isLikes) ? '0' : 'X 0';
+                    return;
+                }
+                data = data[0];
+            }
+
+            console.log('Update', type, ':', data);
+
+            // Custom Title Support
+            if (data.customTitle) {
+                titleEl.innerHTML = data.customTitle;
+            } else {
+                if (type === 'topGift') titleEl.innerHTML = 'TOP GIFT';
+                else if (type === 'topCoins') titleEl.innerHTML = 'TOP SCORE';
+                else if (isLikes) titleEl.innerHTML = '❤️ TOP LIKES';
+                else titleEl.innerHTML = 'TOP STREAK';
+            }
+
+            const score = isGift ? (data.coins || 0) : (data.count || 0);
+
+            if (score === 0) {
+                usernameEl.textContent = 'PSEUDO';
+            } else {
+                let displayNick = data.nickname || data.uniqueId || 'PSEUDO';
+                usernameEl.textContent = (displayNick === 'Personne' || displayNick === 'Personne') ? 'PSEUDO' : displayNick;
+            }
+
+            if (isGift) {
+                valueEl.textContent = `${score} COINS`;
+            } else if (isLikes) {
+                valueEl.textContent = `${score} LIKES`;
+            } else {
+                valueEl.textContent = `X ${score}`;
+            }
+
+            if (data.giftIcon && data.giftIcon !== 'null') {
+                iconEl.src = data.giftIcon;
+            } else if (data.profilePictureUrl && data.profilePictureUrl !== 'null') {
+                iconEl.src = data.profilePictureUrl;
+            } else {
+                iconEl.src = isGift ? DEFAULT_GIFT_ICON : (isLikes ? DEFAULT_LIKE_ICON : DEFAULT_STREAK_ICON);
+            }
+
+            // Apply Font from dynamic data if present
+            if (data.font) {
+                applyCustomFont(data.font);
+            }
+        }
+
+        function applyCustomFont(font) {
+            if (!font) return;
+            const googleFonts = ['Luckiest Guy', 'Outfit', 'Bebas Neue', 'Orbitron', 'Press Start 2P', 'Inter', 'Roboto', 'Fasthand'];
+            const isGoogle = googleFonts.includes(font);
+
+            if (isGoogle) {
+                const fontId = 'google-font-' + font.replace(/ /g, '-').toLowerCase();
+                if (!document.getElementById(fontId)) {
+                    const link = document.createElement('link');
+                    link.id = fontId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}&display=swap`;
+                    document.head.appendChild(link);
+                }
+                document.body.style.setProperty('font-family', `'${font}', cursive, sans-serif`, 'important');
+            } else {
+                const fontUrl = `https://gentok.fr/polices/${font}.ttf`;
+                const fontFace = new FontFace(font, `url(${fontUrl})`);
+                fontFace.load().then(loadedFace => {
+                    document.fonts.add(loadedFace);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                }).catch(err => {
+                    console.error('Font load error:', err);
+                    document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
+                });
+            }
+        }
+
+        // Handle URL parameter font
+        const fontParam = urlParams.get('font');
+        if (fontParam) applyCustomFont(fontParam);
+
+        const token = urlParams.get('token');
+
+        socket.on('connect', () => {
+            console.log('Connected to Top Widget');
+            socket.emit('identify', { token, type: 'overlay' });
+        });
+
+        socket.on('session_stats', (stats) => {
+            updateDisplay(stats);
+        });
+
+        // Simulations
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'simulation') {
+                const fakeStats = {};
+                fakeStats[type] = event.data.data;
+                updateDisplay(fakeStats);
+            }
+        });
+
+        socket.on('remote_reload', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+
+</html>
+
