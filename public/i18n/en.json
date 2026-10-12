@@ -96,7 +96,8 @@
   "Archivée le {0} · {1} gagnant{2}": "Archived on {0} · {1} winner(s){2}",
   "La scène a été créée vide ({0}).": "The scene was created empty ({0}).",
   "{0} de la scène « {1} »": "{0} of the scene \"{1}\"",
-  "{0} par défaut (aucune scène active)": "Default {0} (no active scene)"
+  "{0} par défaut (aucune scène active)": "Default {0} (no active scene)",
+  "Afficher plus ({0} restants)": "Show more ({0} left)"
  },
  "texts": {
   "0 / 3 Scènes": "0 / 3 Scenes",
@@ -1555,6 +1556,15 @@
   "spectateurs actifs": "active viewers",
   "vu il y a": "seen",
   "À ouvrir comme": "Open it as a",
-  "📦 Queue pleine, annonce ignorée": "📦 Queue full, announcement skipped"
+  "📦 Queue pleine, annonce ignorée": "📦 Queue full, announcement skipped",
+  "Configuration": "Setup",
+  "Outils": "Tools",
+  "Système": "System",
+  "Scène active": "Active scene",
+  "Scène sans nom": "Unnamed scene",
+  "Taille de l'interface": "Interface size",
+  "Petite (plus d'infos à l'écran)": "Small (more on screen)",
+  "Normale (Défaut)": "Normal (Default)",
+  "Grande": "Large"
  }
 }

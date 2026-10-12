@@ -6004,7 +6004,8 @@ window.renderInstalledPresets = () => {
 
 // --- Scene Management Helpers ---
 window.getUserScenes = () => {
-    return userScenes || [];
+    // old scenes saved without a name are shown as "Scène sans nom" instead of an empty label
+    return (userScenes || []).map(sc => (sc && !sc.title ? { ...sc, title: 'Scène sans nom' } : sc));
 };
 
 window.saveUserScenes = async (scenes) => {
@@ -9039,7 +9040,10 @@ async function syncRankingCache() {
         if (Array.isArray(gifts)) {
             giftCatalogCache = gifts;
             localStorage.setItem('gentok_cache_gifts', JSON.stringify(gifts));
-            populateManualGiftSelect(true); // silent update
+            // the 3 000+ gift list is only built when the Classement page is open (it is heavy)
+            const select = document.getElementById('manual-gift-id');
+            const rankingOpen = document.getElementById('ranking-section')?.style.display !== 'none';
+            if (select && (rankingOpen || select.options.length > 2)) populateManualGiftSelect(true);
         }
     } catch (e) { console.warn("Sync cache failed", e); }
 }
@@ -9124,13 +9128,11 @@ async function populateManualGiftSelect(force = false) {
 
     const render = (list) => {
         const currentVal = select.value;
-        select.innerHTML = '<option value="">-- Choisir un cadeau --</option>';
-        list.forEach(gift => {
-            const opt = document.createElement('option');
-            opt.value = gift.id;
-            opt.textContent = `${gift.name} (${gift.price} coins)`;
-            select.appendChild(opt);
-        });
+        // built in one go (thousands of options): one layout instead of one per gift
+        const frag = document.createDocumentFragment();
+        frag.appendChild(new Option('-- Choisir un cadeau --', ''));
+        list.forEach(gift => frag.appendChild(new Option(`${gift.name} (${gift.price} coins)`, gift.id)));
+        select.replaceChildren(frag);
         if (currentVal) select.value = currentVal;
     };
 
@@ -9352,6 +9354,10 @@ async function renderRankingLegends() {
     }
 }
 
+const LEGENDS_PAGE = 48;
+let legendsGridShown = LEGENDS_PAGE;
+let legendsGridSignature = '';
+
 function displayLegendsGrid() {
     const container = document.getElementById('ranking-legends-container');
     if (!container) return;
@@ -9363,7 +9369,9 @@ function displayLegendsGrid() {
         return matchesPrice && matchesSearch && hasScore;
     });
 
-    if (rankingSort === 'score') filtered.sort((a, b) => b.price - a.price);
+    // "Score": gifts that have winners first (most sent first), then by price
+    const best = (g) => (g.topUsers && g.topUsers[0] ? g.topUsers[0].count : 0);
+    if (rankingSort === 'score') filtered.sort((a, b) => (best(b) > 0) - (best(a) > 0) || best(b) - best(a) || b.price - a.price);
     else if (rankingSort === 'price-asc') filtered.sort((a, b) => a.price - b.price);
     else if (rankingSort === 'price-desc') filtered.sort((a, b) => b.price - a.price);
 
@@ -9372,11 +9380,18 @@ function displayLegendsGrid() {
         return;
     }
 
+    // The catalog has 3 000+ gifts: cards are shown 48 at a time (rendering them all froze the page)
+    const signature = JSON.stringify([rankingFilters, rankingSort, filtered.length]);
+    if (signature !== legendsGridSignature) { legendsGridSignature = signature; legendsGridShown = LEGENDS_PAGE; }
+    const total = filtered.length;
+    filtered = filtered.slice(0, legendsGridShown);
+
     container.innerHTML = '';
+    const frag = document.createDocumentFragment();
     filtered.forEach(gift => {
         const card = document.createElement('div');
         card.className = 'gift-legend-card-compact';
-        card.style.cssText = `background: rgba(18, 19, 22, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); position: relative; overflow: hidden;`;
+        card.style.cssText = `background: rgba(18, 19, 22, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; display: flex; flex-direction: column; position: relative; overflow: hidden;`;
 
         const topUsersHtml = gift.topUsers && gift.topUsers.length > 0 ? gift.topUsers.map((user, idx) => {
             savePfp(user.uniqueId, user.profilePictureUrl);
@@ -9387,7 +9402,7 @@ function displayLegendsGrid() {
             <div style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
                 <div style="font-weight: 800; color: ${rankColor}; font-size: 0.8rem; width: 25px;">#${idx + 1}</div>
                 <div style="position: relative; flex-shrink: 0;">
-                    <img src="${pfp}" onerror="this.src='/logo.png'" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${idx < 3 ? rankColor : 'rgba(255,255,255,0.1)'};">
+                    <img src="${escapeHtml(pfp)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.src='/logo.png'" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${idx < 3 ? rankColor : 'rgba(255,255,255,0.1)'};">
                 </div>
                 <div style="flex-grow: 1; min-width: 0;">
                     <div style="font-size: 0.75rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9;">${escapeHtml(user.uniqueId)}</div>
@@ -9401,9 +9416,9 @@ function displayLegendsGrid() {
             <div style="background: rgba(255,255,255,0.02); padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <div style="position: relative; flex-shrink: 0;"><img src="${escapeHtml(gift.giftIcon || '')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='/logo.png';this.style.opacity='.35'" style="width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.2));"></div>
                 <div style="flex-grow: 1; min-width: 0;">
-                    <div style="font-weight: 800; font-size: 1rem; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${gift.giftName}</div>
+                    <div style="font-weight: 800; font-size: 1rem; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(gift.giftName)}</div>
                     <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; display: flex; align-items: center; gap: 5px; font-weight: 600;">
-                        ${gift.price} <img src="https://tiktok.gentok.fr/img/tiktok/5655.png" style="width: 12px; height: 12px; opacity: 0.7;">
+                        ${gift.price} <img src="https://tiktok.gentok.fr/img/tiktok/5655.png" loading="lazy" alt="" style="width: 12px; height: 12px; opacity: 0.7;">
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -9413,8 +9428,18 @@ function displayLegendsGrid() {
             </div>
             <div class="legend-scroll-list" style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px; overflow-y: auto; max-height: 250px;">${topUsersHtml}</div>
         `;
-        container.appendChild(card);
+        frag.appendChild(card);
     });
+    container.appendChild(frag);
+    if (total > filtered.length) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'btn-secondary legends-more';
+        more.style.cssText = 'grid-column: 1 / -1; justify-self: center; margin: 6px 0 12px;';
+        more.innerHTML = `<i class="fas fa-chevron-down"></i> Afficher plus (${(total - filtered.length).toLocaleString()} restants)`;
+        more.onclick = () => { legendsGridShown += LEGENDS_PAGE * 2; displayLegendsGrid(); };
+        container.appendChild(more);
+    }
 }
 
 async function renderRankingTable() {

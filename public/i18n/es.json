@@ -96,7 +96,8 @@
   "Archivée le {0} · {1} gagnant{2}": "Archivada el {0} · {1} ganador(es){2}",
   "La scène a été créée vide ({0}).": "La escena se creó vacía ({0}).",
   "{0} de la scène « {1} »": "{0} de la escena «{1}»",
-  "{0} par défaut (aucune scène active)": "{0} por defecto (ninguna escena activa)"
+  "{0} par défaut (aucune scène active)": "{0} por defecto (ninguna escena activa)",
+  "Afficher plus ({0} restants)": "Mostrar más (quedan {0})"
  },
  "texts": {
   "0 / 3 Scènes": "0 / 3 Escenas",
@@ -1575,6 +1576,15 @@
   "spectateurs actifs": "espectadores activos",
   "vu il y a": "visto hace",
   "À ouvrir comme": "Ábrelo como",
-  "📦 Queue pleine, annonce ignorée": "📦 Cola llena, anuncio omitido"
+  "📦 Queue pleine, annonce ignorée": "📦 Cola llena, anuncio omitido",
+  "Configuration": "Configuración",
+  "Outils": "Herramientas",
+  "Système": "Sistema",
+  "Scène active": "Escena activa",
+  "Scène sans nom": "Escena sin nombre",
+  "Taille de l'interface": "Tamaño de la interfaz",
+  "Petite (plus d'infos à l'écran)": "Pequeña (más información en pantalla)",
+  "Normale (Défaut)": "Normal (Predeterminado)",
+  "Grande": "Grande"
  }
 }

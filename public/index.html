@@ -19,6 +19,10 @@
             var style = 'classic';
             try { style = localStorage.getItem('gentok_ui_style') || 'classic'; } catch (e) { }
             if (style === 'classic' || style === 'studio') document.documentElement.classList.add('ui-' + style);
+            // Interface size (Settings > Apparence): compact | normal | large
+            var density = 'normal';
+            try { density = localStorage.getItem('gentok_ui_density') || 'normal'; } catch (e) { }
+            document.documentElement.setAttribute('data-density', density);
         })();
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Luckiest+Guy&display=swap"
@@ -26,6 +30,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css">
+    <link rel="stylesheet" href="layout.css">
     <style>
         .font-selector {
             background: rgba(255,255,255,0.05);
@@ -2562,6 +2567,14 @@
                                             <option value="glass">Full Glass (Translucide)</option>
                                         </select>
                                     </div>
+                                    <div class="form-group">
+                                        <label>Taille de l'interface</label>
+                                        <select id="setting-ui-density" onchange="setUiDensity(this.value)">
+                                            <option value="compact">Petite (plus d'infos à l'écran)</option>
+                                            <option value="normal">Normale (Défaut)</option>
+                                            <option value="large">Grande</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -3984,6 +3997,8 @@
     <script src="premium.js"></script>
     <script src="previews.js"></script>
     <script src="router.js"></script>
+    <script src="navrail.js"></script>
+    <script src="frames.js"></script>
     <script src="pro.js"></script>
     <script src="gallery.js"></script>
     <script src="appstatus.js"></script>
