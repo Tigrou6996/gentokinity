@@ -424,6 +424,9 @@
         document.head.appendChild(link);
     }
 
+    const OVERLAY_THEMES = [['glass', 'Verre'], ['dark', 'Sombre'], ['light', 'Clair'], ['neon', 'Néon'], ['gradient', 'Dégradé'],
+        ['minimal', 'Minimal'], ['candy', 'Bonbon'], ['retro', 'Rétro'], ['cyber', 'Cyber'], ['tiktok', 'TikTok']];
+
     function setupOverlayStyleBar() {
         const body = document.querySelector('#overlay-item-pro .overlay-body');
         if (!body || body.querySelector('.overlay-style-bar')) return;
@@ -432,6 +435,8 @@
         bar.innerHTML = `
             <div class="pro-field"><label>${esc(t('Police des overlays'))}</label>
                 <select id="ovl-font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option value="${esc(f)}" style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></div>
+            <div class="pro-field"><label>${esc(t('Style des overlays'))}</label>
+                <select id="ovl-theme"><option value="">${esc(t('Par défaut'))}</option>${OVERLAY_THEMES.map(([v, l]) => `<option value="${v}">${esc(t(l))}</option>`).join('')}</select></div>
             <div class="pro-field" style="min-width:110px;flex:0"><label>${esc(t('Couleur principale'))}</label><input type="color" id="ovl-color" value="#fe2c55"></div>
             <div class="pro-field" style="min-width:110px;flex:0"><label>${esc(t('Couleur 2'))}</label><input type="color" id="ovl-color2" value="#ff8a00"></div>
             <div class="pro-field" id="ovl-font-preview" style="font-size:1.4rem;font-weight:800;padding-bottom:6px;">Gentok 123 ❤️</div>`;
@@ -441,14 +446,16 @@
         let saved = {};
         try { saved = JSON.parse(localStorage.getItem('gentok_overlay_style') || '{}'); } catch (e) { }
         if (saved.font) bar.querySelector('#ovl-font').value = saved.font;
+        if (saved.theme) bar.querySelector('#ovl-theme').value = saved.theme;
         if (saved.color) bar.querySelector('#ovl-color').value = saved.color;
         if (saved.color2) bar.querySelector('#ovl-color2').value = saved.color2;
 
         const apply = () => {
             const font = bar.querySelector('#ovl-font').value;
+            const theme = bar.querySelector('#ovl-theme').value;
             const color = bar.querySelector('#ovl-color').value;
             const color2 = bar.querySelector('#ovl-color2').value;
-            try { localStorage.setItem('gentok_overlay_style', JSON.stringify({ font, color, color2 })); } catch (e) { }
+            try { localStorage.setItem('gentok_overlay_style', JSON.stringify({ font, theme, color, color2 })); } catch (e) { }
             bar.querySelector('#ovl-font-preview').style.fontFamily = font ? `'${font}'` : '';
             bar.querySelector('#ovl-font-preview').style.color = color;
             document.querySelectorAll('#overlay-item-pro input[readonly]').forEach(inp => {
@@ -456,6 +463,7 @@
                 const url = new URL(inp.dataset.base);
                 url.searchParams.delete('font'); url.searchParams.delete('color'); url.searchParams.delete('color2');
                 if (font) url.searchParams.set('font', font);
+                if (theme) url.searchParams.set('theme', theme); // replaces the overlay's own default style
                 if (color && color.toLowerCase() !== '#fe2c55') url.searchParams.set('color', color.replace('#', ''));
                 if (color2 && color2.toLowerCase() !== '#ff8a00') url.searchParams.set('color2', color2.replace('#', ''));
                 inp.value = url.toString();
@@ -464,6 +472,53 @@
         };
         bar.addEventListener('input', apply);
         apply();
+        addPreviewButtons();
+    }
+
+    // "Aperçu": shows the overlay in demo mode (fake events) with the chosen style, without being live
+    function addPreviewButtons() {
+        document.querySelectorAll('#overlay-item-pro .overlay-sub-item .input-group').forEach(group => {
+            if (group.querySelector('.ovl-preview-btn')) return;
+            const btn = document.createElement('button');
+            btn.className = 'btn-secondary ovl-preview-btn';
+            btn.title = t('Aperçu');
+            btn.innerHTML = '<i class="fas fa-eye"></i>';
+            btn.addEventListener('click', () => {
+                const input = group.querySelector('input[readonly]');
+                if (input) openOverlayPreview(input.value, group.closest('.overlay-sub-item').querySelector('label').textContent.trim());
+            });
+            group.appendChild(btn);
+        });
+    }
+
+    function openOverlayPreview(rawUrl, title) {
+        let url;
+        try { url = new URL(rawUrl, window.location.origin); } catch (e) { return; }
+        url.searchParams.set('demo', '1');
+        // The preview is served by the server the dashboard talks to
+        const src = getApiBase() + url.pathname + url.search;
+        let modal = document.getElementById('ovl-preview-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'ovl-preview-modal';
+            modal.className = 'ovl-preview-modal';
+            modal.innerHTML = `<div class="ovl-preview-box"><div class="ovl-preview-head"><b></b>
+                <div class="ovl-preview-bg"><button data-bg="checker" class="active">▦</button><button data-bg="dark">●</button><button data-bg="light">○</button><button data-bg="game">🎮</button></div>
+                <button class="btn-secondary ovl-preview-close"><i class="fas fa-times"></i></button></div>
+                <div class="ovl-preview-stage bg-checker"><iframe></iframe></div>
+                <p class="ovl-preview-hint">${esc(t('Aperçu en mode démo : les événements sont simulés. Le fond n\'apparaît pas dans OBS.'))}</p></div>`;
+            document.body.appendChild(modal);
+            const close = () => { modal.classList.remove('open'); modal.querySelector('iframe').src = 'about:blank'; };
+            modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+            modal.querySelector('.ovl-preview-close').addEventListener('click', close);
+            modal.querySelectorAll('[data-bg]').forEach(b => b.addEventListener('click', () => {
+                modal.querySelectorAll('[data-bg]').forEach(x => x.classList.toggle('active', x === b));
+                modal.querySelector('.ovl-preview-stage').className = 'ovl-preview-stage bg-' + b.dataset.bg;
+            }));
+        }
+        modal.querySelector('.ovl-preview-head b').textContent = title || '';
+        modal.querySelector('iframe').src = src;
+        modal.classList.add('open');
     }
 
     // Interface font (Settings > Appearance)

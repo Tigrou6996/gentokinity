@@ -20,12 +20,13 @@
         .goal.done .fill { animation: glow 1s ease-in-out 3; }
         @keyframes glow { 50% { filter: brightness(1.6); } }
     </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
 </head>
 
 <body>
-    <div class="goal" id="goal">
+    <div class="goal ov-surface" id="goal">
         <div class="top"><span class="title" id="title"></span><span class="numbers"><b id="cur">0</b> / <span id="target">0</span></span></div>
-        <div class="bar"><div class="fill" id="fill"></div><div class="pct" id="pct">0%</div></div>
+        <div class="bar ov-track"><div class="fill" id="fill"></div><div class="pct" id="pct">0%</div></div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

@@ -114,3 +114,20 @@
     .battle-live .row .name { width: 80px; }
     .pro-tabs button { padding: 8px 10px; font-size: 0.82rem; }
 }
+
+/* Overlay preview (Overlays Pro > eye button) */
+.ovl-preview-modal { position: fixed; inset: 0; z-index: 2147483000; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.8); backdrop-filter: blur(4px); padding: 16px; }
+.ovl-preview-modal.open { display: flex; }
+.ovl-preview-box { width: min(1000px, 100%); background: #14141c; border: 1px solid var(--border); border-radius: 16px; padding: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.ovl-preview-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ovl-preview-head b { flex: 1; font-size: 1rem; }
+.ovl-preview-bg { display: flex; gap: 4px; }
+.ovl-preview-bg button { width: 34px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,.05); color: var(--text); cursor: pointer; }
+.ovl-preview-bg button.active { border-color: var(--primary); color: var(--primary); }
+.ovl-preview-stage { height: min(560px, 65vh); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.ovl-preview-stage iframe { width: 100%; height: 100%; border: 0; background: transparent; }
+.ovl-preview-stage.bg-checker { background: repeating-conic-gradient(#2a2a35 0% 25%, #1c1c24 0% 50%) 50% / 28px 28px; }
+.ovl-preview-stage.bg-dark { background: #0b0b10; }
+.ovl-preview-stage.bg-light { background: #f3f4f6; }
+.ovl-preview-stage.bg-game { background: linear-gradient(160deg, #1e3a5f, #3b1d4a 55%, #0f3d2e); }
+.ovl-preview-hint { margin: 8px 2px 0; font-size: .75rem; color: var(--text-dim); }

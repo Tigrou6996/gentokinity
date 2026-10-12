@@ -349,6 +349,7 @@ app.get('/overlay/battle', (req, res) => sendOverlay(res, 'overlay_battle.html')
 app.get('/overlay/likegoal', (req, res) => sendOverlay(res, 'overlay_likegoal.html'));
 app.get('/overlay/ranking', (req, res) => sendOverlay(res, 'overlay_ranking.html'));
 app.get('/overlay/social', (req, res) => sendOverlay(res, 'overlay_social.html'));
+app.get('/overlay/jar', (req, res) => sendOverlay(res, 'overlay_jar.html'));
 
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
 app.use('/pages', express.static(path.resolve(__dirname, '../classement/pages')));

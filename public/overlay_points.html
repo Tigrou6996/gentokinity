@@ -48,6 +48,7 @@
         @keyframes drop { to { transform: translateY(110vh) rotate(720deg); opacity: .6; } }
         @keyframes fade { 0% { opacity: 0; transform: translate(-50%, 10px); } 10%, 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
     </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
 </head>
 
 <body>
@@ -77,7 +78,7 @@
                     <div class="stat"><b>${G.formatNumber(d.points)}</b><span>${G.escapeHtml(G.t('points.points'))}</span></div>
                     <div class="stat"><b>${d.rank ? '#' + G.escapeHtml(d.rank) : '—'}</b><span>${G.escapeHtml(G.t('points.rank'))}</span></div>
                 </div>
-                <div class="bar"><div data-w="${pct}%"></div></div>
+                <div class="bar ov-track"><div data-w="${pct}%"></div></div>
                 <div class="next"><span>${G.escapeHtml(G.t('points.level'))} ${G.escapeHtml(d.level || 0)}</span><span>${G.escapeHtml(G.t('points.next'))} : ${G.formatNumber(d.nextLevelPoints)}</span></div>`;
         }
 
@@ -115,7 +116,7 @@
             busy = true;
             const html = queue.shift();
             const el = document.createElement('div');
-            el.className = 'card';
+            el.className = 'card ov-surface';
             el.innerHTML = html;
             if (html.includes('class="lvlup"')) confetti();
             stage.appendChild(el);

@@ -1219,6 +1219,25 @@
   "🆙 Passage de niveau": "🆙 Level up",
   "Sondage (1 vote par spectateur)": "Poll (1 vote per viewer)",
   "Réseaux sociaux": "Social media",
-  "Bandeau qui fait défiler vos réseaux (Instagram, YouTube, Discord…). Remplacez les pseudos dans l'URL.": "Banner that cycles through your social accounts (Instagram, YouTube, Discord…). Replace the usernames in the URL."
+  "Bandeau qui fait défiler vos réseaux (Instagram, YouTube, Discord…). Remplacez les pseudos dans l'URL.": "Banner that cycles through your social accounts (Instagram, YouTube, Discord…). Replace the usernames in the URL.",
+  "Style des overlays": "Overlay style",
+  "Verre": "Glass",
+  "Sombre": "Dark",
+  "Clair": "Light",
+  "Néon": "Neon",
+  "Dégradé": "Gradient",
+  "Minimal": "Minimal",
+  "Bonbon": "Candy",
+  "Rétro": "Retro",
+  "Aperçu": "Preview",
+  "Aperçu en mode démo : les événements sont simulés. Le fond n'apparaît pas dans OBS.": "Demo preview: events are simulated. The background does not appear in OBS.",
+  "Pot à cadeaux": "Gift jar",
+  "Chaque cadeau reçu tombe dans un bocal et s'empile, avec le total des pièces en dessous.": "Every gift received falls into a jar and piles up, with the coin total below.",
+  "Paramètres : duration=7 · toasts=1 · color · color2 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok": "Parameters: duration=7 · toasts=1 · color · color2 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok",
+  "Paramètres : events=follow,gift · max=6 · mingift=0 · size=18 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok": "Parameters: events=follow,gift · max=6 · mingift=0 · size=18 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok",
+  "Paramètres : events=follow,gift,subscribe,share · mingift=10 · duration=5 · color=fe2c55 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok": "Parameters: events=follow,gift,subscribe,share · mingift=10 · duration=5 · color=fe2c55 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok",
+  "Paramètres : hold=10 (secondes d'affichage du gagnant) · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok": "Parameters: hold=10 (seconds the winner is shown) · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok",
+  "Paramètres : max=10 · fade=30 · avatars=1 · badges=1 · bg=1 · size=18 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok": "Parameters: max=10 · fade=30 · avatars=1 · badges=1 · bg=1 · size=18 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok",
+  "start (min) · coin, follow, sub, share (secondes ajoutées) · like (par 100 likes) · maxh · reset=1 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok": "start (min) · coin, follow, sub, share (seconds added) · like (per 100 likes) · maxh · reset=1 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok"
  }
 }

@@ -32,11 +32,12 @@
         @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes blink { 50% { opacity: .5; } }
     </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
 </head>
 
 <body>
     <div class="battle" id="battle">
-        <div class="top"><span class="title" id="title"></span><span class="timer" id="timer"></span></div>
+        <div class="top"><span class="title" id="title"></span><span class="timer ov-surface" id="timer"></span></div>
         <div id="body"></div>
         <div id="winner"></div>
     </div>
@@ -78,8 +79,8 @@
             } else {
                 const max = Math.max(1, ...teams.map(t => t.score));
                 body.innerHTML = `<div class="bars">${teams.map(t => `
-                    <div class="bar"><span class="n" style="color:${G.escapeHtml(t.color)}">${G.escapeHtml(t.name)}</span>
-                        <div class="t"><div style="width:${Math.round(t.score / max * 100)}%;background:${G.escapeHtml(t.color)}"></div></div>
+                    <div class="bar ov-surface"><span class="n" style="color:${G.escapeHtml(t.color)}">${G.escapeHtml(t.name)}</span>
+                        <div class="t ov-track"><div style="width:${Math.round(t.score / max * 100)}%;background:${G.escapeHtml(t.color)}"></div></div>
                         <span class="s">${val(t)}</span><span class="c">${G.escapeHtml(t.command)}</span></div>`).join('')}</div>`;
             }
             const w = document.getElementById('winner');

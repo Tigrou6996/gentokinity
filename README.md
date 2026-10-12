@@ -79,10 +79,13 @@ URL de base : `https://tiktok.gentok.fr/overlay/<nom>?token=TON_TOKEN`. Ajoute `
 | `ranking`: top pièces / top likes / top points | `type` (coins, likes, points), `period` (live, all, weekly), `theme` (glass, neon, podium, minimal, gradient, ticker), `limit`, `avatars`, `title`, `width`, `size` |
 | `points`: carte `!score`, top `!top`, passages de niveau | `duration`, `toasts`, `levelup`, `minlevel`, `color`, `color2` |
 | `battle`: bataille d'équipes ou sondage | `hold` (secondes d'affichage du gagnant) |
+| `jar`: pot à cadeaux | `style` (glass, neon, wood, gold), `size`, `max`, `width`, `likes`, `counter`, `title`, `persist`, `reset=1` |
 | `social`: réseaux sociaux | `items=instagram:moncompte,youtube:MaChaine,discord:discord.gg/xxx` (tiktok, instagram, youtube, twitch, discord, x, snapchat, facebook, kick, web), `layout` (rotate, row), `theme` (pill, glass, neon, brand, minimal), `interval`, `size` |
 | Déjà existants | `goals` (objectif de likes), `gifts`, `last-*`, `top-*`, `leaderboard`, `gift_legend.html`, `gallery` |
 
-Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**. Tous les overlays acceptent `lang=fr|en|es|de|pt|it` et `font=` avec le nom d'une police Google Fonts (Bangers, Poppins, Press Start 2P, Luckiest Guy, Orbitron…). Dans le tableau de bord, la barre « Police des overlays / Couleurs » au-dessus des Overlays Pro ajoute ces paramètres aux liens. La police de l'interface elle-même se change dans **Paramètres**.
+Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le tableau de bord, menu **Overlays**, section **Overlays Pro**. **Styles partagés** : `alerts`, `chat`, `feed`, `goal`, `counter`, `timer`, `points` et `battle` acceptent `theme=` avec 10 styles : `glass`, `dark`, `light`, `neon`, `gradient`, `minimal`, `candy`, `retro`, `cyber`, `tiktok` (fichier `public/overlay-themes.css`). Sans `theme`, chaque overlay garde son apparence d'origine. Dans le tableau de bord, le menu **Style des overlays** l'applique à tous les liens, et le bouton 👁 **Aperçu** montre l'overlay en mode démo, sur fond damier, sombre, clair ou « jeu ».
+
+Tous les overlays acceptent `lang=fr|en|es|de|pt|it` et `font=` avec le nom d'une police Google Fonts (Bangers, Poppins, Press Start 2P, Luckiest Guy, Orbitron…). Dans le tableau de bord, la barre « Police des overlays / Couleurs » au-dessus des Overlays Pro ajoute ces paramètres aux liens. La police de l'interface elle-même se change dans **Paramètres**.
 
 ### Utilisateurs & Points
 Chaque spectateur gagne des points pendant le live : pièces offertes, likes, follow, partage, abonnement, messages (avec un délai anti-spam) et minutes de présence. Les montants se règlent dans **Utilisateurs & Points → Réglages des points**.

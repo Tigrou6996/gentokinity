@@ -18,10 +18,11 @@
         .value.bump { animation: bump .35s ease; }
         @keyframes bump { 50% { transform: scale(1.15); color: var(--accent); } }
     </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
 </head>
 
 <body>
-    <div class="counter" id="counter">
+    <div class="counter ov-surface" id="counter">
         <span class="icon" id="icon"></span>
         <span><span class="label" id="label"></span><span class="value" id="value">0</span></span>
     </div>

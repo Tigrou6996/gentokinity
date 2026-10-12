@@ -1,0 +1,125 @@
+/*
+ * Shared overlay styles, chosen with ?theme=<name> (glass, dark, light, neon, gradient, minimal, candy, retro, cyber, tiktok).
+ * overlay-common.js adds the class "ovt-<name>" on <html> for the overlays that load this file.
+ * Without a theme, nothing here applies and every overlay keeps its own look.
+ * The elements that become "cards" carry the class "ov-surface".
+ */
+html[class*="ovt-"] {
+    --ov-a: var(--accent, var(--c1, #fe2c55));
+    --ov-a2: var(--accent2, var(--c2, #ff8a00));
+    --ov-bg: rgba(0, 0, 0, .55);
+    --ov-text: #fff;
+    --ov-border: 0 solid transparent;
+    --ov-shadow: none;
+    --ov-radius: 14px;
+    --ov-blur: none;
+    --ov-text-shadow: 0 2px 6px rgba(0, 0, 0, .8);
+    --ov-track: rgba(255, 255, 255, .14);
+}
+
+html[class*="ovt-"] .ov-surface {
+    background: var(--ov-bg) !important;
+    color: var(--ov-text) !important;
+    border: var(--ov-border) !important;
+    box-shadow: var(--ov-shadow) !important;
+    border-radius: var(--ov-radius) !important;
+    backdrop-filter: var(--ov-blur);
+    -webkit-backdrop-filter: var(--ov-blur);
+}
+html[class*="ovt-"] .ov-surface,
+html[class*="ovt-"] .ov-surface * { text-shadow: var(--ov-text-shadow) !important; }
+html[class*="ovt-"] .ov-track { background: var(--ov-track) !important; }
+
+/* Glass: frosted, light border */
+html.ovt-glass {
+    --ov-bg: rgba(255, 255, 255, .13);
+    --ov-border: 1px solid rgba(255, 255, 255, .3);
+    --ov-shadow: 0 8px 30px rgba(0, 0, 0, .3);
+    --ov-blur: blur(12px);
+    --ov-radius: 18px;
+}
+
+/* Dark: solid, clean */
+html.ovt-dark {
+    --ov-bg: rgba(14, 14, 22, .94);
+    --ov-border: 1px solid rgba(255, 255, 255, .08);
+    --ov-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+    --ov-text-shadow: none;
+    --ov-radius: 16px;
+}
+
+/* Light: white cards, dark text */
+html.ovt-light {
+    --ov-bg: rgba(255, 255, 255, .96);
+    --ov-text: #16161d;
+    --ov-shadow: 0 10px 28px rgba(0, 0, 0, .25);
+    --ov-text-shadow: none;
+    --ov-track: rgba(0, 0, 0, .1);
+    --ov-radius: 16px;
+}
+
+/* Neon: dark glass with a glowing accent border */
+html.ovt-neon {
+    --ov-bg: rgba(5, 5, 15, .88);
+    --ov-border: 2px solid var(--ov-a);
+    --ov-shadow: 0 0 14px var(--ov-a), inset 0 0 12px color-mix(in srgb, var(--ov-a) 30%, transparent);
+    --ov-text-shadow: 0 0 8px var(--ov-a);
+    --ov-radius: 14px;
+}
+
+/* Gradient: the two colors (color, color2) */
+html.ovt-gradient {
+    --ov-bg: linear-gradient(135deg, var(--ov-a), var(--ov-a2));
+    --ov-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    --ov-text-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+    --ov-track: rgba(0, 0, 0, .25);
+    --ov-radius: 18px;
+}
+/* the accent color is the background here: accent-colored texts become white */
+html.ovt-gradient .ov-surface { --accent: #fff; --c1: #fff; }
+
+/* Minimal: no background, strong outline on the text */
+html.ovt-minimal {
+    --ov-bg: transparent;
+    --ov-text-shadow: 0 2px 4px #000, 0 0 3px #000, 0 0 1px #000;
+    --ov-radius: 0;
+}
+
+/* Candy: white, thick colored border, "sticker" shadow */
+html.ovt-candy {
+    --ov-bg: #fff;
+    --ov-text: #22222c;
+    --ov-border: 4px solid var(--ov-a);
+    --ov-shadow: 0 6px 0 color-mix(in srgb, var(--ov-a) 60%, #000);
+    --ov-text-shadow: none;
+    --ov-track: rgba(0, 0, 0, .1);
+    --ov-radius: 24px;
+}
+
+/* Retro: pixel / arcade (font Press Start 2P loaded automatically) */
+html.ovt-retro {
+    --ov-bg: #111;
+    --ov-border: 3px solid #fff;
+    --ov-shadow: 5px 5px 0 var(--ov-a);
+    --ov-text-shadow: 2px 2px 0 #000;
+    --ov-radius: 0;
+}
+html.ovt-retro .ov-surface { font-size: .82em; letter-spacing: .5px; image-rendering: pixelated; }
+
+/* Cyber: cut corners, cyan glow */
+html.ovt-cyber {
+    --ov-bg: linear-gradient(135deg, rgba(0, 25, 35, .92), rgba(20, 0, 35, .92));
+    --ov-border: 1px solid #25f4ee;
+    --ov-shadow: 0 0 12px rgba(37, 244, 238, .55);
+    --ov-text-shadow: 0 0 6px rgba(37, 244, 238, .8);
+    --ov-radius: 0;
+}
+html.ovt-cyber .ov-surface { clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
+
+/* TikTok: black card with the cyan / pink offset */
+html.ovt-tiktok {
+    --ov-bg: rgba(0, 0, 0, .82);
+    --ov-shadow: -3px -3px 0 #25f4ee, 3px 3px 0 #fe2c55;
+    --ov-text-shadow: -1px -1px 0 rgba(37, 244, 238, .7), 1px 1px 0 rgba(254, 44, 85, .7);
+    --ov-radius: 14px;
+}

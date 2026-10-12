@@ -25,6 +25,7 @@
         .text { word-break: break-word; }
         @keyframes pop { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
     </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
 </head>
 
 <body>
@@ -54,7 +55,7 @@
         function addMessage(d) {
             if (!d || !d.comment) return;
             const el = document.createElement('div');
-            el.className = 'msg' + (withBg ? '' : ' nobg');
+            el.className = 'msg ov-surface' + (withBg ? '' : ' nobg');
             const avatar = G.safeUrl(d.profilePictureUrl) || '/logo.png';
             const tags = showBadges
                 ? `${d.isModerator ? '<span class="tag mod">MOD</span>' : ''}${d.isSubscriber ? '<span class="tag sub">SUB</span>' : ''}`

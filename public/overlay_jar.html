@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Jar</title>
+    <style>
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        canvas { display: block; }
+        .label { position: fixed; left: 50%; transform: translateX(-50%); color: #fff; font-weight: 900; text-align: center; white-space: nowrap;
+            text-shadow: 0 2px 6px rgba(0,0,0,.9); pointer-events: none; }
+        .label .t { font-size: 18px; text-transform: uppercase; letter-spacing: 1.5px; opacity: .9; }
+        .label .n { font-size: 30px; font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+    <div class="label" id="label"><div class="t" id="title"></div><div class="n" id="count"></div></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Pot à cadeaux : chaque cadeau reçu tombe dans un bocal et s'y empile (physique simple).
+        // URL parameters:
+        //   size=34     taille d'un cadeau (px)          max=160   nombre maximum dans le bocal (les plus anciens disparaissent)
+        //   width=420   largeur du bocal (px)            style=glass|neon|wood|gold   (dessin du bocal)
+        //   likes=0     des cœurs tombent aussi avec les likes     counter=1  total des pièces sous le bocal
+        //   title=...   texte au-dessus du total         persist=1  garde le contenu si l'overlay est rechargé
+        //   reset=1     vide le bocal à chaque chargement de l'overlay (ex : au début de chaque live)
+        //   color=fe2c55, font, lang, demo=1
+        const G = window.Gentok;
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const R = Math.min(Math.max(G.numParam('size', 34), 10), 120) / 2;
+        const MAX = Math.min(Math.max(G.numParam('max', 160), 10), 400);
+        const JAR_W = Math.min(Math.max(G.numParam('width', 420), 120), 1600);
+        const STYLE = ['glass', 'neon', 'wood', 'gold'].includes(G.param('style', 'glass')) ? G.param('style', 'glass') : 'glass';
+        const ACCENT = G.colorParam('color', '#fe2c55');
+        const withLikes = G.boolParam('likes', false);
+        const showCounter = G.boolParam('counter', true);
+        const persist = G.boolParam('persist', true) && !G.isDemo;
+        const STORE = `gentok_jar_${G.token || 'demo'}`;
+
+        let W = 0, H = 0, jar = null;
+        const bodies = [];
+        const images = new Map();
+        let coins = 0;
+
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+            const w = Math.min(JAR_W, W - 20);
+            const labelSpace = showCounter ? 70 : 10;
+            const h = Math.min(w * 1.25, H - labelSpace - 30);
+            jar = { x0: (W - w) / 2, x1: (W + w) / 2, top: H - labelSpace - h, bottom: H - labelSpace, wall: 6, radius: Math.min(48, w / 5) };
+            document.getElementById('label').style.top = (jar.bottom + 8) + 'px';
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function image(src) {
+            if (!images.has(src)) {
+                const img = new Image();
+                img.referrerPolicy = 'no-referrer';
+                img.src = src;
+                images.set(src, img);
+            }
+            return images.get(src);
+        }
+
+        function save() {
+            if (!persist) return;
+            try { localStorage.setItem(STORE, JSON.stringify({ coins, items: bodies.slice(-MAX).map(b => b.src || b.emoji) })); } catch (e) { }
+        }
+
+        function add(content, isImage, delay = 0) {
+            setTimeout(() => {
+                const r = R * (0.85 + Math.random() * 0.3);
+                bodies.push({
+                    x: jar.x0 + jar.wall + r + Math.random() * (jar.x1 - jar.x0 - 2 * (jar.wall + r)),
+                    y: jar.top - r - Math.random() * 60, vx: (Math.random() - 0.5) * 60, vy: 0, r,
+                    a: Math.random() * Math.PI * 2, va: (Math.random() - 0.5) * 4,
+                    src: isImage ? content : null, emoji: isImage ? null : content, img: isImage ? image(content) : null, born: performance.now()
+                });
+                while (bodies.length > MAX) bodies.shift();
+            }, delay);
+        }
+
+        function burst(content, isImage, count) {
+            const n = Math.min(Math.max(1, count), 30);
+            for (let i = 0; i < n; i++) add(content, isImage, i * 90);
+        }
+
+        // ---- physics (3 sub-steps per frame, circle vs circle and circle vs jar)
+        const GRAVITY = 1600;
+        function step(dt) {
+            const left = jar.x0 + jar.wall, right = jar.x1 - jar.wall, floor = jar.bottom - jar.wall, cr = jar.radius;
+            for (const b of bodies) {
+                b.vy += GRAVITY * dt;
+                b.vx *= 0.995; b.va *= 0.98;
+                b.x += b.vx * dt; b.y += b.vy * dt; b.a += b.va * dt;
+                if (b.y + b.r < jar.top) continue; // still falling above the jar
+                if (b.x - b.r < left) { b.x = left + b.r; b.vx = Math.abs(b.vx) * 0.3; }
+                if (b.x + b.r > right) { b.x = right - b.r; b.vx = -Math.abs(b.vx) * 0.3; }
+                // rounded bottom corners
+                for (const cx of [left + cr, right - cr]) {
+                    const cy = floor - cr;
+                    if ((cx < left + cr + 1 && b.x < cx) || (cx > right - cr - 1 && b.x > cx)) {
+                        if (b.y > cy) {
+                            const dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy) || 1;
+                            if (d + b.r > cr) {
+                                const nx = dx / d, ny = dy / d;
+                                b.x = cx + nx * (cr - b.r); b.y = cy + ny * (cr - b.r);
+                                const vn = b.vx * nx + b.vy * ny;
+                                if (vn > 0) { b.vx -= 1.3 * vn * nx; b.vy -= 1.3 * vn * ny; }
+                            }
+                        }
+                    }
+                }
+                if (b.y + b.r > floor) { b.y = floor - b.r; b.vy = -Math.abs(b.vy) * 0.25; b.vx *= 0.9; b.va = b.vx / b.r; }
+            }
+            for (let i = 0; i < bodies.length; i++) {
+                const p = bodies[i];
+                for (let j = i + 1; j < bodies.length; j++) {
+                    const q = bodies[j];
+                    const dx = q.x - p.x, dy = q.y - p.y, min = p.r + q.r;
+                    if (Math.abs(dx) > min || Math.abs(dy) > min) continue;
+                    const d2 = dx * dx + dy * dy;
+                    if (d2 >= min * min || d2 === 0) continue;
+                    const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, push = (min - d) / 2;
+                    p.x -= nx * push; p.y -= ny * push; q.x += nx * push; q.y += ny * push;
+                    const rv = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny;
+                    if (rv < 0) {
+                        const imp = -rv * 0.6;
+                        p.vx -= imp * nx; p.vy -= imp * ny; q.vx += imp * nx; q.vy += imp * ny;
+                    }
+                }
+            }
+        }
+
+        // ---- drawing
+        function jarPath() {
+            const { x0, x1, top, bottom, radius } = jar;
+            ctx.beginPath();
+            ctx.moveTo(x0, top);
+            ctx.lineTo(x0, bottom - radius);
+            ctx.quadraticCurveTo(x0, bottom, x0 + radius, bottom);
+            ctx.lineTo(x1 - radius, bottom);
+            ctx.quadraticCurveTo(x1, bottom, x1, bottom - radius);
+            ctx.lineTo(x1, top);
+        }
+
+        const STYLES = {
+            glass: { fill: 'rgba(255,255,255,0.07)', stroke: 'rgba(255,255,255,0.75)', glow: null, rim: 'rgba(255,255,255,0.85)' },
+            neon: { fill: 'rgba(10,10,25,0.45)', stroke: ACCENT, glow: ACCENT, rim: ACCENT },
+            wood: { fill: 'rgba(120,72,30,0.25)', stroke: '#8b5a2b', glow: null, rim: '#6b3f1d' },
+            gold: { fill: 'rgba(255,215,0,0.08)', stroke: '#fbbf24', glow: '#f59e0b', rim: '#fde68a' }
+        };
+
+        function draw() {
+            const st = STYLES[STYLE];
+            ctx.clearRect(0, 0, W, H);
+            // jar back
+            jarPath(); ctx.closePath(); ctx.fillStyle = st.fill; ctx.fill();
+            // contents
+            for (const b of bodies) {
+                ctx.save();
+                ctx.translate(b.x, b.y); ctx.rotate(b.a);
+                if (b.img && b.img.complete && b.img.naturalWidth) {
+                    ctx.drawImage(b.img, -b.r, -b.r, b.r * 2, b.r * 2);
+                } else {
+                    ctx.font = `${Math.round(b.r * 1.7)}px sans-serif`;
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText(b.emoji || '🎁', 0, 0);
+                }
+                ctx.restore();
+            }
+            // jar front: outline, rim and a light reflection
+            ctx.save();
+            if (st.glow) { ctx.shadowColor = st.glow; ctx.shadowBlur = 18; }
+            ctx.lineWidth = jar.wall; ctx.strokeStyle = st.stroke; ctx.lineJoin = 'round';
+            jarPath(); ctx.stroke();
+            ctx.lineWidth = jar.wall * 1.6; ctx.strokeStyle = st.rim; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(jar.x0 - 10, jar.top); ctx.lineTo(jar.x1 + 10, jar.top); ctx.stroke();
+            ctx.restore();
+            if (STYLE === 'glass' || STYLE === 'gold') {
+                ctx.save();
+                ctx.globalAlpha = 0.25; ctx.strokeStyle = '#fff'; ctx.lineWidth = jar.wall * 1.4; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(jar.x0 + 22, jar.top + 30); ctx.lineTo(jar.x0 + 22, jar.bottom - jar.radius - 10); ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        let last = performance.now();
+        function frame(now) {
+            const dt = Math.min((now - last) / 1000, 1 / 30);
+            last = now;
+            for (let i = 0; i < 3; i++) step(dt / 3);
+            draw();
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        function renderLabel() {
+            document.getElementById('label').style.display = showCounter ? '' : 'none';
+            document.getElementById('title').textContent = G.param('title', G.t('jar.title'));
+            document.getElementById('count').textContent = `🪙 ${G.formatNumber(coins)}`;
+        }
+
+        // Restore the jar after a reload of the source in OBS
+        if (G.boolParam('reset', false)) { try { localStorage.removeItem(STORE); } catch (e) { } }
+        if (persist) {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+                if (saved && Array.isArray(saved.items)) {
+                    coins = Number(saved.coins) || 0;
+                    saved.items.slice(-MAX).forEach((it, i) => {
+                        const isImg = /^(https?:)?\//.test(it);
+                        add(isImg ? G.safeUrl(it) || '/logo.png' : it, isImg, i * 8);
+                    });
+                }
+            } catch (e) { }
+        }
+        renderLabel();
+        setInterval(save, 5000);
+
+        const socket = G.connect();
+        socket.on('stats', (p) => {
+            if (!p || !p.type) return;
+            const d = p.data || {};
+            if (p.type === 'gift') {
+                const icon = G.safeUrl(d.url || d.giftIcon);
+                const n = Number(d.repeatCount) || 1;
+                if (icon) burst(icon, true, n); else burst('🎁', false, n);
+                coins += Number(d.coins) || 0;
+                renderLabel();
+            } else if (p.type === 'like' && withLikes) {
+                burst('❤️', false, Math.min(Number(d.likeCount) || 1, 3));
+            }
+        });
+
+        if (G.isDemo) {
+            const gifts = ['5655', '5269', '5487', '6064', '5827', '7934', '6427', '8913'].map(id => `/img/tiktok/${id}.png`);
+            setInterval(() => {
+                const g = gifts[Math.floor(Math.random() * gifts.length)];
+                burst(g, g.startsWith('/'), 1 + Math.floor(Math.random() * 3));
+                coins += 1 + Math.floor(Math.random() * 30);
+                renderLabel();
+            }, 450);
+        }
+    </script>
+</body>
+
+</html>
