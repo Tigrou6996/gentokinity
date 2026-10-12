@@ -1401,6 +1401,8 @@
   "En cours": "Em andamento",
   "Terminé": "Encerrado",
   "Spotify n'est pas connecté (Paramètres > Spotify > Se connecter).": "Spotify não está conectado (Configurações > Spotify > Conectar).",
-  "La file d'attente est pleine.": "A fila está cheia."
+  "La file d'attente est pleine.": "A fila está cheia.",
+  "Studio (Défaut)": "Studio (padrão)",
+  "Moderne (Néon)": "Moderno (Neon)"
  }
 }

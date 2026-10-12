@@ -1401,6 +1401,8 @@
   "En cours": "Läuft",
   "Terminé": "Beendet",
   "Spotify n'est pas connecté (Paramètres > Spotify > Se connecter).": "Spotify ist nicht verbunden (Einstellungen > Spotify > Verbinden).",
-  "La file d'attente est pleine.": "Die Warteschlange ist voll."
+  "La file d'attente est pleine.": "Die Warteschlange ist voll.",
+  "Studio (Défaut)": "Studio (Standard)",
+  "Moderne (Néon)": "Modern (Neon)"
  }
 }

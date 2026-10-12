@@ -131,6 +131,17 @@ Menu **Outils live → Batailles d'équipes**. Choisis le mode (likes, cadeaux, 
 ### Simulateur d'événements
 Menu **Outils live → Simulateur**. Envoie un follow, un partage, un abonnement, des likes, un message (ou une `!commande`) ou un cadeau (avec ou sans combo) au nom d'un faux spectateur. Les événements simulés passent par le même moteur que les vrais (déclencheurs, actions, overlays, batailles), mais ne sont jamais enregistrés dans les classements ni dans les points.
 
+### Giveaway & Points Drop
+Menu **Outils live → Giveaway & Points Drop**.
+- **Giveaway** : mot-clé (`!join`), followers ou abonnés uniquement, +1 ticket tous les X pièces offertes, inscriptions limitées dans le temps ou fermées à la main, tirage pondéré par les tickets (jamais deux fois le même gagnant). Overlay `giveaway` : participants, roulette des pseudos, gagnant avec confettis.
+- **Points Drop** : les premiers spectateurs qui tapent `!catch` gagnent des points (Utilisateurs & Points). Overlay `pointsdrop` : pièces qui tombent et avatars des gagnants.
+
+### Spotify (Song Requests)
+`!play <titre ou lien>`, `!skip` (vote, ou immédiat pour les modérateurs / l'auteur), `!remove`. Overlay `songs` façon TikFinity : pochette, progression, « démarre dans ». Corrections : jeton d'accès après reconnexion, `!play` juste après un redémarrage, la pause du streamer n'est plus annulée, `!playlist` n'est plus pris pour `!play`, limite de la file appliquée.
+
+### Style de l'interface
+**Paramètres → Apparence → Style de l'interface** : **Studio** (par défaut, sobre comme TikFinity : panneaux gris anthracite, bordures fines), Moderne (néon), Compact ou Glass. Fichier `public/theme-studio.css`.
+
 ### Langues
 Le tableau de bord et les overlays existent en **français, anglais, espagnol, allemand, portugais et italien**. On choisit la langue en bas de la barre latérale ou sur l'écran de connexion. Elle est mémorisée sur le compte, et les liens d'overlay la suivent automatiquement.
 

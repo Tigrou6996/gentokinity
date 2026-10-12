@@ -1401,6 +1401,8 @@
   "En cours": "In corso",
   "Terminé": "Terminato",
   "Spotify n'est pas connecté (Paramètres > Spotify > Se connecter).": "Spotify non è connesso (Impostazioni > Spotify > Connetti).",
-  "La file d'attente est pleine.": "La coda è piena."
+  "La file d'attente est pleine.": "La coda è piena.",
+  "Studio (Défaut)": "Studio (predefinito)",
+  "Moderne (Néon)": "Moderno (Neon)"
  }
 }

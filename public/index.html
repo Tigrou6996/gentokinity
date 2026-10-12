@@ -10,6 +10,11 @@
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pro.css">
+    <link rel="stylesheet" href="theme-studio.css">
+    <script>
+        // Interface style chosen in Settings (default: Studio), applied before the page draws to avoid a flash
+        try { if ((localStorage.getItem('gentok_ui_style') || 'studio') === 'studio') document.documentElement.classList.add('ui-studio'); } catch (e) { document.documentElement.classList.add('ui-studio'); }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Luckiest+Guy&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -2491,7 +2496,8 @@
                                     <div class="form-group">
                                         <label>Style de l'interface</label>
                                         <select id="setting-ui-style" onchange="updateUIStyle(this.value)">
-                                            <option value="modern">Moderne (Défaut)</option>
+                                            <option value="studio">Studio (Défaut)</option>
+                                            <option value="modern">Moderne (Néon)</option>
                                             <option value="compact">Compact (Plus d'infos)</option>
                                             <option value="glass">Full Glass (Translucide)</option>
                                         </select>

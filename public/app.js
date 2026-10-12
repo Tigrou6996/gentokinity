@@ -9435,16 +9435,19 @@ function setAccentColor(color, el) {
 }
 
 function updateUIStyle(style) {
-    document.body.classList.remove('ui-compact', 'ui-glass');
+    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio');
+    document.documentElement.classList.remove('ui-studio');
     if (style === 'compact') document.body.classList.add('ui-compact');
     if (style === 'glass') document.body.classList.add('ui-glass');
+    if (style === 'studio') { document.body.classList.add('ui-studio'); document.documentElement.classList.add('ui-studio'); }
+    try { localStorage.setItem('gentok_ui_style', style); } catch (e) { }
     savePremiumSettings();
 }
 
 function savePremiumSettings() {
     const settings = {
         accentColor: document.documentElement.style.getPropertyValue('--primary'),
-        uiStyle: document.getElementById('setting-ui-style')?.value || 'modern',
+        uiStyle: document.getElementById('setting-ui-style')?.value || 'studio',
         autoConnect: document.getElementById('setting-auto-connect')?.checked,
         autoReset: document.getElementById('setting-auto-reset')?.checked,
         soundAlerts: document.getElementById('setting-sound-alerts')?.checked,
@@ -9454,6 +9457,14 @@ function savePremiumSettings() {
 }
 
 function loadPremiumSettings() {
+    // Interface style: its own key, Studio by default (older saves of "modern" were only the old default)
+    let uiStyle = 'studio';
+    try { uiStyle = localStorage.getItem('gentok_ui_style') || 'studio'; } catch (e) { }
+    const styleSelect = document.getElementById('setting-ui-style');
+    if (styleSelect) styleSelect.value = uiStyle;
+    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio');
+    if (['compact', 'glass', 'studio'].includes(uiStyle)) document.body.classList.add('ui-' + uiStyle);
+
     const saved = localStorage.getItem('gentok_premium_settings');
     if (!saved) return;
 
@@ -9462,11 +9473,6 @@ function loadPremiumSettings() {
         if (settings.accentColor) {
             const dot = document.querySelector(`.color-dot[data-color="${settings.accentColor}"]`);
             setAccentColor(settings.accentColor, dot);
-        }
-        if (settings.uiStyle) {
-            const select = document.getElementById('setting-ui-style');
-            if (select) select.value = settings.uiStyle;
-            updateUIStyle(settings.uiStyle);
         }
         if (settings.autoConnect !== undefined && document.getElementById('setting-auto-connect')) document.getElementById('setting-auto-connect').checked = settings.autoConnect;
         if (settings.autoReset !== undefined && document.getElementById('setting-auto-reset')) document.getElementById('setting-auto-reset').checked = settings.autoReset;

@@ -1381,6 +1381,8 @@
   "En cours": "Running",
   "Terminé": "Ended",
   "Spotify n'est pas connecté (Paramètres > Spotify > Se connecter).": "Spotify is not connected (Settings > Spotify > Connect).",
-  "La file d'attente est pleine.": "The queue is full."
+  "La file d'attente est pleine.": "The queue is full.",
+  "Studio (Défaut)": "Studio (default)",
+  "Moderne (Néon)": "Modern (Neon)"
  }
 }

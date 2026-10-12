@@ -199,3 +199,4 @@
 .gw-user small { color: #fbbf24; font-weight: 800; }
 .gw-card .battle-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .gw-card .battle-actions button { width: auto; margin: 0; }
+.gal-toolbar input, .gal-toolbar select { padding: 9px 12px; min-height: 40px; border-radius: 8px; background: rgba(0,0,0,.3); border: 1px solid var(--border); color: var(--text); }
