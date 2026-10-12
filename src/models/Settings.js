@@ -34,6 +34,7 @@ const SettingsSchema = new mongoose.Schema({
         password: { type: String, default: '' }
     },
     language: { type: String, default: 'fr' }, // dashboard + overlays language
+    runMode: { type: String, enum: ['auto', 'cloud', 'pc'], default: 'auto' }, // where the live connection runs
     streamerbot: {
         host: { type: String, default: '127.0.0.1' },
         port: { type: Number, default: 7474 }

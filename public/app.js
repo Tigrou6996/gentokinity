@@ -1467,6 +1467,8 @@ function applyConfigUI(config) {
     // Update local state
     isAdmin = config.isAdmin || false;
     isPremiumUser = config.isPremium || false;
+    window.gentokRunMode = config.runMode || 'auto';
+    if (window.GentokRunMode) window.GentokRunMode.render();
     activeSceneId = config.activeSceneId || null;
     userScenes = config.scenes || [];
 
@@ -4373,9 +4375,12 @@ async function handleLogin() {
 }
 
 async function startBot(username, silent = false) {
-    // Use Local Engine if in App Mode, otherwise VPS (which might relay)
-    const base = isLocalMode ? getLocalApiBase() : getApiBase();
+    // Use Local Engine if in App Mode, otherwise VPS (which might relay).
+    // "Cloud" (Settings > Connexion au live): even in the app, the live runs on the Gentok servers.
+    const cloud = window.gentokRunMode === 'cloud';
+    const base = (isLocalMode && !cloud) ? getLocalApiBase() : getApiBase();
     const token = localStorage.getItem('gentok_token');
+    if (cloud) return await startBotHttp(username, base, token, silent);
 
     if (!silent) {
         addLog(`🛰️ Lancement de la connexion pour ${username}...`, 'info');

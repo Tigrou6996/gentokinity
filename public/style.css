@@ -4961,3 +4961,14 @@ table td {
 .donor-row.tier-supporter { border-left-color: #fbbf24; }
 .donor-row.tier-small { border-left-color: #34d399; }
 @media (max-width: 700px) { .donor-row { grid-template-columns: 36px 1fr auto; } .donor-tier { display: none; } }
+
+/* Settings > Connexion au live: Cloud or PC */
+.runmode-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.runmode-option { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; background: rgba(255, 255, 255, .02); margin: 0; }
+.runmode-option:has(input:checked) { border-color: var(--primary); background: rgba(var(--primary-rgb), .08); }
+.runmode-option input { margin-top: 4px; }
+.runmode-option b { display: inline-block; margin-bottom: 2px; }
+.runmode-option em { font-style: normal; font-size: .7rem; font-weight: 700; color: #10b981; margin-left: 4px; }
+.runmode-option small { display: block; color: var(--text-dim); line-height: 1.35; }
+.runmode-table { font-size: .85rem; }
+.runmode-table td:first-child { text-align: left; color: var(--text-dim); font-weight: 600; width: 30%; padding-left: 12px; }

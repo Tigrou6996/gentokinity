@@ -2563,6 +2563,40 @@
                                 </div>
                             </div>
 
+                            <!-- Where the live connection runs (public/runmode.js) -->
+                            <div class="settings-group-premium" id="runmode-card" style="margin-bottom: 2rem;">
+                                <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-tower-broadcast"></i> Connexion au live : Cloud ou sur mon PC
+                                </h3>
+                                <p class="text-dim small mb-3">Choisissez où Gentok se connecte à votre live TikTok. Vos réglages, overlays et classements sont les mêmes dans les deux cas.</p>
+                                <div class="runmode-options" role="radiogroup">
+                                    <label class="runmode-option"><input type="radio" name="runmode" value="auto">
+                                        <span><b><i class="fas fa-wand-magic-sparkles"></i> Automatique</b> <em>recommandé</em>
+                                        <small>Sur votre PC quand l'application Gentok est ouverte, sinon dans le Cloud.</small></span></label>
+                                    <label class="runmode-option"><input type="radio" name="runmode" value="cloud">
+                                        <span><b><i class="fas fa-cloud"></i> Cloud (serveurs Gentok)</b>
+                                        <small>Rien à installer, marche même en live depuis le téléphone, votre PC peut être éteint.</small></span></label>
+                                    <label class="runmode-option"><input type="radio" name="runmode" value="pc">
+                                        <span><b><i class="fas fa-desktop"></i> Sur mon PC (application Windows)</b>
+                                        <small>Connexion depuis votre ordinateur et votre adresse IP, toutes les actions PC disponibles.</small></span></label>
+                                </div>
+                                <div class="table-container">
+                                    <table class="runmode-table">
+                                        <thead><tr><th></th><th><i class="fas fa-cloud"></i> Cloud</th><th><i class="fas fa-desktop"></i> Sur mon PC</th></tr></thead>
+                                        <tbody>
+                                            <tr><td>Installation</td><td>Aucune, depuis le navigateur</td><td>Application Windows à installer</td></tr>
+                                            <tr><td>PC allumé pendant le live</td><td>Non (idéal en live sur téléphone)</td><td>Oui, l'application doit rester ouverte</td></tr>
+                                            <tr><td>Overlays, alertes, TTS, points, objectifs</td><td>Oui</td><td>Oui</td></tr>
+                                            <tr><td>Touches clavier, OBS, Minecraft, Streamer.bot</td><td>Seulement si l'application est ouverte (elle reçoit les ordres)</td><td>Oui, directement</td></tr>
+                                            <tr><td>Adresse IP utilisée pour TikTok</td><td>Celle des serveurs Gentok</td><td>La vôtre (moins de blocages TikTok)</td></tr>
+                                            <tr><td>Réactivité des actions</td><td>Très bonne</td><td>La meilleure (tout est sur place)</td></tr>
+                                            <tr><td>Ressources de votre PC</td><td>Aucune</td><td>Faibles</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="runmode-status" class="small mt-2"></div>
+                            </div>
+
                             <!-- Application & updates (filled by appstatus.js) -->
                             <div class="settings-group-premium" id="app-update-card" style="margin-bottom: 2rem;">
                                 <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 10px;">
@@ -3914,6 +3948,7 @@
     <script src="gallery.js"></script>
     <script src="appstatus.js"></script>
     <script src="donors.js"></script>
+    <script src="runmode.js"></script>
 
     <!-- MODAL MINECRAFT OPTIONS -->
     <div id="modal-mc-options" class="modal-overlay hidden" style="z-index: 11000;">

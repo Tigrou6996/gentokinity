@@ -725,6 +725,7 @@ async function getFullConfig(token) {
         token: settings.token || null,
         isAppMode: config.isAppMode,
         isPremium: settings.isPremium || false,
+        runMode: settings.runMode || 'auto',
         activeSceneId: settings.activeSceneId || null,
         scenes: settings.scenes || [],
         isAdmin: isAdmin,
@@ -1841,8 +1842,17 @@ app.post('/api/start', async (req, res) => {
         activeConnectors.delete(token);
     }
 
+    // Where the live runs (Settings > Connexion au live): auto = the PC app when it is open, otherwise the cloud
+    const runMode = (await config.getSettings(token)).runMode || 'auto';
+    if (!config.isAppMode && runMode === 'pc' && !appConnected) {
+        return res.status(412).json({
+            error: 'APP_REQUIRED',
+            message: "Vous avez choisi « Sur mon PC » : ouvrez l'application Gentok sur votre ordinateur (connectée au même compte), ou passez en mode Cloud dans Paramètres › Connexion au live."
+        });
+    }
+
     // 2. SMART RELAY: Check if we are on VPS and an App is connected
-    if (!config.isAppMode && appConnected) {
+    if (!config.isAppMode && appConnected && runMode !== 'cloud') {
         console.log(`📡 [API:Relay] App connected via Socket for ${token.substring(0, 8)}. Sending remote_start...`);
         emitToApp(token, 'remote_start', { username: tiktokUsername });
         return res.status(202).json({
@@ -1851,7 +1861,7 @@ app.post('/api/start', async (req, res) => {
             message: 'Commande relayée à l\'application locale (Utilise votre IP).'
         });
     } else if (!config.isAppMode) {
-        console.log(`⚠️ [API:Direct] No app connected for token ${token.substring(0, 8)}. Starting direct connection on VPS...`);
+        console.log(`☁️ [API:Direct] ${runMode === 'cloud' ? 'Cloud mode chosen' : 'No app connected'} for token ${token.substring(0, 8)}. Starting direct connection on VPS...`);
     }
 
     // 3. Normal Start (VPS or App Local)

@@ -313,9 +313,14 @@ function initSocket(server) {
         // otherwise any page or LAN device could press keys / run commands on the PC.
 
         // [NEW] Relay Connection Commands (Dashboard -> App)
-        socket.on('setUniqueId', (data, callback) => {
+        socket.on('setUniqueId', async (data, callback) => {
             if (identifiedToken && identifiedType === 'dashboard') {
-                if (isAppConnected(identifiedToken)) {
+                // "Cloud" chosen in Settings > Connexion au live: the live starts on the Gentok servers (HTTP /api/start)
+                let runMode = 'auto';
+                try { runMode = (await require('../config').getSettings(identifiedToken)).runMode || 'auto'; } catch (e) { }
+                if (runMode === 'cloud') {
+                    if (callback) callback({ success: false, error: 'CLOUD_MODE' });
+                } else if (isAppConnected(identifiedToken)) {
                     console.log(`📡 Relaying 'setUniqueId' for ${data.uniqueId} to connected app...`);
                     emitToApp(identifiedToken, 'remote_start', data);
                     if (callback) callback({ success: true, relayed: true });

@@ -29,6 +29,7 @@ const getSessionDefaults = () => ({
         password: ''
     },
     language: 'fr',
+    runMode: 'auto', // where the live connection runs: auto | cloud (Gentok servers) | pc (Windows app)
     streamerbot: { host: '127.0.0.1', port: 7474 },
     points: null,
     spotify: {
@@ -181,6 +182,7 @@ module.exports = {
                 newSession.obs = { ...newSession.obs, ...obs };
             }
             if (settings.language) newSession.language = settings.language;
+            if (settings.runMode) newSession.runMode = settings.runMode;
             if (settings.streamerbot) {
                 const sb = settings.streamerbot.toObject ? settings.streamerbot.toObject() : settings.streamerbot;
                 newSession.streamerbot = { ...newSession.streamerbot, ...sb };
@@ -419,6 +421,7 @@ module.exports = {
         if (data.streamerbot) s.streamerbot = { ...s.streamerbot, ...data.streamerbot };
         if (data.points && typeof data.points === 'object') s.points = { ...(s.points || {}), ...data.points };
         if (typeof data.language === 'string' && /^[a-z]{2}$/.test(data.language)) s.language = data.language;
+        if (['auto', 'cloud', 'pc'].includes(data.runMode)) s.runMode = data.runMode;
         if (data.spotify) {
             s.spotify = {
                 ...s.spotify, ...data.spotify,
@@ -457,7 +460,7 @@ module.exports = {
         const updatePayload = {
             $set: {
                 username: s.username, ip: s.ip, activeSceneId: s.activeSceneId,
-                scenes: s.scenes, minecraft: s.minecraft, obs: s.obs, language: s.language, streamerbot: s.streamerbot, points: s.points, spotify: s.spotify, tts: s.tts,
+                scenes: s.scenes, minecraft: s.minecraft, obs: s.obs, language: s.language, runMode: s.runMode || 'auto', streamerbot: s.streamerbot, points: s.points, spotify: s.spotify, tts: s.tts,
                 lastEvents: s.lastEvents,
                 autoResetTopStats: s.autoResetTopStats,
                 autoResetLastX: s.autoResetLastX,
