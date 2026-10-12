@@ -4972,3 +4972,7 @@ table td {
 .runmode-option small { display: block; color: var(--text-dim); line-height: 1.35; }
 .runmode-table { font-size: .85rem; }
 .runmode-table td:first-child { text-align: left; color: var(--text-dim); font-weight: 600; width: 30%; padding-left: 12px; }
+
+/* "Settings of the scene X" label (TTS, points) */
+.scene-scope-hint { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 600; color: var(--text-dim); background: rgba(255, 255, 255, .05); border: 1px solid var(--border); }
+.scene-scope-hint:empty { display: none; }

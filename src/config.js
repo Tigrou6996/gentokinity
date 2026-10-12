@@ -7,6 +7,14 @@ const { isPremiumActive } = require('./features/plans');
 let buildEnv = {};
 try { buildEnv = require('./build-env.json'); } catch (e) { }
 
+// Settings that each scene keeps for itself (on top of its actions / events and its goals / top stats).
+// A scene without its own copy yet inherits the settings in use when it is first opened.
+const SCENE_OWN_SETTINGS = ['tts', 'points'];
+const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
+function mergeTts(base, own) {
+    return { ...base, ...own, allowedUsers: { ...(base.allowedUsers || {}), ...((own && own.allowedUsers) || {}) } };
+}
+
 // Helper to get fresh default session state
 const getSessionDefaults = () => ({
     token: null,
@@ -228,6 +236,8 @@ module.exports = {
 
                     if (activeScene.autoResetTopStats !== undefined) newSession.autoResetTopStats = activeScene.autoResetTopStats;
                     if (activeScene.autoResetLastX !== undefined) newSession.autoResetLastX = activeScene.autoResetLastX;
+                    if (activeScene.tts) newSession.tts = mergeTts(newSession.tts, activeScene.tts);
+                    if (activeScene.points) newSession.points = { ...(newSession.points || {}), ...activeScene.points };
                 }
             }
             // Global events remain global
@@ -317,6 +327,8 @@ module.exports = {
 
                     if (activeScene.autoResetTopStats !== undefined) result.autoResetTopStats = activeScene.autoResetTopStats;
                     if (activeScene.autoResetLastX !== undefined) result.autoResetLastX = activeScene.autoResetLastX;
+                    if (activeScene.tts) result.tts = mergeTts(result.tts, activeScene.tts);
+                    if (activeScene.points) result.points = { ...(result.points || {}), ...activeScene.points };
                 }
             }
         }
@@ -398,6 +410,7 @@ module.exports = {
                 s.scenes[prevIndex].topLikes = JSON.parse(JSON.stringify(s.topLikes));
                 s.scenes[prevIndex].autoResetTopStats = s.autoResetTopStats;
                 s.scenes[prevIndex].autoResetLastX = s.autoResetLastX;
+                for (const k of SCENE_OWN_SETTINGS) s.scenes[prevIndex][k] = clone(s[k]);
             }
 
             // Reset current session stats to defaults (they will be overwritten by loadSession if the new scene has its own)
@@ -415,7 +428,13 @@ module.exports = {
         if (data.ip) s.ip = data.ip;
         if (data.isPremium !== undefined) s.isPremium = data.isPremium;
         if (data.activeSceneId !== undefined) s.activeSceneId = data.activeSceneId;
-        if (data.scenes !== undefined) s.scenes = (!s.isPremium && data.scenes.length > 2) ? data.scenes.slice(0, 2) : data.scenes;
+        if (data.scenes !== undefined) {
+            // The dashboard sends the list (id, title...): what each scene already keeps (goals, top stats,
+            // TTS, points rules) must not be lost when a scene is added or renamed
+            const plain = (sc) => (sc && sc.toObject ? sc.toObject() : sc);
+            const merged = (Array.isArray(data.scenes) ? data.scenes : []).map(sc => ({ ...(plain(s.scenes.find(e => e.id === sc.id)) || {}), ...sc }));
+            s.scenes = (!s.isPremium && merged.length > 2) ? merged.slice(0, 2) : merged;
+        }
         if (data.minecraft) s.minecraft = { ...s.minecraft, ...data.minecraft };
         if (data.obs) s.obs = { ...s.obs, ...data.obs };
         if (data.streamerbot) s.streamerbot = { ...s.streamerbot, ...data.streamerbot };
@@ -454,6 +473,17 @@ module.exports = {
                 if (data.topLikes !== undefined) s.scenes[activeIndex].topLikes = s.topLikes;
                 if (data.autoResetTopStats !== undefined) s.scenes[activeIndex].autoResetTopStats = s.autoResetTopStats;
                 if (data.autoResetLastX !== undefined) s.scenes[activeIndex].autoResetLastX = s.autoResetLastX;
+                for (const k of SCENE_OWN_SETTINGS) if (data[k]) s.scenes[activeIndex][k] = clone(s[k]);
+            }
+        }
+
+        // Opening a scene: it uses its own TTS / points settings, or keeps a copy of the current ones
+        if (isSwitching && s.activeSceneId) {
+            const idx = s.scenes.findIndex(sc => sc.id === s.activeSceneId);
+            if (idx !== -1) {
+                const scene = s.scenes[idx];
+                if (scene.tts) s.tts = mergeTts(s.tts, clone(scene.tts)); else scene.tts = clone(s.tts);
+                if (scene.points) s.points = { ...(s.points || {}), ...clone(scene.points) }; else scene.points = clone(s.points || {});
             }
         }
 

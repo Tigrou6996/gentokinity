@@ -6034,29 +6034,47 @@ window.createCustomScene = async () => {
         return;
     }
 
-    const { value: name } = await Swal.fire({
+    // Each scene has its own actions, events, goals, TTS and points settings: start empty or from a copy
+    const hasCurrent = !!activeSceneId;
+    const { value: form } = await Swal.fire({
         title: 'Nouvelle scène',
-        text: 'Créez un profil vide pour vos propres réglages.',
-        input: 'text',
-        inputLabel: 'Nom de la scène',
-        inputPlaceholder: 'Ex: Ma Scène 1',
+        html: `
+            <p class="small text-secondary mb-2">Chaque scène garde ses propres actions, événements, objectifs, réglages TTS et règles de points.</p>
+            <input id="new-scene-name" class="swal2-input" placeholder="Ex : Live jeux, Live discussion" maxlength="40">
+            ${hasCurrent ? `<div class="text-start mx-4 mt-2 small">
+                <label class="d-block mb-1"><input type="radio" name="new-scene-from" value="empty" checked> Scène vide</label>
+                <label class="d-block"><input type="radio" name="new-scene-from" value="copy"> Copier la scène actuelle (actions, événements, réglages)</label>
+            </div>` : ''}`,
         showCancelButton: true,
         confirmButtonColor: 'var(--secondary)',
         cancelButtonText: 'Annuler',
         confirmButtonText: 'Créer',
-        inputValidator: (value) => {
-            if (!value) {
-                return 'Veuillez mettre un nom de scène';
-            }
+        focusConfirm: false,
+        preConfirm: () => {
+            const name = (document.getElementById('new-scene-name').value || '').trim();
+            if (!name) { Swal.showValidationMessage('Veuillez mettre un nom de scène'); return false; }
+            return { name, copy: document.querySelector('input[name="new-scene-from"]:checked')?.value === 'copy' };
         }
     });
 
-    if (name) {
+    if (form && form.name) {
         const id = `custom_${Date.now()}`;
-        scenes.push({ id, title: name, isPreset: false });
+        scenes.push({ id, title: form.name, isPreset: false });
         await saveUserScenes(scenes); // [FIX] Wait for the new list to be saved
+        if (form.copy) {
+            try {
+                const r = await fetch(`${getApiBase()}/api/scenes/duplicate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: localStorage.getItem('gentok_token'), toSceneId: id })
+                });
+                if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+            } catch (e) {
+                showNotify('Copie impossible', `La scène a été créée vide (${e.message}).`, 'warning');
+            }
+        }
         renderInstalledPresets(); // Refresh any list if visible
-        showToast('Scène créée !');
+        showToast(form.copy ? 'Scène créée à partir de la scène actuelle !' : 'Scène créée !');
         await switchScene(id); // [FIX] Wait for the switch to complete
     }
 };
@@ -6202,6 +6220,8 @@ window.switchScene = async (sceneId) => {
             activeSceneId = result.activeSceneId;
             showToast('Scène activée !');
             await fetchData();
+            // the TTS settings belong to the scene too
+            if (typeof reloadTTSConfig === 'function') reloadTTSConfig();
         }
     } catch (e) {
         showNotify('Erreur', 'Impossible de changer de scène', 'error');
@@ -6296,6 +6316,15 @@ window.updateSceneUI = () => {
         triggerSpan.innerHTML = `<i class="fas fa-layer-group"></i> Sélectionnez une scène`;
         triggerSpan.title = "";
     }
+
+    // TTS and points sections say which scene their settings belong to
+    const activeScene = scenes.find(sc => sc.id === activeSceneId);
+    document.querySelectorAll('.scene-scope-hint').forEach(el => {
+        const what = el.dataset.what || 'Réglages';
+        el.innerHTML = activeScene
+            ? `<i class="fas fa-layer-group"></i> ${escapeHtml(what)} de la scène « ${escapeHtml(activeScene.title)} »`
+            : `<i class="fas fa-layer-group"></i> ${escapeHtml(what)} par défaut (aucune scène active)`;
+    });
 
     // [NEW] Dynamically hide/show sidebar items based on active scene
     const sceneRequiredItems = document.querySelectorAll('.scene-required');
@@ -7218,6 +7247,27 @@ async function initTTS() {
     }
 
     console.log('[TTS] TTS System Ready');
+}
+
+// Reload the TTS settings of the active scene (after a scene switch)
+async function reloadTTSConfig() {
+    try {
+        const token = localStorage.getItem('gentok_token');
+        const res = await fetch(`${getApiBase()}/api/tts/settings?token=${encodeURIComponent(token || '')}&t=${Date.now()}`);
+        if (!res.ok) return;
+        const saved = await res.json();
+        ttsConfig = {
+            ...ttsConfig,
+            ...saved,
+            allowedUsers: { ...ttsConfig.allowedUsers, ...(saved.allowedUsers || {}) },
+            events: (saved.events && typeof saved.events === 'object') ? saved.events : {}
+        };
+        ttsQueue = [];
+        loadVoices();
+        updateTTSUI();
+    } catch (e) {
+        console.warn('[TTS] Reload after scene switch failed', e);
+    }
 }
 
 // Natural voices (free Edge neural voices, synthesized by the server: /api/tts/voices and /api/tts/generate).

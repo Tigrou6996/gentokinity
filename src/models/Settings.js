@@ -16,7 +16,9 @@ const SettingsSchema = new mongoose.Schema({
         topCoins: { type: Object, default: { limit: 10, title: 'TOP COINS', style: 1, transparent: true, showTitle: true } }, // [NEW] Per-scene Top Coins Leaderboard
         topLikes: { type: Object, default: { limit: 10, title: 'TOP LIKES', style: 1, transparent: true, showTitle: true } }, // [NEW] Per-scene Top Likes Leaderboard
         autoResetTopStats: { type: Boolean, default: false }, // [NEW] Per-scene Auto Reset
-        autoResetLastX: { type: Boolean, default: false } // [NEW] Per-scene Auto Reset
+        autoResetLastX: { type: Boolean, default: false }, // [NEW] Per-scene Auto Reset
+        tts: { type: Object, default: null },    // per-scene TTS settings (voice, what is read...)
+        points: { type: Object, default: null }  // per-scene points rules (the viewers' points stay shared)
     }], // [NEW] Persisted scenes list
 
     // [GLOBAL FALLBACKS] Root-level settings when no scene is active

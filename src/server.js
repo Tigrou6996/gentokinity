@@ -1775,6 +1775,55 @@ app.post('/api/scenes/switch', async (req, res) => {
     }
 });
 
+// API: Copy the active scene into another one (actions, events with their links, TTS and points settings)
+app.post('/api/scenes/duplicate', async (req, res) => {
+    const token = getRequestToken(req);
+    const { toSceneId } = req.body || {};
+    if (!token) return res.status(401).json({ error: 'Token manquant' });
+    if (!toSceneId || typeof toSceneId !== 'string') return res.status(400).json({ error: 'toSceneId manquant' });
+    try {
+        await config.loadSession(token);
+        const session = await config.getSessionFor(token);
+        const target = (session.scenes || []).find(sc => sc.id === toSceneId);
+        if (!target) return res.status(404).json({ error: 'Scène introuvable' });
+        if (toSceneId === session.activeSceneId) return res.status(400).json({ error: 'Choisissez une autre scène' });
+
+        const Action = require('./models/Action');
+        const Event = require('./models/Event');
+        const plain = (d) => { const { _id, __v, token: _t, sceneId: _s, createdAt, updatedAt, ...rest } = d.toObject ? d.toObject() : d; return rest; };
+        const limit = session.isPremium ? Infinity : 5;
+        const stamp = Date.now();
+        const idMap = {};
+        const actions = (session.actions || []).slice(0, limit).map((a, i) => {
+            const id = `acc_${stamp}_${i}_${Math.round(Math.random() * 999999)}`;
+            idMap[a.id] = id;
+            return { ...plain(a), id, token, sceneId: toSceneId };
+        });
+        const events = (session.events || []).slice(0, limit).map((e, i) => ({
+            ...plain(e),
+            id: `evt_${stamp}_${i}_${Math.round(Math.random() * 999999)}`,
+            actions: (e.actions || []).map(old => idMap[old]).filter(Boolean),
+            token, sceneId: toSceneId
+        }));
+        await Promise.all([Action.deleteMany({ token, sceneId: toSceneId }), Event.deleteMany({ token, sceneId: toSceneId })]);
+        if (actions.length) await Action.insertMany(actions);
+        if (events.length) await Event.insertMany(events);
+
+        // the copy also keeps the TTS and points settings of the current scene
+        const copy = (v) => JSON.parse(JSON.stringify(v || {}));
+        const scenes = session.scenes.map(sc => {
+            const o = sc.toObject ? sc.toObject() : { ...sc };
+            return o.id === toSceneId ? { ...o, tts: copy(session.tts), points: copy(session.points) } : o;
+        });
+        await config.saveSettings({ token, scenes });
+        notifyAppSessionChanged(token);
+        res.json({ success: true, actions: actions.length, events: events.length });
+    } catch (err) {
+        console.error('Duplicate scene error:', err);
+        res.status(500).json({ error: 'Copie de la scène impossible' });
+    }
+});
+
 // API: Delete a Scene
 app.post('/api/scenes/delete', async (req, res) => {
     const { sceneId, token: reqToken } = req.body;
