@@ -87,6 +87,23 @@ Les liens prêts à copier, avec ton token déjà inclus, se trouvent dans le ta
 
 Tous les overlays acceptent `lang=fr|en|es|de|pt|it` et `font=` avec le nom d'une police Google Fonts (Bangers, Poppins, Press Start 2P, Luckiest Guy, Orbitron…). Dans le tableau de bord, la barre « Police des overlays / Couleurs » au-dessus des Overlays Pro ajoute ces paramètres aux liens. La police de l'interface elle-même se change dans **Paramètres**.
 
+### Galerie d'overlays
+Menu **WIDGETS LIVE → Galerie d'overlays**, comme la page des widgets de TikFinity : une carte par overlay avec un **aperçu en direct** (mode démo, fond sombre, damier, « jeu » ou clair), l'URL prête à copier, **Test** (envoie un vrai événement simulé à l'overlay dans OBS), **Personnaliser** (les options mettent l'URL et l'aperçu à jour, et sont mémorisées) et Ouvrir. Filtres par catégorie et recherche. Le catalogue est dans `public/gallery.js`.
+
+Widgets ajoutés :
+
+| Overlay | Effet |
+|---|---|
+| `coinmatch` (PRO) | Enchère : chaque pièce offerte pendant la manche compte, classement en direct puis gagnants. Lancer / Terminer / Réinitialiser / Gagnants depuis la galerie. |
+| `jar` (PRO) | Bocal qui se remplit de cadeaux, bulle « X a offert… », meilleur donateur, bouton « Vider le pot ». |
+| `cannon` (PRO) | La photo du spectateur est tirée par un canon avec son cadeau. |
+| `fountain` (PRO) | Cœurs et photos qui jaillissent à chaque like. |
+| `firework` (PRO) | Feu d'artifice par cadeau, taille selon la valeur, pseudo et son (désactivable). |
+| `emojify` | Les emojis du chat et les emotes d'abonnés traversent l'écran. |
+| `snow` | Ambiance continue : neige, cœurs, étoiles, sakura, confettis, feuilles ou billets. |
+
+Les overlays PRO affichent « réservé à Gentok Premium » sans abonnement (l'aperçu de la galerie reste visible pour tous). `ranking` a un style `classic` (médailles, couronne, valeur sous le pseudo), `goal` une forme `layout=slant`, et la roue est maintenant sur pied avec la photo du spectateur au centre (`stand=0` pour l'ancienne roue).
+
 ### Utilisateurs & Points
 Chaque spectateur gagne des points pendant le live : pièces offertes, likes, follow, partage, abonnement, messages (avec un délai anti-spam) et minutes de présence. Les montants se règlent dans **Utilisateurs & Points → Réglages des points**.
 

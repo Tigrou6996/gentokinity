@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Like Fountain</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        html, body { margin: 0; background: transparent; overflow: hidden; width: 100%; height: 100%; }
+        canvas { position: fixed; inset: 0; }
+        .av { position: fixed; left: 0; top: 0; border-radius: 50%; object-fit: cover; border: 2px solid #fff; background: #222; pointer-events: none; will-change: transform, opacity; }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Like Fountain : à chaque like, des cœurs (et la photo du spectateur) jaillissent.
+        // URL parameters: from=bottom|left|right|random, colors=rainbow|tiktok|pink|green|gold|<couleur>, size=34,
+        //                 hearts=3 (cœurs par like, max 12), avatars=1, max=250, demo=1
+        const G = window.Gentok;
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const SIZE = Math.min(Math.max(G.numParam('size', 34), 10), 120);
+        const PER_LIKE = Math.min(Math.max(G.numParam('hearts', 3), 1), 12);
+        const MAX = Math.min(Math.max(G.numParam('max', 250), 20), 1000);
+        const withAvatars = G.boolParam('avatars', true);
+        const from = ['bottom', 'left', 'right', 'random'].includes(G.param('from', 'bottom')) ? G.param('from', 'bottom') : 'bottom';
+        const PALETTES = {
+            rainbow: ['#fe2c55', '#ff8a00', '#fbbf24', '#4ade80', '#25f4ee', '#818cf8', '#e879f9'],
+            tiktok: ['#fe2c55', '#25f4ee', '#ffffff'],
+            pink: ['#fe2c55', '#ff6b9d', '#ffc2d6', '#e11d48'],
+            green: ['#4ade80', '#22c55e', '#86efac', '#a3e635'],
+            gold: ['#fbbf24', '#f59e0b', '#fde68a', '#fff7cc']
+        };
+        const colorsParam = G.param('colors', 'rainbow');
+        const custom = /^#?[0-9a-f]{3,8}$/i.test(colorsParam) ? [colorsParam.startsWith('#') ? colorsParam : '#' + colorsParam] : null;
+        const palette = custom || PALETTES[colorsParam] || PALETTES.rainbow;
+        let W, H;
+        const parts = [];
+
+        function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        function origin() {
+            const mode = from === 'random' ? ['bottom', 'left', 'right'][Math.floor(Math.random() * 3)] : from;
+            if (mode === 'left') return { x: 0, y: H * 0.85, vx: W * (0.25 + Math.random() * 0.2), vy: -H * (0.7 + Math.random() * 0.4) };
+            if (mode === 'right') return { x: W, y: H * 0.85, vx: -W * (0.25 + Math.random() * 0.2), vy: -H * (0.7 + Math.random() * 0.4) };
+            return { x: W / 2 + (Math.random() - 0.5) * 40, y: H + 10, vx: (Math.random() - 0.5) * W * 0.5, vy: -H * (0.8 + Math.random() * 0.5) };
+        }
+
+        function heartPath(s) {
+            ctx.beginPath();
+            ctx.moveTo(0, s * 0.3);
+            ctx.bezierCurveTo(0, 0, -s * 0.5, 0, -s * 0.5, s * 0.3);
+            ctx.bezierCurveTo(-s * 0.5, s * 0.6, 0, s * 0.75, 0, s);
+            ctx.bezierCurveTo(0, s * 0.75, s * 0.5, s * 0.6, s * 0.5, s * 0.3);
+            ctx.bezierCurveTo(s * 0.5, 0, 0, 0, 0, s * 0.3);
+            ctx.closePath();
+        }
+
+        function spawnHeart() {
+            if (parts.length >= MAX) return;
+            const o = origin();
+            parts.push({ ...o, s: SIZE * (0.6 + Math.random() * 0.7), c: palette[Math.floor(Math.random() * palette.length)], life: 0,
+                ttl: 2.2 + Math.random() * 1.2, rot: (Math.random() - 0.5) * 0.6, vr: (Math.random() - 0.5) * 1.5 });
+        }
+
+        function spawnAvatar(d) {
+            const o = origin();
+            const img = document.createElement('img');
+            img.className = 'av';
+            img.referrerPolicy = 'no-referrer';
+            img.src = G.avatarOf(d);
+            img.onerror = () => { img.src = '/logo.png'; };
+            const s = SIZE * 1.1;
+            img.style.width = img.style.height = s + 'px';
+            document.body.appendChild(img);
+            let { x, y, vx, vy } = o; let t = 0; let last = performance.now();
+            const step = (now) => {
+                const dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
+                vy += H * 0.9 * dt; x += vx * dt; y += vy * dt;
+                img.style.transform = `translate(${x - s / 2}px, ${y - s / 2}px)`;
+                img.style.opacity = Math.max(0, 1 - t / 2.6);
+                if (t > 2.6) { img.remove(); return; }
+                requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        let last = performance.now();
+        function frame(now) {
+            const dt = Math.min((now - last) / 1000, 0.05); last = now;
+            ctx.clearRect(0, 0, W, H);
+            for (let i = parts.length - 1; i >= 0; i--) {
+                const p = parts[i];
+                p.life += dt; p.vy += H * 0.9 * dt; p.vx *= 0.995; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+                if (p.life > p.ttl || p.y > H + 50) { parts.splice(i, 1); continue; }
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, Math.min(1, (p.ttl - p.life) / 0.6));
+                ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.translate(0, -p.s / 2);
+                heartPath(p.s);
+                ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 8; ctx.fill();
+                ctx.restore();
+            }
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        const lastAvatar = new Map();
+        function onLike(d) {
+            const n = Math.min((Number(d.likeCount) || 1) * PER_LIKE, 40);
+            for (let i = 0; i < n; i++) setTimeout(spawnHeart, i * 35);
+            // one picture per viewer every 2 seconds at most
+            const key = d.uniqueId || '?';
+            if (withAvatars && Date.now() - (lastAvatar.get(key) || 0) > 2000) { lastAvatar.set(key, Date.now()); spawnAvatar(d); }
+        }
+
+        const socket = G.connect();
+        socket.on('stats', (p) => { if (p && p.type === 'like' && p.data) onLike(p.data); });
+
+        if (G.isDemo) setInterval(() => onLike({ ...G.demoUser(), likeCount: 1 + Math.floor(Math.random() * 5) }), 700);
+    </script>
+</body>
+
+</html>

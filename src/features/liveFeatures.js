@@ -6,6 +6,7 @@ const config = require('../config');
 const logger = require('../utils/logger');
 const points = require('./points');
 const battle = require('./battle');
+const coinmatch = require('./coinmatch');
 
 const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
@@ -105,6 +106,7 @@ async function onGifts(connector, data, count, coins) {
     try {
         markActive(connector, data);
         battle.onGift(connector.token, userOf(data), data.giftId, coins);
+        coinmatch.onGift(connector.token, userOf(data), coins);
         if (!canPersist(connector)) return;
         const s = points.getSettings(await config.getSettings(connector.token));
         if (s.enabled) points.award(connector.token, userOf(data), coins * s.perCoin, 'gift', { coins, gifts: count });

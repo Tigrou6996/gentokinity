@@ -12,6 +12,7 @@ const PLANS = {
         maxPointsUsers: 1000,
         maxBattleTeams: 2,
         premiumActionTypes: ['obs', 'wheel', 'streamerbot'],
+        proWidgets: false,      // Coin Match, gift jar, cannon, like fountain, firework
         pointsStore: false,     // events that cost points (viewer rewards shop)
         sessionHistory: false,  // detailed history of past lives
         actionDelay: false,     // "delay before running" option
@@ -25,6 +26,7 @@ const PLANS = {
         maxPointsUsers: 100000,
         maxBattleTeams: 4,
         premiumActionTypes: [],
+        proWidgets: true,
         pointsStore: true,
         sessionHistory: true,
         actionDelay: true,

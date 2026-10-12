@@ -373,6 +373,15 @@
                 <!-- CATEGORY: OVERLAYS -->
                 <li class="nav-category scene-required">WIDGETS LIVE</li>
                 <li class="scene-required">
+                    <a href="#gallery" onclick="showSection('gallery')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-images"></i>
+                            <span>Galerie d'overlays</span>
+                        </span>
+                        <span class="beta-tag">NEW</span>
+                    </a>
+                </li>
+                <li class="scene-required">
                     <a href="#overlays" onclick="showSection('overlays'); activateOverlay('goals')">
                         <span class="nav-item-content">
                             <i class="fas fa-bullseye"></i>
@@ -2301,6 +2310,24 @@
             </section>
 
             <!-- SECTION SIMULATOR (test triggers without being live) -->
+            <section id="gallery-section" class="card" style="display: none;">
+                <div class="card-header" style="margin-bottom: 0.8rem;">
+                    <h2><i class="fas fa-images"></i> Galerie d'overlays</h2>
+                    <p class="text-dim">Ajoutez l'URL dans OBS ou TikTok Live Studio comme source navigateur (fond transparent). Chaque aperçu tourne en mode démo. Le bouton Test envoie un vrai événement simulé à votre overlay, et Personnaliser règle l'overlay et met l'URL à jour.</p>
+                </div>
+                <div class="gal-toolbar">
+                    <div class="gal-filters" id="gallery-filters"></div>
+                    <input type="search" id="gallery-search" placeholder="Rechercher un overlay...">
+                    <select id="gallery-bg" title="Fond des aperçus">
+                        <option value="dark">Fond sombre</option>
+                        <option value="checker">Damier (transparent)</option>
+                        <option value="game">Fond « jeu »</option>
+                        <option value="light">Fond clair</option>
+                    </select>
+                </div>
+                <div class="gal-grid" id="gallery-grid" data-bg="dark"></div>
+            </section>
+
             <section id="simulator-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1rem;">
                     <h2>🧪 Simulateur d'événements</h2>
@@ -3749,6 +3776,7 @@
     <script src="previews.js"></script>
     <script src="router.js"></script>
     <script src="pro.js"></script>
+    <script src="gallery.js"></script>
 
     <!-- MODAL MINECRAFT OPTIONS -->
     <div id="modal-mc-options" class="modal-overlay hidden" style="z-index: 11000;">

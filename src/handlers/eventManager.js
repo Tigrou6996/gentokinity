@@ -937,6 +937,13 @@ function registerEvents(tiktokConnection, connector) {
         if (isDuplicateMessage(connector, data) || isOldMessage(connector, data)) return;
         const emote = Array.isArray(data.emotes) && data.emotes[0] ? data.emotes[0] : {};
         actionManager.executeAction('emote', { ...data, emoteId: emote.emoteId, emoteImageUrl: emote.emoteImageUrl }, connector);
+        // Emojify overlay: the emote image flies across the screen
+        if (emote.emoteImageUrl) {
+            emitEvent('emote', {
+                uniqueId: data.uniqueId, nickname: data.nickname, profilePictureUrl: data.profilePictureUrl,
+                emoteImageUrl: emote.emoteImageUrl
+            }, connector.token);
+        }
     });
 
     // Questions asked with the TikTok "Q&A" feature

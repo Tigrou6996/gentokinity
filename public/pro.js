@@ -237,6 +237,7 @@
                             ${row(true, "Simulateur d'événements")}
                             ${row(true, `Batailles d'équipes : ${plan.maxBattleTeams} équipes`)}
                             ${row(plan.pointsStore, 'Boutique de points (événements payés en points)')}
+                            ${row(plan.proWidgets, "Widgets PRO : Coin Match, pot à cadeaux, canon, fontaine de likes, feu d'artifice")}
                             ${row(!plan.premiumActionTypes.includes('obs'), 'Actions OBS Studio')}
                             ${row(!plan.premiumActionTypes.includes('wheel'), 'Roue de la fortune')}
                             ${row(!plan.premiumActionTypes.includes('streamerbot'), 'Actions Streamer.bot')}
@@ -551,6 +552,7 @@
 
     // ------------------------------------------------------------------ init
     function onSection(id) {
+        if (id === 'gallery' && window.GentokGallery) window.GentokGallery.render();
         if (id === 'points') { Points.load(); Points.loadSettings(); }
         if (id === 'premium') Plan.load();
         if (id === 'battle') { if (!document.querySelector('#battle-teams .battle-team')) Battle.renderTeams(); Battle.poll(); }

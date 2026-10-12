@@ -54,6 +54,22 @@
         .step.p3 .block { height: 46px; background: linear-gradient(180deg, #f59e0b, #78350f); }
         .crown { font-size: 1.4em; margin-bottom: -6px; }
 
+        /* Classic (TikFinity-like): transparent, medals, crown on #1, value under the name */
+        .theme-classic .title { display: none; }
+        .theme-classic .list { gap: 4px; }
+        .theme-classic .item { padding: 4px 2px; gap: 12px; }
+        .theme-classic .rank { width: 34px; font-size: 1.35em; font-weight: 900; color: #e5e7eb; text-shadow: 0 2px 4px rgba(0,0,0,.6); }
+        .theme-classic .av-wrap { position: relative; flex-shrink: 0; }
+        .theme-classic .avatar { width: 2.9em; height: 2.9em; border: 2px solid rgba(255,255,255,.85); }
+        .theme-classic .r1 .avatar { border-color: #fbbf24; }
+        .theme-classic .r2 .avatar { border-color: #cbd5e1; }
+        .theme-classic .r3 .avatar { border-color: #f59e0b; }
+        .theme-classic .crown { position: absolute; left: 50%; top: -1.05em; transform: translateX(-50%); font-size: 1.2em; filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+        .theme-classic .txt { display: flex; flex-direction: column; min-width: 0; }
+        .theme-classic .name { font-weight: 900; color: var(--name, #fff); text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+        .theme-classic .score { font-size: .9em; color: #fde68a; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+        .theme-classic .score i { margin: 0 4px 0 0; }
+
         /* Ticker: one scrolling line */
         .theme-ticker .board, .board.theme-ticker { width: auto; max-width: none; }
         .theme-ticker .list { flex-direction: row; gap: 26px; white-space: nowrap; animation: scroll var(--speed, 25s) linear infinite; width: max-content; }
@@ -77,7 +93,7 @@
         // URL parameters:
         //   type=coins|likes|points       ce qui est classé (défaut coins)
         //   period=live|all|weekly        live = le live en cours, all = depuis toujours, weekly = cette semaine (coins/likes)
-        //   theme=glass|neon|podium|minimal|gradient|ticker   (défaut glass)
+        //   theme=glass|neon|podium|minimal|gradient|ticker|classic   (défaut glass ; classic = style TikFinity)
         //   limit=5, avatars=1, title=..., width=380, size=16, color=fe2c55, color2=ff8a00, font=..., lang=..., demo=1
         const G = window.Gentok;
         const root = document.documentElement;
@@ -88,11 +104,12 @@
 
         const type = ['coins', 'likes', 'points'].includes(G.param('type', 'coins')) ? G.param('type', 'coins') : 'coins';
         const period = type === 'points' ? 'all' : (['live', 'all', 'weekly'].includes(G.param('period', 'live')) ? G.param('period', 'live') : 'live');
-        const theme = ['glass', 'neon', 'podium', 'minimal', 'gradient', 'ticker'].includes(G.param('theme', 'glass')) ? G.param('theme', 'glass') : 'glass';
+        const theme = ['glass', 'neon', 'podium', 'minimal', 'gradient', 'ticker', 'classic'].includes(G.param('theme', 'glass')) ? G.param('theme', 'glass') : 'glass';
         const limit = Math.min(Math.max(G.numParam('limit', 5), 1), 20);
         const showAvatars = G.boolParam('avatars', true);
         const board = document.getElementById('board');
         board.classList.add('theme-' + theme);
+        if (type === 'likes') board.style.setProperty('--name', '#5fb6f0');
         const ICON = { coins: '🪙', likes: '❤️', points: '🏅' };
         document.getElementById('title').textContent = `${ICON[type]} ${G.param('title', G.t('rank.' + type))}`;
 
@@ -120,6 +137,18 @@
                         <div class="block">${place}</div></div>`;
                 }).join('');
                 rest = rows.slice(3);
+            }
+            const MEDALS = ['🥇', '🥈', '🥉'];
+            if (theme === 'classic') {
+                list.innerHTML = rows.map((r, i) => {
+                    const bumped = previous.has(r.key) && previous.get(r.key) < r.score;
+                    return `<div class="item r${i + 1}${bumped ? ' bump' : ''}">
+                        <span class="rank">${MEDALS[i] || (i + 1) + '.'}</span>
+                        ${showAvatars ? `<span class="av-wrap">${i === 0 ? '<span class="crown">👑</span>' : ''}<img class="avatar" src="${avatar(r)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'"></span>` : ''}
+                        <span class="txt"><span class="name">${G.escapeHtml(r.name)}</span><span class="score"><i>${ICON[type]}</i>${G.formatNumber(r.score)}</span></span></div>`;
+                }).join('');
+                previous = new Map(rows.map(r => [r.key, r.score]));
+                return;
             }
             const html = rest.map((r, i) => {
                 const rank = rows.indexOf(r) + 1;

@@ -7,6 +7,7 @@ const { getPlan, serializePlan, PLANS } = require('../features/plans');
 const points = require('../features/points');
 const battle = require('../features/battle');
 const simulator = require('../features/simulator');
+const coinmatch = require('../features/coinmatch');
 const ViewerPoints = require('../models/ViewerPoints');
 const PointTransaction = require('../models/PointTransaction');
 
@@ -173,6 +174,38 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
         const { type, ...opts } = req.body || {};
         delete opts.token;
         res.json(simulator.simulate(token, String(type || ''), opts));
+    }));
+
+    // ---------------- Coin Match (gift auction) ----------------
+    app.get('/api/coinmatch/state', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        res.json(coinmatch.getState(token));
+    }));
+    app.post('/api/coinmatch/:command', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        const body = req.body || {};
+        switch (req.params.command) {
+            case 'start':
+                if (!getPlan(await config.getSettings(token)).proWidgets) {
+                    return res.status(403).json({ error: 'PREMIUM_ONLY', message: 'Coin Match est réservé à Gentok Premium.' });
+                }
+                return res.json(coinmatch.start(token, { title: body.title, duration: body.duration, winners: body.winners }));
+            case 'stop': return res.json(coinmatch.stop(token));
+            case 'reset': return res.json(coinmatch.reset(token));
+            case 'winners': return res.json(coinmatch.showWinners(token));
+            default: return res.status(404).json({ error: 'Commande inconnue' });
+        }
+    }));
+
+    // ---------------- Dashboard buttons for an overlay ----------------
+    const OVERLAY_COMMANDS = ['jar_reset'];
+    app.post('/api/overlay/command', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        const command = String((req.body || {}).command || '');
+        if (!OVERLAY_COMMANDS.includes(command)) return res.status(400).json({ error: 'Commande inconnue' });
+        const { emitEvent } = require('../utils/socket');
+        emitEvent('overlay_command', { command }, token);
+        res.json({ success: true });
     }));
 
     // ---------------- Streamer.bot ----------------

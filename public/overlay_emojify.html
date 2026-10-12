@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Emojify</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --size: 56px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; width: 100%; height: 100%; }
+        .e { position: fixed; left: 0; top: 0; pointer-events: none; will-change: transform, opacity; display: flex; align-items: center; justify-content: center;
+            width: var(--size); height: var(--size); font-size: calc(var(--size) * .82); line-height: 1; }
+        .e img.emote { width: 100%; height: 100%; object-fit: contain; }
+        .e img.av { position: absolute; right: -8%; bottom: -8%; width: 42%; height: 42%; border-radius: 50%; object-fit: cover; border: 2px solid #fff; background: #222; }
+    </style>
+</head>
+
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Emojify : les emojis écrits dans le chat et les emotes d'abonnés traversent l'écran.
+        // URL parameters: motion=float|right|left|bounce|random, size=56, max=6 (emojis par message), avatars=1, onscreen=60, demo=1
+        const G = window.Gentok;
+        const SIZE = Math.min(Math.max(G.numParam('size', 56), 16), 200);
+        document.documentElement.style.setProperty('--size', SIZE + 'px');
+        const MAX_PER_MSG = Math.min(Math.max(G.numParam('max', 6), 1), 20);
+        const ON_SCREEN = Math.min(Math.max(G.numParam('onscreen', 60), 5), 300);
+        const withAvatars = G.boolParam('avatars', true);
+        const MOTIONS = ['float', 'right', 'left', 'bounce'];
+        const motionParam = G.param('motion', 'random');
+        let count = 0;
+        const EMOJI = /(\p{Extended_Pictographic}(?:️)?(?:‍\p{Extended_Pictographic}(?:️)?)*|\p{Regional_Indicator}{2})/gu;
+
+        function fly(content, isImage, d) {
+            if (count >= ON_SCREEN) return;
+            count++;
+            const el = document.createElement('div');
+            el.className = 'e';
+            if (isImage) {
+                const img = document.createElement('img');
+                img.className = 'emote'; img.referrerPolicy = 'no-referrer'; img.src = content;
+                el.appendChild(img);
+            } else {
+                el.textContent = content;
+            }
+            if (withAvatars && d) {
+                const av = document.createElement('img');
+                av.className = 'av'; av.referrerPolicy = 'no-referrer'; av.src = G.avatarOf(d); av.onerror = () => { av.src = '/logo.png'; };
+                el.appendChild(av);
+            }
+            document.body.appendChild(el);
+            const W = window.innerWidth, H = window.innerHeight;
+            const motion = MOTIONS.includes(motionParam) ? motionParam : MOTIONS[Math.floor(Math.random() * MOTIONS.length)];
+            let x, y, vx, vy, g = 0, life = 4 + Math.random() * 2;
+            if (motion === 'right') { x = -SIZE; y = H * (0.1 + Math.random() * 0.75); vx = W / (3 + Math.random() * 2); vy = 0; }
+            else if (motion === 'left') { x = W + SIZE; y = H * (0.1 + Math.random() * 0.75); vx = -W / (3 + Math.random() * 2); vy = 0; }
+            else if (motion === 'bounce') { x = Math.random() * (W - SIZE); y = -SIZE; vx = (Math.random() - 0.5) * 300; vy = 0; g = H * 1.5; }
+            else { x = Math.random() * (W - SIZE); y = H + SIZE; vx = (Math.random() - 0.5) * 60; vy = -H / (3 + Math.random() * 2); }
+            const wob = Math.random() * Math.PI * 2;
+            let t = 0, last = performance.now(), rot = 0;
+            const step = (now) => {
+                const dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
+                vy += g * dt; x += vx * dt; y += vy * dt;
+                if (motion === 'bounce' && y > H - SIZE) { y = H - SIZE; vy = -Math.abs(vy) * 0.6; }
+                if (motion === 'right' || motion === 'left') { rot = Math.sin(t * 6 + wob) * 12; y += Math.sin(t * 3 + wob) * 0.8; }
+                if (motion === 'float') x += Math.sin(t * 2 + wob) * 0.9;
+                const fade = Math.min(1, (life - t) / 0.6);
+                el.style.opacity = Math.max(0, fade);
+                el.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
+                if (t > life || x < -SIZE * 2 || x > W + SIZE * 2) { el.remove(); count--; return; }
+                requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        function onChat(d) {
+            const emojis = String(d.comment || '').match(EMOJI);
+            if (!emojis) return;
+            emojis.slice(0, MAX_PER_MSG).forEach((e, i) => setTimeout(() => fly(e, false, d), i * 140));
+        }
+
+        const socket = G.connect();
+        socket.on('chat', (d) => d && onChat(d));
+        socket.on('emote', (d) => { const url = d && G.safeUrl(d.emoteImageUrl); if (url) fly(url, true, d); });
+
+        if (G.isDemo) {
+            const msgs = ['🎉🎉🥳', 'GG 🔥🔥', 'trop fort 😂😂😂', '❤️💖', '🍾🥂', '👏👏👏', '🚀'];
+            setInterval(() => onChat({ ...G.demoUser(), comment: msgs[Math.floor(Math.random() * msgs.length)] }), 900);
+        }
+    </script>
+</body>
+
+</html>

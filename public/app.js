@@ -4545,7 +4545,7 @@ window.showSection = (sectionId) => {
     }
 
     // Hide all sections
-    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games', 'points', 'premium', 'battle', 'simulator'];
+    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games', 'points', 'premium', 'battle', 'simulator', 'gallery'];
     sections.forEach(s => {
         const el = document.getElementById(`${s}-section`);
         if (el) el.style.display = 'none';
@@ -4578,7 +4578,8 @@ window.showSection = (sectionId) => {
             'points': 'Utilisateurs & Points',
             'premium': 'Mon offre',
             'battle': "Batailles d'équipes",
-            'simulator': "Simulateur d'événements"
+            'simulator': "Simulateur d'événements",
+            'gallery': "Galerie d'overlays"
         };
         headerTitle.textContent = titles[sectionId] || 'Gentok';
     }

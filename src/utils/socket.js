@@ -160,7 +160,11 @@ function initSocket(server) {
             'points_levelup', // a viewer reached a new level
             'points_insufficient',
             'battle_update',  // team battles
-            'battle_end'
+            'battle_end',
+            'coinmatch_update', // Coin Match (gift auction)
+            'coinmatch_end',
+            'overlay_command',  // dashboard buttons for an overlay (e.g. empty the gift jar)
+            'emote'             // subscriber emotes (Emojify overlay)
         ];
 
         relayEvents.forEach(eventName => {

@@ -131,3 +131,49 @@
 .ovl-preview-stage.bg-light { background: #f3f4f6; }
 .ovl-preview-stage.bg-game { background: linear-gradient(160deg, #1e3a5f, #3b1d4a 55%, #0f3d2e); }
 .ovl-preview-hint { margin: 8px 2px 0; font-size: .75rem; color: var(--text-dim); }
+
+/* ================= Overlay gallery (TikFinity-like cards) ================= */
+.gal-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.gal-filters { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.gal-chip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text-dim); cursor: pointer; font-weight: 600; font-size: 0.82rem; }
+.gal-chip span { opacity: .6; margin-left: 4px; font-size: .75rem; }
+.gal-chip.active, .gal-chip:hover { color: #fff; border-color: var(--primary); background: color-mix(in srgb, var(--primary) 18%, transparent); }
+#gallery-search { flex: 0 1 240px; min-width: 160px; }
+#gallery-bg { flex: 0 0 auto; width: auto; }
+.gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(430px, 100%), 1fr)); gap: 16px; }
+.gal-card { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #1b1b22; border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+    box-shadow: 0 6px 20px rgba(0,0,0,.25); min-width: 0; }
+.gal-head h3 { margin: 0; font-size: 1.05rem; color: #5fb6f0; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.gal-head h3 i { color: var(--primary); width: 20px; text-align: center; }
+.gal-pro { color: var(--primary); font-size: .62rem; font-weight: 800; letter-spacing: .5px; }
+.gal-desc { margin: 0; font-size: .85rem; color: var(--text-dim); line-height: 1.45; }
+.gal-controls { display: flex; flex-wrap: wrap; gap: 6px; }
+.gal-controls select { width: auto; }
+.gal-url { display: flex; gap: 6px; flex-wrap: wrap; }
+.gal-url .gal-link { flex: 1 1 220px; min-width: 0; padding: 8px 10px; font-size: .78rem; color: var(--text-dim); background: rgba(0,0,0,.3); border: 1px dashed var(--border); border-radius: 6px; }
+.gal-url button { white-space: nowrap; font-size: .8rem; padding: 7px 12px; }
+.gal-url button:disabled { opacity: .4; cursor: not-allowed; }
+.gal-url button.active { border-color: var(--primary); color: var(--primary); }
+.gal-custom { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: rgba(255,255,255,.02); }
+.gal-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.gal-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gal-field label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-dim); }
+.gal-field input[type=color] { height: 36px; padding: 2px; }
+.gal-field.bool { justify-content: space-between; }
+.gal-reset { margin-top: 10px; font-size: .78rem; }
+.gal-switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+.gal-switch input { opacity: 0; width: 0; height: 0; }
+.gal-switch span { position: absolute; inset: 0; border-radius: 99px; background: rgba(255,255,255,.15); cursor: pointer; transition: .2s; }
+.gal-switch span::before { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: .2s; }
+.gal-switch input:checked + span { background: var(--primary); }
+.gal-switch input:checked + span::before { transform: translateX(18px); }
+.gal-preview { position: relative; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); background: #222228; }
+.gal-preview iframe { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+.gal-preview.scaled iframe { transform-origin: 0 0; }
+.gal-grid[data-bg=checker] .gal-preview { background: repeating-conic-gradient(#2a2a35 0% 25%, #1c1c24 0% 50%) 50% / 24px 24px; }
+.gal-grid[data-bg=game] .gal-preview { background: linear-gradient(160deg, #1e3a5f, #3b1d4a 55%, #0f3d2e); }
+.gal-grid[data-bg=light] .gal-preview { background: #eef0f3; }
+@media (max-width: 640px) {
+    .gal-card { padding: 12px; }
+    .gal-url button { flex: 1 1 auto; }
+}

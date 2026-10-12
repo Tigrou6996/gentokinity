@@ -349,7 +349,28 @@ app.get('/overlay/battle', (req, res) => sendOverlay(res, 'overlay_battle.html')
 app.get('/overlay/likegoal', (req, res) => sendOverlay(res, 'overlay_likegoal.html'));
 app.get('/overlay/ranking', (req, res) => sendOverlay(res, 'overlay_ranking.html'));
 app.get('/overlay/social', (req, res) => sendOverlay(res, 'overlay_social.html'));
-app.get('/overlay/jar', (req, res) => sendOverlay(res, 'overlay_jar.html'));
+app.get('/overlay/jar', (req, res) => sendPremiumOverlay(req, res, 'overlay_jar.html'));
+// PRO widgets: real use needs Gentok Premium (the demo preview of the gallery stays open to everyone)
+async function sendPremiumOverlay(req, res, filename) {
+    const token = typeof req.query.token === 'string' ? req.query.token : '';
+    const isDemo = req.query.demo === '1' || req.query.demo === 'true';
+    if (!isDemo) {
+        const settings = token ? await config.getSettings(token).catch(() => null) : null;
+        if (!settings || !require('./features/plans').getPlan(settings).proWidgets) {
+            res.set('Cache-Control', 'no-store');
+            return res.type('html').send(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent;font:700 18px 'Segoe UI',sans-serif}
+                div{position:fixed;left:12px;top:12px;padding:10px 16px;border-radius:12px;background:rgba(15,15,22,.9);color:#fff;border:2px solid #fbbf24}</style></head>
+                <body><div>⭐ Overlay réservé à Gentok Premium</div></body></html>`);
+        }
+    }
+    sendOverlay(res, filename);
+}
+app.get('/overlay/coinmatch', (req, res) => sendPremiumOverlay(req, res, 'overlay_coinmatch.html'));
+app.get('/overlay/cannon', (req, res) => sendPremiumOverlay(req, res, 'overlay_cannon.html'));
+app.get('/overlay/fountain', (req, res) => sendPremiumOverlay(req, res, 'overlay_fountain.html'));
+app.get('/overlay/firework', (req, res) => sendPremiumOverlay(req, res, 'overlay_firework.html'));
+app.get('/overlay/snow', (req, res) => sendOverlay(res, 'overlay_snow.html'));
+app.get('/overlay/emojify', (req, res) => sendOverlay(res, 'overlay_emojify.html'));
 
 // Expose ranking pages assets (tiktok-coin.png, etc) if still needed for other pages
 app.use('/pages', express.static(path.resolve(__dirname, '../classement/pages')));
