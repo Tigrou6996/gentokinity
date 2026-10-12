@@ -6,3 +6,5 @@ APP/
 *.rar
 *.zip
 *.blockmap
+node_modules/
+lbs-video/LBS-promo-draft.mp4
