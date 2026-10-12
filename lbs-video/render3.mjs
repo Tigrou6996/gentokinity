@@ -92,7 +92,7 @@ if (hasAudio) {
   const pcm = base + '.pcm'; writeFileSync(pcm, Buffer.from(b64, 'base64'));
   const voice = process.env.VOICE;
   await run(['-v','error','-y','-i',silent,'-f','s16le','-ar','48000','-ac','2','-i',pcm,'-i',voice,
-    '-filter_complex','[2:a]aresample=48000,aformat=channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,asplit=2[v][vs];[1:a]volume='+(process.env.MUSICVOL||'0.5')+'[m];[m][vs]sidechaincompress=threshold=0.04:ratio=4:attack=20:release=400[md];[v][md]amix=inputs=2:normalize=0:duration=longest,alimiter=limit=0.95[a]',
+    '-filter_complex','[2:a]aresample=48000,aformat=channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,apad=whole_dur='+String(V.duration)+',asplit=2[v][vs];[1:a]volume='+(process.env.MUSICVOL||'0.5')+'[m];[m][vs]sidechaincompress=threshold=0.04:ratio=4:attack=20:release=400[md];[v][md]amix=inputs=2:normalize=0:duration=longest,alimiter=limit=0.95[a]',
     '-map','0:v','-map','[a]','-c:v','copy','-c:a','aac','-b:a','192k','-t',String(V.duration),out]);
   rmSync(pcm); console.log('with audio ->', out);
 }
