@@ -486,6 +486,50 @@ module.exports = {
         await replaceSceneItems(require('./models/Action'), s, s.actions);
     },
 
+    /**
+     * Adds / updates / removes some actions or events of the active scene without resending the whole list
+     * (two tabs, or the website and the app, no longer undo each other's changes).
+     * Removing actions also removes them from the events that used them.
+     * @param {'actions'|'events'} kind
+     * @returns {Promise<{ items: object[], removed: string[], total: number }>}
+     */
+    async applyItemChanges(kind, token, { upsert = [], remove = [] } = {}) {
+        const Model = kind === 'actions' ? Action : Event;
+        const s = await this.getSessionFor(token);
+        if (!s.token) throw Object.assign(new Error('Session introuvable'), { status: 401 });
+        const scope = { token: s.token, sceneId: s.activeSceneId };
+        const items = cleanItems(upsert);
+        const removeIds = Array.from(new Set((Array.isArray(remove) ? remove : []).map(String))).filter(id => !items.some(i => String(i.id) === id));
+
+        const existing = new Set((await Model.find(scope).select('id').lean()).map(d => String(d.id)));
+        const finalCount = new Set([...existing, ...items.map(i => String(i.id))].filter(id => !removeIds.includes(id))).size;
+        if (!s.isPremium && finalCount > 5 && items.some(i => !existing.has(String(i.id)))) {
+            throw Object.assign(new Error(`Limite de 5 ${kind === 'actions' ? 'actions' : 'événements'} par scène en gratuit : passez Premium pour en ajouter plus.`), { status: 403 });
+        }
+        const docs = items.map(i => ({ ...i, ...scope }));
+        for (const d of docs) {
+            const err = new Model(d).validateSync();
+            if (err) throw Object.assign(new Error(`Élément invalide (${d.name || d.id}) : ${err.message}`), { status: 400 });
+        }
+        const ops = docs.map(d => ({ replaceOne: { filter: { ...scope, id: d.id }, replacement: d, upsert: true } }));
+        if (removeIds.length) ops.push({ deleteMany: { filter: { ...scope, id: { $in: removeIds } } } });
+        if (ops.length) await Model.bulkWrite(ops, { ordered: true });
+        if (kind === 'actions' && removeIds.length) {
+            const using = await Event.find({ ...scope, actions: { $in: removeIds } }).select('id actions').lean();
+            if (using.length) {
+                await Event.bulkWrite(using.map(e => ({
+                    updateOne: { filter: { ...scope, id: e.id }, update: { $set: { actions: (e.actions || []).filter(a => !removeIds.includes(String(a))) } } }
+                })));
+            }
+        }
+
+        // The session follows the database (the live connector reads its actions / events from it)
+        const [actions, events] = await Promise.all([Action.find(scope).lean(), Event.find(scope).lean()]);
+        s.actions = actions;
+        s.events = events;
+        return { items: docs.map(d => { const o = { ...d }; delete o.token; delete o.sceneId; return o; }), removed: removeIds, total: kind === 'actions' ? actions.length : events.length };
+    },
+
     async saveSettings(data) {
         const t = data.token || fallbackToken(); if (!t) return;
         if (!_sessions.has(t)) await this.loadSession(t);

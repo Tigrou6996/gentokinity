@@ -156,3 +156,11 @@ body.nav-railed #dashboard-container .nav-links a .beta-tag { flex-shrink: 0; fo
 .pc-modes { display: flex; flex-direction: column; gap: 6px; text-align: left; margin: .8rem 1.2rem .3rem; font-size: .9rem; }
 .pc-modes label, .pc-check { cursor: pointer; }
 @media (max-width: 760px) { .pcode-card { grid-template-columns: 1fr; } }
+
+/* Paramètres > API Gentok */
+.api-table { width: 100%; font-size: .8rem; border-collapse: collapse; margin-top: .4rem; }
+.api-table td { padding: 5px 8px; border-top: 1px solid var(--border); vertical-align: top; color: var(--text-dim); }
+.api-table td:first-child { white-space: nowrap; color: #34d399; width: 1%; }
+.api-table td:nth-child(2) { white-space: nowrap; width: 1%; }
+.api-table code { font-size: .78rem; }
+@media (max-width: 760px) { .api-table td:nth-child(3) { display: none; } }

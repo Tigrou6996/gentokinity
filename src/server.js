@@ -1256,6 +1256,70 @@ app.post('/api/events', async (req, res) => {
     }
 });
 
+// API: one action / event at a time (the dashboard sends only what changed)
+//   POST /api/actions/changes { upsert: [...], remove: [ids] }   (same for /api/events/changes)
+//   POST /api/actions/item { action }   PUT /api/actions/:id { action }   DELETE /api/actions/:id
+//   POST /api/events/item { event }     PUT /api/events/:id { event }     DELETE /api/events/:id
+for (const kind of ['actions', 'events']) {
+    const one = kind === 'actions' ? 'action' : 'event';
+    const apply = async (req, res, changes) => {
+        const token = getRequestToken(req);
+        if (!token) return res.status(401).json({ error: 'Token manquant' });
+        try {
+            await config.getSessionFor(token);
+            const result = await config.applyItemChanges(kind, token, changes);
+            notifyAppSessionChanged(token);
+            res.json({ success: true, ...result });
+        } catch (e) {
+            res.status(e.status || 500).json({ error: e.message });
+        }
+    };
+    const itemOf = (req) => {
+        const body = req.body || {};
+        const item = body[one] && typeof body[one] === 'object' ? body[one] : null;
+        if (item && req.params.id) item.id = req.params.id;
+        return item;
+    };
+    app.post(`/api/${kind}/changes`, (req, res) => {
+        const { upsert = [], remove = [] } = req.body || {};
+        if (!Array.isArray(upsert) || !Array.isArray(remove) || upsert.length > 500 || remove.length > 500) return res.status(400).json({ error: 'Format invalide' });
+        apply(req, res, { upsert, remove });
+    });
+    app.post(`/api/${kind}/item`, (req, res) => {
+        const item = itemOf(req);
+        if (!item) return res.status(400).json({ error: `Paramètre « ${one} » manquant` });
+        apply(req, res, { upsert: [item] });
+    });
+    app.put(`/api/${kind}/:id`, (req, res) => {
+        const item = itemOf(req);
+        if (!item) return res.status(400).json({ error: `Paramètre « ${one} » manquant` });
+        apply(req, res, { upsert: [item] });
+    });
+    app.delete(`/api/${kind}/:id`, (req, res) => apply(req, res, { remove: [req.params.id] }));
+}
+
+// API: add a sound to the soundboard (a "sound" action) from its address
+app.post('/api/sounds/item', async (req, res) => {
+    const token = getRequestToken(req);
+    if (!token) return res.status(401).json({ error: 'Token manquant' });
+    const { name, url, volume } = req.body || {};
+    let address;
+    try { address = new URL(String(url || '')); } catch (e) { return res.status(400).json({ error: 'URL du son invalide' }); }
+    if (!['http:', 'https:'].includes(address.protocol)) return res.status(400).json({ error: 'URL du son invalide' });
+    const title = String(name || '').trim().slice(0, 60) || 'Son';
+    try {
+        await config.getSessionFor(token);
+        const v = Number(volume);
+        const result = await config.applyItemChanges('actions', token, {
+            upsert: [{ id: `snd_${Date.now()}_${Math.round(Math.random() * 1e6)}`, name: title, type: 'sound', soundUrl: address.toString(), soundName: title, volume: Number.isFinite(v) ? Math.min(Math.max(v, 0), 1) : 1 }]
+        });
+        notifyAppSessionChanged(token);
+        res.json({ success: true, sound: result.items[0] });
+    } catch (e) {
+        res.status(e.status || 500).json({ error: e.message });
+    }
+});
+
 // API: Manage Actions
 app.get('/api/actions', async (req, res) => {
     const token = getRequestToken(req);

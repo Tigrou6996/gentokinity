@@ -1736,6 +1736,7 @@ function applyConfigUI(config) {
 
     currentActions = config.actions || [];
     currentEvents = config.events || [];
+    if (!isPresetEditMode) { rememberSynced('actions', currentActions); rememberSynced('events', currentEvents); }
     renderActions();
     renderEvents();
     renderSoundLinks();
@@ -3761,7 +3762,7 @@ async function saveNewAction(e) {
     updateLikesGoalActionSelect();
 
     // Sync in background
-    sync('actions', currentActions).catch(console.error);
+    syncDiff('actions', currentActions).catch(console.error);
 }
 
 async function saveNewEvent(e) {
@@ -3914,7 +3915,44 @@ async function saveNewEvent(e) {
     renderSoundLinks(); // Immediately refresh soundboard trigger badges
 
     // Sync in background
-    sync('events', currentEvents).catch(console.error);
+    syncDiff('events', currentEvents).catch(console.error);
+}
+
+// Actions / events are saved item by item: only what changed since the last save (or the last config received)
+// is sent to /api/<kind>/changes. Resending the whole list let a stale tab (or the app) undo other changes.
+const syncedItems = { actions: null, events: null };
+function rememberSynced(kind, list) {
+    syncedItems[kind] = new Map((list || []).map(i => [String(i.id), JSON.stringify(i)]));
+}
+async function syncDiff(kind, list) {
+    if (isPresetEditMode) return; // preset edition saves the preset, not the scene
+    const base = syncedItems[kind];
+    if (!base) { await sync(kind, list); rememberSynced(kind, list); return; }
+    const upsert = [];
+    const seen = new Set();
+    for (const item of list || []) {
+        const id = String(item.id);
+        seen.add(id);
+        if (base.get(id) !== JSON.stringify(item)) upsert.push(item);
+    }
+    const remove = Array.from(base.keys()).filter(id => !seen.has(id));
+    if (!upsert.length && !remove.length) return;
+    if (upsert.length > 400 || remove.length > 400) { await sync(kind, list); rememberSynced(kind, list); return; } // big import
+    try {
+        const res = await fetch(`${getApiBase()}/api/${kind}/changes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), upsert, remove })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            showNotify('Enregistrement impossible', data.error || `Erreur ${res.status}`, 'error');
+            return;
+        }
+        rememberSynced(kind, list);
+    } catch (e) {
+        showNotify('Enregistrement impossible', e.message, 'error');
+    }
 }
 
 async function sync(type, data) {
@@ -4030,7 +4068,7 @@ window.deleteSelectedItems = async (type) => {
     if (type === 'sound') {
         // Delete Actions (Sounds)
         currentActions = currentActions.filter(a => !selected.includes(a.id));
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
 
         // Cleanup orphaned events
         currentEvents.forEach(evt => {
@@ -4038,7 +4076,7 @@ window.deleteSelectedItems = async (type) => {
         });
         // Remove empty events if they were only for sound
         // Actually keep them but inactive? No, let's keep logic simple
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         showToast(`${selected.length} sons supprimés.`);
         renderSoundLinks();
@@ -4051,7 +4089,7 @@ window.deleteSelectedItems = async (type) => {
     } else if (type === 'event') {
         // Delete Events
         currentEvents = currentEvents.filter(e => !selected.includes(e.id));
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         showToast(`${selected.length} événements supprimés.`);
         renderEvents();
@@ -4065,13 +4103,13 @@ window.deleteSelectedItems = async (type) => {
     } else if (type === 'action') {
         // Delete Actions (General)
         currentActions = currentActions.filter(a => !selected.includes(a.id));
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
 
         // Cleanup orphaned events
         currentEvents.forEach(evt => {
             evt.actions = evt.actions.filter(id => !selected.includes(id));
         });
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         showToast(`${selected.length} actions supprimées.`);
         renderActions();
@@ -4105,9 +4143,9 @@ window.deleteItem = async (type, id) => {
             }
         });
 
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
         if (eventsChanged) {
-            await sync('events', currentEvents);
+            await syncDiff('events', currentEvents);
             renderEvents(); // Re-render events to show updated badges
         }
         showToast('Action supprimée !', 'success');
@@ -4117,7 +4155,7 @@ window.deleteItem = async (type, id) => {
         updateLikesGoalActionSelect();
     } else {
         currentEvents = currentEvents.filter(e => e.id !== id);
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
         renderEvents();
         showToast('Événement supprimé !', 'success');
     }
@@ -4127,7 +4165,7 @@ window.toggleEvent = async (id) => {
     const e = currentEvents.find(evt => evt.id === id);
     if (e) {
         e.active = !e.active;
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
     }
 };
 
@@ -4601,6 +4639,18 @@ window.closeModal = (id) => {
 
 
 // Navigation Logic
+// Paramètres > API Gentok
+window.copyApiExample = async () => {
+    const base = (typeof getApiBase === 'function' && getApiBase()) || location.origin;
+    const example = `curl -X POST ${base}/api/actions/item -H "Content-Type: application/json" -d '{"token":"VOTRE_CLE","action":{"name":"Merci","type":"tts","text":"Merci {nickname} !"}}'`;
+    try { await navigator.clipboard.writeText(example); showToast('Exemple copié (remplacez VOTRE_CLE)', 'success'); } catch (e) { showToast(example, 'info'); }
+};
+window.copyApiToken = async () => {
+    const ok = await Swal.fire({ title: 'Copier votre clé ?', text: "Elle donne accès à votre compte Gentok : collez-la uniquement dans vos propres outils.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Copier', cancelButtonText: 'Annuler' });
+    if (!ok.isConfirmed) return;
+    try { await navigator.clipboard.writeText(localStorage.getItem('gentok_token') || ''); showToast('Clé copiée', 'success'); } catch (e) { showToast('Copie impossible', 'error'); }
+};
+
 // Points, levels and gift history: shared by all the scenes, unless the active scene is marked independent
 function renderSceneSync(activeScene) {
     document.querySelectorAll('.scene-sync').forEach(el => {
@@ -6797,7 +6847,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
             volume: volume
         };
         currentActions.push(action);
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
 
         // 2. Create Event
         const eventId = 'evt_' + Date.now();
@@ -6824,7 +6874,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
         }
 
         currentEvents.push(event);
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         // Refresh & Close
         let label = '';
@@ -10212,8 +10262,8 @@ window.cleanAllUnlinkedItems = async () => {
 
 async function saveCurrentConfig() {
     try {
-        await sync('actions', currentActions);
-        await sync('events', currentEvents);
+        await syncDiff('actions', currentActions);
+        await syncDiff('events', currentEvents);
 
         const base = window.electronAPI ? getLocalApiBase() : getApiBase();
         const token = localStorage.getItem('gentok_token');

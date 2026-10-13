@@ -2612,6 +2612,28 @@
                             </div>
 
                             <!-- UI & Theme -->
+                            <!-- Add actions / events / sounds from other tools (endpoints in src/server.js) -->
+                            <div class="settings-group-premium api-card" style="margin-bottom: 2rem;">
+                                <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: .6rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-code"></i> API Gentok (ajouter des actions, événements et sons)
+                                </h3>
+                                <p class="text-dim small">Ajoutez, modifiez ou supprimez un élément de la scène active depuis Streamer.bot, un script ou un autre outil. Chaque appel ne touche que l'élément indiqué. Envoyez votre clé dans <code>token</code> (corps JSON) — elle donne accès à votre compte : ne la partagez jamais.</p>
+                                <table class="api-table">
+                                    <tr><td><b>POST</b></td><td><code>/api/actions/item</code></td><td><code>{ token, action: { name, type, … } }</code> — ajoute (ou modifie si <code>id</code> existe)</td></tr>
+                                    <tr><td><b>PUT</b></td><td><code>/api/actions/:id</code></td><td><code>{ token, action }</code> — remplace l'action</td></tr>
+                                    <tr><td><b>DELETE</b></td><td><code>/api/actions/:id</code></td><td><code>{ token }</code> — la retire aussi des événements</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/events/item</code></td><td><code>{ token, event: { triggerType, actions: [ids], … } }</code></td></tr>
+                                    <tr><td><b>PUT / DELETE</b></td><td><code>/api/events/:id</code></td><td>comme pour les actions</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/sounds/item</code></td><td><code>{ token, name, url, volume }</code> — ajoute un son au Soundboard</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/actions/changes</code></td><td><code>{ token, upsert: [...], remove: [ids] }</code> — plusieurs changements d'un coup</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/test-action/:id</code></td><td><code>{ token }</code> — lance une action</td></tr>
+                                </table>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <button type="button" class="btn-secondary btn-sm" onclick="copyApiExample()"><i class="fas fa-copy"></i> Copier un exemple (curl)</button>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="copyApiToken()"><i class="fas fa-key"></i> Copier ma clé</button>
+                                </div>
+                            </div>
+
                             <div class="settings-group-premium" style="margin-bottom: 2rem;">
                                 <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-palette"></i> Apparence & Thème
