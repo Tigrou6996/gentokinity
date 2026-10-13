@@ -53,10 +53,13 @@ async function useDirectConnection(reason) {
     if (proxyBypassed) return false;
     proxyBypassed = true;
     logger.warn(`🌐 Proxy système injoignable (${reason}) : connexion directe utilisée.`);
+    // the app's pages use the default session; the auto-updater uses its own one ("electron-updater")
     try {
         const { session } = require('electron');
-        await session.defaultSession.setProxy({ mode: 'direct' });
-        await session.defaultSession.closeAllConnections();
+        for (const ses of [session.defaultSession, session.fromPartition('electron-updater')]) {
+            await ses.setProxy({ mode: 'direct' });
+            await ses.closeAllConnections();
+        }
     } catch (e) { logger.warn(`Proxy : ${e.message}`); }
     return true;
 }

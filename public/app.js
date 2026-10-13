@@ -1552,14 +1552,10 @@ function applyConfigUI(config) {
 
     if (window.renderInstalledPresets) renderInstalledPresets();
 
-    // [ADMIN] Show admin nav only for admin users
-    const navAdmin = document.getElementById('nav-admin');
-    if (navAdmin) {
-        console.log('[DEBUG] Setting nav-admin display to:', config.isAdmin ? 'block' : 'none');
-        navAdmin.style.display = config.isAdmin ? 'block' : 'none';
-        // Force visibility if admin
-        if (config.isAdmin) navAdmin.style.setProperty('display', 'block', 'important');
-    }
+    // [ADMIN] Console and Administration: admin accounts only (normal and Premium accounts never see them).
+    // They are not "scene-required" items: that rule showed them to everybody as soon as a scene was open.
+    document.querySelectorAll('.admin-only').forEach(li => { li.style.display = config.isAdmin ? '' : 'none'; });
+    if (!config.isAdmin && ['#logs', '#admin'].includes(window.location.hash) && typeof showSection === 'function') showSection('dashboard');
 
     // [CRITICAL: LEADERBOARDS & GOALS INIT] Moved to top for robustness
     try {
@@ -4717,6 +4713,8 @@ async function setSceneIndependent(sceneId, independent, input) {
 }
 
 window.showSection = (sectionId) => {
+    // Console and Administration are for admin accounts only
+    if ((sectionId === 'logs' || sectionId === 'admin') && !isAdmin) sectionId = 'dashboard';
     // Check if section is locked (Premium only)
     const navItem = document.querySelector(`.nav-links a[href="#${sectionId}"]`)?.parentElement;
     if (navItem && navItem.classList.contains('locked')) {

@@ -1,5 +1,5 @@
 {
-    "version": "1.0.6",
-    "buildDate": "2026-09-01",
-    "changelog": "AutoIt fix in Electron (Mixed Content) & Username Management UI."
+    "version": "1.0.7",
+    "buildDate": "2026-10-13",
+    "changelog": "Application sans aucune information privée (le serveur traite le live), connexion directe si le proxy Windows est en panne, style Épuré, presets par code, XP et monnaie, compte bot du chat."
 }
