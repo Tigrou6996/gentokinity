@@ -130,6 +130,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// Database down (or not configured) on the server: the API says so in JSON instead of hanging or crashing
+app.use('/api', (req, res, next) => {
+    if (config.isAppMode || req.method === 'OPTIONS' || /^\/(version|app\/ping|health)\b/.test(req.path)) return next();
+    const reason = require('./utils/db').status();
+    if (!reason) return next();
+    res.status(503).json({
+        error: 'Base de données indisponible',
+        message: `Le serveur Gentok n'a pas accès à sa base de données (${reason}). Réessayez dans un instant.`
+    });
+});
+
 // [DEBUG] Request Logger
 // app.use((req, res, next) => {
 //     console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
@@ -2941,7 +2952,8 @@ async function startServer() {
         try {
             logger.info('🔌 Initialisation de la base de données...');
             await connectDB();
-            logger.info('✅ Base de données prête.');
+            if (connectDB.status()) logger.warn(`⚠️ Démarrage sans base de données (${connectDB.status()}) : l'API répond « Base de données indisponible ».`);
+            else logger.info('✅ Base de données prête.');
 
             const PORT = process.env.PORT || 3000;
 

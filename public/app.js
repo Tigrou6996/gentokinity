@@ -365,14 +365,18 @@ async function init() {
                 });
 
                 const text = await res.text();
-                console.log('Raw login response:', text); // Debug log
 
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch (e) {
-                    console.error('JSON Parse Error. Raw response:', text);
-                    throw new Error('Réponse serveur invalide (non-JSON)');
+                    // an HTML page (e.g. nginx 502 while the Gentok server is down or restarting)
+                    console.error('Login: non-JSON response', res.status, text.slice(0, 200));
+                    errorDiv.textContent = res.status >= 500
+                        ? `Le serveur Gentok ne répond pas correctement (erreur ${res.status}). Il redémarre peut-être : réessayez dans une minute.`
+                        : `Réponse inattendue du serveur Gentok (erreur ${res.status}).`;
+                    errorDiv.style.display = 'block';
+                    return;
                 }
 
                 if (res.ok && data.success) {
@@ -383,8 +387,8 @@ async function init() {
                     isAdmin = data.isAdmin || false;
 
                     // Verify token with API
-                    const verifyRes = await fetch(`${base}/api/verify-license?token=${data.token}`);
-                    const verifyData = await verifyRes.json();
+                    const verifyRes = await fetch(`${base}/api/verify-license?token=${encodeURIComponent(data.token)}`);
+                    const verifyData = await verifyRes.json().catch(() => ({ error: `Vérification du compte impossible (erreur ${verifyRes.status}).` }));
 
                     if (verifyData.error) {
                         errorDiv.textContent = verifyData.error;
@@ -408,12 +412,15 @@ async function init() {
                     showToast('Connexion réussie', 'Initialisation de l\'espace Gentok Pro...');
                     setTimeout(() => window.location.reload(), 800);
                 } else {
-                    errorDiv.textContent = data.error || 'Erreur de connexion';
+                    errorDiv.textContent = data.message || data.error || 'Erreur de connexion';
                     errorDiv.style.display = 'block';
                 }
             } catch (err) {
+                // fetch itself failed: no internet, DNS, firewall / antivirus, or the server is unreachable
                 console.error('Login error:', err);
-                errorDiv.textContent = 'Impossible de se connecter au serveur';
+                errorDiv.textContent = navigator.onLine === false
+                    ? 'Pas de connexion internet.'
+                    : `Impossible de joindre le serveur Gentok (${getApiBase().replace(/^https?:\/\//, '')}). Vérifiez votre connexion (pare-feu, antivirus, VPN) ou réessayez dans un instant.`;
                 errorDiv.style.display = 'block';
             }
         });

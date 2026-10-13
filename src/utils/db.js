@@ -45,9 +45,18 @@ const connectDB = async () => {
         if (config.isAppMode) {
             logger.warn('⚠️ Mode Application local : continuation en mode hors-ligne sans MongoDB cloud.');
         } else {
-            process.exit(1);
+            // The server keeps running (the API answers "database unavailable", see dbStatus) instead of
+            // exiting: an exit made nginx answer an HTML 502 page and the login only said "cannot connect".
+            connectDB.lastError = config.mongodbUri ? err.message : 'MONGODB_URI manquante dans le fichier .env du serveur';
+            if (config.mongodbUri) {
+                logger.warn('⏳ Nouvel essai de connexion à MongoDB dans 15 s...');
+                setTimeout(() => connectDB().then(() => { connectDB.lastError = null; }).catch(() => { }), 15000).unref();
+            }
         }
     }
 };
+
+/** null when the database is usable, otherwise the reason (for the API's 503 answers) */
+connectDB.status = () => (mongoose.connection.readyState === 1 ? null : (connectDB.lastError || 'connexion en cours'));
 
 module.exports = connectDB;
