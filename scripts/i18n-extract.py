@@ -94,7 +94,7 @@ def handle_js_literal(raw, is_template):
     elif looks_french_ui(raw):
         texts.add(norm(raw))
 
-for js in ["public/app.js", "public/router.js", "public/pro.js", "public/gallery.js", "public/appstatus.js", "public/premium.js", "public/donors.js", "public/runmode.js", "public/navrail.js"]:
+for js in ["public/app.js", "public/home.js", "public/router.js", "public/pro.js", "public/gallery.js", "public/appstatus.js", "public/premium.js", "public/donors.js", "public/runmode.js", "public/navrail.js"]:
     p = os.path.join(ROOT, js)
     src = open(p, encoding="utf-8").read()
     # drop comments

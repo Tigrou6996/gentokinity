@@ -810,6 +810,16 @@ if (searchInput) {
 }
 
 
+// Same id for every socket of this tab (also after a reload): when the connection drops and comes back
+// (network change, proxy, sleep), the server must not take this tab's old socket for "another tab"
+function dashboardTabId() {
+    try {
+        let id = sessionStorage.getItem('gentok_tab_id');
+        if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('gentok_tab_id', id); }
+        return id;
+    } catch (e) { return ''; }
+}
+
 function connectToRemote() {
     if (socket) socket.disconnect();
     console.log('🌐 Connecting to Remote VPS...');
@@ -897,7 +907,7 @@ function setupSocketListeners() {
         // [RELAY] Identify ourselves
         const token = localStorage.getItem('gentok_token');
         if (token) {
-            socket.emit('identify', { token, type: 'dashboard' });
+            socket.emit('identify', { token, type: 'dashboard', tabId: dashboardTabId() });
         }
 
         // Refresh data on connection
@@ -913,7 +923,9 @@ function setupSocketListeners() {
         if (modal) modal.style.display = 'flex';
         if (btn) {
             btn.disabled = false;
+            btn.style.display = '';
             btn.innerHTML = 'Prendre la main sur cette session';
+            btn.onclick = window.takeOverSession; // the button was never wired: the warning could not be closed
         }
     });
 
@@ -1652,7 +1664,7 @@ function applyConfigUI(config) {
         const licenseInput = document.querySelector('#license-token');
         if (licenseInput) licenseInput.value = config.token;
         if (socket && socket.connected) {
-            socket.emit('identify', { token: config.token, type: 'dashboard' });
+            socket.emit('identify', { token: config.token, type: 'dashboard', tabId: dashboardTabId() });
         }
     }
 

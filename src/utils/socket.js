@@ -84,7 +84,16 @@ function initSocket(server) {
                 // Another tab already open (a real, still connected one): it would play the sounds, alerts and TTS
                 // twice. The warning stays (it used to be hidden right away by session_active) until "take over".
                 // The open desktop app is not a duplicate: the header badge shows it and Cloud mode uses both.
-                const others = clientsByToken[token].dashboard.filter(id => id !== socket.id && io.sockets.sockets.get(id));
+                // A socket of this same tab (it reconnected before the server noticed the old one was gone) is not
+                // another tab: close the stale one instead of warning the streamer about themselves
+                const tabId = data && typeof data.tabId === 'string' ? data.tabId.slice(0, 64) : '';
+                socket.data.tabId = tabId;
+                const others = clientsByToken[token].dashboard.filter(id => {
+                    const s = id !== socket.id && io.sockets.sockets.get(id);
+                    if (!s) return false;
+                    if (tabId && s.data.tabId === tabId) { s.leave(`room:${token}`); s.disconnect(true); return false; }
+                    return true;
+                });
                 clientsByToken[token].dashboard = others.concat(socket.id);
                 if (others.length > 0) {
                     // not in the live room until "Prendre la main": this tab plays nothing twice meanwhile
