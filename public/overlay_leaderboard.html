@@ -26,6 +26,7 @@
         }
 
         /* [NEW] Centering ONLY for Dashboard Preview */
+        body.is-demo .leaderboard-item { opacity: .82; }
         body.preview-mode {
             display: flex;
             justify-content: center;
@@ -525,6 +526,11 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Escapes text coming from TikTok viewers before it is put into innerHTML
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
         const socket = io();
         const lbContainer = document.getElementById('leaderboard');
         const listEl = document.getElementById('lb-list');
@@ -547,7 +553,12 @@
         let transparentParam = urlParams.get('transparent') === 'true';
         let showTitleParam = urlParams.get('showTitle') !== 'false';
         let rtlParam = urlParams.get('rtl') === 'true';
-        let isPreview = urlParams.get('preview') === 'true';
+        // Dashboard preview (or gallery demo): the size comes from the saved settings, and example rows
+        // are shown until the live sends real ones
+        let isPreview = ['true', '1'].includes(urlParams.get('preview')) || window.self !== window.top;
+        const isDemo = ['true', '1'].includes(urlParams.get('demo'));
+        const DEMO_ROWS = [['Léa', 1250, 4800], ['Tom_off', 860, 3100], ['Inès', 540, 2400], ['Max', 320, 1700], ['Sarah.b', 210, 1200], ['Noah', 120, 800], ['Jade', 60, 450], ['Lucas', 25, 200], ['Emma', 10, 90], ['Hugo', 5, 40]]
+            .map(([nickname, coins, count], i) => ({ nickname, uniqueId: nickname, coins, count, profilePictureUrl: `/img/tiktok/${['5655', '5487', '5827', '6064', '5655', '5487', '5827', '6064', '5655', '5487'][i]}.png`, demo: true }));
 
         // Apply style class
         lbContainer.classList.add(`style-${styleParam}`);
@@ -624,8 +635,10 @@
                 serverLimit = stats.topLikesLimit || 10;
             }
 
-            const effectiveLimit = Math.min(limitParam || serverLimit, serverLimit);
+            const effectiveLimit = isPreview ? serverLimit : Math.min(limitParam || serverLimit, serverLimit);
+            if (!data.length && (isPreview || isDemo)) data = DEMO_ROWS;
             const slicedData = data.slice(0, effectiveLimit);
+            document.body.classList.toggle('is-demo', !!(slicedData[0] && slicedData[0].demo));
 
             if (displayTitle && showTitleParam) titleEl.textContent = displayTitle;
 
@@ -675,9 +688,9 @@
                 item.className = 'leaderboard-item';
                 item.innerHTML = `
                     <div class="rank rank-${rank}">${rank}.</div>
-                    <img src="${user.profilePictureUrl || '/logo.png'}" class="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/logo.png';">
+                    <img src="${escapeHtml(user.profilePictureUrl || '/logo.png')}" class="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/logo.png';">
                     <div class="user-info">
-                        <div class="username">${user.nickname || user.uniqueId}</div>
+                        <div class="username">${escapeHtml(user.nickname || user.uniqueId)}</div>
                         <div class="score">
                             <i class="fas ${type === 'coins' ? 'fa-coins' : 'fa-heart'} score-icon"></i>
                             <span class="score-val">${prevScore}</span>

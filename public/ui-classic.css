@@ -1,0 +1,175 @@
+/*
+ * 1) Compatibility with Bootstrap 5 (public/vendor/bootstrap.min.css, loaded first).
+ *    Bootstrap's "Reboot" adds margins on titles, paragraphs and lists, underlines links...
+ *    The dashboard was laid out without them: give them back their previous values.
+ * 2) "Classique" interface style (default): Bootstrap dark look, flat and sober
+ *    (system font, no gradients, no glow, no blur, standard radius). Scoped to .ui-classic.
+ */
+
+/* ---------- 1. Bootstrap compatibility (all styles) ---------- */
+h1, h2, h3, h4, h5, h6, p, ul, ol, dl, dd, figure, blockquote, label, legend, fieldset { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+a { color: inherit; text-decoration: none; }
+label { display: inline; }
+table { border-collapse: separate; }
+button { border-radius: 0; }
+.btn-close { opacity: 1; width: auto; height: auto; padding: 0; background-image: none; box-sizing: border-box; }
+.modal { --bs-modal-zindex: 1000; }
+
+/* ---------- 2. "Classique" style ---------- */
+.ui-classic {
+    --primary-glow: transparent;
+    --bg-dark: #1a1d21;
+    --bg-deep: #1f2328;
+    --sidebar-bg: #16181c;
+    --card-bg: #212529;
+    --card-hover: #262a2f;
+    --border: #343a40;
+    --border-hover: #495057;
+    --text: #e9ecef;
+    --text-dim: #adb5bd;
+    --text-muted: #868e96;
+    --secondary: #9aa4ae;
+    --glass-blur: 0px;
+    --panel-glow: none;
+    --bs-body-bg: #1a1d21;
+    --bs-border-color: #343a40;
+    --bs-primary: var(--primary);
+    --bs-primary-rgb: var(--primary-rgb);
+    --bs-link-color: var(--primary);
+}
+
+/* system font everywhere (or the font chosen in Settings), except the icon fonts */
+.ui-classic, .ui-classic *:not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands) {
+    font-family: var(--ui-font, var(--bs-font-sans-serif));
+}
+body.ui-classic { background: var(--bg-dark); line-height: 1.45; }
+.ui-classic .glass-bg, .ui-classic .bg-glow, .ui-classic .orb, .ui-classic .brand-wrapper::after { display: none !important; }
+.ui-classic .main-content { background: var(--bg-dark); }
+
+/* no motion effects */
+.ui-classic .card, .ui-classic .stat-card, .ui-classic .btn-primary, .ui-classic .btn-secondary, .ui-classic .btn-icon,
+.ui-classic .btn-ghost, .ui-classic .nav-links a, .ui-classic .stat-icon-wrapper, .ui-classic .settings-group-premium { transition: background-color .15s, border-color .15s, color .15s; }
+.ui-classic .card:hover, .ui-classic .stat-card:hover, .ui-classic .btn-primary:hover, .ui-classic .btn-secondary:hover, .ui-classic .btn-icon:hover,
+.ui-classic .nav-links a:hover, .ui-classic .stat-card:hover .stat-icon-wrapper { transform: none !important; }
+
+/* Sidebar */
+.ui-classic .sidebar { background: var(--sidebar-bg); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; border-right: 1px solid var(--border); padding: 1.25rem .85rem; }
+.ui-classic .brand-wrapper { margin-bottom: 1.25rem; }
+.ui-classic .nav-category { color: var(--text-muted); opacity: 1; font-size: .7rem; letter-spacing: .08em; font-weight: 600; padding: 1rem .5rem .35rem .85rem; }
+.ui-classic .nav-links a { border-radius: .375rem; padding: .45rem .75rem; color: #c3c9cf; font-weight: 400; font-size: .9rem; border: 0; margin: 0; }
+.ui-classic .nav-links a:hover:not(.active) { background: rgba(255, 255, 255, .05); color: #fff; }
+.ui-classic .nav-links li.active a { background: rgba(var(--primary-rgb), .14); color: #fff; border: 0; border-radius: .375rem; box-shadow: none; }
+.ui-classic .nav-item-content { gap: 10px; }
+.ui-classic .nav-item-content i { font-size: .95rem; width: 18px; color: #868e96; }
+.ui-classic .nav-links li.active a .nav-item-content i, .ui-classic .nav-links a:hover .nav-item-content i { color: var(--primary); filter: none; }
+.ui-classic .beta-tag { background: transparent !important; color: var(--text-muted) !important; border: 1px solid var(--border) !important; box-shadow: none !important;
+    border-radius: .25rem; font-size: .6rem; font-weight: 600; padding: .1rem .3rem; animation: none !important; }
+
+/* Header */
+.ui-classic header { height: 64px; padding-bottom: .75rem; border-bottom: 1px solid var(--border); }
+.ui-classic h1 { font-size: 1.35rem; font-weight: 600; letter-spacing: 0; background: none; -webkit-text-fill-color: currentColor; color: var(--text); text-shadow: none; }
+.ui-classic h2 { font-weight: 600; letter-spacing: 0; }
+.ui-classic h3 { font-weight: 600; }
+
+/* Cards */
+.ui-classic .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: .5rem; padding: 1.25rem; backdrop-filter: none; box-shadow: none; }
+.ui-classic .card-header { background: transparent; border: 0; padding: 0; }
+.ui-classic .card-header h2 { font-size: 1.15rem; color: var(--text); }
+.ui-classic .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: .5rem; backdrop-filter: none; box-shadow: none; min-height: 120px; padding: 1rem 1.15rem; }
+.ui-classic .stat-card:hover { border-color: var(--border-hover); background: var(--card-bg); box-shadow: none; }
+.ui-classic .stat-grid { gap: 1rem; margin: 1rem auto; }
+.ui-classic .stat-title { font-size: .85rem; font-weight: 500; }
+.ui-classic .stat-value { font-size: 2rem; font-weight: 600; letter-spacing: 0; }
+.ui-classic .stat-icon-wrapper { width: 38px; height: 38px; border-radius: .375rem; font-size: 1rem; background: rgba(255, 255, 255, .04); border: 1px solid var(--border); box-shadow: none !important; }
+.ui-classic .stat-card:hover .stat-icon-wrapper { background: rgba(255, 255, 255, .04); color: inherit; }
+.ui-classic .stat-compare { background: transparent; padding: 0; }
+.ui-classic .settings-group-premium { background: transparent; border: 1px solid var(--border); border-radius: .5rem; padding: 1.15rem; }
+.ui-classic .settings-group-premium:hover { background: transparent; border-color: var(--border); }
+.ui-classic .settings-group-premium h3 { color: var(--text) !important; font-size: .95rem !important; }
+.ui-classic .settings-group-premium h3 i { color: var(--primary); }
+.ui-classic .overlay-item { border-color: var(--border) !important; border-radius: .5rem !important; }
+.ui-classic .overlay-header { background: #24282d !important; }
+.ui-classic .overlay-body { background: #1e2125 !important; }
+.ui-classic .overlay-sub-item { background: var(--card-bg) !important; border-color: var(--border) !important; border-radius: .375rem !important; }
+.ui-classic .gal-card, .ui-classic .gw-card { background: var(--card-bg); border-color: var(--border); border-radius: .5rem; box-shadow: none; }
+.ui-classic .gal-head h3 { color: var(--text); font-weight: 600; }
+.ui-classic .gal-preview { border-radius: .375rem; }
+
+/* Buttons: Bootstrap shapes */
+.ui-classic .btn-primary { background: var(--primary); border: 1px solid var(--primary); color: #fff; border-radius: .375rem; padding: .45rem .9rem; font-size: .9rem; font-weight: 500; box-shadow: none; gap: .45rem; }
+.ui-classic .btn-primary::before { display: none; }
+.ui-classic .btn-primary:hover { filter: brightness(1.08); box-shadow: none; }
+.ui-classic .btn-secondary { background: transparent; border: 1px solid #495057; color: #dee2e6; border-radius: .375rem; padding: .4rem .8rem; font-size: .875rem; font-weight: 400; backdrop-filter: none; gap: .45rem; }
+.ui-classic .btn-secondary:hover { background: #343a40; color: #fff; border-color: #6c757d; box-shadow: none; }
+.ui-classic .btn-ghost { border-radius: .375rem; }
+.ui-classic .btn-icon { width: 38px; height: 38px; border-radius: .375rem; background: transparent; border: 1px solid #495057; }
+.ui-classic .btn-icon:hover { background: #343a40; border-color: #6c757d; color: #fff; box-shadow: none; }
+.ui-classic #btn-start { box-shadow: none; }
+
+/* Forms: Bootstrap .form-control / .form-select look */
+.ui-classic input[type=text], .ui-classic input[type=number], .ui-classic input[type=search], .ui-classic input[type=password],
+.ui-classic input[type=email], .ui-classic input[type=url], .ui-classic select, .ui-classic textarea {
+    background-color: #212529; border: 1px solid #495057; border-radius: .375rem; color: var(--text); box-shadow: none;
+}
+.ui-classic input:focus, .ui-classic select:focus, .ui-classic textarea:focus {
+    border-color: rgba(var(--primary-rgb), .7); box-shadow: 0 0 0 .2rem rgba(var(--primary-rgb), .2); outline: 0;
+}
+.ui-classic .custom-select-trigger { border-radius: .375rem; background: #212529; border-color: #495057; }
+.ui-classic .form-group label, .ui-classic .pro-field label { font-weight: 500; }
+
+/* Tables, tabs */
+.ui-classic th { background: #24282d; font-weight: 600; }
+.ui-classic .pro-table th { background: #24282d; }
+.ui-classic .pro-tabs button { border-radius: .375rem .375rem 0 0; }
+
+/* Header: one line, no wrapping */
+.ui-classic header .user-control { gap: .5rem; flex-wrap: nowrap; }
+.ui-classic header h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ui-classic header .header-left { min-width: 0; flex: 1 1 auto; }
+.ui-classic header .btn-primary, .ui-classic header .btn-ghost { white-space: nowrap; height: 38px; }
+.ui-classic #header-username { height: 38px; width: 170px; }
+.ui-classic .blob, .ui-classic .splash-bg, .ui-classic .splash-blob { display: none !important; }
+
+/* Modals & login */
+.ui-classic .modal { background: rgba(0, 0, 0, .6); backdrop-filter: none; }
+.ui-classic .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: .5rem; box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .4); padding: 1.5rem; animation: none; }
+.ui-classic .login-overlay { background: var(--bg-dark); }
+.ui-classic .login-card { border-radius: .5rem; padding: 2.25rem; }
+
+/* Overlay previews: an iframe is drawn opaque (white) when its colour scheme differs from the page's,
+   and Bootstrap's dark theme sets color-scheme: dark. Overlays are light-scheme pages with a transparent background. */
+iframe { color-scheme: light; }
+
+/* ---------- Application status badge (header) and update card (both styles) ---------- */
+.app-badge { display: inline-flex; align-items: center; gap: .45rem; height: 38px; padding: 0 .8rem; border-radius: .375rem; border: 1px solid var(--border);
+    background: transparent; color: var(--text-dim); font-size: .82rem; white-space: nowrap; cursor: pointer; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+.app-badge span { overflow: hidden; text-overflow: ellipsis; }
+.app-badge:hover { border-color: var(--border-hover); color: var(--text); }
+.app-badge.tone-ok i { color: #20c997; }
+.app-badge.tone-warn { border-color: rgba(255, 193, 7, .5); color: #ffc107; }
+.app-badge.tone-info i { color: #0dcaf0; }
+.app-update-row { display: flex; gap: .75rem; align-items: flex-start; }
+.app-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: .4rem; flex-shrink: 0; background: #6c757d; }
+.app-dot.tone-ok { background: #20c997; }
+.app-dot.tone-warn { background: #ffc107; }
+.app-dot.tone-info { background: #0dcaf0; }
+.app-update-facts { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: .9rem 0; font-size: .875rem; }
+.app-update-facts dt { color: var(--text-dim); font-weight: 400; }
+.app-update-facts dd { margin: 0; }
+.app-progress { height: .5rem; margin-bottom: .9rem; background: #343a40; }
+.app-progress .progress-bar { background: var(--primary); }
+.app-update-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 900px) {
+    .app-badge span { display: none; }
+    .ui-classic header { height: auto; }
+}
+
+/* SweetAlert dialogs and the update window, flat like Bootstrap modals */
+.ui-classic .swal2-popup { border-radius: .5rem !important; background: var(--card-bg) !important; border: 1px solid var(--border) !important; box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .4) !important; font-family: var(--ui-font, var(--bs-font-sans-serif)) !important; }
+.ui-classic .swal2-title { font-size: 1.25rem !important; font-weight: 600 !important; }
+.ui-classic .swal2-html-container { font-size: .95rem !important; }
+.ui-classic .swal2-styled { border-radius: .375rem !important; box-shadow: none !important; font-weight: 500 !important; padding: .45rem 1.1rem !important; }
+.ui-classic .swal2-backdrop-show { backdrop-filter: none !important; }
+.ui-classic .update-content { border-radius: .5rem !important; }
+.ui-classic .update-content * { animation: none !important; }

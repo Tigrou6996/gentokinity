@@ -1,0 +1,80 @@
+/*
+ * "Studio" interface style (Settings > Appearance > Style de l'interface), the default.
+ * Inspired by TikFinity: grey-black panels, thin colored borders, clear titles, sober buttons.
+ * Everything is scoped to .ui-studio (set on <html> and <body>), the other styles are untouched.
+ */
+.ui-studio {
+    --bg-dark: #121216;
+    --bg-deep: #16161b;
+    --sidebar-bg: #17171d;
+    --card-bg: #1c1c23;
+    --card-hover: #22222a;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.16);
+    --studio-line: color-mix(in srgb, var(--primary) 38%, transparent);
+    --studio-title: #5fb6f0;
+    --text-dim: #a3acb9;
+    --glass-blur: 0px;
+    --panel-glow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Page */
+body.ui-studio { background: var(--bg-dark); }
+.ui-studio .glass-bg, .ui-studio .bg-glow, .ui-studio .orb { opacity: .25; }
+.ui-studio .main-content { background: radial-gradient(1200px 600px at 80% -10%, rgba(var(--primary-rgb), .06), transparent 60%), var(--bg-dark); }
+
+/* Sidebar */
+.ui-studio .sidebar { background: var(--sidebar-bg); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; border-right: 1px solid var(--border); padding: 1.6rem 1rem; }
+.ui-studio .nav-category { color: #6b7280; opacity: 1; letter-spacing: 1.2px; padding: 1.2rem .5rem .5rem 1rem; }
+.ui-studio .nav-links a { border-radius: 8px; padding: .6rem .9rem; color: #b6bcc6; font-weight: 500; }
+.ui-studio .nav-links a:hover:not(.active) { transform: none; background: rgba(255, 255, 255, .05); border-color: transparent; }
+.ui-studio .nav-links li.active a { background: rgba(var(--primary-rgb), .12); border-left: 3px solid var(--primary); border-radius: 4px 8px 8px 4px; box-shadow: none; }
+.ui-studio .nav-links li.active a .nav-item-content i { filter: none; }
+.ui-studio .nav-links a:hover .nav-item-content i { filter: none; }
+
+/* Header */
+.ui-studio header { height: 88px; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.ui-studio h1 { font-size: 1.8rem; letter-spacing: -.5px; background: none; -webkit-text-fill-color: #fff; color: #fff; text-shadow: none; }
+
+/* Cards & sections */
+.ui-studio .card { background: var(--card-bg); border: 1px solid var(--studio-line); border-radius: 14px; padding: 1.6rem; backdrop-filter: none; box-shadow: var(--panel-glow); }
+.ui-studio .card-header h2, .ui-studio section.card > h2 { font-size: 1.35rem; color: #fff; }
+.ui-studio .card h3 { color: var(--studio-title); }
+.ui-studio .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; backdrop-filter: none; box-shadow: var(--panel-glow); min-height: 150px; padding: 1.4rem; }
+.ui-studio .stat-card:hover { transform: translateY(-3px); border-color: var(--studio-line); box-shadow: 0 10px 28px rgba(0, 0, 0, .4); }
+.ui-studio .overlay-item { border-color: var(--studio-line) !important; border-radius: 12px !important; }
+.ui-studio .overlay-header { background: #1f1f27 !important; }
+.ui-studio .overlay-body { background: #18181e !important; }
+.ui-studio .overlay-sub-item { background: #1c1c23 !important; border-color: var(--border) !important; }
+.ui-studio .overlay-sub-item label { color: var(--studio-title) !important; }
+.ui-studio .gal-card { background: #1c1c23; }
+.ui-studio .gw-card, .ui-studio .pro-usage > div, .ui-studio .plan-card { background: #1c1c23; }
+
+/* Buttons */
+.ui-studio .btn-primary { background: var(--primary); border-radius: 8px; padding: 10px 18px; box-shadow: none; font-weight: 700; }
+.ui-studio .btn-primary::before { display: none; }
+.ui-studio .btn-primary:hover { transform: none; filter: brightness(1.1); box-shadow: 0 4px 14px rgba(var(--primary-rgb), .35); }
+.ui-studio .btn-secondary { background: #2a2a33; border: 1px solid #3a3a45; border-radius: 6px; padding: 8px 14px; backdrop-filter: none; font-weight: 500; }
+.ui-studio .btn-secondary:hover { transform: none; background: #33333d; color: #fff; border-color: #4a4a57; box-shadow: none; }
+.ui-studio .btn-ghost { border-radius: 6px; }
+
+/* Forms */
+.ui-studio input[type=text], .ui-studio input[type=number], .ui-studio input[type=search], .ui-studio input[type=password],
+.ui-studio input[type=email], .ui-studio input[type=url], .ui-studio select, .ui-studio textarea,
+.ui-studio .form-group input, .ui-studio .form-group select, .ui-studio .form-group textarea {
+    background: #131318; border: 1px solid #30303a; border-radius: 6px;
+}
+.ui-studio input:focus, .ui-studio select:focus, .ui-studio textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .15); outline: none; }
+
+/* Tables, tabs, badges */
+.ui-studio .pro-table th { background: #22222a; }
+.ui-studio .pro-tabs button.active { color: var(--primary); }
+.ui-studio .beta-tag { border-radius: 4px; }
+
+/* Modals */
+.ui-studio .modal-content, .ui-studio .modal { background: #1c1c23; border: 1px solid var(--studio-line); border-radius: 14px; }
+
+@media (max-width: 900px) {
+    .ui-studio header { height: auto; }
+    .ui-studio h1 { font-size: 1.4rem; }
+}

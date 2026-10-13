@@ -50,6 +50,16 @@ function savePfp(uniqueId, url) {
 function getPfp(uniqueId, fallback) {
     return pfpCache[uniqueId?.toLowerCase()] || fallback;
 }
+// Avatar shown when a viewer has no picture or TikTok's link expired (they expire after a few days):
+// the first letter of the name on a color picked from the name, instead of the Gentok logo
+window.gentokInitialAvatar = (name) => {
+    const n = String(name || '?').replace(/^@/, '');
+    const letter = (Array.from(n)[0] || '?').toUpperCase().replace(/[<>&"']/g, '?');
+    let h = 0;
+    for (const c of n) h = (h * 31 + c.codePointAt(0)) % 360;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="hsl(${h},55%,42%)"/><text x="32" y="42" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">${letter}</text></svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+};
 
 const showToast = (message, type = 'success') => {
     const Toast = Swal.mixin({
@@ -69,7 +79,8 @@ const showToast = (message, type = 'success') => {
             toast.onmouseleave = Swal.resumeTimer;
         }
     });
-    Toast.fire({ icon: type, title: message });
+    // plain text: toasts show server messages and viewers' nicknames, which must never be read as HTML
+    Toast.fire({ icon: type, titleText: String(message ?? '') });
 };
 
 // [NEW] DISCORD RICH PRESENCE HELPER
@@ -77,7 +88,7 @@ function updateDiscordPresence() {
     if (!window.electronAPI || !window.electronAPI.updateRPC) return;
 
     const hash = window.location.hash.replace('#', '') || 'dashboard';
-    const isLive = btnStart && btnStart.innerText === 'Arrêter';
+    const isLive = isBotRunningUI();
     const username = document.getElementById('header-username')?.value || 'Utilisateur';
 
     const pageNames = {
@@ -111,7 +122,7 @@ function updateDiscordPresence() {
 
 const showNotify = (title, message, type = 'info') => {
     Swal.fire({
-        title: title.toUpperCase(),
+        titleText: String(title ?? '').toUpperCase(),
         text: message,
         icon: type,
         background: '#0a0b0d',
@@ -164,13 +175,26 @@ const statDiamonds = document.querySelector('#stat-diamonds');
 const statusIndicator = document.querySelector('#status-indicator'); // Assuming you have one
 const statusText = document.querySelector('#status-text');
 
+// Escapes text coming from TikTok viewers / external APIs before it is put into innerHTML
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Bot state read from the Start button icon (its text is translated, so never compare the text)
+function isBotRunningUI(includeConnecting = false) {
+    const btn = document.querySelector('#btn-start');
+    if (!btn) return false;
+    return !!btn.querySelector(includeConnecting ? '.fa-stop, .fa-spinner' : '.fa-stop');
+}
+
 // [CONSOLE] Add log entry function
 let logsCount = 0;
 function addLog(msg, type = '') {
     if (!logConsole) return;
     const div = document.createElement('div');
     div.className = `log-entry ${type}`;
-    div.innerHTML = `<span class="time">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+    // text only: messages can contain viewers' nicknames (a nickname with "<" must not become HTML)
+    div.innerHTML = `<span class="time">[${new Date().toLocaleTimeString()}]</span> ${escapeHtml(String(msg))}`;
     logConsole.prepend(div);
 
     // Limit console to 100 entries
@@ -182,26 +206,19 @@ function addLog(msg, type = '') {
 
 
 async function init() {
-    // Check for payment result in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment') === 'success') {
-        Swal.fire({
-            title: 'Félicitations !',
-            text: 'Votre abonnement Gentok App Premium est maintenant actif. Merci pour votre confiance !',
-            icon: 'success',
-            confirmButtonColor: '#fe2c55',
-            background: '#1a1a1a',
-            color: '#fff'
-        });
-        // Remove query param without reload
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (urlParams.get('payment') === 'cancel') {
-        showToast('Paiement annulé.');
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
+    // Safety net: the dashboard never runs inside one of its own preview frames
+    // (it would connect a second time and repeat sounds, alerts, TTS and history).
+    try {
+        if (window.top !== window && window.top.location.origin === window.location.origin && window.top.document.getElementById('tts-chat-section')) {
+            document.documentElement.innerHTML = '';
+            return;
+        }
+    } catch (e) { /* different origin: not our own frame */ }
+
+    // The return from Stripe (?payment=success / cancel) is handled by premium.js
 
     // [DETECTION] Are we running in the Electron App?
-    // urlParams already declared above
+    const urlParams = new URLSearchParams(window.location.search);
     const isAppUA = navigator.userAgent.toLowerCase().includes('electron');
     const isAppMode = urlParams.get('mode') === 'app' || isAppUA;
 
@@ -209,6 +226,17 @@ async function init() {
         console.log(isAppUA ? '📱 App Mode (Electron) detected.' : '📱 App Mode (Web Forced) detected.');
         // [FIX] Default to local mode in App Mode for Smart Relay compatibility
         isLocalMode = true;
+        // Secure app (no database in it): the dashboard works like the website; the app only connects to the
+        // TikTok live and runs the PC actions the Gentok server sends it
+        try {
+            const ping = await fetch(`${getLocalApiBase()}/api/app/ping`, { cache: 'no-store' }).then(r => r.json());
+            if (ping && ping.relay) {
+                window.gentokRelayApp = true;
+                isLocalMode = false;
+                const t = localStorage.getItem('gentok_token');
+                if (t) await fetch(`${getLocalApiBase()}/api/app/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t }) }).catch(() => { });
+            }
+        } catch (e) { /* older app */ }
     } else {
         showDownloadButton();
     }
@@ -220,7 +248,7 @@ async function init() {
             // addLog(`👤 Profil détecté : ${data.username}`, 'info');
         }
     } catch (e) {
-        console.error("âŒ Pre-init FetchData failed:", e.message);
+        console.error("❌ Pre-init FetchData failed:", e.message);
     }
 
     setupEventListeners();
@@ -348,14 +376,18 @@ async function init() {
                 });
 
                 const text = await res.text();
-                console.log('Raw login response:', text); // Debug log
 
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch (e) {
-                    console.error('JSON Parse Error. Raw response:', text);
-                    throw new Error('Réponse serveur invalide (non-JSON)');
+                    // an HTML page (e.g. nginx 502 while the Gentok server is down or restarting)
+                    console.error('Login: non-JSON response', res.status, text.slice(0, 200));
+                    errorDiv.textContent = res.status >= 500
+                        ? `Le serveur Gentok ne répond pas correctement (erreur ${res.status}). Il redémarre peut-être : réessayez dans une minute.`
+                        : `Réponse inattendue du serveur Gentok (erreur ${res.status}).`;
+                    errorDiv.style.display = 'block';
+                    return;
                 }
 
                 if (res.ok && data.success) {
@@ -366,8 +398,8 @@ async function init() {
                     isAdmin = data.isAdmin || false;
 
                     // Verify token with API
-                    const verifyRes = await fetch(`${base}/api/verify-license?token=${data.token}`);
-                    const verifyData = await verifyRes.json();
+                    const verifyRes = await fetch(`${base}/api/verify-license?token=${encodeURIComponent(data.token)}`);
+                    const verifyData = await verifyRes.json().catch(() => ({ error: `Vérification du compte impossible (erreur ${verifyRes.status}).` }));
 
                     if (verifyData.error) {
                         errorDiv.textContent = verifyData.error;
@@ -391,12 +423,15 @@ async function init() {
                     showToast('Connexion réussie', 'Initialisation de l\'espace Gentok Pro...');
                     setTimeout(() => window.location.reload(), 800);
                 } else {
-                    errorDiv.textContent = data.error || 'Erreur de connexion';
+                    errorDiv.textContent = data.message || data.error || 'Erreur de connexion';
                     errorDiv.style.display = 'block';
                 }
             } catch (err) {
+                // fetch itself failed: no internet, DNS, firewall / antivirus, or the server is unreachable
                 console.error('Login error:', err);
-                errorDiv.textContent = 'Impossible de se connecter au serveur';
+                errorDiv.textContent = navigator.onLine === false
+                    ? 'Pas de connexion internet.'
+                    : `Impossible de joindre le serveur Gentok (${getApiBase().replace(/^https?:\/\//, '')}). Vérifiez votre connexion (pare-feu, antivirus, VPN) ou réessayez dans un instant.`;
                 errorDiv.style.display = 'block';
             }
         });
@@ -432,7 +467,7 @@ async function init() {
         const username = headerUsername ? headerUsername.value.trim() : '';
 
         if (pSettings.autoConnect && isAuthenticated && hasToken && username && username !== '@pseudo' && username !== '0') {
-            const isRunning = btnStart && (btnStart.innerText.includes('Arrêter') || btnStart.innerText.includes('Connexion...'));
+            const isRunning = isBotRunningUI(true);
             if (!isRunning) {
                 console.log('🤖 [AUTO-LIVE] Automated connection attempt...');
                 await startBot(username, true);
@@ -775,9 +810,19 @@ if (searchInput) {
 }
 
 
+// Same id for every socket of this tab (also after a reload): when the connection drops and comes back
+// (network change, proxy, sleep), the server must not take this tab's old socket for "another tab"
+function dashboardTabId() {
+    try {
+        let id = sessionStorage.getItem('gentok_tab_id');
+        if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('gentok_tab_id', id); }
+        return id;
+    } catch (e) { return ''; }
+}
+
 function connectToRemote() {
     if (socket) socket.disconnect();
-    console.log('ðŸŒ Connecting to Remote VPS...');
+    console.log('🌐 Connecting to Remote VPS...');
     socket = io('https://tiktok.gentok.fr', {
         reconnection: true,
         reconnectionAttempts: 15,
@@ -818,7 +863,7 @@ function connectToLocal() {
     setupSocketListeners();
 
     socket.on('connect_error', (err) => {
-        console.warn('âŒ Socket Connection Error (App Local):', err.message);
+        console.warn('❌ Socket Connection Error (App Local):', err.message);
 
         // If we are strictly in App Mode, just keep retrying local
         const urlParams = new URLSearchParams(window.location.search);
@@ -862,7 +907,7 @@ function setupSocketListeners() {
         // [RELAY] Identify ourselves
         const token = localStorage.getItem('gentok_token');
         if (token) {
-            socket.emit('identify', { token, type: 'dashboard' });
+            socket.emit('identify', { token, type: 'dashboard', tabId: dashboardTabId() });
         }
 
         // Refresh data on connection
@@ -878,7 +923,9 @@ function setupSocketListeners() {
         if (modal) modal.style.display = 'flex';
         if (btn) {
             btn.disabled = false;
+            btn.style.display = '';
             btn.innerHTML = 'Prendre la main sur cette session';
+            btn.onclick = window.takeOverSession; // the button was never wired: the warning could not be closed
         }
     });
 
@@ -891,7 +938,7 @@ function setupSocketListeners() {
             const btn = modal.querySelector('#btn-take-over'); // Use specific ID or querySelector
 
             if (title) title.textContent = 'Session terminée';
-            if (p) p.innerHTML = data.message || 'Session active ailleurs.';
+            if (p) p.textContent = (data && data.message) || 'Session active ailleurs.';
             // Change button behavior since we are kicked out
             if (btn) {
                 btn.textContent = 'Recharger la page';
@@ -961,6 +1008,15 @@ function setupSocketListeners() {
         processSoundQueue();
     });
 
+    // [ACTION] "Synthèse vocale" actions: read the text with the TTS voice settings
+    socket.on('tts_speak', (data) => {
+        if (!data || !data.text) return;
+        if (typeof ttsQueue === 'undefined' || typeof processTTSQueue !== 'function') return;
+        if (ttsQueue.length >= 20) return;
+        ttsQueue.push({ text: String(data.text).slice(0, 300), user: data.user || 'action' });
+        processTTSQueue();
+    });
+
     // [TTS] Listen for chat
     socket.on('chat', (data) => {
         if (typeof handleChatForTTS === 'function') {
@@ -972,13 +1028,13 @@ function setupSocketListeners() {
         console.error(`Socket Connection Error (${contextName}):`, err);
         // Don't log every error to avoid spam, or log only if not local detection
         if (!isLocalMode) {
-            addLog(`âŒ Erreur connexion socket : ${err.message}`, 'error');
+            addLog(`❌ Erreur connexion socket : ${err.message}`, 'error');
         }
     });
 
     socket.on('disconnect', (reason) => {
         console.log(`Socket Disconnected (${contextName}): ${reason}`);
-        addLog(`â Œ Déconnecté du serveur (${contextName})`, 'error');
+        addLog(`❌ Déconnecté du serveur (${contextName})`, 'error');
         updateStatus('offline');
 
         // Only fallback to remote if NOT in App Mode
@@ -1007,9 +1063,13 @@ function setupSocketListeners() {
     });
 
     // [NEW] Log Relay Listener
+    // Server messages (Spotify requests, points, actions...) in the Console page, at most 20 per second
+    let logBudget = 20;
+    setInterval(() => { logBudget = 20; }, 1000);
     socket.on('log', (data) => {
-        // console.log('Server Log:', data);
-        // addLog(data.message, data.level);
+        if (!data || !data.message || logBudget <= 0) return;
+        logBudget--;
+        addLog(String(data.message), ['error', 'warn', 'warning', 'success', 'system'].includes(data.level) ? data.level : 'info');
     });
 
     socket.on('status', (status) => {
@@ -1031,6 +1091,7 @@ function setupSocketListeners() {
     });
 
     socket.on('stats', ({ type, data }) => {
+        if (typeof handleEventForTTS === 'function') handleEventForTTS(type, data);
         // [MODIFIED] Using session_stats for counters, this event is now for per-event animations if needed
         if (type === 'gift') {
             playAlert('gift');
@@ -1188,10 +1249,10 @@ function setupSocketListeners() {
                     <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
                         <div style="width: 20px; height: 20px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--text-dim); font-weight: 700;">${i + 1}</div>
                         <div style="flex: 1; min-width: 0;">
-                            <div style="font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.title}</div>
-                            <div style="font-size: 0.65rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.artist}</div>
+                            <div style="font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.title)}</div>
+                            <div style="font-size: 0.65rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.artist)}</div>
                         </div>
-                        ${t.requestedBy ? `<div style="font-size: 0.6rem; background: rgba(29, 185, 84, 0.1); color: #1DB954; padding: 2px 6px; border-radius: 4px;">${t.requestedBy}</div>` : ''}
+                        ${t.requestedBy ? `<div style="font-size: 0.6rem; background: rgba(29, 185, 84, 0.1); color: #1DB954; padding: 2px 6px; border-radius: 4px;">${escapeHtml(t.requestedBy)}</div>` : ''}
                     </div>
                 `).join('');
             }
@@ -1259,7 +1320,7 @@ function setupSocketListeners() {
 
 // ===== LOCAL APP DETECTION =====
 function initLocalAppDetection() {
-    if (isLocalMode) return; // Already local
+    if (isLocalMode || window.gentokRelayApp) return; // Already local, or the secure app (it works with the server)
 
     const appGroup = document.querySelector('#app-status-group');
     const appStatusIndicator = document.querySelector('#app-status-indicator');
@@ -1268,7 +1329,7 @@ function initLocalAppDetection() {
     if (appGroup) appGroup.style.display = 'flex';
 
     // Try to connect to local WebSocket server
-    console.log('ðŸ” Checking for Local App...');
+    console.log('🔍 Checking for Local App...');
     // [RE-ENABLED]
     const tempSocket = io('http://localhost:3000', {
         reconnection: false, // Don't retry indefinitely if not there
@@ -1276,7 +1337,12 @@ function initLocalAppDetection() {
         autoConnect: true
     });
 
-    tempSocket.on('connect', () => {
+    tempSocket.on('connect', async () => {
+        // the secure app processes nothing locally: the website stays connected to the Gentok server
+        try {
+            const ping = await fetch(`${getLocalApiBase()}/api/app/ping`, { cache: 'no-store' }).then(r => r.json());
+            if (ping && ping.relay) { tempSocket.disconnect(); return; }
+        } catch (e) { }
         console.log('✅ App Local DETECTED! Switching to Local Mode.');
 
         // Disconnect Remote
@@ -1318,6 +1384,8 @@ function initLocalAppDetection() {
 }
 
 function showDownloadButton() {
+    // The application badge (appstatus.js) already offers the download when the app is not detected
+    if (window.GentokAppStatus) return;
     const downloadBtn = document.querySelector('#btn-download-app');
     if (!downloadBtn) {
         const header = document.querySelector('header .user-control');
@@ -1356,6 +1424,93 @@ async function fetchData() {
     }
 }
 
+// OBS connection settings (saved per account, used by "OBS Studio" actions)
+let currentObsSettings = { host: '127.0.0.1', port: 4455, password: '' };
+// Streamer.bot HTTP server settings (used by "Streamer.bot" actions)
+let currentStreamerbotSettings = { host: '127.0.0.1', port: 7474 };
+
+function readStreamerbotForm() {
+    return {
+        host: (document.querySelector('#f-sb-host')?.value || '127.0.0.1').trim(),
+        port: parseInt(document.querySelector('#f-sb-port')?.value) || 7474
+    };
+}
+
+async function saveStreamerbotSettingsFromForm() {
+    const streamerbot = readStreamerbotForm();
+    if (JSON.stringify(streamerbot) === JSON.stringify(currentStreamerbotSettings)) return;
+    currentStreamerbotSettings = streamerbot;
+    try {
+        await fetch(`${getApiBase()}/api/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), streamerbot })
+        });
+    } catch (e) { console.warn('Streamer.bot settings save failed', e); }
+}
+
+window.testStreamerbotConnection = async () => {
+    const status = document.querySelector('#f-sb-status');
+    if (status) { status.style.color = 'var(--text-dim)'; status.textContent = '⏳ Connexion à Streamer.bot...'; }
+    try {
+        const res = await fetch(`${getApiBase()}/api/streamerbot/test`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(readStreamerbotForm())
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Erreur');
+        window.streamerbotActions = data.actions || [];
+        const list = document.querySelector('#sb-action-list');
+        if (list) list.innerHTML = window.streamerbotActions.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.group)}</option>`).join('');
+        if (status) { status.style.color = '#10b981'; status.textContent = `✅ Streamer.bot connecté — ${window.streamerbotActions.length} action(s)`; }
+        saveStreamerbotSettingsFromForm();
+    } catch (e) {
+        if (status) { status.style.color = '#ef4444'; status.textContent = `❌ ${e.message}`; }
+    }
+};
+
+function readObsSettingsForm() {
+    return {
+        host: (document.querySelector('#f-obs-host')?.value || '127.0.0.1').trim(),
+        port: parseInt(document.querySelector('#f-obs-port')?.value) || 4455,
+        password: document.querySelector('#f-obs-password')?.value || ''
+    };
+}
+
+async function saveObsSettingsFromForm() {
+    const obs = readObsSettingsForm();
+    if (JSON.stringify(obs) === JSON.stringify(currentObsSettings)) return;
+    currentObsSettings = obs;
+    try {
+        await fetch(`${getApiBase()}/api/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), obs })
+        });
+    } catch (e) {
+        console.warn('OBS settings save failed', e);
+    }
+}
+
+window.testObsConnection = async () => {
+    const status = document.querySelector('#f-obs-status');
+    if (status) { status.style.color = 'var(--text-dim)'; status.textContent = '⏳ Connexion à OBS...'; }
+    try {
+        const res = await fetch(`${getApiBase()}/api/obs/test`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(readObsSettingsForm())
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Erreur');
+        const list = document.querySelector('#obs-scene-list');
+        if (list) list.innerHTML = (data.scenes || []).map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+        if (status) { status.style.color = '#10b981'; status.textContent = `✅ OBS ${data.version || ''} connecté — ${data.scenes.length} scène(s) : ${data.scenes.join(', ')}`; }
+        saveObsSettingsFromForm();
+    } catch (e) {
+        if (status) { status.style.color = '#ef4444'; status.textContent = `❌ ${e.message}`; }
+    }
+};
+
 function applyConfigUI(config) {
     if (!config) return;
     console.log('[DEBUG] applyConfigUI received config:', { isAdmin: config.isAdmin, isPremium: config.isPremium });
@@ -1363,13 +1518,15 @@ function applyConfigUI(config) {
     // Update local state
     isAdmin = config.isAdmin || false;
     isPremiumUser = config.isPremium || false;
+    window.gentokRunMode = config.runMode || 'auto';
+    if (window.GentokRunMode) window.GentokRunMode.render();
     activeSceneId = config.activeSceneId || null;
     userScenes = config.scenes || [];
 
     // [MIGRATION] Persist local scenes to DB if empty on server
     const localScenes = JSON.parse(localStorage.getItem('gentok_user_scenes') || '[]');
     if (userScenes.length === 0 && localScenes.length > 0) {
-        console.log('â†» Migration des scènes locales vers le serveur...');
+        console.log('↻ Migration des scènes locales vers le serveur...');
         userScenes = localScenes;
         saveUserScenes(userScenes);
         localStorage.removeItem('gentok_user_scenes');
@@ -1388,35 +1545,29 @@ function applyConfigUI(config) {
     updateSceneUI();
 
     const premiumBadge = document.getElementById('premium-badge');
-    const proBanner = document.querySelector('.pro-banner');
+    if (window.GentokPremium) window.GentokPremium.render(isPremiumUser);
 
     if (isPremiumUser) {
         if (!window._premiumLogged) {
-            console.log('ðŸŒŸ Compte Premium détecté, déblocage des fonctionnalités.');
+            console.log('🌟 Compte Premium détecté, déblocage des fonctionnalités.');
             window._premiumLogged = true;
         }
         if (premiumBadge) premiumBadge.classList.remove('hidden');
-        if (proBanner) proBanner.style.display = 'none';
         document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('locked'));
         document.querySelectorAll('.crown-tag').forEach(tag => tag.style.display = 'none');
         if (window.location.hash === '#stats') renderStatsHistory();
     } else {
         if (premiumBadge) premiumBadge.classList.add('hidden');
-        if (proBanner) proBanner.style.display = 'flex';
         document.querySelector('#nav-stats')?.classList.add('locked');
         document.querySelectorAll('.crown-tag').forEach(tag => tag.style.display = 'block');
     }
 
     if (window.renderInstalledPresets) renderInstalledPresets();
 
-    // [ADMIN] Show admin nav only for admin users
-    const navAdmin = document.getElementById('nav-admin');
-    if (navAdmin) {
-        console.log('[DEBUG] Setting nav-admin display to:', config.isAdmin ? 'block' : 'none');
-        navAdmin.style.display = config.isAdmin ? 'block' : 'none';
-        // Force visibility if admin
-        if (config.isAdmin) navAdmin.style.setProperty('display', 'block', 'important');
-    }
+    // [ADMIN] Console and Administration: admin accounts only (normal and Premium accounts never see them).
+    // They are not "scene-required" items: that rule showed them to everybody as soon as a scene was open.
+    document.querySelectorAll('.admin-only').forEach(li => { li.style.display = config.isAdmin ? '' : 'none'; });
+    if (!config.isAdmin && ['#logs', '#admin'].includes(window.location.hash) && typeof showSection === 'function') showSection('dashboard');
 
     // [CRITICAL: LEADERBOARDS & GOALS INIT] Moved to top for robustness
     try {
@@ -1435,13 +1586,8 @@ function applyConfigUI(config) {
             if (urlInput || iframe) {
                 const url = `/overlay/leaderboard?type=coins&limit=${config.topCoins.limit || 10}&style=${currentTopCoinsStyle}&transparent=${config.topCoins.transparent !== false}&showTitle=${config.topCoins.showTitle !== false}&rtl=${config.topCoins.rtl === true}`;
                 if (urlInput) urlInput.value = `https://tiktok.gentok.fr${url}`;
-                if (iframe) {
-                    iframe.src = url;
-                    const limit = config.topCoins.limit || 10;
-                    const height = (parseInt(limit) || 10) * 42 + 60;
-                    iframe.style.height = height + 'px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-                }
+                // the preview itself is set (once, with the token) by updateOverlayLinks below
+                if (iframe) setPreviewHeight(iframe, leaderboardPreviewHeight(config.topCoins.limit));
             }
         }
         if (config.topLikes) {
@@ -1459,19 +1605,14 @@ function applyConfigUI(config) {
             if (urlInput || iframe) {
                 const url = `/overlay/leaderboard?type=likes&limit=${config.topLikes.limit || 10}&style=${currentTopLikesStyle}&transparent=${config.topLikes.transparent !== false}&showTitle=${config.topLikes.showTitle !== false}&rtl=${config.topLikes.rtl === true}`;
                 if (urlInput) urlInput.value = `https://tiktok.gentok.fr${url}`;
-                if (iframe) {
-                    iframe.src = url;
-                    const limit = config.topLikes.limit || 10;
-                    const height = (parseInt(limit) || 10) * 42 + 60;
-                    iframe.style.height = height + 'px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-                }
+                // the preview itself is set (once, with the token) by updateOverlayLinks below
+                if (iframe) setPreviewHeight(iframe, leaderboardPreviewHeight(config.topLikes.limit));
             }
         }
         const lge = document.getElementById('likes-goal-enabled');
         if (lge && config.likesGoal) {
             lge.checked = config.likesGoal.enabled || false;
-            document.getElementById('likes-goal-amount').value = config.likesGoal.goal || 10000;
+            document.getElementById('likes-goal-amount').value = config.likesGoal.goalStep || config.likesGoal.initialGoal || config.likesGoal.goal || 10000; // the configured step, not the target reached during a live
             document.getElementById('likes-goal-title').value = config.likesGoal.title || '';
 
             // Restore Font
@@ -1516,14 +1657,14 @@ function applyConfigUI(config) {
         }
         updateLikesGoalActionSelect();
     } catch (err) {
-        console.error("â Œ Error initializing Leaderboards/Goals UI:", err);
+        console.error("❌ Error initializing Leaderboards/Goals UI:", err);
     }
 
     if (config.token) {
         const licenseInput = document.querySelector('#license-token');
         if (licenseInput) licenseInput.value = config.token;
         if (socket && socket.connected) {
-            socket.emit('identify', { token: config.token, type: 'dashboard' });
+            socket.emit('identify', { token: config.token, type: 'dashboard', tabId: dashboardTabId() });
         }
     }
 
@@ -1540,6 +1681,14 @@ function applyConfigUI(config) {
             if (loginOverlay) loginOverlay.style.display = 'none';
             if (dashboardContainer) dashboardContainer.style.display = 'flex';
         }
+    }
+
+    if (config.obs) currentObsSettings = { ...currentObsSettings, ...config.obs };
+    if (config.streamerbot) currentStreamerbotSettings = { ...currentStreamerbotSettings, ...config.streamerbot };
+    window.gentokConfig = config;
+    // Language chosen on another device (only when this browser has no choice yet)
+    if (config.language && config.language !== 'fr' && window.GentokI18n && !localStorage.getItem('gentok_lang')) {
+        window.GentokI18n.setLanguage(config.language, { save: false });
     }
 
     if (config.minecraft) {
@@ -1608,6 +1757,7 @@ function applyConfigUI(config) {
 
     currentActions = config.actions || [];
     currentEvents = config.events || [];
+    if (!isPresetEditMode) { rememberSynced('actions', currentActions); rememberSynced('events', currentEvents); }
     renderActions();
     renderEvents();
     renderSoundLinks();
@@ -1858,6 +2008,30 @@ window.viewSessionDetails = async (id) => {
             });
         }
 
+        // Gift history of the live: every gift with its picture, count and coins (most valuable first)
+        const giftsTable = document.getElementById('sd-gifts-table');
+        if (giftsTable) {
+            const counts = session.giftsBreakdown || {};
+            const coins = session.giftsCoinsBreakdown || {};
+            const icons = session.giftsIcons || {};
+            const rows = Object.keys(counts).map(name => ({ name, count: Number(counts[name]) || 0, coins: Number(coins[name]) || 0, icon: icons[name] || '' }))
+                .sort((a, b) => (b.coins - a.coins) || (b.count - a.count));
+            const hasCoins = rows.some(r => r.coins > 0);
+            giftsTable.innerHTML = rows.length ? `
+                <table class="stats-history-table">
+                    <thead><tr><th style="text-align:left">Cadeau</th><th>Nombre</th>${hasCoins ? '<th>Pièces</th>' : ''}</tr></thead>
+                    <tbody>${rows.map(r => `
+                        <tr>
+                            <td style="text-align:left"><span class="sd-gift-name">${r.icon ? `<img src="${escapeHtml(r.icon)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : '<i class="fas fa-gift"></i>'} ${escapeHtml(r.name)}</span></td>
+                            <td>×${r.count.toLocaleString()}</td>
+                            ${hasCoins ? `<td>${r.coins.toLocaleString()}</td>` : ''}
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+                ${hasCoins ? '' : '<p class="text-dim small mt-2 mb-0">Le détail des pièces par cadeau est enregistré à partir des prochains lives.</p>'}`
+                : '<p class="text-dim mb-0">Aucun cadeau reçu pendant ce live.</p>';
+        }
+
         // Gifts Chart
         const giftsData = session.giftsBreakdown || {};
         const giftLabels = Object.keys(giftsData);
@@ -2032,7 +2206,12 @@ function renderActions() {
         sound: 'fa-music',
         web: 'fa-globe',
         default: 'fa-bolt',
-        rcon: 'fa-cube' // Cube icon for Minecraft
+        rcon: 'fa-cube', // Cube icon for Minecraft
+        webhook: 'fa-globe',
+        alert: 'fa-bell',
+        tts: 'fa-volume-up',
+        wheel: 'fa-dharmachakra',
+        streamerbot: 'fa-robot'
     };
 
     const labels = {
@@ -2042,7 +2221,12 @@ function renderActions() {
         command: 'Commande',
         sound: 'Son',
         web: 'Webhook',
-        rcon: 'Minecraft Serveur'
+        webhook: 'Webhook',
+        rcon: 'Minecraft Serveur',
+        alert: 'Alerte écran',
+        tts: 'Synthèse vocale',
+        wheel: 'Roue de la fortune',
+        streamerbot: 'Streamer.bot'
     };
 
     otherActions.forEach(action => {
@@ -2096,7 +2280,7 @@ window.testActionWithDelay = (id) => {
 
     const executeTest = async () => {
         try {
-            const base = window.electronAPI ? getLocalApiBase() : getApiBase();
+            const base = (window.electronAPI && !window.gentokRelayApp) ? getLocalApiBase() : getApiBase();
             const token = localStorage.getItem('gentok_token');
             console.log(`[TEST-ACTION] Appel API: ${base}/api/test-action/${id}`);
             const res = await fetch(`${base}/api/test-action/${id}?token=${token}`, {
@@ -2202,12 +2386,12 @@ function renderSoundLinks() {
                 const icons = {
                     like: 'fa-heart', follow: 'fa-user-plus', share: 'fa-share',
                     member: 'fa-door-open', subscribe: 'fa-star', chat: 'fa-comment',
-                    command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag'
+                    command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag', level_up: 'fa-arrow-up-wide-short'
                 };
                 const labels = {
                     like: 'Like', follow: 'Follow', share: 'Partage',
                     member: 'Rejoint', subscribe: 'Abonnement', chat: 'Chat',
-                    command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur'
+                    command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur', level_up: 'Niveau'
                 };
                 triggerHtml = `
                     <div class="trigger-box" onclick="editItem('event', '${event.id}')" style="cursor:pointer;">
@@ -2328,7 +2512,7 @@ function renderEvents() {
                         <i class="fas fa-calendar-check" style="font-size: 3rem; opacity: 0.3;"></i>
                         <div>
                             <h3 style="margin-bottom: 5px; color: var(--text);">Aucun événement configuré</h3>
-                            <p style="font-size: 0.9rem;">Liez vos Cadeaux et Likes à  vos Actions ici.</p>
+                            <p style="font-size: 0.9rem;">Liez vos Cadeaux et Likes à vos Actions ici.</p>
                         </div>
                         <button class="btn-primary" onclick="document.querySelector('#btn-new-event').click()">
                             <i class="fas fa-plus"></i> Créer un Événement
@@ -2348,7 +2532,12 @@ function renderEvents() {
         sound: 'fa-music',
         web: 'fa-globe',
         default: 'fa-bolt',
-        rcon: 'fa-cube'
+        rcon: 'fa-cube',
+        webhook: 'fa-globe',
+        alert: 'fa-bell',
+        tts: 'fa-volume-up',
+        wheel: 'fa-dharmachakra',
+        streamerbot: 'fa-robot'
     };
 
     const labels = {
@@ -2358,7 +2547,12 @@ function renderEvents() {
         command: 'Commande',
         sound: 'Son',
         web: 'Webhook',
-        rcon: 'Minecraft Serveur'
+        webhook: 'Webhook',
+        rcon: 'Minecraft Serveur',
+        alert: 'Alerte écran',
+        tts: 'Synthèse vocale',
+        wheel: 'Roue de la fortune',
+        streamerbot: 'Streamer.bot'
     };
 
     currentEvents.forEach(event => {
@@ -2404,12 +2598,12 @@ function renderEvents() {
             const icons = {
                 like: 'fa-heart', follow: 'fa-user-plus', share: 'fa-share',
                 member: 'fa-door-open', subscribe: 'fa-star', chat: 'fa-comment',
-                command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag'
+                command: 'fa-terminal', gift_min: 'fa-coins', specific_user: 'fa-user-tag', level_up: 'fa-arrow-up-wide-short'
             };
             const labels = {
                 like: 'Like', follow: 'Follow', share: 'Partage',
                 member: 'Rejoint', subscribe: 'Abonnement', chat: 'Chat',
-                command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur'
+                command: 'Commande', gift_min: 'Cadeau Min.', specific_user: 'Utilisateur', level_up: 'Niveau'
             };
 
             triggerHtml = `
@@ -2489,6 +2683,31 @@ window.editItem = async (type, id) => {
                 if (window.updateKeyPreview) window.updateKeyPreview();
             }
             if (action.type === 'rcon') document.querySelector('#f-cmd').value = action.command;
+            if (action.type === 'alert') {
+                document.querySelector('#f-text').value = action.text || '';
+                document.querySelector('#f-media-url').value = action.mediaUrl || '';
+                document.querySelector('#f-alert-duration').value = action.alertDuration || 5;
+            }
+            if (action.type === 'tts') document.querySelector('#f-text').value = action.text || '';
+            if (action.type === 'obs') {
+                document.querySelector('#f-obs-action').value = action.obsAction || 'scene';
+                document.querySelector('#f-obs-action').dispatchEvent(new Event('change'));
+                document.querySelector('#f-obs-scene').value = action.obsScene || '';
+                document.querySelector('#f-obs-source').value = action.obsSource || '';
+                document.querySelector('#f-obs-duration').value = action.obsDuration || 0;
+            }
+            if (action.type === 'wheel') document.querySelector('#f-segments').value = action.segments || '';
+            if (action.type === 'streamerbot') {
+                document.querySelector('#f-sb-name').value = action.sbActionName || '';
+                document.querySelector('#f-sb-id').value = action.sbActionId || '';
+                document.querySelector('#f-sb-args').value = action.sbArgs || '';
+            }
+            const cooldownInput = document.querySelector('#action-cooldown');
+            if (cooldownInput) cooldownInput.value = action.cooldown || 0;
+            const userCooldownInput = document.querySelector('#action-user-cooldown');
+            if (userCooldownInput) userCooldownInput.value = action.userCooldown || 0;
+            const delayInput = document.querySelector('#action-delay');
+            if (delayInput) delayInput.value = action.delay || 0;
             if (action.type === 'sound') {
                 document.querySelector('#f-sound-name').value = action.soundName;
                 document.querySelector('#f-sound-url').value = action.soundUrl;
@@ -2533,6 +2752,11 @@ window.editItem = async (type, id) => {
         // Pass event to handle async pre-selection (like gifts)
         await updateEventFields(event);
 
+        const costInput = document.querySelector('#event-points-cost');
+        if (costInput) costInput.value = event.pointsCost || 0;
+        const teamInput = document.querySelector('#event-team-level');
+        if (teamInput) teamInput.value = event.minTeamLevel || 0;
+
         // Select actions
         const actionCheckboxes = document.querySelectorAll('#event-action-list input[type="checkbox"]');
         actionCheckboxes.forEach(chk => {
@@ -2554,12 +2778,28 @@ function formatDetails(a) {
         return display;
     }
     if (a.type === 'rcon') return a.command;
+    if (a.type === 'alert') return a.text || a.mediaUrl || 'Alerte';
+    if (a.type === 'tts') return `🔊 ${a.text || ''}`;
+    if (a.type === 'obs') return `🎬 ${a.obsAction === 'scene' ? a.obsScene : a.obsSource}`;
+    if (a.type === 'wheel') return `🎡 ${(a.segments || '').split('\n').filter(l => l.trim()).length} cases`;
+    if (a.type === 'streamerbot') return `🤖 ${a.sbActionName || a.sbActionId}`;
     return '';
 }
 
+const TRIGGER_LABELS = {
+    like: '❤️ Likes', follow: '➕ Follow', share: '🔁 Partage', member: '🚪 Rejoint le live', subscribe: '⭐ Abonnement',
+    chat: '💬 Chat', command: '⌨️ Commande', gift_min: '💰 Cadeau (valeur min.)', first_message: '👋 Premier message',
+    emote: '😀 Emote', question: '❓ Question', level_up: '🆙 Passage de niveau'
+};
+
 function formatTrigger(e) {
-    if (e.triggerType === 'gift') return `ðŸŽ Gift: ${e.giftName}`;
-    return `âš¡ ${e.triggerType.charAt(0).toUpperCase() + e.triggerType.slice(1)}`;
+    if (e.triggerType === 'gift') return `🎁 ${e.giftName || 'Cadeau'}`;
+    let label = TRIGGER_LABELS[e.triggerType] || `⚡ ${e.triggerType}`;
+    if (e.triggerType === 'like' && e.likeThreshold > 1) label += ` ×${e.likeThreshold}`;
+    if (e.triggerType === 'command' && e.command) label += ` !${e.command.replace(/^!/, '')}`;
+    if (e.triggerType === 'gift_min' && e.minCoins) label += ` ≥ ${e.minCoins}`;
+    if (e.triggerType === 'level_up' && e.minLevel) label += ` ≥ ${e.minLevel}`;
+    return label;
 }
 
 function updateActionSelect() {
@@ -2643,7 +2883,7 @@ function setupEventListeners() {
                 });
                 const result = await res.json();
                 if (result.success) {
-                    showToast('Succès', 'Spotify connecté avec succès !', 'success');
+                    showToast('Spotify connecté avec succès !', 'success');
                     fetchData(); // Refresh to show "Connecté" status
                 } else {
                     throw new Error(result.error);
@@ -2733,14 +2973,6 @@ function setupEventListeners() {
     const btnTestLG = document.getElementById('btn-test-likes-goal');
     if (btnTestLG) btnTestLG.onclick = handleTestLikesGoal;
 
-    // Pro Banner Listener
-    const proBanner = document.querySelector('.pro-banner');
-    if (proBanner) {
-        proBanner.addEventListener('click', () => {
-            if (window.openProModal) window.openProModal();
-        });
-    }
-
     // Auto-Updater UI Logic
     if (window.electronAPI) {
         const updateModal = document.querySelector('#update-modal');
@@ -2781,7 +3013,7 @@ function setupEventListeners() {
         window.electronAPI.onUpdateDownloaded(() => {
             btnDownloading.style.display = 'none';
             btnRestart.style.display = 'block';
-            progressStatusText.textContent = 'Votre app va être mise à  jour...';
+            progressStatusText.textContent = 'Votre app va être mise à jour...';
         });
 
         // Error
@@ -2793,6 +3025,29 @@ function setupEventListeners() {
             }
             updateModal.classList.remove('active');
         });
+
+        // The update may have started before this page was shown (e.g. during the launcher):
+        // ask the current state and follow it, so the progress window is never missed
+        const followUpdateState = (st) => {
+            if (!st) return;
+            if (st.status === 'downloading' || st.status === 'downloaded') {
+                if (st.version) newVersionNumber.textContent = `v${st.version}`;
+                updateModal.classList.add('active');
+                btnDownload.style.display = 'none';
+                btnLater.style.display = 'none';
+                progressContainer.style.display = 'block';
+                const percent = st.status === 'downloaded' ? 100 : (st.percent || 0);
+                progressBarFill.style.width = `${percent}%`;
+                progressPercent.textContent = `${percent}%`;
+                btnDownloading.style.display = st.status === 'downloaded' ? 'none' : 'block';
+                btnRestart.style.display = st.status === 'downloaded' ? 'block' : 'none';
+                if (st.status === 'downloaded') progressStatusText.textContent = 'Votre app va être mise à jour...';
+            }
+        };
+        if (window.electronAPI.getUpdateState) {
+            window.electronAPI.getUpdateState().then(followUpdateState).catch(() => { });
+            window.electronAPI.onUpdateState(followUpdateState);
+        }
 
         // Buttons
         btnDownload.onclick = () => {
@@ -3010,6 +3265,100 @@ function updateActionFields() {
                 </div>
             </div>
         `;
+    } else if (type === 'alert') {
+        container.innerHTML = `
+            <div class="form-group"><label>Texte affiché</label><input type="text" id="f-text" placeholder="Merci {nickname} pour {repeatcount} {giftname} !"></div>
+            <div class="form-group"><label>Image, GIF ou vidéo (URL, optionnel)</label><input type="text" id="f-media-url" placeholder="https://.../animation.gif ou .mp4"></div>
+            <div class="form-group"><label>Durée d'affichage (secondes)</label><input type="number" id="f-alert-duration" min="1" max="60" value="5" style="width: 100px;"></div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> S'affiche dans l'overlay <b>Alertes animées</b> (menu Overlays → Overlays Pro).</p>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-tags"></i> Paramètres Dynamiques</div>
+                <div class="ph-tags">
+                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}', '{level}']
+                        .map(p => `<span class="ph-tag" onclick="insertPlaceholder('f-text','${p}')">${p}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    } else if (type === 'tts') {
+        container.innerHTML = `
+            <div class="form-group"><label>Texte à lire</label><input type="text" id="f-text" placeholder="Merci {nickname} pour le follow !" required></div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> Lu par le tableau de bord avec la voix choisie dans le module TTS.</p>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-tags"></i> Paramètres Dynamiques</div>
+                <div class="ph-tags">
+                    ${['{nickname}', '{username}', '{giftname}', '{repeatcount}', '{coins}', '{comment}', '{likecount}', '{submonth}', '{level}']
+                        .map(p => `<span class="ph-tag" onclick="insertPlaceholder('f-text','${p}')">${p}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    } else if (type === 'obs') {
+        container.innerHTML = `
+            <div class="form-group">
+                <label>Que faire dans OBS ?</label>
+                <select id="f-obs-action">
+                    <option value="scene">Changer de scène</option>
+                    <option value="source_show">Afficher une source</option>
+                    <option value="source_hide">Masquer une source</option>
+                    <option value="source_toggle">Basculer une source (afficher / masquer)</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Scène <span style="opacity: 0.6; font-weight: 400;">(pour une source : vide = scène en cours)</span></label>
+                <input type="text" id="f-obs-scene" list="obs-scene-list" placeholder="ex: Caméra plein écran">
+                <datalist id="obs-scene-list"></datalist>
+            </div>
+            <div class="form-group" id="f-obs-source-group"><label>Source</label><input type="text" id="f-obs-source" placeholder="ex: Webcam, GIF Danse..."></div>
+            <div class="form-group"><label>Revenir en arrière après (secondes, 0 = rester)</label><input type="number" id="f-obs-duration" min="0" max="3600" value="0" style="width: 100px;"></div>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-plug"></i> Connexion OBS (Outils → Paramètres du serveur WebSocket)</div>
+                <div style="display: grid; grid-template-columns: 1fr 90px 1fr auto; gap: 8px; align-items: center;">
+                    <input type="text" id="f-obs-host" placeholder="127.0.0.1" value="${escapeHtml(currentObsSettings.host || '127.0.0.1')}">
+                    <input type="number" id="f-obs-port" placeholder="4455" value="${escapeHtml(currentObsSettings.port || 4455)}">
+                    <input type="password" id="f-obs-password" placeholder="Mot de passe" value="${escapeHtml(currentObsSettings.password || '')}">
+                    <button type="button" class="btn-secondary" onclick="testObsConnection()"><i class="fas fa-plug"></i> Tester</button>
+                </div>
+                <small id="f-obs-status" style="display: block; margin-top: 6px; color: var(--text-dim);"></small>
+            </div>
+        `;
+        const obsActionSelect = document.querySelector('#f-obs-action');
+        const toggleSource = () => {
+            document.querySelector('#f-obs-source-group').style.display = obsActionSelect.value === 'scene' ? 'none' : 'block';
+        };
+        obsActionSelect.addEventListener('change', toggleSource);
+        toggleSource();
+    } else if (type === 'streamerbot') {
+        container.innerHTML = `
+            <div class="form-group"><label>Action Streamer.bot (nom exact)</label>
+                <input type="text" id="f-sb-name" list="sb-action-list" placeholder="ex: Jouer un son">
+                <datalist id="sb-action-list"></datalist>
+                <input type="hidden" id="f-sb-id">
+            </div>
+            <div class="form-group"><label>Arguments supplémentaires (JSON, optionnel)</label>
+                <input type="text" id="f-sb-args" placeholder='{"message": "Merci {nickname} !"}'>
+                <small style="color: var(--text-dim); font-size: 0.8rem;">Toujours envoyés : user, nickname, comment, giftName, giftId, coins, repeatCount, likeCount, trigger.</small>
+            </div>
+            <div class="placeholder-hint-panel">
+                <div class="placeholder-hint-title"><i class="fas fa-plug"></i> Connexion Streamer.bot (Servers/Clients → HTTP Server, port 7474)</div>
+                <div style="display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; align-items: center;">
+                    <input type="text" id="f-sb-host" placeholder="127.0.0.1" value="${escapeHtml(currentStreamerbotSettings.host || '127.0.0.1')}">
+                    <input type="number" id="f-sb-port" placeholder="7474" value="${escapeHtml(currentStreamerbotSettings.port || 7474)}">
+                    <button type="button" class="btn-secondary" onclick="testStreamerbotConnection()"><i class="fas fa-plug"></i> Tester</button>
+                </div>
+                <small id="f-sb-status" style="display: block; margin-top: 6px; color: var(--text-dim);"></small>
+            </div>
+        `;
+        document.querySelector('#f-sb-name').addEventListener('input', (e) => {
+            const opt = (window.streamerbotActions || []).find(a => a.name === e.target.value);
+            document.querySelector('#f-sb-id').value = opt ? opt.id : '';
+        });
+    } else if (type === 'wheel') {
+        container.innerHTML = `
+            <div class="form-group">
+                <label>Cases de la roue <span style="opacity: 0.6; font-weight: 400;">(une par ligne, 2 à 24)</span></label>
+                <textarea id="f-segments" rows="7" style="width: 100%; resize: vertical;" placeholder="10 pompes&#10;Danse => Action Danse&#10;Rien 😅&#10;Chanson"></textarea>
+                <small style="color: var(--text-dim); font-size: 0.8rem;">Ajoutez <b>=&gt; Nom d'une action</b> après une case pour lancer cette action quand la roue tombe dessus.</small>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0 0 10px 0;"><i class="fas fa-info-circle"></i> S'affiche dans l'overlay <b>Roue de la fortune</b> (menu Overlays → Overlays Pro).</p>
+        `;
     } else if (type === 'sound') {
         container.innerHTML = `
             <div class="form-group">
@@ -3097,13 +3446,13 @@ async function updateEventFields(eventToEdit = null) {
             <div class="form-group">
                 <label>Nombre de Likes (Taps) requis</label>
                 <input type="number" id="f-like-threshold" min="1" value="${(eventToEdit && eventToEdit.likeThreshold) || 1}" placeholder="ex: 10">
-                <small style="color: var(--text-dim); font-size: 0.8rem;">L'action se déclenchera si un utilisateur envoie ce nombre de likes d'un coup.</small>
+                <small style="color: var(--text-dim); font-size: 0.8rem;">L'action se déclenche chaque fois qu'un spectateur atteint ce nombre de likes (cumulés pendant le live). 1 = à chaque like.</small>
             </div>
         `;
     } else if (type === 'command') {
         container.innerHTML = `
             <div class="form-group">
-                <label>Commande à  taper (sans !)</label>
+                <label>Commande à taper (sans !)</label>
                 <input type="text" id="f-command" value="${(eventToEdit && eventToEdit.command) || ''}" placeholder="ex: jouer, sauter..." required>
                 <small style="color: var(--text-dim); font-size: 0.8rem;">Le viewer devra écrire cette commande dans le chat.</small>
             </div>
@@ -3121,6 +3470,14 @@ async function updateEventFields(eventToEdit = null) {
             <div class="form-group">
                 <label>Valeur minimum (pièces)</label>
                 <input type="number" id="f-min-coins" min="1" value="${(eventToEdit && eventToEdit.minCoins) || ''}" placeholder="ex: 100" required>
+            </div>
+        `;
+    } else if (type === 'level_up') {
+        container.innerHTML = `
+            <div class="form-group">
+                <label>À partir du niveau</label>
+                <input type="number" id="f-min-level" min="1" value="${(eventToEdit && eventToEdit.minLevel) || 1}" placeholder="ex: 5">
+                <small style="color: var(--text-dim); font-size: 0.8rem;">Se déclenche quand un spectateur atteint un nouveau niveau grâce à ses points. Variable : {level}.</small>
             </div>
         `;
     }
@@ -3344,14 +3701,62 @@ async function saveNewAction(e) {
         if (alt) prefix += '!';
         if (shift) prefix += '+';
 
+        if (!key) { showToast('Choisissez une touche à appuyer.', 'error'); return; }
         action.key = prefix + key;
         action.duration = parseInt(document.querySelector('#f-duration').value) || 100;
     }
     if (action.type === 'rcon') action.command = document.querySelector('#f-cmd').value;
+    if (action.type === 'alert') {
+        action.text = document.querySelector('#f-text').value;
+        action.mediaUrl = document.querySelector('#f-media-url').value.trim();
+        action.alertDuration = parseInt(document.querySelector('#f-alert-duration').value) || 5;
+        if (!action.text && !action.mediaUrl) {
+            showToast("Ajoutez un texte ou une image/vidéo pour l'alerte !", 'error');
+            return;
+        }
+    }
+    if (action.type === 'tts') action.text = document.querySelector('#f-text').value;
+    if (action.type === 'obs') {
+        action.obsAction = document.querySelector('#f-obs-action').value;
+        action.obsScene = document.querySelector('#f-obs-scene').value.trim();
+        action.obsSource = document.querySelector('#f-obs-source').value.trim();
+        action.obsDuration = Math.max(0, parseInt(document.querySelector('#f-obs-duration').value) || 0);
+        if (action.obsAction === 'scene' ? !action.obsScene : !action.obsSource) {
+            showToast(action.obsAction === 'scene' ? 'Indiquez le nom de la scène OBS !' : 'Indiquez le nom de la source OBS !', 'error');
+            return;
+        }
+        saveObsSettingsFromForm();
+    }
+    if (action.type === 'streamerbot') {
+        action.sbActionName = document.querySelector('#f-sb-name').value.trim();
+        action.sbActionId = document.querySelector('#f-sb-id').value.trim();
+        action.sbArgs = document.querySelector('#f-sb-args').value.trim();
+        if (!action.sbActionName && !action.sbActionId) {
+            showToast('Indiquez le nom de l\'action Streamer.bot !', 'error');
+            return;
+        }
+        if (action.sbArgs) {
+            try { JSON.parse(action.sbArgs); } catch (e) { showToast('Arguments : JSON invalide', 'error'); return; }
+        }
+        saveStreamerbotSettingsFromForm();
+    }
+    if (action.type === 'wheel') {
+        action.segments = document.querySelector('#f-segments').value;
+        const count = action.segments.split('\n').map(l => l.trim()).filter(Boolean).length;
+        if (count < 2) {
+            showToast('La roue doit avoir au moins 2 cases !', 'error');
+            return;
+        }
+    }
+    action.cooldown = Math.max(0, parseInt(document.querySelector('#action-cooldown')?.value) || 0);
+    action.userCooldown = Math.max(0, parseInt(document.querySelector('#action-user-cooldown')?.value) || 0);
+    action.delay = Math.max(0, parseInt(document.querySelector('#action-delay')?.value) || 0);
     if (action.type === 'sound') {
         action.soundName = document.querySelector('#f-sound-name').value;
         action.soundUrl = document.querySelector('#f-sound-url').value;
-        action.volume = document.querySelector('#f-sound-volume').value;
+        if (!action.soundUrl) { showToast('Choisissez un son dans la bibliothèque.', 'error'); return; }
+        // a number (a text "50" was ignored by the player until the server restarted)
+        action.volume = Math.min(Math.max(parseInt(document.querySelector('#f-sound-volume').value, 10) || 0, 0), 100);
     }
 
     if (editId) {
@@ -3380,7 +3785,7 @@ async function saveNewAction(e) {
     updateLikesGoalActionSelect();
 
     // Sync in background
-    sync('actions', currentActions).catch(console.error);
+    syncDiff('actions', currentActions).catch(console.error);
 }
 
 async function saveNewEvent(e) {
@@ -3390,9 +3795,11 @@ async function saveNewEvent(e) {
     const editIdInput = document.querySelector('#event-edit-id');
     const editId = editIdInput ? editIdInput.value : null;
 
+    // editing keeps the event's on / off state (it used to be switched back on silently)
+    const existingEvent = editId ? (currentEvents || []).find(ev => ev.id === editId) : null;
     const event = {
         id: editId || 'evt_' + Date.now(),
-        active: true,
+        active: existingEvent ? existingEvent.active !== false : true,
         who: document.querySelector('#event-who').value,
         triggerType: document.querySelector('#event-trigger-type').value,
         actions: Array.from(document.querySelectorAll('#event-action-list input[type="checkbox"]:checked')).map(chk => chk.value)
@@ -3435,6 +3842,18 @@ async function saveNewEvent(e) {
         event.minCoins = parseInt(document.querySelector('#f-min-coins').value);
     }
 
+    if (event.triggerType === 'level_up') {
+        event.minLevel = Math.max(1, parseInt(document.querySelector('#f-min-level').value) || 1);
+    }
+
+    // Points shop (Premium): cost paid by the viewer
+    event.pointsCost = Math.max(0, parseInt(document.querySelector('#event-points-cost')?.value) || 0);
+    event.minTeamLevel = Math.min(Math.max(parseInt(document.querySelector('#event-team-level')?.value) || 0, 0), 50);
+    if (event.pointsCost > 0 && !isPremiumUser) {
+        showNotify('🌟 Gentok Pro', 'La boutique de points est réservée à Gentok Premium.', 'info');
+        event.pointsCost = 0;
+    }
+
     // [DUPLICATE TRIGGER GUARD] Block duplicate triggers for the same gift/action
     const existingDuplicate = currentEvents.find(evt => {
         if (editId && evt.id === editId) return false;
@@ -3460,7 +3879,11 @@ async function saveNewEvent(e) {
             return evt.minCoins === event.minCoins;
         }
 
-        if (event.triggerType === 'follow' || event.triggerType === 'share' || event.triggerType === 'join' || event.triggerType === 'subscribe') {
+        if (event.triggerType === 'level_up') {
+            return evt.minLevel === event.minLevel;
+        }
+
+        if (event.triggerType === 'follow' || event.triggerType === 'share' || event.triggerType === 'member' || event.triggerType === 'subscribe') {
             return true;
         }
 
@@ -3516,7 +3939,44 @@ async function saveNewEvent(e) {
     renderSoundLinks(); // Immediately refresh soundboard trigger badges
 
     // Sync in background
-    sync('events', currentEvents).catch(console.error);
+    syncDiff('events', currentEvents).catch(console.error);
+}
+
+// Actions / events are saved item by item: only what changed since the last save (or the last config received)
+// is sent to /api/<kind>/changes. Resending the whole list let a stale tab (or the app) undo other changes.
+const syncedItems = { actions: null, events: null };
+function rememberSynced(kind, list) {
+    syncedItems[kind] = new Map((list || []).map(i => [String(i.id), JSON.stringify(i)]));
+}
+async function syncDiff(kind, list) {
+    if (isPresetEditMode) return; // preset edition saves the preset, not the scene
+    const base = syncedItems[kind];
+    if (!base) { await sync(kind, list); rememberSynced(kind, list); return; }
+    const upsert = [];
+    const seen = new Set();
+    for (const item of list || []) {
+        const id = String(item.id);
+        seen.add(id);
+        if (base.get(id) !== JSON.stringify(item)) upsert.push(item);
+    }
+    const remove = Array.from(base.keys()).filter(id => !seen.has(id));
+    if (!upsert.length && !remove.length) return;
+    if (upsert.length > 400 || remove.length > 400) { await sync(kind, list); rememberSynced(kind, list); return; } // big import
+    try {
+        const res = await fetch(`${getApiBase()}/api/${kind}/changes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), upsert, remove })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            showNotify('Enregistrement impossible', data.error || `Erreur ${res.status}`, 'error');
+            return;
+        }
+        rememberSynced(kind, list);
+    } catch (e) {
+        showNotify('Enregistrement impossible', e.message, 'error');
+    }
 }
 
 async function sync(type, data) {
@@ -3535,18 +3995,24 @@ async function sync(type, data) {
 
     const base = getApiBase();
     try {
-        await fetch(`${base}/api/${type}`, {
+        const res = await fetch(`${base}/api/${type}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        // the save is reported instead of silently showing success while nothing was stored
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            showNotify('Enregistrement impossible', err.error || `Erreur ${res.status}`, 'error');
+        }
     } catch (e) {
         console.error(`Sync failed for ${type}: `, e);
+        showToast('Enregistrement impossible : serveur injoignable', 'error');
     }
 
     // [FIX] In App/Electron mode, ALSO sync to local server so that test-action reads updated config
-    // (test-action goes to localhost, which reads its own in-memory config)
-    if (window.electronAPI) {
+    // (test-action goes to localhost, which reads its own in-memory config). Not the secure app: it has no data.
+    if (window.electronAPI && !window.gentokRelayApp) {
         try {
             const localBase = getLocalApiBase();
             await fetch(`${localBase}/api/${type}`, {
@@ -3626,7 +4092,7 @@ window.deleteSelectedItems = async (type) => {
     if (type === 'sound') {
         // Delete Actions (Sounds)
         currentActions = currentActions.filter(a => !selected.includes(a.id));
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
 
         // Cleanup orphaned events
         currentEvents.forEach(evt => {
@@ -3634,7 +4100,7 @@ window.deleteSelectedItems = async (type) => {
         });
         // Remove empty events if they were only for sound
         // Actually keep them but inactive? No, let's keep logic simple
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         showToast(`${selected.length} sons supprimés.`);
         renderSoundLinks();
@@ -3647,7 +4113,7 @@ window.deleteSelectedItems = async (type) => {
     } else if (type === 'event') {
         // Delete Events
         currentEvents = currentEvents.filter(e => !selected.includes(e.id));
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         showToast(`${selected.length} événements supprimés.`);
         renderEvents();
@@ -3661,13 +4127,13 @@ window.deleteSelectedItems = async (type) => {
     } else if (type === 'action') {
         // Delete Actions (General)
         currentActions = currentActions.filter(a => !selected.includes(a.id));
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
 
         // Cleanup orphaned events
         currentEvents.forEach(evt => {
             evt.actions = evt.actions.filter(id => !selected.includes(id));
         });
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         showToast(`${selected.length} actions supprimées.`);
         renderActions();
@@ -3701,9 +4167,9 @@ window.deleteItem = async (type, id) => {
             }
         });
 
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
         if (eventsChanged) {
-            await sync('events', currentEvents);
+            await syncDiff('events', currentEvents);
             renderEvents(); // Re-render events to show updated badges
         }
         showToast('Action supprimée !', 'success');
@@ -3713,7 +4179,7 @@ window.deleteItem = async (type, id) => {
         updateLikesGoalActionSelect();
     } else {
         currentEvents = currentEvents.filter(e => e.id !== id);
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
         renderEvents();
         showToast('Événement supprimé !', 'success');
     }
@@ -3723,7 +4189,7 @@ window.toggleEvent = async (id) => {
     const e = currentEvents.find(evt => evt.id === id);
     if (e) {
         e.active = !e.active;
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
     }
 };
 
@@ -3735,7 +4201,7 @@ function saveUser(username) {
 }
 
 async function toggleBot() {
-    const isRunning = btnStart.innerText === 'Arrêter';
+    const isRunning = isBotRunningUI();
     const base = isLocalMode ? getLocalApiBase() : getApiBase();
     const token = localStorage.getItem('gentok_token');
 
@@ -3854,7 +4320,7 @@ async function handleTestMinecraft() {
     resultEl.style.color = "var(--text-muted)";
 
     try {
-        const base = window.electronAPI ? getLocalApiBase() : getApiBase();
+        const base = (window.electronAPI && !window.gentokRelayApp) ? getLocalApiBase() : getApiBase();
         const res = await fetch(`${base}/api/minecraft/test`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3998,9 +4464,12 @@ async function handleLogin() {
 }
 
 async function startBot(username, silent = false) {
-    // Use Local Engine if in App Mode, otherwise VPS (which might relay)
-    const base = isLocalMode ? getLocalApiBase() : getApiBase();
+    // Use Local Engine if in App Mode, otherwise VPS (which might relay).
+    // "Cloud" (Settings > Connexion au live): even in the app, the live runs on the Gentok servers.
+    const cloud = window.gentokRunMode === 'cloud';
+    const base = (isLocalMode && !cloud) ? getLocalApiBase() : getApiBase();
     const token = localStorage.getItem('gentok_token');
+    if (cloud) return await startBotHttp(username, base, token, silent);
 
     if (!silent) {
         addLog(`🛰️ Lancement de la connexion pour ${username}...`, 'info');
@@ -4066,7 +4535,7 @@ async function startBotHttp(username, base, token, silent = false) {
             // RELAYED TO APP (via VPS)
             btnStart.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Connexion...</span>';
             addLog('📡 Commande relayée à l\'application locale.', 'info');
-            showToast('Relais Actif', 'Démarrage lancé en local');
+            showToast('Relais actif : démarrage lancé sur votre PC', 'success');
             return { success: true };
         }
 
@@ -4194,19 +4663,79 @@ window.closeModal = (id) => {
 
 
 // Navigation Logic
+// Paramètres > API Gentok
+window.copyApiExample = async () => {
+    const base = (typeof getApiBase === 'function' && getApiBase()) || location.origin;
+    const example = `curl -X POST ${base}/api/actions/item -H "Content-Type: application/json" -d '{"token":"VOTRE_CLE","action":{"name":"Merci","type":"tts","text":"Merci {nickname} !"}}'`;
+    try { await navigator.clipboard.writeText(example); showToast('Exemple copié (remplacez VOTRE_CLE)', 'success'); } catch (e) { showToast(example, 'info'); }
+};
+window.copyApiToken = async () => {
+    const ok = await Swal.fire({ title: 'Copier votre clé ?', text: "Elle donne accès à votre compte Gentok : collez-la uniquement dans vos propres outils.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Copier', cancelButtonText: 'Annuler' });
+    if (!ok.isConfirmed) return;
+    try { await navigator.clipboard.writeText(localStorage.getItem('gentok_token') || ''); showToast('Clé copiée', 'success'); } catch (e) { showToast('Copie impossible', 'error'); }
+};
+
+// Points, levels and gift history: shared by all the scenes, unless the active scene is marked independent
+function renderSceneSync(activeScene) {
+    document.querySelectorAll('.scene-sync').forEach(el => {
+        if (!activeScene) { el.innerHTML = ''; return; }
+        const own = !!activeScene.independent;
+        el.innerHTML = `
+            <span class="scene-sync-badge ${own ? 'own' : ''}"><i class="fas ${own ? 'fa-lock' : 'fa-link'}"></i> ${own
+                ? escapeHtml(`Propres à la scène « ${activeScene.title || 'Scène sans nom'} »`)
+                : 'Partagés entre toutes vos scènes'}</span>
+            <label class="scene-sync-toggle" title="Points, niveaux et historique des cadeaux séparés pour cette scène">
+                <input type="checkbox" ${own ? 'checked' : ''}> Scène indépendante
+            </label>`;
+        el.querySelector('input').addEventListener('change', (e) => setSceneIndependent(activeScene.id, e.target.checked, e.target));
+    });
+}
+
+async function setSceneIndependent(sceneId, independent, input) {
+    if (independent) {
+        const ok = await Swal.fire({
+            title: 'Rendre cette scène indépendante ?',
+            html: 'Elle gardera <b>ses propres</b> points, niveaux, règles de gain et historique des cadeaux (top cadeau, top série, top pièces / likes).<br><br>Elle part d\'une copie des réglages et de l\'historique actuels ; les points des spectateurs y repartent de zéro. Les autres scènes restent synchronisées entre elles.',
+            icon: 'question', showCancelButton: true, confirmButtonText: 'Oui, indépendante', cancelButtonText: 'Annuler'
+        });
+        if (!ok.isConfirmed) { if (input) input.checked = false; return; }
+    }
+    try {
+        const r = await fetch(`${getApiBase()}/api/scenes/independent`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), sceneId, independent })
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+        showToast(independent ? 'Scène indépendante : points et historique propres à cette scène.' : 'Scène synchronisée : points et historique partagés entre toutes vos scènes.', 'success');
+        // the server also sends sync_config; reading it here keeps this tab right even if the socket is slow
+        const cfg = await fetch(`${getApiBase()}/api/config?token=${encodeURIComponent(localStorage.getItem('gentok_token') || '')}`, { cache: 'no-store' }).then(x => x.json()).catch(() => null);
+        if (cfg) applyConfigUI(cfg);
+        if (window.GentokPro && typeof window.GentokPro.onSection === 'function') window.GentokPro.onSection('points');
+    } catch (err) {
+        if (input) input.checked = !independent;
+        showToast(`Impossible : ${err.message}`, 'error');
+    }
+}
+
 window.showSection = (sectionId) => {
+    // Console and Administration are for admin accounts only
+    if ((sectionId === 'logs' || sectionId === 'admin') && !isAdmin) sectionId = 'dashboard';
     // Check if section is locked (Premium only)
     const navItem = document.querySelector(`.nav-links a[href="#${sectionId}"]`)?.parentElement;
     if (navItem && navItem.classList.contains('locked')) {
-        showNotify("ðŸŒŸ Gentok Pro", "Cette fonctionnalité nécessite un compte Gentok Pro !", 'info');
+        showNotify("🌟 Gentok Pro", "Cette fonctionnalité nécessite un compte Gentok Pro !", 'info');
         return;
     }
 
     // Hide all sections
-    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games'];
+    const sections = ['dashboard', 'actions', 'events', 'logs', 'soundboard', 'settings', 'stats', 'presets', 'tts-chat', 'overlays', 'admin', 'ranking', 'minecraft', 'games', 'points', 'premium', 'battle', 'simulator', 'gallery', 'giveaway'];
     sections.forEach(s => {
         const el = document.getElementById(`${s}-section`);
         if (el) el.style.display = 'none';
+    });
+    // pages added later (donors, ...) are hidden too, whatever their id
+    document.querySelectorAll('#dashboard-container section[id$="-section"]').forEach(el => {
+        if (el.id !== `${sectionId}-section`) el.style.display = 'none';
     });
 
     // Show target
@@ -4232,7 +4761,14 @@ window.showSection = (sectionId) => {
             'settings': 'Paramètres',
             'logs': 'Console / Logs',
             'admin': 'Administration Système',
-            'ranking': 'Classement'
+            'ranking': 'Classement',
+            'points': 'Utilisateurs & Points',
+            'premium': 'Mon offre',
+            'battle': "Batailles d'équipes",
+            'simulator': "Simulateur d'événements",
+            'gallery': "Galerie d'overlays",
+            'giveaway': 'Giveaway & Points Drop',
+            'donors': 'Donateurs présents'
         };
         headerTitle.textContent = titles[sectionId] || 'Gentok';
     }
@@ -4252,6 +4788,9 @@ window.showSection = (sectionId) => {
     if (sectionId === 'stats') {
         renderStatsHistory();
     }
+
+    // New pages (public/pro.js)
+    if (window.GentokPro && typeof window.GentokPro.onSection === 'function') window.GentokPro.onSection(sectionId);
 
     if (sectionId === 'ranking') {
         // Default to legends tab
@@ -4397,6 +4936,20 @@ window.activateOverlay = (targetId) => {
     }, 100);
 };
 
+// Sets a preview iframe address without reloading it when nothing changed (see frames.js)
+function setPreviewSrc(iframe, url) {
+    if (window.GentokFrames) window.GentokFrames.setSrc(iframe, url);
+    else if (iframe.src !== url) iframe.src = url;
+}
+// Leaderboard previews show the first rows only: the full list (up to 50 rows) made the page huge
+function leaderboardPreviewHeight(limit) {
+    return Math.min(parseInt(limit) || 10, 6) * 42 + 64;
+}
+function setPreviewHeight(iframe, height) {
+    iframe.style.height = height + 'px';
+    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
+}
+
 function updateOverlayLinks() {
     const token = localStorage.getItem('gentok_token');
     if (!token) return;
@@ -4405,15 +4958,21 @@ function updateOverlayLinks() {
     const inputs = document.querySelectorAll('#overlays-section input[readonly]');
     inputs.forEach(input => {
         let url = input.value;
+        // Field not filled yet (its config hasn't loaded): an empty URL would make the preview
+        // iframe load "?token=..." i.e. the dashboard itself, which then plays every alert and TTS again
+        if (!/\/overlay[/_]/.test(url)) return;
         // Strip existing token if present (matches both ?token= and &token=)
         if (url.includes('token=')) {
             const separator = url.includes('?token=') ? '?token=' : '&token=';
             url = url.split(separator)[0];
         }
 
-        // Determine if we need ? or & to append token
+        // Determine if we need ? or & to append token (+ the dashboard language for the overlay texts)
         const hasQuery = url.includes('?');
-        const fullUrl = `${url}${hasQuery ? '&' : '?'}token=${token}`;
+        const uiLang = window.GentokI18n ? window.GentokI18n.lang : 'fr';
+        // Always pinned: OBS / TikTok Live Studio browsers are often in English whatever the streamer's language
+        const langParam = !url.includes('lang=') ? `&lang=${uiLang}` : '';
+        const fullUrl = `${url}${hasQuery ? '&' : '?'}token=${token}${langParam}`;
         input.value = fullUrl;
 
         // Also update any preview iframes within the same container
@@ -4421,26 +4980,17 @@ function updateOverlayLinks() {
         if (card) {
             const iframe = card.querySelector('iframe');
             if (iframe) {
-                // Only update if src is different to avoid unnecessary reloads
-                const currentSrc = iframe.src;
-                const isSameUrl = currentSrc === fullUrl || currentSrc.endsWith(fullUrl);
-
-                if (!isSameUrl) {
-                    iframe.src = fullUrl;
-                }
-
-                // [NEW] Dynamic height for leaderboards
+                // Leaderboards: style, size, title and font reach the running preview through the
+                // session_stats socket event, so its address stays the same and it is not reloaded
+                let previewUrl = fullUrl;
                 if (fullUrl.includes('/overlay/leaderboard')) {
-                    const params = new URLSearchParams(url.split('?')[1]);
-                    const limit = params.get('limit') || 10;
-                    const height = (parseInt(limit) || 10) * 42 + 60;
-                    iframe.style.height = height + 'px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-                } else if (fullUrl.includes('/overlay/top-gift') || fullUrl.includes('/overlay/top-streak')) {
-                    // Force 350px for gift and streak
-                    iframe.style.height = '350px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = '350px';
+                    const params = new URLSearchParams(url.split('?')[1] || '');
+                    const keep = new URLSearchParams({ type: params.get('type') || 'coins', token, lang: uiLang, preview: 'true' });
+                    if (params.get('period')) keep.set('period', params.get('period'));
+                    previewUrl = `${url.split('?')[0]}?${keep}`;
+                    setPreviewHeight(iframe, leaderboardPreviewHeight(params.get('limit')));
                 }
+                setPreviewSrc(iframe, previewUrl);
             }
         }
 
@@ -4756,7 +5306,8 @@ if (window.electronAPI) {
         if (consoleEl) {
             const div = document.createElement('div');
             div.style.marginBottom = '5px';
-            div.innerHTML = `<span style="color: #666;">[${new Date().toLocaleTimeString()}]</span> ${log}`;
+            // server output can contain viewers' text (e.g. "say {comment}"): shown as text, never as HTML
+            div.innerHTML = `<span style="color: #666;">[${new Date().toLocaleTimeString()}]</span> ${escapeHtml(String(log))}`;
             consoleEl.appendChild(div);
             // Auto scroll
             consoleEl.scrollTop = consoleEl.scrollHeight;
@@ -4896,7 +5447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnStart) {
         btnStart.onclick = async () => {
             if (!window.electronAPI) return;
-            const isOnline = btnStart.innerText.includes('Arrêter');
+            const isOnline = !!btnStart.querySelector('.fa-stop'); // Minecraft server button (text is translated)
             if (isOnline) {
                 btnStart.disabled = true;
                 btnStart.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Arrêt...';
@@ -5068,14 +5619,15 @@ window.editGlobalPreset = (id) => {
     document.getElementById('p-badge').value = preset.badge || 'gratuit';
 
     const modalTitle = document.querySelector('#modal-publish-preset h2');
-    if (modalTitle) modalTitle.innerText = "âœï¸ Modifier le Preset";
+    if (modalTitle) modalTitle.innerText = "✏️ Modifier le Preset";
 
     const btnEditContent = document.getElementById('btn-edit-preset-content');
     if (btnEditContent) btnEditContent.style.display = 'block';
 
-    // For editing, we could mark which items were previously in the preset, 
-    // but usually admins want to update to their NEW current session.
+    // Editing: nothing is ticked, so only the title / description / image change. Tick items to replace
+    // the preset's content with them.
     populatePresetItems();
+    document.querySelectorAll('input[name="p-included-event"], input[name="p-included-action"]').forEach(cb => { cb.checked = false; });
     openModal('modal-publish-preset');
 };
 
@@ -5137,6 +5689,7 @@ window.savePresetContentChanges = async () => {
     showToast('Sauvegarde du pack...', 'info');
 
     try {
+        const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
         const res = await fetch(`${base}/api/presets?token=${token || ''}`, {
             method: 'POST',
@@ -5151,7 +5704,7 @@ window.savePresetContentChanges = async () => {
 
         const data = await res.json();
         if (data.success) {
-            showNotify('Succès', 'Le contenu du pack a été mis à  jour !', 'success');
+            showNotify('Succès', 'Le contenu du pack a été mis à jour !', 'success');
             quitPresetEditorMode();
             loadPresets();
         } else throw new Error(data.error);
@@ -5240,7 +5793,7 @@ window.populatePresetItems = () => {
     }
 
     if (currentEvents.length === 0 && currentActions.length === 0) {
-        container.innerHTML = '<p class="text-dim" style="font-size: 0.8rem; text-align: center;">Aucune donnée à  inclure.</p>';
+        container.innerHTML = '<p class="text-dim" style="font-size: 0.8rem; text-align: center;">Aucune donnée à inclure.</p>';
     }
 };
 
@@ -5249,6 +5802,7 @@ window.deleteGlobalPreset = async (presetId) => {
     if (!confirmed) return;
 
     try {
+        const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
         const res = await fetch(`${base}/api/presets/${presetId}?token=${token || ''}`, { method: 'DELETE' });
         const data = await res.json();
@@ -5282,6 +5836,7 @@ window.installPreset = async (presetId, title) => {
     showToast('Installation en cours...', 'info');
 
     try {
+        const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
         const res = await fetch(`${base}/api/presets/install?token=${token || ''}`, {
             method: 'POST',
@@ -5298,7 +5853,7 @@ window.installPreset = async (presetId, title) => {
                 saveUserScenes(scenes);
             }
 
-            addLog(`ðŸ“¦ Preset "${title}" installé avec succès !`, 'success');
+            addLog(`📦 Preset "${title}" installé avec succès !`, 'success');
             showNotify('Succès', `Le preset a été installé. ${result.actionsInstalled} actions et ${result.eventsInstalled} événements ajoutés.`, 'success');
 
             // Refresh data from server
@@ -5492,7 +6047,10 @@ if (formPublishPreset) {
             img: document.getElementById('p-img').value,
             badge: document.getElementById('p-badge').value,
             events: selectedEvents,
-            actions: selectedActions
+            actions: selectedActions,
+            // editing with nothing ticked: keep the preset's content
+            keepContent: !!document.getElementById('p-id-hidden').value && !selectedEvents.length && !selectedActions.length,
+            token: localStorage.getItem('gentok_token')
         };
 
         showToast('Sauvegarde...', 'info');
@@ -5604,7 +6162,8 @@ window.renderInstalledPresets = () => {
 
 // --- Scene Management Helpers ---
 window.getUserScenes = () => {
-    return userScenes || [];
+    // old scenes saved without a name are shown as "Scène sans nom" instead of an empty label
+    return (userScenes || []).map(sc => (sc && !sc.title ? { ...sc, title: 'Scène sans nom' } : sc));
 };
 
 window.saveUserScenes = async (scenes) => {
@@ -5634,29 +6193,47 @@ window.createCustomScene = async () => {
         return;
     }
 
-    const { value: name } = await Swal.fire({
+    // Each scene has its own actions, events, goals, TTS and points settings: start empty or from a copy
+    const hasCurrent = !!activeSceneId;
+    const { value: form } = await Swal.fire({
         title: 'Nouvelle scène',
-        text: 'Créez un profil vide pour vos propres réglages.',
-        input: 'text',
-        inputLabel: 'Nom de la scène',
-        inputPlaceholder: 'Ex: Ma Scène 1',
+        html: `
+            <p class="small text-secondary mb-2">Chaque scène garde ses propres actions, événements, objectifs, réglages TTS et règles de points.</p>
+            <input id="new-scene-name" class="swal2-input" placeholder="Ex : Live jeux, Live discussion" maxlength="40">
+            ${hasCurrent ? `<div class="text-start mx-4 mt-2 small">
+                <label class="d-block mb-1"><input type="radio" name="new-scene-from" value="empty" checked> Scène vide</label>
+                <label class="d-block"><input type="radio" name="new-scene-from" value="copy"> Copier la scène actuelle (actions, événements, réglages)</label>
+            </div>` : ''}`,
         showCancelButton: true,
         confirmButtonColor: 'var(--secondary)',
         cancelButtonText: 'Annuler',
         confirmButtonText: 'Créer',
-        inputValidator: (value) => {
-            if (!value) {
-                return 'Veuillez mettre un nom de scène';
-            }
+        focusConfirm: false,
+        preConfirm: () => {
+            const name = (document.getElementById('new-scene-name').value || '').trim();
+            if (!name) { Swal.showValidationMessage('Veuillez mettre un nom de scène'); return false; }
+            return { name, copy: document.querySelector('input[name="new-scene-from"]:checked')?.value === 'copy' };
         }
     });
 
-    if (name) {
+    if (form && form.name) {
         const id = `custom_${Date.now()}`;
-        scenes.push({ id, title: name, isPreset: false });
+        scenes.push({ id, title: form.name, isPreset: false });
         await saveUserScenes(scenes); // [FIX] Wait for the new list to be saved
+        if (form.copy) {
+            try {
+                const r = await fetch(`${getApiBase()}/api/scenes/duplicate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: localStorage.getItem('gentok_token'), toSceneId: id })
+                });
+                if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+            } catch (e) {
+                showNotify('Copie impossible', `La scène a été créée vide (${e.message}).`, 'warning');
+            }
+        }
         renderInstalledPresets(); // Refresh any list if visible
-        showToast('Scène créée !');
+        showToast(form.copy ? 'Scène créée à partir de la scène actuelle !' : 'Scène créée !');
         await switchScene(id); // [FIX] Wait for the switch to complete
     }
 };
@@ -5785,6 +6362,8 @@ window.switchScene = async (sceneId) => {
     // If we want to switch to "User First Scene", sceneId must be provided.
 
     if (sceneId === 'default' || !sceneId) sceneId = null;
+    // Two quick clicks: only the last choice may update the screen (answers can come back in any order)
+    const seq = (window.__sceneSwitchSeq = (window.__sceneSwitchSeq || 0) + 1);
     try {
         const base = getApiBase();
         const token = localStorage.getItem('gentok_token');
@@ -5794,11 +6373,14 @@ window.switchScene = async (sceneId) => {
             body: JSON.stringify({ sceneId, token })
         });
         const result = await res.json();
+        if (seq !== window.__sceneSwitchSeq) return;
         if (result.success) {
             // [FIX] Update data dynamically instead of reloading the whole page
             activeSceneId = result.activeSceneId;
             showToast('Scène activée !');
             await fetchData();
+            // the TTS settings belong to the scene too
+            if (typeof reloadTTSConfig === 'function') reloadTTSConfig();
         }
     } catch (e) {
         showNotify('Erreur', 'Impossible de changer de scène', 'error');
@@ -5842,21 +6424,23 @@ window.updateSceneUI = () => {
         div.innerHTML = `
             <span style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding-right: 10px;">
                 <i class="fas fa-layer-group" style="flex-shrink: 0;"></i> 
-                <span class="scene-title-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">${s.title}</span>
+                <span class="scene-title-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">${escapeHtml(s.title)}</span>
                 ${badge}
             </span>
             <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
-                <div class="scene-action-btn edit" onclick="renameScene('${s.id}', '${s.title.replace(/'/g, "\\'")}', event)" title="Renommer">
+                <div class="scene-action-btn edit" onclick="renameScene(this.closest('.custom-option').dataset.sceneId, this.closest('.custom-option').dataset.title, event)" title="Renommer">
                     <i class="fas fa-pen"></i>
                 </div>
-                <div class="scene-delete-btn" onclick="deleteScene('${s.id}', event)" title="Supprimer">
+                <div class="scene-delete-btn" onclick="deleteScene(this.closest('.custom-option').dataset.sceneId, event)" title="Supprimer">
                     <i class="fas fa-trash-alt"></i>
                 </div>
             </div>
         `;
+        div.dataset.sceneId = s.id;
+        div.dataset.title = s.title;
         div.onclick = (e) => {
             if (e.target.closest('.scene-delete-btn') || e.target.closest('.scene-action-btn')) return;
-            selectCustomOption('cs-active-scene', s.id, `<i class="fas fa-layer-group"></i> ${s.title}${badge}`);
+            selectCustomOption('cs-active-scene', s.id, `<i class="fas fa-layer-group"></i> ${escapeHtml(s.title)}${badge}`);
             switchScene(s.id);
         };
         optionsGrid.appendChild(div);
@@ -5880,7 +6464,7 @@ window.updateSceneUI = () => {
                 `<span style="font-size: 0.6rem; background: #8a2be2; color: white; padding: 2px 4px; border-radius: 4px; margin-left: 5px; font-weight: bold;">PRESET</span>` :
                 ``;
 
-            triggerSpan.innerHTML = `<i class="fas fa-layer-group"></i> ${active.title}${badge}`;
+            triggerSpan.innerHTML = `<i class="fas fa-layer-group"></i> ${escapeHtml(active.title)}${badge}`;
             triggerSpan.title = active.title;
         } else if (triggerSpan) {
             // Fallback if deleted or not found
@@ -5891,6 +6475,17 @@ window.updateSceneUI = () => {
         triggerSpan.innerHTML = `<i class="fas fa-layer-group"></i> Sélectionnez une scène`;
         triggerSpan.title = "";
     }
+
+    // TTS and points sections say which scene their settings belong to
+    const activeScene = scenes.find(sc => sc.id === activeSceneId);
+    document.querySelectorAll('.scene-scope-hint').forEach(el => {
+        const what = el.dataset.what || 'Réglages';
+        el.innerHTML = activeScene
+            ? `<i class="fas fa-layer-group"></i> ${escapeHtml(what)} de la scène « ${escapeHtml(activeScene.title)} »`
+            : `<i class="fas fa-layer-group"></i> ${escapeHtml(what)} par défaut (aucune scène active)`;
+    });
+
+    renderSceneSync(activeScene);
 
     // [NEW] Dynamically hide/show sidebar items based on active scene
     const sceneRequiredItems = document.querySelectorAll('.scene-required');
@@ -5925,7 +6520,7 @@ window.addLocalSoundToUI = (sound) => {
         el.style.animation = 'fadeIn 0.5s ease-out';
         el.innerHTML = `
             <div class="sound-badge">${sound.isUploading ? '<i class="fas fa-spinner fa-spin"></i>' : 'UPLOAD'}</div>
-            <span class="sound-info">${sound.title}</span>
+            <span class="sound-info">${escapeHtml(sound.title)}</span>
             <div class="sound-actions">
                 <button class="btn-icon preview" onclick="previewSound('${safeUrl}')" title="Écouter"><i class="fas fa-play"></i></button>
                 ${sound.isUploading ? '' : `<button class="btn-icon quick" onclick="openQuickSound('${encodedData}')" title="Lien Rapide"><i class="fas fa-bolt"></i></button>`}
@@ -5952,7 +6547,7 @@ window.addLocalSoundToUI = (sound) => {
                 ${sound.isUploading ? '<i class="fas fa-spinner fa-spin" style="color: var(--secondary); font-size: 0.7rem;"></i>' : '<i class="fas fa-upload" style="color: var(--secondary); font-size: 0.7rem;"></i>'}
             </div>
              <div style="display:flex; flex-direction:column; flex:1; min-width:0;">
-                <span class="sound-name" title="${sound.title}">${sound.title}</span>
+                <span class="sound-name" title="${escapeHtml(sound.title)}">${escapeHtml(sound.title)}</span>
             </div>
             <div class="sound-actions">
                 <button class="btn-mini btn-mini-play" onclick="previewSound('${safeUrl}', this)">
@@ -6192,7 +6787,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
     const triggerType = document.querySelector('#qs-trigger-type').value;
     const soundName = document.querySelector('#qs-sound-name').value;
     const soundUrl = document.querySelector('#qs-sound-url').value;
-    const volume = document.querySelector('#qs-volume').value;
+    const volume = Math.min(Math.max(parseInt(document.querySelector('#qs-volume').value, 10) || 0, 0), 100);
 
     // Validate gift selection if trigger is gift
     if (triggerType === 'gift') {
@@ -6242,7 +6837,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
             const giftName = document.querySelector('#qs-gift-name').value;
             triggerMatch = (evt.giftName === giftName);
         } else if (triggerType === 'like') {
-            triggerMatch = (evt.likeCount === likeThreshold);
+            triggerMatch = (Number(evt.likeThreshold) === Number(likeThreshold));
         } else if (triggerType === 'chat') {
             triggerMatch = (evt.message === chatMessage);
         } else if (triggerType === 'command') {
@@ -6283,7 +6878,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
             volume: volume
         };
         currentActions.push(action);
-        await sync('actions', currentActions);
+        await syncDiff('actions', currentActions);
 
         // 2. Create Event
         const eventId = 'evt_' + Date.now();
@@ -6300,7 +6895,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
             event.giftName = document.querySelector('#qs-gift-name').value;
             event.giftId = document.querySelector('#qs-gift-id').value;
         } else if (triggerType === 'like') {
-            event.likeCount = likeThreshold;
+            event.likeThreshold = likeThreshold; // field read by the engine (was likeCount: the threshold was ignored)
         } else if (triggerType === 'chat') {
             event.message = chatMessage;
         } else if (triggerType === 'command') {
@@ -6310,7 +6905,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
         }
 
         currentEvents.push(event);
-        await sync('events', currentEvents);
+        await syncDiff('events', currentEvents);
 
         // Refresh & Close
         let label = '';
@@ -6549,7 +7144,7 @@ async function handleSaveSpotify() {
     // Only validate if trying to enable the module
     if (isEnabled && (!clientId || !clientSecret)) {
         const statusMsg = document.querySelector('#spotify-status-msg');
-        if (statusMsg && !statusMsg.innerText.includes('Connecté')) {
+        if (statusMsg && !statusMsg.querySelector('.fa-check-circle')) {
             showNotify('Spotify', 'Veuillez remplir le Client ID et Client Secret pour activer Spotify.', 'warning');
             return;
         }
@@ -6729,38 +7324,7 @@ window.addEventListener('click', (e) => {
     }
 });
 
-async function subscribePlan(plan) {
-    console.log(`[Stripe] Initiating ${plan} plan subscription...`);
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-
-    try {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
-
-        const base = getApiBase();
-        const token = localStorage.getItem('gentok_token');
-
-        const res = await fetch(`${base}/api/stripe/create-checkout-session`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, plan })
-        });
-
-        const data = await res.json();
-
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            throw new Error(data.error || 'Erreur lors de la création de la session');
-        }
-    } catch (err) {
-        console.error('[Stripe] Error:', err);
-        showNotify('Erreur Stripe', err.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-}
+// subscribePlan(plan, button) is defined in premium.js (Stripe checkout + activation)
 
 // ========================================
 // TTS CHAT SYSTEM
@@ -6791,7 +7355,9 @@ let ttsConfig = {
     maxLength: 100,
     filterSpam: true,
     filterMentions: true,
-    filterCommands: true
+    filterCommands: true,
+    readChat: true,
+    events: {}
 };
 
 let ttsQueue = [];
@@ -6804,9 +7370,10 @@ let ttsSynth = window.speechSynthesis;
 async function initTTS() {
     console.log('[TTS] Initializing TTS System...');
 
-    // Load voices
+    // Load voices (natural voices from the server, then the ones of this computer)
     loadVoices();
-    if (ttsSynth.onvoiceschanged !== undefined) {
+    fetchNeuralVoices();
+    if (ttsSynth && ttsSynth.onvoiceschanged !== undefined) {
         ttsSynth.onvoiceschanged = loadVoices;
     }
 
@@ -6827,7 +7394,8 @@ async function initTTS() {
                 ttsConfig = {
                     ...ttsConfig,
                     ...saved,
-                    allowedUsers: { ...ttsConfig.allowedUsers, ...(saved.allowedUsers || {}) }
+                    allowedUsers: { ...ttsConfig.allowedUsers, ...(saved.allowedUsers || {}) },
+                    events: (saved.events && typeof saved.events === 'object') ? saved.events : {}
                 };
                 console.log('[TTS] Config loaded from MongoDB:', ttsConfig);
 
@@ -6842,54 +7410,112 @@ async function initTTS() {
     console.log('[TTS] TTS System Ready');
 }
 
-// Load available voices
-// [NEW] Hardcoded TikTok Voices - Only verified ones
-const TIKTOK_VOICES = [
-    { name: 'FR | Homme Vocal', id: 'fr_001', lang: 'fr-FR' },
-    { name: 'FR | Homme Calme', id: 'fr_002', lang: 'fr-FR' }
+// Reload the TTS settings of the active scene (after a scene switch)
+async function reloadTTSConfig() {
+    try {
+        const token = localStorage.getItem('gentok_token');
+        const res = await fetch(`${getApiBase()}/api/tts/settings?token=${encodeURIComponent(token || '')}&t=${Date.now()}`);
+        if (!res.ok) return;
+        const saved = await res.json();
+        ttsConfig = {
+            ...ttsConfig,
+            ...saved,
+            allowedUsers: { ...ttsConfig.allowedUsers, ...(saved.allowedUsers || {}) },
+            events: (saved.events && typeof saved.events === 'object') ? saved.events : {}
+        };
+        ttsQueue = [];
+        loadVoices();
+        updateTTSUI();
+    } catch (e) {
+        console.warn('[TTS] Reload after scene switch failed', e);
+    }
+}
+
+// Natural voices (free Edge neural voices, synthesized by the server: /api/tts/voices and /api/tts/generate).
+// The browser / Windows voices stay available below them and are used as a fallback if the server can't answer.
+let NEURAL_VOICES = [
+    { id: 'fr-FR-DeniseNeural', name: 'Denise', lang: 'fr-FR', gender: 'F', style: 'Claire et posée' },
+    { id: 'fr-FR-VivienneMultilingualNeural', name: 'Vivienne', lang: 'fr-FR', gender: 'F', style: 'Chaleureuse, très naturelle' },
+    { id: 'fr-FR-EloiseNeural', name: 'Eloise', lang: 'fr-FR', gender: 'F', style: 'Jeune, enjouée' },
+    { id: 'fr-FR-HenriNeural', name: 'Henri', lang: 'fr-FR', gender: 'M', style: 'Grave, radio' },
+    { id: 'fr-FR-RemyMultilingualNeural', name: 'Rémy', lang: 'fr-FR', gender: 'M', style: 'Dynamique, très naturel' }
 ];
+// Old TikTok voices saved in settings now map to a natural voice on the server
+const LEGACY_TTS_VOICES = ['fr_001', 'fr_002'];
+const isNeuralVoice = (id) => !!id && (NEURAL_VOICES.some(v => v.id === id) || LEGACY_TTS_VOICES.includes(id));
+
+async function fetchNeuralVoices() {
+    try {
+        const r = await fetch(`${getApiBase()}/api/tts/voices`);
+        const d = await r.json();
+        if (Array.isArray(d.voices) && d.voices.length) NEURAL_VOICES = d.voices;
+    } catch (e) {
+        console.warn('[TTS] Natural voices list unavailable, using the built-in one', e);
+    }
+    loadVoices();
+}
+
+// Natural voices of the chosen language (same country first, then the other countries of the language)
+function neuralVoicesFor(lang) {
+    const base = (lang || 'fr-FR').slice(0, 2);
+    const same = NEURAL_VOICES.filter(v => v.lang === lang);
+    const others = NEURAL_VOICES.filter(v => v.lang !== lang && v.lang.startsWith(base));
+    return same.concat(others);
+}
+
+// The voice really used for a message ("" = automatic: first natural voice of the language)
+function resolveTTSVoice() {
+    if (ttsConfig.randomVoice) {
+        const pool = neuralVoicesFor(ttsConfig.language);
+        if (pool.length) return pool[Math.floor(Math.random() * pool.length)].id;
+    }
+    if (ttsConfig.voice) return ttsConfig.voice;
+    const auto = neuralVoicesFor(ttsConfig.language)[0];
+    return auto ? auto.id : '';
+}
 
 function loadVoices() {
-    ttsVoices = ttsSynth.getVoices();
-    console.log('[TTS] Loaded', ttsVoices.length, 'voices');
+    ttsVoices = ttsSynth ? ttsSynth.getVoices() : [];
 
-    // Populate voice selector
     const voiceSelect = document.getElementById('tts-voice');
-    if (voiceSelect) {
-        voiceSelect.innerHTML = '<option value="">Défaut (Système)</option>';
+    if (!voiceSelect) return;
+    voiceSelect.innerHTML = '';
 
-        // 1. Add TikTok Voices Group
-        const groupTikTok = document.createElement('optgroup');
-        groupTikTok.label = "--- TikTok Officiel (Premium) ---";
+    const auto = document.createElement('option');
+    auto.value = '';
+    auto.textContent = 'Automatique (voix naturelle)';
+    voiceSelect.appendChild(auto);
 
-        TIKTOK_VOICES.forEach(v => {
-            const option = document.createElement('option');
-            option.value = v.id; // ID used for API call
-            option.textContent = `🎵 ${v.name}`;
-            groupTikTok.appendChild(option);
-        });
-        voiceSelect.appendChild(groupTikTok);
+    const base = (ttsConfig.language || 'fr-FR').slice(0, 2);
+    const group = (label, voices, toOption) => {
+        if (!voices.length) return;
+        const g = document.createElement('optgroup');
+        g.label = label;
+        voices.forEach(v => g.appendChild(toOption(v)));
+        voiceSelect.appendChild(g);
+    };
+    const neuralOption = (v) => {
+        const o = document.createElement('option');
+        o.value = v.id;
+        o.textContent = `${v.gender === 'M' ? '♂' : '♀'} ${v.name} · ${v.style} (${v.lang})`;
+        return o;
+    };
 
-        // 2. Add System Voices Group
-        const groupSystem = document.createElement('optgroup');
-        groupSystem.label = "--- Voix Système / Navigateur ---";
+    // 1. Natural voices (free, best quality)
+    group('Voix naturelles (gratuites)', neuralVoicesFor(ttsConfig.language), neuralOption);
+    // 2. Natural voices of the other languages (a French streamer can read English messages...)
+    group('Autres langues (voix naturelles)', NEURAL_VOICES.filter(v => !v.lang.startsWith(base)), neuralOption);
+    // 3. Voices installed on this computer / browser
+    group('Voix de cet ordinateur', ttsVoices.filter(v => v.lang.startsWith(base)), (voice) => {
+        const o = document.createElement('option');
+        o.value = voice.name; // name used by SpeechSynthesis
+        o.textContent = `${voice.name} (${voice.lang})`;
+        return o;
+    });
 
-        // Filter by language roughly
-        const langVoices = ttsVoices.filter(v => v.lang.startsWith(ttsConfig.language.substring(0, 2)));
-
-        langVoices.forEach((voice) => {
-            const option = document.createElement('option');
-            option.value = voice.name; // Name used for SpeechSynthesis
-            option.textContent = `${voice.name} (${voice.lang})`;
-            groupSystem.appendChild(option);
-        });
-        voiceSelect.appendChild(groupSystem);
-
-        // Set saved voice
-        if (ttsConfig.voice) {
-            voiceSelect.value = ttsConfig.voice;
-        }
-    }
+    const saved = LEGACY_TTS_VOICES.includes(ttsConfig.voice) ? '' : (ttsConfig.voice || '');
+    voiceSelect.value = saved;
+    if (voiceSelect.value !== saved) voiceSelect.value = ''; // voice not available here: automatic
 }
 
 // Bind UI controls
@@ -6958,8 +7584,15 @@ function bindTTSUI() {
     if (elements.language) elements.language.addEventListener('change', (e) => {
         ttsConfig.language = e.target.value;
         loadVoices();
+        renderTTSEvents(); // default announcement texts follow the language
         saveTTSConfig();
     });
+    const readChatEl = document.getElementById('tts-read-chat');
+    if (readChatEl) {
+        readChatEl.checked = ttsConfig.readChat !== false;
+        readChatEl.addEventListener('change', saveTTSConfig);
+    }
+    renderTTSEvents();
     if (elements.voice) elements.voice.addEventListener('change', saveTTSConfig);
     if (elements.randomVoice) elements.randomVoice.addEventListener('change', saveTTSConfig);
     if (elements.speed) elements.speed.addEventListener('change', saveTTSConfig);
@@ -7046,6 +7679,10 @@ function updateTTSUI() {
     const typeRadio = document.querySelector(`input[name="tts-type"][value="${ttsConfig.commentType}"]`);
     if (typeRadio) typeRadio.checked = true;
 
+    const readChat = document.getElementById('tts-read-chat');
+    if (readChat) readChat.checked = ttsConfig.readChat !== false;
+    renderTTSEvents();
+
     console.log('[TTS] UI updated with config');
 }
 
@@ -7056,7 +7693,8 @@ async function saveTTSConfig() {
     ttsConfig.voice = document.getElementById('tts-voice')?.value || null;
     ttsConfig.randomVoice = document.getElementById('tts-random-voice')?.checked || false;
     ttsConfig.speed = parseFloat(document.getElementById('tts-speed')?.value) || 1.0;
-    ttsConfig.pitch = parseFloat(document.getElementById('tts-pitch')?.value) || 1.0;
+    const pitchValue = parseFloat(document.getElementById('tts-pitch')?.value);
+    ttsConfig.pitch = Number.isFinite(pitchValue) ? pitchValue : 1.0; // 0 = lowest voice, not "normal"
     ttsConfig.volume = parseFloat(document.getElementById('tts-volume')?.value) || 1.0;
     ttsConfig.allowedUsers.all = document.getElementById('tts-allow-all')?.checked || false;
     ttsConfig.allowedUsers.followers = document.getElementById('tts-allow-followers')?.checked || false;
@@ -7079,6 +7717,10 @@ async function saveTTSConfig() {
         ttsConfig.commentType = selectedType.value;
     }
 
+    const readChat = document.getElementById('tts-read-chat');
+    if (readChat) ttsConfig.readChat = readChat.checked;
+    if (document.getElementById('tts-events-list')?.children.length) ttsConfig.events = readTTSEventsForm();
+
     // Save to MongoDB via API
     try {
         const base = getApiBase();
@@ -7099,15 +7741,132 @@ async function saveTTSConfig() {
     }
 }
 
+// ---------------------------------------------------------------- spoken event announcements
+// "Que lire à voix haute ?": gifts, follows, shares, subscriptions and arrivals, with the TTS voice.
+const TTS_EVENT_TYPES = [
+    { type: 'gift', label: 'Cadeaux', icon: 'fa-gift', minCoins: true },
+    { type: 'follow', label: 'Follows', icon: 'fa-user-plus' },
+    { type: 'share', label: 'Partages', icon: 'fa-share-nodes' },
+    { type: 'subscribe', label: 'Abonnements (Super Fan)', icon: 'fa-star' },
+    { type: 'member', label: 'Arrivées dans le live', icon: 'fa-door-open', note: '1 annonce toutes les 15 s maximum' }
+];
+const TTS_EVENT_TEXTS = {
+    fr: { gift: '{pseudo} a envoyé {nombre} {cadeau}, merci !', follow: 'Merci {pseudo} pour le follow !', share: 'Merci {pseudo} pour le partage !', subscribe: "Merci {pseudo} pour l'abonnement !", member: 'Bienvenue {pseudo} !' },
+    en: { gift: '{pseudo} sent {nombre} {cadeau}, thank you!', follow: 'Thanks {pseudo} for the follow!', share: 'Thanks {pseudo} for sharing!', subscribe: 'Thanks {pseudo} for subscribing!', member: 'Welcome {pseudo}!' },
+    es: { gift: '{pseudo} envió {nombre} {cadeau}, ¡gracias!', follow: '¡Gracias {pseudo} por seguirme!', share: '¡Gracias {pseudo} por compartir!', subscribe: '¡Gracias {pseudo} por la suscripción!', member: '¡Bienvenido {pseudo}!' },
+    de: { gift: '{pseudo} hat {nombre} {cadeau} geschickt, danke!', follow: 'Danke {pseudo} fürs Folgen!', share: 'Danke {pseudo} fürs Teilen!', subscribe: 'Danke {pseudo} fürs Abonnieren!', member: 'Willkommen {pseudo}!' },
+    it: { gift: '{pseudo} ha inviato {nombre} {cadeau}, grazie!', follow: 'Grazie {pseudo} per il follow!', share: 'Grazie {pseudo} per la condivisione!', subscribe: "Grazie {pseudo} per l'abbonamento!", member: 'Benvenuto {pseudo}!' },
+    pt: { gift: '{pseudo} enviou {nombre} {cadeau}, obrigado!', follow: 'Valeu {pseudo} pelo follow!', share: 'Valeu {pseudo} por compartilhar!', subscribe: 'Valeu {pseudo} pela inscrição!', member: 'Bem-vindo {pseudo}!' }
+};
+const TTS_MEMBER_INTERVAL_MS = 15000;
+const ttsGiftCombos = new Map(); // user|gift -> { count, coins, data, timer }
+let ttsLastMemberAt = 0;
+
+function ttsEventDefaultText(type) {
+    const lang = (ttsConfig.language || 'fr-FR').slice(0, 2);
+    return (TTS_EVENT_TEXTS[lang] || TTS_EVENT_TEXTS.fr)[type] || '';
+}
+
+function ttsEventSettings(type) {
+    const e = (ttsConfig.events && ttsConfig.events[type]) || {};
+    const min = Number(e.minCoins);
+    return { enabled: !!e.enabled, minCoins: Number.isFinite(min) && min >= 0 ? min : 1, text: typeof e.text === 'string' ? e.text : '' };
+}
+
+function renderTTSEvents() {
+    const list = document.getElementById('tts-events-list');
+    if (!list) return;
+    list.innerHTML = TTS_EVENT_TYPES.map(def => {
+        const e = ttsEventSettings(def.type);
+        return `
+            <div class="tts-event-row" data-type="${def.type}">
+                <label class="tts-event-toggle">
+                    <input type="checkbox" data-field="enabled" ${e.enabled ? 'checked' : ''}>
+                    <i class="fas ${def.icon}"></i> <span>${escapeHtml(def.label)}</span>
+                </label>
+                <input type="text" class="form-control form-control-sm" data-field="text" maxlength="200" value="${escapeHtml(e.text)}" placeholder="${escapeHtml(ttsEventDefaultText(def.type))}">
+                <div class="tts-event-extra">
+                    ${def.minCoins ? `<label class="small text-dim mb-0">Dès <input type="number" class="form-control form-control-sm d-inline-block" data-field="minCoins" min="0" step="1" value="${e.minCoins}" style="width:80px"> pièces</label>` : `<span class="small text-dim">${def.note ? escapeHtml(def.note) : ''}</span>`}
+                </div>
+            </div>`;
+    }).join('');
+    list.querySelectorAll('input').forEach(el => el.addEventListener('change', saveTTSConfig));
+}
+
+function readTTSEventsForm() {
+    const events = {};
+    document.querySelectorAll('#tts-events-list .tts-event-row').forEach(row => {
+        const get = (f) => row.querySelector(`[data-field="${f}"]`);
+        const minEl = get('minCoins');
+        events[row.dataset.type] = {
+            enabled: !!get('enabled')?.checked,
+            text: (get('text')?.value || '').trim().slice(0, 200),
+            ...(minEl ? { minCoins: Math.max(0, parseInt(minEl.value, 10) || 0) } : {})
+        };
+    });
+    return events;
+}
+
+function fillTTSEventText(template, v) {
+    const map = { pseudo: v.name, user: v.name, cadeau: v.gift, gift: v.gift, nombre: v.count, count: v.count, pieces: v.coins, coins: v.coins };
+    return template.replace(/\{(\w+)\}/g, (m, k) => (map[k] !== undefined && map[k] !== null ? String(map[k]) : m));
+}
+
+function queueTTSAnnouncement(type, values) {
+    const e = ttsEventSettings(type);
+    const text = fillTTSEventText(e.text || ttsEventDefaultText(type), values).trim();
+    if (!text) return;
+    // announcements may go a little over the chat queue limit, never far over it
+    if (ttsQueue.length >= (ttsConfig.maxQueue || 5) + 3) {
+        ttsLog(`📦 Queue pleine, annonce ignorée`, 'warning');
+        return;
+    }
+    // gifts are read before waiting chat messages
+    if (type === 'gift') ttsQueue.unshift({ text, user: values.name });
+    else ttsQueue.push({ text, user: values.name });
+    processTTSQueue();
+}
+
+// Called for every "stats" socket event (gift, follow, share, subscribe, member...)
+function handleEventForTTS(type, data) {
+    if (!ttsConfig.enabled || !data || !TTS_EVENT_TYPES.some(d => d.type === type)) return;
+    const e = ttsEventSettings(type);
+    if (!e.enabled) return;
+    const name = data.nickname || data.uniqueId || '';
+
+    if (type === 'gift') {
+        // a combo arrives in several parts: one announcement once it is over
+        const key = `${data.userId || data.uniqueId}|${data.giftName}`;
+        const combo = ttsGiftCombos.get(key) || { count: 0, coins: 0 };
+        combo.count += parseInt(data.repeatCount, 10) || 1;
+        combo.coins += parseInt(data.coins, 10) || 0;
+        combo.data = data;
+        clearTimeout(combo.timer);
+        combo.timer = setTimeout(() => {
+            ttsGiftCombos.delete(key);
+            if (combo.coins < e.minCoins) return;
+            queueTTSAnnouncement('gift', { name, gift: data.giftName || '', count: combo.count, coins: combo.coins });
+        }, 3000);
+        ttsGiftCombos.set(key, combo);
+        return;
+    }
+    if (type === 'member') {
+        const now = Date.now();
+        if (now - ttsLastMemberAt < TTS_MEMBER_INTERVAL_MS) return;
+        ttsLastMemberAt = now;
+    }
+    queueTTSAnnouncement(type, { name });
+}
+
 // Handle incoming chat for TTS
 function handleChatForTTS(data) {
-    if (!ttsConfig.enabled) return;
+    if (!ttsConfig.enabled || ttsConfig.readChat === false) return;
 
     const { uniqueId, comment, userId, isModerator, isSubscriber, isFollower } = data;
 
     // Check if user is allowed
     if (!isUserAllowedForTTS(data)) {
-        ttsLog(`âŒ ${uniqueId}: Non autorisé`, 'dim');
+        ttsLog(`❌ ${uniqueId}: Non autorisé`, 'dim');
         return;
     }
 
@@ -7120,7 +7879,7 @@ function handleChatForTTS(data) {
     const now = Date.now();
     const lastTime = ttsUserCooldowns.get(userId) || 0;
     if (now - lastTime < ttsConfig.cooldown * 1000) {
-        ttsLog(`â±ï¸ ${uniqueId}: Cooldown actif`, 'dim');
+        ttsLog(`⏱️ ${uniqueId}: Cooldown actif`, 'dim');
         return;
     }
 
@@ -7147,13 +7906,13 @@ function handleChatForTTS(data) {
 
     // Add to queue
     if (ttsQueue.length >= ttsConfig.maxQueue) {
-        ttsLog(`ðŸ“¦ Queue pleine (${ttsQueue.length}/${ttsConfig.maxQueue})`, 'warning');
+        ttsLog(`📦 Queue pleine (${ttsQueue.length}/${ttsConfig.maxQueue})`, 'warning');
         return;
     }
 
     ttsQueue.push({ text, user: uniqueId, userId });
     ttsUserCooldowns.set(userId, now);
-    ttsLog(`✅ ${uniqueId}: "${text}" ajouté à  la queue`, 'success');
+    ttsLog(`✅ ${uniqueId}: "${text}" ajouté à la queue`, 'success');
 
     // Process queue
     processTTSQueue();
@@ -7161,7 +7920,7 @@ function handleChatForTTS(data) {
 
 // Check if user is allowed
 function isUserAllowedForTTS(data) {
-    // [PRIORITY] Si le serveur a déjà  validé l'éligibilité, on fait confiance
+    // [PRIORITY] Si le serveur a déjà validé l'éligibilité, on fait confiance
     if (data.eligibleForTTS === true) return true;
 
     // [FALLBACK] Toujours autoriser le Streamer (Broadcaster)
@@ -7242,7 +8001,7 @@ let isTTSPlaying = false; // Flag for custom audio playback
 
 function processTTSQueue() {
     if (ttsQueue.length === 0) return;
-    if (ttsSynth.speaking || isTTSPlaying) return; // Already speaking (System or Custom)
+    if ((ttsSynth && ttsSynth.speaking) || isTTSPlaying) return; // Already speaking (System or Custom)
 
     const item = ttsQueue.shift();
     speakText(item.text, item.user);
@@ -7250,107 +8009,89 @@ function processTTSQueue() {
 
 // Speak text
 async function speakText(text, user) {
-    if (ttsSynth.speaking) {
+    if (ttsSynth && ttsSynth.speaking) {
         ttsSynth.cancel();
     }
 
-    // Check if selected voice is a TikTok Voice ID
-    const selectedVoiceId = ttsConfig.voice;
-    const isTikTokVoice = TIKTOK_VOICES.some(v => v.id === selectedVoiceId);
+    const voiceId = resolveTTSVoice();
 
-    if (isTikTokVoice) {
-        // [CUSTOM TTS] Fetch audio from backend proxy
+    if (isNeuralVoice(voiceId)) {
+        // [NATURAL VOICE] MP3 generated by the server
         isTTSPlaying = true;
-        ttsLog(`🔊 Lecture (Custom): "${text}" (${user})`, 'info');
+        ttsLog(`🔊 Lecture : "${text}" (${user})`, 'info');
 
         try {
-            const base = getApiBase();
-            const response = await fetch(`${base}/api/tts/generate`, {
+            const response = await fetch(`${getApiBase()}/api/tts/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, voice: selectedVoiceId })
+                body: JSON.stringify({ text, voice: voiceId, rate: ttsConfig.speed, pitch: ttsConfig.pitch, token: localStorage.getItem('gentok_token') || '' })
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || errorData.error || 'TTS Gen Failed');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}`);
             }
 
             const blob = await response.blob();
             const audioUrl = URL.createObjectURL(blob);
             const audio = new Audio(audioUrl);
-            audio.volume = ttsConfig.volume;
+            audio.volume = Math.min(Math.max(Number(ttsConfig.volume) || 1, 0), 1);
 
-            audio.onended = () => {
+            const done = (ok) => {
                 isTTSPlaying = false;
                 URL.revokeObjectURL(audioUrl);
-                ttsLog(`✅ Terminé: "${text}"`, 'success');
-                setTimeout(processTTSQueue, 500); // Small delay between messages
+                ttsLog(ok ? `✅ Terminé : "${text}"` : '❌ Lecture audio impossible', ok ? 'success' : 'error');
+                setTimeout(processTTSQueue, 400); // small pause between messages
             };
-
-            audio.onerror = () => {
-                console.error('[TTS] Audio playback error');
-                ttsLog(`âŒ Erreur Audio Playback`, 'error');
-                isTTSPlaying = false;
-                processTTSQueue();
-            };
+            audio.onended = () => done(true);
+            audio.onerror = () => done(false);
 
             await audio.play();
-
         } catch (err) {
-            console.error('[TTS] Failed to play custom voice:', err);
-            ttsLog(`âŒ Erreur Gen TTS: ${err.message}`, 'error');
+            console.error('[TTS] Natural voice failed:', err);
             isTTSPlaying = false;
-            // Fallback to system voice or skip?
-            // Let's try to fallback to system voice if custom fails
-            // But for now, just skip to avoid infinite loops if network is down
-            processTTSQueue();
-        }
-
-    } else {
-        // [SYSTEM TTS] Standard Browser API
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        // Select voice
-        let selectedVoice = null;
-        if (ttsConfig.randomVoice) {
-            const langVoices = ttsVoices.filter(v => v.lang.startsWith(ttsConfig.language.substring(0, 2)));
-            if (langVoices.length > 0) {
-                selectedVoice = langVoices[Math.floor(Math.random() * langVoices.length)];
+            if (ttsSynth) {
+                // the message is still read, with the voice of this computer
+                ttsLog(`⚠️ Voix naturelle indisponible (${err.message}), voix de l'ordinateur utilisée.`, 'warning');
+                speakWithSystemVoice(text, user, null);
+            } else {
+                ttsLog(`❌ Erreur TTS : ${err.message}`, 'error');
+                processTTSQueue();
             }
-        } else if (ttsConfig.voice) {
-            selectedVoice = ttsVoices.find(v => v.name === ttsConfig.voice);
         }
-
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
-        }
-
-        utterance.lang = ttsConfig.language;
-        utterance.rate = ttsConfig.speed;
-        utterance.pitch = ttsConfig.pitch;
-        utterance.volume = ttsConfig.volume;
-
-        utterance.onstart = () => {
-            ttsLog(`🔊 Lecture: "${text}" (${user})`, 'info');
-        };
-
-        utterance.onend = () => {
-            ttsLog(`✅ Terminé: "${text}"`, 'success');
-            ttsCurrentUtterance = null;
-            // Process next in queue
-            setTimeout(() => processTTSQueue(), 100);
-        };
-
-        utterance.onerror = (e) => {
-            ttsLog(`âŒ Erreur TTS: ${e.error}`, 'error');
-            ttsCurrentUtterance = null;
-            setTimeout(() => processTTSQueue(), 100);
-        };
-
-        ttsCurrentUtterance = utterance;
-        ttsSynth.speak(utterance);
+    } else {
+        speakWithSystemVoice(text, user, voiceId);
     }
+}
+
+// [SYSTEM TTS] Voices installed on this computer / browser (voiceName null = any voice of the language)
+function speakWithSystemVoice(text, user, voiceName) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const langVoices = ttsVoices.filter(v => v.lang.startsWith(ttsConfig.language.substring(0, 2)));
+    const selectedVoice = (voiceName && ttsVoices.find(v => v.name === voiceName)) || (ttsConfig.randomVoice && langVoices.length ? langVoices[Math.floor(Math.random() * langVoices.length)] : null);
+    if (selectedVoice) utterance.voice = selectedVoice;
+
+    utterance.lang = ttsConfig.language;
+    utterance.rate = ttsConfig.speed;
+    utterance.pitch = ttsConfig.pitch;
+    utterance.volume = ttsConfig.volume;
+
+    utterance.onstart = () => {
+        ttsLog(`🔊 Lecture : "${text}" (${user})`, 'info');
+    };
+    utterance.onend = () => {
+        ttsLog(`✅ Terminé : "${text}"`, 'success');
+        ttsCurrentUtterance = null;
+        setTimeout(() => processTTSQueue(), 100);
+    };
+    utterance.onerror = (e) => {
+        ttsLog(`❌ Erreur TTS : ${e.error}`, 'error');
+        ttsCurrentUtterance = null;
+        setTimeout(() => processTTSQueue(), 100);
+    };
+
+    ttsCurrentUtterance = utterance;
+    ttsSynth.speak(utterance);
 }
 
 // TTS Log
@@ -7643,10 +8384,20 @@ async function resetTopStat(type) {
     }
 }
 
-window.updateTopTitle = async (type, title) => {
+// Title / font of Top Gift, Top Streak and the leaderboards. Saved after a short pause in typing (it used
+// to save and reload the preview on every keystroke); the server pushes the change to the running overlays.
+const topTitleTimers = {};
+window.updateTopTitle = (type, title) => {
+    clearTimeout(topTitleTimers[type]);
+    topTitleTimers[type] = setTimeout(() => saveTopTitle(type, title), 500);
+};
+async function saveTopTitle(type, title) {
     const token = getToken();
     const font = document.getElementById(`${type}Font`)?.value || '';
-
+    if (type === 'topCoins' || type === 'topLikes') {
+        // saves the title along with the other leaderboard options
+        return updateLeaderboardConfig(type === 'topCoins' ? 'coins' : 'likes');
+    }
     try {
         await fetch(`${getApiBase()}/api/stats/update-title`, {
             method: 'POST',
@@ -7654,26 +8405,11 @@ window.updateTopTitle = async (type, title) => {
             body: JSON.stringify({ type, title, font, token })
         });
         showToast('✅ Configuration mise à jour !');
-
-        // Reactive UI update
-        if (type === 'topCoins' || type === 'topLikes') {
-            const shortType = type === 'topCoins' ? 'coins' : 'likes';
-            updateLeaderboardConfig(shortType);
-        } else if (type === 'topGift' || type === 'topStreak') {
-            // Refresh iframe
-            const iframe = document.querySelector(`#overlay-item-top iframe[src*="${type === 'topGift' ? 'top-gift' : 'top-streak'}"]`);
-            if (iframe) {
-                const url = new URL(iframe.src, window.location.origin);
-                url.searchParams.set('font', font);
-                url.searchParams.set('t', Date.now()); // Cache buster
-                iframe.src = url.toString();
-            }
-        }
     } catch (e) {
         console.error(e);
         showToast('Erreur mise à jour.', 'error');
     }
-};
+}
 
 
 window.updateLeaderboardConfig = async (type) => {
@@ -7698,6 +8434,7 @@ window.updateLeaderboardConfig = async (type) => {
                 transparent,
                 showTitle,
                 rtl,
+                title: document.getElementById(`${prefix}TitleInput`)?.value || undefined,
                 font: document.getElementById(`${prefix}Font`)?.value || '',
                 token
             })
@@ -7715,15 +8452,9 @@ window.updateLeaderboardConfig = async (type) => {
     const overlayUrl = `/overlay/leaderboard?type=${type}&limit=${limit}&style=${style}&transparent=${transparent}&showTitle=${showTitle}&rtl=${rtl}${font ? `&font=${font}` : ''}`;
 
     if (urlInput) urlInput.value = `${PRODUCTION_URL}${overlayUrl}`;
-    if (iframe) {
-        iframe.src = overlayUrl + '&preview=true&t=' + Date.now();
-        // Dynamic height adjustment
-        const height = (parseInt(limit) || 10) * 42 + 60;
-        iframe.style.height = height + 'px';
-        if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-    }
+    if (iframe) setPreviewHeight(iframe, leaderboardPreviewHeight(limit));
 
-    // Standardize with token
+    // Copy links with the token; the preview keeps running and receives the new options by socket
     updateOverlayLinks();
 
     // Update Style Text
@@ -7966,7 +8697,6 @@ async function handleSaveLikesGoal() {
 
         if (response.ok) {
             showToast('Objectif enregistré avec succès !', 'success');
-            updateLikesGoalPreview();
         } else {
             showToast('Erreur lors de la sauvegarde', 'error');
         }
@@ -7994,7 +8724,6 @@ async function handleResetLikesCounter() {
 
         if (response.ok) {
             showToast('Compteur réinitialisé à 0 !', 'success');
-            updateLikesGoalPreview();
         } else {
             showToast('Erreur lors de la réinitialisation', 'error');
         }
@@ -8461,7 +9190,10 @@ async function syncRankingCache() {
         if (Array.isArray(gifts)) {
             giftCatalogCache = gifts;
             localStorage.setItem('gentok_cache_gifts', JSON.stringify(gifts));
-            populateManualGiftSelect(true); // silent update
+            // the 3 000+ gift list is only built when the Classement page is open (it is heavy)
+            const select = document.getElementById('manual-gift-id');
+            const rankingOpen = document.getElementById('ranking-section')?.style.display !== 'none';
+            if (select && (rankingOpen || select.options.length > 2)) populateManualGiftSelect(true);
         }
     } catch (e) { console.warn("Sync cache failed", e); }
 }
@@ -8534,7 +9266,7 @@ window.resetRankingFilters = () => {
     rankingSort = 'score';
     document.querySelectorAll('.ranking-filter-row .btn-tab').forEach(b => {
         b.classList.remove('active');
-        if (b.innerText.includes('Score')) b.classList.add('active');
+        if ((b.getAttribute('onclick') || '').includes("'score'")) b.classList.add('active');
     });
     applyRankingFilters();
 };
@@ -8546,13 +9278,11 @@ async function populateManualGiftSelect(force = false) {
 
     const render = (list) => {
         const currentVal = select.value;
-        select.innerHTML = '<option value="">-- Choisir un cadeau --</option>';
-        list.forEach(gift => {
-            const opt = document.createElement('option');
-            opt.value = gift.id;
-            opt.textContent = `${gift.name} (${gift.price} coins)`;
-            select.appendChild(opt);
-        });
+        // built in one go (thousands of options): one layout instead of one per gift
+        const frag = document.createDocumentFragment();
+        frag.appendChild(new Option('-- Choisir un cadeau --', ''));
+        list.forEach(gift => frag.appendChild(new Option(`${gift.name} (${gift.price} coins)`, gift.id)));
+        select.replaceChildren(frag);
         if (currentVal) select.value = currentVal;
     };
 
@@ -8622,55 +9352,59 @@ window.saveCurrentWeek = async () => {
     } catch (err) { showNotify('Erreur', 'Erreur lors de la sauvegarde', 'error'); }
 };
 
+// Archived week (Top Légende, top coins, top likes): podium + one card per gift with its winners
 async function viewHistoryDetail(id) {
     try {
         const base = getApiBase();
-        const res = await fetch(`${base}/api/leaderboard/history/detail?id=${id}`);
+        const token = localStorage.getItem('gentok_token');
+        const res = await fetch(`${base}/api/leaderboard/history/detail?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token || '')}`);
         const history = await res.json();
-
         if (history.error) throw new Error(history.error);
 
-        let html = `
-            <div style="text-align: left; max-height: 70vh; overflow-y: auto; padding-right: 10px;">
-                <div style="margin-bottom: 20px; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03);">
-                    <h3 style="color: #ffd700; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-coins"></i> Top 10 Pièces</h3>
-                    ${history.topCoins.map((u, i) => `
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;">
-                            <span>#${i + 1} @${u.uniqueId}</span>
-                            <span style="font-weight: 800;">${u.count.toLocaleString()} <small>coins</small></span>
-                        </div>
-                    `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
-                </div>
+        const avatar = (u, size = 34) => `<img class="hz-avatar" style="width:${size}px;height:${size}px" src="${escapeHtml(u.profilePictureUrl || gentokInitialAvatar(u.nickname || u.uniqueId))}" data-n="${escapeHtml(u.nickname || u.uniqueId || '')}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)">`;
+        const name = (u) => escapeHtml(u.nickname || u.uniqueId || '?');
+        const podium = (list, unit) => {
+            if (!list || !list.length) return '<div class="hz-empty">Aucune donnée cette semaine</div>';
+            const top = list.slice(0, 3);
+            const order = [top[1], top[0], top[2]].filter(Boolean);
+            return `
+                <div class="hz-podium">${order.map(u => {
+                    const rank = list.indexOf(u) + 1;
+                    return `<div class="hz-step rank-${rank}">${avatar(u, rank === 1 ? 64 : 50)}<b>${name(u)}</b><span>${u.count.toLocaleString()} ${unit}</span><em>${rank}</em></div>`;
+                }).join('')}</div>
+                ${list.length > 3 ? `<ol class="hz-rest" start="4">${list.slice(3).map(u => `<li>${avatar(u, 24)}<span>${name(u)}</span><b>${u.count.toLocaleString()}</b></li>`).join('')}</ol>` : ''}`;
+        };
+        const legends = (history.legends || []).slice().sort((a, b) => ((b.topUsers[0] && b.topUsers[0].count) || 0) - ((a.topUsers[0] && a.topUsers[0].count) || 0));
+        const legendCards = legends.length ? legends.map(l => `
+            <div class="hz-legend">
+                <div class="hz-gift"><img src="${base}/img/tiktok/${encodeURIComponent(l.giftId)}.png" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('i'), { className: 'fas fa-gift' }))"><span>${escapeHtml(l.giftName)}</span></div>
+                ${(l.topUsers || []).map((u, i) => `<div class="hz-winner ${i === 0 ? 'first' : ''}">${i === 0 ? '<i class="fas fa-crown"></i>' : `<small>${i + 1}</small>`}${avatar(u, 22)}<span>${name(u)}</span><b>×${u.count.toLocaleString()}</b></div>`).join('')}
+            </div>`).join('') : '<div class="hz-empty">Aucun cadeau archivé</div>';
 
-                <div style="margin-bottom: 20px; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03);">
-                    <h3 style="color: #fe2c55; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-heart"></i> Top 10 Likes</h3>
-                    ${history.topLikes.map((u, i) => `
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;">
-                            <span>#${i + 1} @${u.uniqueId}</span>
-                            <span style="font-weight: 800;">${u.count.toLocaleString()} <small>likes</small></span>
-                        </div>
-                    `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
-                </div>
-
-                <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03);">
-                    <h3 style="color: #00f2ea; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-crown"></i> Légendes (Gagnants)</h3>
-                    ${history.legends.map(l => `
-                        <div style="margin-bottom: 8px; font-size: 0.85rem;">
-                            <span style="font-weight: 700;">${l.giftName} :</span> 
-                            <span>@${l.topUsers[0]?.uniqueId} (${l.topUsers[0]?.count})</span>
-                        </div>
-                    `).join('') || '<div style="opacity: 0.5;">Aucun donnée</div>'}
-                </div>
-            </div>
-        `;
-
+        const period = String(history.period || '').replace(/^(\d{4})-W(\d+)$/, 'Semaine $2 · $1');
         Swal.fire({
-            title: `Archive : Semaine ${history.period}`,
-            html: html,
-            width: '500px',
-            background: 'var(--bg-dark)',
-            color: '#fff',
-            confirmButtonColor: '#fe2c55'
+            title: `<i class="fas fa-crown" style="color:#ffd700"></i> ${escapeHtml(period)}`,
+            html: `
+                <div class="hz-detail">
+                    <div class="hz-tabs" role="tablist">
+                        <button type="button" class="active" data-hz="legends"><i class="fas fa-crown"></i> Top Légende <span>${legends.length}</span></button>
+                        <button type="button" data-hz="coins"><i class="fas fa-coins"></i> Pièces</button>
+                        <button type="button" data-hz="likes"><i class="fas fa-heart"></i> Likes</button>
+                    </div>
+                    <div class="hz-pane" data-pane="legends"><div class="hz-legends">${legendCards}</div></div>
+                    <div class="hz-pane" data-pane="coins" hidden>${podium(history.topCoins, 'pièces')}</div>
+                    <div class="hz-pane" data-pane="likes" hidden>${podium(history.topLikes, 'likes')}</div>
+                </div>`,
+            width: 'min(860px, 96vw)',
+            showConfirmButton: false,
+            showCloseButton: true,
+            customClass: { popup: 'hz-popup' },
+            didOpen: (el) => {
+                el.querySelectorAll('.hz-tabs button').forEach(btn => btn.addEventListener('click', () => {
+                    el.querySelectorAll('.hz-tabs button').forEach(x => x.classList.toggle('active', x === btn));
+                    el.querySelectorAll('.hz-pane').forEach(p => { p.hidden = p.dataset.pane !== btn.dataset.hz; });
+                }));
+            }
         });
     } catch (err) {
         showNotify('Erreur', 'Impossible de charger le détail', 'error');
@@ -8683,30 +9417,36 @@ async function loadHistoryList() {
     try {
         const base = getApiBase();
         const token = getToken();
-        const res = await fetch(`${base}/api/leaderboard/history?token=${token}`);
+        const res = await fetch(`${base}/api/leaderboard/history?token=${encodeURIComponent(token || '')}`);
         const data = await res.json();
-        if (data && data.length > 0) {
-            list.innerHTML = data.map(h => `
-                <div class="history-item">
-                    <div>
-                        <div style="font-weight: 800; font-size: 0.85rem;">Semaine du ${new Date(h.date).toLocaleDateString()}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.6;">${h.totalGifts} cadeaux totalisés</div>
-                    </div>
-                    <button class="btn-tab" onclick="viewHistoryDetail('${h._id}')" style="padding: 5px 10px; font-size: 0.7rem;">
-                        <i class="fas fa-eye"></i> Voir
-                    </button>
-                </div>
-            `).join('');
+        if (!Array.isArray(data) || !data.length) {
+            list.innerHTML = '<div class="hz-empty">Aucune semaine archivée pour le moment. L\'archive se fait chaque dimanche à 23 h (ou avec « Sauvegarder la semaine »).</div>';
+            return;
         }
-    } catch (e) { }
+        list.innerHTML = data.map(h => {
+            const m = String(h.period || '').match(/^(\d{4})-W(\d+)$/);
+            return `
+                <button type="button" class="history-item hz-item" onclick="viewHistoryDetail('${escapeHtml(h._id)}')">
+                    <span class="hz-week">${m ? `S${m[2]}` : '<i class="fas fa-calendar"></i>'}</span>
+                    <span class="hz-meta">
+                        <b>${m ? `Semaine ${m[2]} · ${m[1]}` : 'Semaine'}</b>
+                        <small>Archivée le ${new Date(h.date).toLocaleDateString()} · ${h.totalGifts} gagnant${h.totalGifts > 1 ? 's' : ''}</small>
+                    </span>
+                    <i class="fas fa-chevron-right"></i>
+                </button>`;
+        }).join('');
+    } catch (e) {
+        list.innerHTML = '<div class="hz-empty">Historique indisponible pour le moment.</div>';
+    }
 }
 
 window.showRankingOverlayUrls = () => {
     const token = getToken();
     const urls = [
-        { name: 'Légendes (Grille)', url: `https://tiktok.gentok.fr/overlay/legends?token=${token}&period=${rankingPeriod}` },
-        { name: 'Top Pièces (Liste)', url: `https://tiktok.gentok.fr/overlay/top-coins?token=${token}&period=${rankingPeriod}` },
-        { name: 'Top Likes (Liste)', url: `https://tiktok.gentok.fr/overlay/top-likes?token=${token}&period=${rankingPeriod}` }
+        // (the old links pointed to /overlay/legends, which doesn't exist, and to the session's #1 only)
+        { name: 'Légendes (cadeau affiché)', url: `https://tiktok.gentok.fr/overlay/gift_legend.html?token=${token}&period=${rankingPeriod}` },
+        { name: 'Top Pièces (Liste)', url: `https://tiktok.gentok.fr/overlay/leaderboard?type=coins&token=${token}&period=${rankingPeriod}` },
+        { name: 'Top Likes (Liste)', url: `https://tiktok.gentok.fr/overlay/leaderboard?type=likes&token=${token}&period=${rankingPeriod}` }
     ];
 
     let html = '<div style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">';
@@ -8765,6 +9505,10 @@ async function renderRankingLegends() {
     }
 }
 
+const LEGENDS_PAGE = 48;
+let legendsGridShown = LEGENDS_PAGE;
+let legendsGridSignature = '';
+
 function displayLegendsGrid() {
     const container = document.getElementById('ranking-legends-container');
     if (!container) return;
@@ -8776,7 +9520,9 @@ function displayLegendsGrid() {
         return matchesPrice && matchesSearch && hasScore;
     });
 
-    if (rankingSort === 'score') filtered.sort((a, b) => b.price - a.price);
+    // "Score": gifts that have winners first (most sent first), then by price
+    const best = (g) => (g.topUsers && g.topUsers[0] ? g.topUsers[0].count : 0);
+    if (rankingSort === 'score') filtered.sort((a, b) => (best(b) > 0) - (best(a) > 0) || best(b) - best(a) || b.price - a.price);
     else if (rankingSort === 'price-asc') filtered.sort((a, b) => a.price - b.price);
     else if (rankingSort === 'price-desc') filtered.sort((a, b) => b.price - a.price);
 
@@ -8785,25 +9531,32 @@ function displayLegendsGrid() {
         return;
     }
 
+    // The catalog has 3 000+ gifts: cards are shown 48 at a time (rendering them all froze the page)
+    const signature = JSON.stringify([rankingFilters, rankingSort, filtered.length]);
+    if (signature !== legendsGridSignature) { legendsGridSignature = signature; legendsGridShown = LEGENDS_PAGE; }
+    const total = filtered.length;
+    filtered = filtered.slice(0, legendsGridShown);
+
     container.innerHTML = '';
+    const frag = document.createDocumentFragment();
     filtered.forEach(gift => {
         const card = document.createElement('div');
         card.className = 'gift-legend-card-compact';
-        card.style.cssText = `background: rgba(18, 19, 22, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); position: relative; overflow: hidden;`;
+        card.style.cssText = `background: rgba(18, 19, 22, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; display: flex; flex-direction: column; position: relative; overflow: hidden;`;
 
         const topUsersHtml = gift.topUsers && gift.topUsers.length > 0 ? gift.topUsers.map((user, idx) => {
             savePfp(user.uniqueId, user.profilePictureUrl);
-            const pfp = getPfp(user.uniqueId, user.profilePictureUrl || '/logo.png');
+            const pfp = getPfp(user.uniqueId, user.profilePictureUrl || gentokInitialAvatar(user.nickname || user.uniqueId));
             let rankColor = idx === 0 ? '#ffd700' : (idx === 1 ? '#c0c0c0' : (idx === 2 ? '#cd7f32' : 'var(--text-dim)'));
 
             return `
             <div style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
                 <div style="font-weight: 800; color: ${rankColor}; font-size: 0.8rem; width: 25px;">#${idx + 1}</div>
                 <div style="position: relative; flex-shrink: 0;">
-                    <img src="${pfp}" onerror="this.src='/logo.png'" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${idx < 3 ? rankColor : 'rgba(255,255,255,0.1)'};">
+                    <img src="${escapeHtml(pfp)}" data-n="${escapeHtml(user.nickname || user.uniqueId || '')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${idx < 3 ? rankColor : 'rgba(255,255,255,0.1)'};">
                 </div>
                 <div style="flex-grow: 1; min-width: 0;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9;">${user.uniqueId}</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9;">${escapeHtml(user.uniqueId)}</div>
                 </div>
                 <div style="font-weight: 800; color: #ffd700; font-size: 0.85rem; flex-shrink: 0;">x${user.count}</div>
             </div>
@@ -8812,11 +9565,11 @@ function displayLegendsGrid() {
 
         card.innerHTML = `
             <div style="background: rgba(255,255,255,0.02); padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <div style="position: relative; flex-shrink: 0;"><img src="${gift.giftIcon}" style="width: 45px; height: 45px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.2));"></div>
+                <div style="position: relative; flex-shrink: 0;"><img src="${escapeHtml(gift.giftIcon || '')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='/logo.png';this.style.opacity='.35'" style="width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.2));"></div>
                 <div style="flex-grow: 1; min-width: 0;">
-                    <div style="font-weight: 800; font-size: 1rem; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${gift.giftName}</div>
+                    <div style="font-weight: 800; font-size: 1rem; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(gift.giftName)}</div>
                     <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; display: flex; align-items: center; gap: 5px; font-weight: 600;">
-                        ${gift.price} <img src="https://tiktok.gentok.fr/img/tiktok/5655.png" style="width: 12px; height: 12px; opacity: 0.7;">
+                        ${gift.price} <img src="https://tiktok.gentok.fr/img/tiktok/5655.png" loading="lazy" alt="" style="width: 12px; height: 12px; opacity: 0.7;">
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -8826,8 +9579,18 @@ function displayLegendsGrid() {
             </div>
             <div class="legend-scroll-list" style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px; overflow-y: auto; max-height: 250px;">${topUsersHtml}</div>
         `;
-        container.appendChild(card);
+        frag.appendChild(card);
     });
+    container.appendChild(frag);
+    if (total > filtered.length) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'btn-secondary legends-more';
+        more.style.cssText = 'grid-column: 1 / -1; justify-self: center; margin: 6px 0 12px;';
+        more.innerHTML = `<i class="fas fa-chevron-down"></i> Afficher plus (${(total - filtered.length).toLocaleString()} restants)`;
+        more.onclick = () => { legendsGridShown += LEGENDS_PAGE * 2; displayLegendsGrid(); };
+        container.appendChild(more);
+    }
 }
 
 async function renderRankingTable() {
@@ -8865,10 +9628,10 @@ async function renderRankingTable() {
                 <td style="text-align: center; font-weight: 800; color: ${rankColor}; font-size: 1.1rem;">#${index + 1}</td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 12px; padding: 5px 0;">
-                        <img src="${getPfp(entry.uniqueId, entry.profilePictureUrl)}" onerror="this.src='/logo.png'" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid ${index < 3 ? rankColor : 'var(--border)'}; object-fit: cover;">
+                        <img src="${escapeHtml(getPfp(entry.uniqueId, entry.profilePictureUrl) || gentokInitialAvatar(entry.nickname || entry.uniqueId))}" data-n="${escapeHtml(entry.nickname || entry.uniqueId || '')}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid ${index < 3 ? rankColor : 'var(--border)'}; object-fit: cover;">
                         <div style="text-align: left;">
-                            <div style="font-weight: 700; color: #fff; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${entry.nickname || entry.uniqueId}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-dim);">@${entry.uniqueId}</div>
+                            <div style="font-weight: 700; color: #fff; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(entry.nickname || entry.uniqueId)}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim);">@${escapeHtml(entry.uniqueId)}</div>
                         </div>
                     </div>
                 </td>
@@ -8992,12 +9755,8 @@ window.applyFontToOverlay = (type, font) => {
     if (type === 'likesGoal') {
         updateLikesPreview();
     } else if (type === 'topGift' || type === 'topStreak') {
-        const iframe = document.querySelector(`#overlay-item-top iframe[src*="${type === 'topGift' ? 'top-gift' : 'top-streak'}"]`);
-        if (iframe) {
-            const url = new URL(iframe.src, window.location.origin);
-            url.searchParams.set('font', font);
-            iframe.src = url.toString();
-        }
+        // saved with the title; the running preview gets the font by socket
+        updateTopTitle(type, document.getElementById(`${type}TitleInput`)?.value || '');
     } else if (type === 'coins' || type === 'likes') {
         updateLeaderboardConfig(type);
     }
@@ -9077,17 +9836,27 @@ function setAccentColor(color, el) {
     savePremiumSettings();
 }
 
+// Interface style classes: "Épuré" (default) is the Classique style plus a refined finish (ui-clean.css)
+const UI_STYLE_CLASSES = ['ui-compact', 'ui-glass', 'ui-studio', 'ui-classic', 'ui-clean'];
+function uiStyleClasses(style) {
+    if (style === 'clean') return ['ui-classic', 'ui-clean'];
+    if (['compact', 'glass', 'studio', 'classic'].includes(style)) return ['ui-' + style];
+    return [];
+}
 function updateUIStyle(style) {
-    document.body.classList.remove('ui-compact', 'ui-glass');
-    if (style === 'compact') document.body.classList.add('ui-compact');
-    if (style === 'glass') document.body.classList.add('ui-glass');
+    document.body.classList.remove(...UI_STYLE_CLASSES);
+    document.documentElement.classList.remove(...UI_STYLE_CLASSES);
+    const classes = uiStyleClasses(style);
+    document.body.classList.add(...classes);
+    if (style !== 'compact' && style !== 'glass') document.documentElement.classList.add(...classes);
+    try { localStorage.setItem('gentok_ui_style', style); } catch (e) { }
     savePremiumSettings();
 }
 
 function savePremiumSettings() {
     const settings = {
         accentColor: document.documentElement.style.getPropertyValue('--primary'),
-        uiStyle: document.getElementById('setting-ui-style')?.value || 'modern',
+        uiStyle: document.getElementById('setting-ui-style')?.value || 'clean',
         autoConnect: document.getElementById('setting-auto-connect')?.checked,
         autoReset: document.getElementById('setting-auto-reset')?.checked,
         soundAlerts: document.getElementById('setting-sound-alerts')?.checked,
@@ -9097,6 +9866,14 @@ function savePremiumSettings() {
 }
 
 function loadPremiumSettings() {
+    // Interface style: its own key, Épuré by default (older saves of "modern" were only the old default)
+    let uiStyle = 'clean';
+    try { uiStyle = localStorage.getItem('gentok_ui_style') || 'clean'; } catch (e) { }
+    const styleSelect = document.getElementById('setting-ui-style');
+    if (styleSelect) styleSelect.value = uiStyle;
+    document.body.classList.remove(...UI_STYLE_CLASSES);
+    document.body.classList.add(...uiStyleClasses(uiStyle));
+
     const saved = localStorage.getItem('gentok_premium_settings');
     if (!saved) return;
 
@@ -9105,11 +9882,6 @@ function loadPremiumSettings() {
         if (settings.accentColor) {
             const dot = document.querySelector(`.color-dot[data-color="${settings.accentColor}"]`);
             setAccentColor(settings.accentColor, dot);
-        }
-        if (settings.uiStyle) {
-            const select = document.getElementById('setting-ui-style');
-            if (select) select.value = settings.uiStyle;
-            updateUIStyle(settings.uiStyle);
         }
         if (settings.autoConnect !== undefined && document.getElementById('setting-auto-connect')) document.getElementById('setting-auto-connect').checked = settings.autoConnect;
         if (settings.autoReset !== undefined && document.getElementById('setting-auto-reset')) document.getElementById('setting-auto-reset').checked = settings.autoReset;
@@ -9173,15 +9945,8 @@ function showDesktopNotification(title, body) {
 // [IMPORT / EXPORT SYSTEM - GENTOK & TIKFINITY]
 // ==========================================
 
-window.openModal = (id) => {
-    const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'flex';
-};
-
-window.closeModal = (id) => {
-    const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'none';
-};
+// openModal / closeModal are defined once, above (they also handle the "hidden" class: a second,
+// simpler copy here used to replace them and some windows, like the live analysis, never opened).
 
 window.openImportModal = () => {
     openModal('modal-import-settings');
@@ -9301,8 +10066,10 @@ window.executeTailoredExport = () => {
         if (!incActions) filteredActions = filteredActions.filter(a => a.type === 'sound');
         if (!incSounds && !incActions) filteredActions = [];
 
-        payload.actions = filteredActions;
-        if (incEvents) payload.events = currentEvents || [];
+        // shared files never carry the account data (token, internal ids)
+        const strip = (list) => (list || []).map(({ token, _id, __v, sceneId, createdAt, updatedAt, ...rest }) => rest);
+        payload.actions = strip(filteredActions);
+        if (incEvents) payload.events = strip(currentEvents);
 
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -9519,10 +10286,10 @@ window.cleanAllUnlinkedItems = async () => {
 
 async function saveCurrentConfig() {
     try {
-        await sync('actions', currentActions);
-        await sync('events', currentEvents);
+        await syncDiff('actions', currentActions);
+        await syncDiff('events', currentEvents);
 
-        const base = window.electronAPI ? getLocalApiBase() : getApiBase();
+        const base = (window.electronAPI && !window.gentokRelayApp) ? getLocalApiBase() : getApiBase();
         const token = localStorage.getItem('gentok_token');
         await fetch(`${base}/api/settings`, {
             method: 'POST',
@@ -9866,7 +10633,9 @@ function parseTikFinityData(data) {
         const gentokId = `act_tf_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`;
         if (item.id) actionIdMap.set(String(item.id), gentokId);
 
-        let gentokType = 'keyboard';
+        // Unknown TikFinity action types (alert, image, TTS...) are skipped: they used to become a keyboard
+        // action pressing SPACE on the streamer's PC at every gift
+        let gentokType = null;
         const typeStr = String(item.type || item.action_type || '').toLowerCase();
 
         if (item.webhookUrl || typeStr.includes('web') || typeStr.includes('http')) {
@@ -9875,8 +10644,12 @@ function parseTikFinityData(data) {
             gentokType = 'rcon';
         } else if (item.audioUrl || typeStr.includes('sound') || typeStr.includes('audio')) {
             gentokType = 'sound';
-        } else if (item.keystrokes || typeStr.includes('key') || typeStr.includes('keyboard')) {
+        } else if ((item.keystrokes || item.key || item.shortcut) || typeStr.includes('key')) {
             gentokType = 'keyboard';
+        }
+        if (!gentokType || (gentokType === 'keyboard' && !(item.keystrokes || item.key || item.shortcut))) {
+            if (item.id) actionIdMap.delete(String(item.id));
+            return;
         }
 
         const vol = (item.dynamicConfig && item.dynamicConfig.mediaSoundVolume !== undefined)
@@ -9887,7 +10660,7 @@ function parseTikFinityData(data) {
             id: gentokId,
             name: item.name || item.title || `Action TikFinity ${idx + 1}`,
             type: gentokType,
-            key: item.keystrokes || item.key || item.shortcut || item.value || '{SPACE}',
+            key: item.keystrokes || item.key || item.shortcut || '',
             command: item.mcCmd || item.command || item.cmd || '',
             url: item.webhookUrl || item.url || item.endpoint || '',
             soundUrl: item.audioUrl || item.soundUrl || item.path || '',
@@ -9923,7 +10696,9 @@ function parseTikFinityData(data) {
         else if (triggerType.includes('like')) triggerType = 'like';
         else if (triggerType.includes('follow')) triggerType = 'follow';
         else if (triggerType.includes('sub')) triggerType = 'subscribe';
-        else if (triggerType.includes('chat') || triggerType.includes('command')) triggerType = 'command';
+        // a chat trigger with a keyword is a command, otherwise it fires on chat messages
+        else if (triggerType.includes('command') || (triggerType.includes('chat') && (item.command || item.keyword))) triggerType = 'command';
+        else if (triggerType.includes('chat')) triggerType = 'chat';
 
         const linkedActionIds = [];
         if (item.action_id || item.actionId) {
@@ -9972,7 +10747,7 @@ window.exportEventsOnly = () => {
         const payload = {
             type: 'gentok_events',
             exportDate: new Date().toISOString(),
-            events: currentEvents || []
+            events: (currentEvents || []).map(({ token, _id, __v, sceneId, createdAt, updatedAt, ...rest }) => rest)
         };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -10026,8 +10801,9 @@ function initDashboardRealtimeSocket() {
         const socket = io();
         window.dashboardSocket = socket;
 
+        // listener only (likes goal preview): it must not count as a second dashboard tab
         socket.on('connect', () => {
-            socket.emit('identify', { token: token, type: 'dashboard' });
+            socket.emit('identify', { token: token, type: 'overlay' });
         });
 
         // Real-Time Likes Goal Update on Dashboard

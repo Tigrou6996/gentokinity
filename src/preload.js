@@ -10,6 +10,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onUpdateProgress: (callback) => ipcRenderer.on('update-progress', (_event, progressObj) => callback(progressObj)),
     onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (_event, info) => callback(info)),
     onUpdateError: (callback) => ipcRenderer.on('update-error', (_event, message) => callback(message)),
+    onUpdateState: (callback) => ipcRenderer.on('update-state', (_event, state) => callback(state)),
+    getUpdateState: () => ipcRenderer.invoke('get-update-state'),
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+
+    // Opens an https page (Stripe checkout, help...) in the default browser
+    openExternal: (url) => ipcRenderer.invoke('open-external', url),
 
     // Auto-updater commands
     startDownload: () => ipcRenderer.invoke('start-download'),
@@ -31,5 +37,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onMinecraftStatus: (callback) => ipcRenderer.on('mc-status', (_event, status) => callback(status)),
 
     // [NEW] Discord RPC
-    updateRPC: (data) => ipcRenderer.invoke('update-rpc', data)
+    updateRPC: (data) => ipcRenderer.invoke('update-rpc', data),
+    // Chat bot account logged in inside the app (no Euler Stream key needed)
+    chatbotLogin: () => ipcRenderer.invoke('chatbot-login'),
+    chatbotLogout: () => ipcRenderer.invoke('chatbot-logout'),
+    chatbotStatus: () => ipcRenderer.invoke('chatbot-status'),
+    chatbotTest: (username, text) => ipcRenderer.invoke('chatbot-test', username, text)
 });

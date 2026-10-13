@@ -95,7 +95,13 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
     <script>
+        // Escapes text coming from TikTok viewers before it is put into innerHTML
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
         const socket = io();
         const container = document.getElementById('gift-container');
 
@@ -113,11 +119,13 @@
             }
         });
 
-        // Also handle initial state
+        // Initial state: the last gift is shown once when the overlay opens. The server sends this list again on
+        // every dashboard save and reconnection, which made an old gift pop up again on stream.
+        let initialShown = false;
         socket.on('initialLastEvents', (events) => {
-            if (events && events.gift) {
-                addGift(events.gift);
-            }
+            if (initialShown) return;
+            initialShown = true;
+            if (events && events.gift) addGift(events.gift);
         });
 
         function addGift(data) {
@@ -125,20 +133,20 @@
             item.className = 'gift-item';
 
             const name = data.nickname || data.uniqueId || 'Anonyme';
-            const giftName = data.giftName || 'Cadeau';
+            const giftName = data.giftName || window.Gentok.t('gift');
             const count = data.repeatCount || 1;
 
             const iconHtml = data.url
-                ? `<img src="${data.url}" style="width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));">`
+                ? `<img src="${escapeHtml(data.url)}" style="width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));">`
                 : `<i class="fas fa-gift gift-icon"></i>`;
 
             item.innerHTML = `
                 ${iconHtml}
                 <div class="gift-info">
-                    <span class="gift-user">${name}</span>
-                    <span class="gift-name">a envoyé ${giftName}</span>
+                    <span class="gift-user">${escapeHtml(name)}</span>
+                    <span class="gift-name">${window.Gentok.t('did.gift')} ${escapeHtml(giftName)}</span>
                 </div>
-                <div class="gift-badge">x${count}</div>
+                <div class="gift-badge">x${escapeHtml(count)}</div>
             `;
 
             container.prepend(item);

@@ -208,12 +208,12 @@
             let data = stats[type];
             // [NEW] If it's a leaderboard array, take the #1
             if (Array.isArray(data)) {
-                if (data.length === 0) {
+                if (data.length === 0 && window.self === window.top) {
                     usernameEl.textContent = 'PSEUDO';
                     valueEl.textContent = (isGift || isLikes) ? '0' : 'X 0';
                     return;
                 }
-                data = data[0];
+                data = data[0] || {};
             }
 
             console.log('Update', type, ':', data);
@@ -228,7 +228,12 @@
                 else titleEl.innerHTML = 'TOP STREAK';
             }
 
-            const score = isGift ? (data.coins || 0) : (data.count || 0);
+            let score = isGift ? (data.coins || 0) : (data.count || 0);
+            // Dashboard preview before any gift: an example instead of "PSEUDO 0"
+            if (score === 0 && window.self !== window.top) {
+                data = Object.assign({}, data, { nickname: 'Léa', uniqueId: 'lea', giftIcon: DEFAULT_GIFT_ICON });
+                score = isGift ? 199 : (isLikes ? 4800 : 12);
+            }
 
             if (score === 0) {
                 usernameEl.textContent = 'PSEUDO';
@@ -285,6 +290,18 @@
                     document.body.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
                 });
             }
+        }
+
+        // Dashboard preview: the whole widget fits in the (small) preview box instead of being cut
+        if (window.self !== window.top) {
+            const fit = () => {
+                const h = widget.offsetHeight, w = widget.offsetWidth;
+                const k = Math.min(1, (window.innerHeight - 8) / (h || 1), (window.innerWidth - 8) / (w || 1));
+                document.body.style.transform = k < 1 ? `scale(${k})` : '';
+            };
+            window.addEventListener('resize', fit);
+            if (window.ResizeObserver) new ResizeObserver(fit).observe(widget);
+            fit();
         }
 
         // Handle URL parameter font

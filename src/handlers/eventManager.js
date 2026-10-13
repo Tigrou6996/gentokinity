@@ -1,20 +1,66 @@
 const logger = require('../utils/logger');
-const { handleGift } = require('./giftHandler');
+const { GiftStreakTracker } = require('./giftStreaks');
+const liveFeatures = require('../features/liveFeatures');
 const actionManager = require('../actions/actionManager');
 const { emitStats, emitEvent } = require('../utils/socket');
 const config = require('../config');
 const { translateGift } = require('../utils/giftTranslator');
 const { getUserInfo } = require('../utils/tiktokApi');
 const Leaderboard = require('../models/Leaderboard');
-const Activity = require('../models/Activity');
 const Session = require('../models/Session');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { normalizeLike, normalizeRoomUser, normalizeMember, normalizeGift, normalizeChat, normalizeSocial, normalizeSubscribe } = require('../utils/tiktokNormalizer');
 
-// [FIX] Track previous repeatCount for each gift streak to prevent double counting
-const giftStreakTracker = new Map();
+// ---------------------------------------------------------------------------
+// De-duplication: TikTok sometimes delivers the same message twice (and again after
+// a reconnection). Every message carries a unique msgId, we remember the last ones.
+// ---------------------------------------------------------------------------
+const MAX_SEEN_MESSAGES = 5000;
+function isDuplicateMessage(connector, data) {
+    const id = data && data.msgId !== undefined && data.msgId !== null ? String(data.msgId) : null;
+    if (!id || id === '0') return false;
+    if (!connector.seenMsgIds) {
+        connector.seenMsgIds = new Set();
+        connector.seenMsgOrder = [];
+    }
+    if (connector.seenMsgIds.has(id)) return true;
+    connector.seenMsgIds.add(id);
+    connector.seenMsgOrder.push(id);
+    if (connector.seenMsgOrder.length > MAX_SEEN_MESSAGES) {
+        connector.seenMsgIds.delete(connector.seenMsgOrder.shift());
+    }
+    return false;
+}
+
+// Messages created before the bot started (TikTok can replay a few on connect)
+function isOldMessage(connector, data) {
+    const created = data && data.createTime ? Number(data.createTime) : 0;
+    return !!(connector.startTime && created && created < connector.startTime - 2000);
+}
+
+// Returns true only the first time this user does `kind` (follow / subscribe) during the live
+function isFirstTimeThisLive(connector, kind, data) {
+    const field = kind === 'follow' ? 'followedUsers' : 'subscribedUsers';
+    if (!connector[field]) connector[field] = new Set();
+    const key = String(data.userId || data.uniqueId || '');
+    if (!key) return true;
+    if (connector[field].has(key)) return false;
+    connector[field].add(key);
+    return true;
+}
+
+// Public fields sent to overlays for alerts
+function alertPayload(data, extra = {}) {
+    return {
+        userId: data.userId,
+        uniqueId: data.uniqueId,
+        nickname: data.nickname || data.uniqueId,
+        profilePictureUrl: data.profilePictureUrl,
+        ...extra
+    };
+}
 
 // [NEW] Persistant Leaderboard Debouncer
 const leaderboardBuffer = new Map(); // token -> { uniqueId -> { coins, likes, user } }
@@ -84,16 +130,33 @@ function safeWriteJson(filePath, data) {
     }
 }
 
+const leaderboardRetry = new Map(); // token -> users whose database write failed (local files already written)
+function mergeLeaderboardUsers(into, users) {
+    for (const [uniqueId, d] of Object.entries(users || {})) {
+        const cur = into[uniqueId] || (into[uniqueId] = { coins: 0, likes: 0, user: d.user, gifts: {} });
+        cur.coins += d.coins || 0;
+        cur.likes += d.likes || 0;
+        cur.user = d.user || cur.user;
+        for (const [giftId, count] of Object.entries(d.gifts || {})) cur.gifts[giftId] = (cur.gifts[giftId] || 0) + count;
+    }
+    return into;
+}
+
 async function flushLeaderboardBuffer() {
-    if (leaderboardBuffer.size === 0) return;
+    if (leaderboardBuffer.size === 0 && leaderboardRetry.size === 0) return;
 
     // Snapshot buffer to process
     const bufferSnapshot = new Map(leaderboardBuffer);
     leaderboardBuffer.clear();
+    const retrySnapshot = new Map(leaderboardRetry);
+    leaderboardRetry.clear();
+    for (const token of retrySnapshot.keys()) if (!bufferSnapshot.has(token)) bufferSnapshot.set(token, {});
     const isApp = config.isAppMode;
 
-    for (const [token, users] of bufferSnapshot.entries()) {
-        if (isApp) {
+    for (const [token, fresh] of bufferSnapshot.entries()) {
+        // the local files get the new counts only; the database also gets the counts of a failed write
+        const users = mergeLeaderboardUsers(mergeLeaderboardUsers({}, fresh), retrySnapshot.get(token));
+        if (isApp && Object.keys(fresh).length) {
             // [APP MODE] Save to Split Local JSON Files (Legacy Format)
             const dir = getLocalDataDir();
 
@@ -110,7 +173,7 @@ async function flushLeaderboardBuffer() {
             files.like.data = safeReadJson(files.like.path);
             files.likeWeek.data = safeReadJson(files.likeWeek.path);
 
-            for (const [uniqueId, data] of Object.entries(users)) {
+            for (const [uniqueId, data] of Object.entries(fresh)) {
 
                 // Helper to update a user entry in a specific file dataset
                 const updates = [
@@ -161,6 +224,7 @@ async function flushLeaderboardBuffer() {
         const sessionUpdateSet = {};
 
         for (const [uniqueId, data] of Object.entries(users)) {
+            const sKey = safeKey(uniqueId);
             // 1. Prepare Leaderboard Bulk Ops
             const updateObj = {
                 $inc: {
@@ -184,8 +248,8 @@ async function flushLeaderboardBuffer() {
                     updateObj.$inc[`weeklyGifts.${giftId}`] = count;
 
                     // Session Update (Gifts)
-                    sessionUpdateInc[`users.${uniqueId}.gifts.${giftId}`] = count;
-                    sessionUpdateInc[`users.${uniqueId}.weeklyGifts.${giftId}`] = count;
+                    sessionUpdateInc[`users.${sKey}.gifts.${giftId}`] = count;
+                    sessionUpdateInc[`users.${sKey}.weeklyGifts.${giftId}`] = count;
                 }
             }
 
@@ -199,19 +263,19 @@ async function flushLeaderboardBuffer() {
 
             // 2. Prepare Session Update (Aggregated)
             if (data.coins) {
-                sessionUpdateInc[`users.${uniqueId}.totalCoins`] = data.coins;
-                sessionUpdateInc[`users.${uniqueId}.weeklyCoins`] = data.coins;
+                sessionUpdateInc[`users.${sKey}.totalCoins`] = data.coins;
+                sessionUpdateInc[`users.${sKey}.weeklyCoins`] = data.coins;
             }
             if (data.likes) {
-                sessionUpdateInc[`users.${uniqueId}.totalLikes`] = data.likes;
-                sessionUpdateInc[`users.${uniqueId}.weeklyLikes`] = data.likes;
+                sessionUpdateInc[`users.${sKey}.totalLikes`] = data.likes;
+                sessionUpdateInc[`users.${sKey}.weeklyLikes`] = data.likes;
             }
 
-            sessionUpdateSet[`users.${uniqueId}.userId`] = data.user.userId;
-            sessionUpdateSet[`users.${uniqueId}.uniqueId`] = uniqueId;
-            sessionUpdateSet[`users.${uniqueId}.nickname`] = data.user.nickname;
-            sessionUpdateSet[`users.${uniqueId}.profilePictureUrl`] = data.user.profilePictureUrl;
-            sessionUpdateSet[`users.${uniqueId}.lastUpdated`] = new Date();
+            sessionUpdateSet[`users.${sKey}.userId`] = data.user.userId;
+            sessionUpdateSet[`users.${sKey}.uniqueId`] = uniqueId;
+            sessionUpdateSet[`users.${sKey}.nickname`] = data.user.nickname;
+            sessionUpdateSet[`users.${sKey}.profilePictureUrl`] = data.user.profilePictureUrl;
+            sessionUpdateSet[`users.${sKey}.lastUpdated`] = new Date();
         }
 
         sessionUpdateSet[`lastUpdated`] = new Date();
@@ -229,13 +293,30 @@ async function flushLeaderboardBuffer() {
                 const p2 = Session.updateOne({ token }, sessionUpdate, { upsert: true });
 
                 await Promise.all([p1, p2]);
+                leaderboardRetries = 0;
             } catch (err) {
                 console.error(`[LEADERBOARD] Bulk update failed for ${token}:`, err.message);
+                // Kept for the next flush (they used to be lost); only the database write is retried
+                requeueLeaderboard(token, users);
+                continue;
             }
         }
 
         // [ALWAYS] Emit sync event
         emitEvent('leaderboard_sync', { timestamp: Date.now() }, token);
+    }
+}
+
+let leaderboardRetries = 0;
+function requeueLeaderboard(token, users) {
+    if (++leaderboardRetries > 20) { // database down for good: stop retrying instead of growing forever
+        console.error(`[LEADERBOARD] Abandon après 20 essais pour ${token}`);
+        leaderboardRetries = 0;
+        return;
+    }
+    leaderboardRetry.set(token, mergeLeaderboardUsers(leaderboardRetry.get(token) || {}, users));
+    if (!leaderboardSaveTimeout) {
+        leaderboardSaveTimeout = setTimeout(() => { leaderboardSaveTimeout = null; flushLeaderboardBuffer(); }, 10000);
     }
 }
 
@@ -267,11 +348,23 @@ function queueLeaderboardUpdate(token, user, coins = 0, likes = 0, giftId = null
     }
 }
 
-// [DEBOUNCE] Timers for top stats saves
-let topGiftSaveTimeout = null;
-let topStreakSaveTimeout = null;
-let topCoinsSaveTimeout = null;
-let topLikesSaveTimeout = null;
+// [DEBOUNCE] One timer per token AND per kind of save. Single module-level timers made one
+// streamer's events cancel another streamer's pending save when several lives run on the VPS.
+const saveTimers = new Map();
+function debounceSave(token, kind, delayMs, fn) {
+    const key = `${token}:${kind}`;
+    if (saveTimers.has(key)) clearTimeout(saveTimers.get(key));
+    saveTimers.set(key, setTimeout(() => {
+        saveTimers.delete(key);
+        fn();
+    }, delayMs));
+}
+
+// MongoDB treats '.' as a path separator and '$' as an operator: TikTok @ids such as
+// "jean.pierre" would otherwise be split into nested objects in the Session document.
+function safeKey(key) {
+    return String(key).replace(/\./g, '\uFF0E').replace(/^\$/, '\uFF04');
+}
 
 function updateStats(connector, key, value = 1, isAbsolute = false) {
     if (!connector || !connector.stats) return;
@@ -298,9 +391,6 @@ function checkUniqueViewer(connector, uniqueId) {
 
 
 // Helper to update last event and persist it
-let lastEventSaveTimeout = null;
-let pendingLastEventsSave = false;
-
 function updateLastEvent(connector, type, data) {
     if (!connector || !connector.lastEvents) return;
     connector.lastEvents[type] = data;
@@ -327,18 +417,150 @@ function updateLastEvent(connector, type, data) {
     */
 
     // [DEBOUNCE] Only save to DB settings every 5 seconds to avoid spam
-    pendingLastEventsSave = true;
+    if (!connector.isSimulation) debounceSave(connector.token, 'lastEvents', 5000, () => {
+        if (connector.lastEvents && !connector.isSimulation) {
+            config.saveSettings({ token: connector.token, lastEvents: connector.lastEvents });
+        }
+    });
+}
 
-    if (lastEventSaveTimeout) {
-        clearTimeout(lastEventSaveTimeout);
+// ---------------------------------------------------------------------------
+// Gifts
+// ---------------------------------------------------------------------------
+function getGiftTracker(connector) {
+    if (!connector.giftTracker) {
+        connector.giftTracker = new GiftStreakTracker(
+            (data, count) => handleNewGifts(connector, data, count),
+            (data, total) => handleStreakEnd(connector, data, total)
+        );
+    }
+    return connector.giftTracker;
+}
+
+/**
+ * Called with `count` NEW gifts (never the same gift twice). Updates every counter and runs
+ * the configured actions once per gift.
+ */
+function handleNewGifts(connector, data, count) {
+    if (!connector || !connector.stats || connector.isStopping) return;
+    const { getGiftPrice } = require('../utils/giftPrices');
+    const unitPrice = getGiftPrice(data);
+    const coinsAdded = unitPrice * count;
+    const giftIcon = data.url;
+    const giftName = translateGift(data.giftName);
+
+    updateStats(connector, 'gifts', count);
+    if (coinsAdded > 0) updateStats(connector, 'diamonds', coinsAdded);
+
+    // Persistent leaderboard (coins + per-gift count, free gifts included)
+    if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, coinsAdded, 0, data.giftId, count);
+
+    if (!connector.stats.giftsBreakdown) connector.stats.giftsBreakdown = {};
+    connector.stats.giftsBreakdown[giftName] = (connector.stats.giftsBreakdown[giftName] || 0) + count;
+    // gift history of the live: coins and picture per gift
+    if (!connector.stats.giftsCoinsBreakdown) connector.stats.giftsCoinsBreakdown = {};
+    connector.stats.giftsCoinsBreakdown[giftName] = (connector.stats.giftsCoinsBreakdown[giftName] || 0) + (coinsAdded || 0);
+    if (!connector.stats.giftsIcons) connector.stats.giftsIcons = {};
+    if (giftIcon && !connector.stats.giftsIcons[giftName]) connector.stats.giftsIcons[giftName] = String(giftIcon).slice(0, 500);
+
+    // Session "top coins" leaderboard
+    if (!connector.topCoinsMap) connector.topCoinsMap = new Map();
+    const currentCoinUser = connector.topCoinsMap.get(data.uniqueId) || {
+        userId: data.userId,
+        uniqueId: data.uniqueId,
+        nickname: data.nickname,
+        profilePictureUrl: data.profilePictureUrl,
+        coins: 0
+    };
+    if (data.profilePictureUrl) currentCoinUser.profilePictureUrl = data.profilePictureUrl;
+    if (data.nickname) currentCoinUser.nickname = data.nickname;
+    currentCoinUser.coins += coinsAdded;
+    connector.topCoinsMap.set(data.uniqueId, currentCoinUser);
+
+    const limitCoins = connector.stats.topCoinsLimit || 10;
+    connector.stats.topCoins = Array.from(connector.topCoinsMap.values())
+        .sort((a, b) => b.coins - a.coins)
+        .slice(0, limitCoins);
+
+    // (the top list is not saved in settings.topCoins: that field holds the overlay's settings - title, style,
+    // limit - and the list is reset at every live anyway)
+
+    // a new record keeps the overlay's own settings (custom title, font): they were lost at each new record
+    const keepDisplay = (prev) => {
+        const o = {};
+        if (prev) ['customTitle', 'font', 'title', 'style'].forEach(k => { if (prev[k] !== undefined) o[k] = prev[k]; });
+        return o;
+    };
+    if (unitPrice > (connector.stats.topGift?.coins || 0)) {
+        connector.stats.topGift = {
+            ...keepDisplay(connector.stats.topGift),
+            userId: data.userId,
+            uniqueId: data.uniqueId,
+            nickname: data.nickname,
+            coins: unitPrice,
+            giftName: giftName,
+            giftIcon: giftIcon
+        };
+        if (!connector.isSimulation) debounceSave(connector.token, 'topGift', 3000, () => {
+            config.saveSettings({ token: connector.token, topGift: connector.stats.topGift });
+        });
     }
 
-    lastEventSaveTimeout = setTimeout(() => {
-        if (pendingLastEventsSave && connector.lastEvents) {
-            config.saveSettings({ token: connector.token, lastEvents: connector.lastEvents });
-            pendingLastEventsSave = false;
+    const comboCount = parseInt(data.repeatCount, 10) || count;
+    if (comboCount > (connector.stats.topStreak?.count || 0)) {
+        connector.stats.topStreak = {
+            ...keepDisplay(connector.stats.topStreak),
+            userId: data.userId,
+            uniqueId: data.uniqueId,
+            nickname: data.nickname,
+            count: comboCount,
+            giftName: giftName,
+            giftIcon: giftIcon
+        };
+        if (!connector.isSimulation) debounceSave(connector.token, 'topStreak', 3000, () => {
+            config.saveSettings({ token: connector.token, topStreak: connector.stats.topStreak });
+        });
+    }
+
+    broadcastStatsImmediate(connector);
+
+    liveFeatures.onGifts(connector, data, count, coinsAdded);
+
+    // `repeatCount` = gifts in THIS batch, `comboCount` = position in the combo
+    const giftEvent = { ...data, repeatCount: count, comboCount, coins: coinsAdded, unitPrice };
+    emitStats('gift', giftEvent, connector.token);
+
+    // Actions: each call gets its own copy (executeAction mutates the context)
+    const actionContext = { ...data, repeatCount: count, comboCount, repeatEnd: true };
+    actionManager.executeAction(`gift:${data.giftName}`, { ...actionContext }, connector);
+    actionManager.executeAction('gift_min', { ...actionContext }, connector);
+
+    getUserInfo(data.uniqueId, data).then(info => {
+        if (info) {
+            data.nickname = info.nickname || data.nickname;
+            data.profilePictureUrl = info.profilePictureUrl || data.profilePictureUrl;
+            if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, 0, 0);
         }
-    }, 5000); // 5 second debounce
+        updateLastEvent(connector, 'gift', { ...data, repeatCount: comboCount });
+    });
+}
+
+/** Called once when a combo is finished (or immediately for single gifts): used by alerts */
+function handleStreakEnd(connector, data, total) {
+    if (!connector || connector.isStopping) return;
+    const { getGiftPrice } = require('../utils/giftPrices');
+    const unitPrice = getGiftPrice(data);
+    emitEvent('tiktok_alert', {
+        type: 'gift',
+        data: alertPayload(data, {
+            giftId: data.giftId,
+            giftName: translateGift(data.giftName),
+            giftIcon: data.url,
+            repeatCount: total,
+            unitPrice,
+            coins: unitPrice * total
+        })
+    }, connector.token);
 }
 
 function registerEvents(tiktokConnection, connector) {
@@ -384,17 +606,16 @@ function registerEvents(tiktokConnection, connector) {
         emitEvent('session_stats', connector.stats, connector.token);
     });
 
-    tiktokConnection.on('disconnected', () => {
+    tiktokConnection.on('disconnected', (info) => {
+        // Ignore events from a connection we already replaced (reconnection)
+        if (connector.connection !== tiktokConnection) return;
         logger.warn('❌ Déconnecté de TikTok Live.');
 
-        // [FIX] Ensure UI updates to offline when disconnected (if not manually stopping)
-        if (!connector.isStopping) {
-            console.log('[EVENT] Disconnected detected, stopping connector...');
-            connector.stop();
-        }
-
-        // Flush leaderboard when live ends
+        // Save what we have, then reconnect automatically (unless the live ended / user stopped)
         flushLeaderboardBuffer();
+        if (!connector.isStopping) {
+            connector.handleDisconnect(info && info.reason ? String(info.reason) : '');
+        }
     });
 
     tiktokConnection.on('error', (err) => {
@@ -404,6 +625,7 @@ function registerEvents(tiktokConnection, connector) {
         // If it's a fatal error (live ended), stop the connector
         if (errorMsg.includes('LIVE has ended') || errorMsg.includes('not live')) {
             logger.warn('⚠️ Live terminé détecté, arrêt du connecteur...');
+            connector.streamEnded = true;
             emitEvent('notification', {
                 type: 'error',
                 title: 'Live terminé',
@@ -416,8 +638,8 @@ function registerEvents(tiktokConnection, connector) {
 
     tiktokConnection.on('chat', async (data) => {
         data = normalizeChat(data);
-        // [ANTI-SPAM] Ignore messages from before the bot started
-        if (connector.startTime && data.createTime && data.createTime < connector.startTime) return;
+        // [ANTI-SPAM] Ignore duplicates and messages from before the bot started
+        if (isDuplicateMessage(connector, data) || isOldMessage(connector, data)) return;
 
         const token = connector.token;
 
@@ -448,7 +670,8 @@ function registerEvents(tiktokConnection, connector) {
                 const spotifyModule = require('../utils/spotifyModule');
 
                 const playCmd = (spotify.commands.play || '!play').toLowerCase();
-                if (lowerComment.startsWith(playCmd) && spotify.playEnabled !== false) {
+                const firstWord = lowerComment.split(/\s+/)[0];
+                if (firstWord === playCmd && spotify.playEnabled !== false) {
                     const query = comment.substring(playCmd.length).trim();
                     const result = await spotifyModule.playTrack(token, query, data.userId, data.uniqueId, isMod, isSub);
                     if (result && result.success) {
@@ -456,6 +679,8 @@ function registerEvents(tiktokConnection, connector) {
                     } else if (result) {
                         const reasonMap = {
                             'disabled': 'Le système Spotify est désactivé.',
+                            'not_connected': "Spotify n'est pas connecté (Paramètres > Spotify > Se connecter).",
+                            'queue_full': "La file d'attente est pleine.",
                             'limit_reached': `Vous avez atteint votre limite (${spotify.maxTracksPerUser} musiques).`,
                             'query_too_short': 'La recherche est trop courte.',
                             'not_found': `Musique introuvable pour "${query}".`,
@@ -515,6 +740,7 @@ function registerEvents(tiktokConnection, connector) {
         }
 
         emitEvent('chat', data, token);
+        liveFeatures.onChat(connector, data); // points, battles, !score / !top
 
         getUserInfo(data.uniqueId, data).then(info => {
             if (info) {
@@ -526,129 +752,41 @@ function registerEvents(tiktokConnection, connector) {
 
         actionManager.executeAction('chat', { ...data, message: data.comment }, connector);
         actionManager.executeAction('command', { ...data, message: data.comment }, connector);
+
+        // "Premier message" trigger: first chat message of this viewer during the live
+        if (!connector.chattedUsers) connector.chattedUsers = new Set();
+        const chatKey = String(data.userId || data.uniqueId || '');
+        if (chatKey && !connector.chattedUsers.has(chatKey)) {
+            connector.chattedUsers.add(chatKey);
+            actionManager.executeAction('first_message', { ...data, message: data.comment }, connector);
+        }
     });
 
     tiktokConnection.on('gift', (data) => {
         data = normalizeGift(data);
-        const { getGiftPrice, getGiftIcon, resolveGiftName } = require('../utils/giftPrices');
-        data.giftName = resolveGiftName(data);
-        const realPrice = getGiftPrice(data);
-        const giftIcon = getGiftIcon(data);
+        if (isDuplicateMessage(connector, data) || isOldMessage(connector, data)) return;
 
+        const { getGiftIcon, resolveGiftName } = require('../utils/giftPrices');
+        data.giftName = resolveGiftName(data);
+        const giftIcon = getGiftIcon(data);
         if (giftIcon) data.url = giftIcon;
 
-        if (connector.startTime && data.createTime && data.createTime < connector.startTime) return;
-
-        handleGift(data, connector);
-
-        if (connector.stats) {
-            const streakKey = `${data.uniqueId}_${data.giftId}`;
-            const previousCount = giftStreakTracker.get(streakKey) || 0;
-            const newGifts = data.repeatCount - previousCount;
-
-            giftStreakTracker.set(streakKey, data.repeatCount);
-
-            if (data.repeatEnd) {
-                giftStreakTracker.delete(streakKey);
-            }
-
-            if (newGifts > 0) {
-                updateStats(connector, 'gifts', newGifts);
-
-                if (realPrice > 0) {
-                    const coinsAdded = realPrice * newGifts;
-                    updateStats(connector, 'diamonds', coinsAdded);
-
-                    // [NEW] UPDATE PERSISTENT LEADERBOARD (Gifts count and Coins)
-                    queueLeaderboardUpdate(connector.token, data, coinsAdded, 0, data.giftId, newGifts);
-                } else {
-                    // Even if 0 coins (free gift), track in leaderboard legends
-                    queueLeaderboardUpdate(connector.token, data, 0, 0, data.giftId, newGifts);
-                }
-
-                const giftName = translateGift(data.giftName);
-                if (!connector.stats.giftsBreakdown) connector.stats.giftsBreakdown = {};
-                connector.stats.giftsBreakdown[giftName] = (connector.stats.giftsBreakdown[giftName] || 0) + newGifts;
-
-                if (!connector.topCoinsMap) connector.topCoinsMap = new Map();
-                const currentCoinUser = connector.topCoinsMap.get(data.uniqueId) || {
-                    userId: data.userId,
-                    uniqueId: data.uniqueId,
-                    nickname: data.nickname,
-                    profilePictureUrl: data.profilePictureUrl,
-                    coins: 0
-                };
-                if (data.profilePictureUrl) currentCoinUser.profilePictureUrl = data.profilePictureUrl;
-                if (data.nickname) currentCoinUser.nickname = data.nickname;
-                currentCoinUser.coins += (realPrice * newGifts);
-                connector.topCoinsMap.set(data.uniqueId, currentCoinUser);
-
-                const limitCoins = connector.stats.topCoinsLimit || 10;
-                connector.stats.topCoins = Array.from(connector.topCoinsMap.values())
-                    .sort((a, b) => b.coins - a.coins)
-                    .slice(0, limitCoins);
-
-                if (topCoinsSaveTimeout) clearTimeout(topCoinsSaveTimeout);
-                topCoinsSaveTimeout = setTimeout(() => {
-                    config.saveSettings({
-                        token: connector.token,
-                        topCoins: connector.stats.topCoins // [FIX] No more ".data" wrapper
-                    });
-                }, 3000);
-
-                // Stats updated via updateStats (debounced)
-
-                if (realPrice > (connector.stats.topGift?.coins || 0)) {
-                    connector.stats.topGift = {
-                        userId: data.userId,
-                        uniqueId: data.uniqueId,
-                        nickname: data.nickname,
-                        coins: realPrice,
-                        giftName: giftName,
-                        giftIcon: giftIcon
-                    };
-                    if (topGiftSaveTimeout) clearTimeout(topGiftSaveTimeout);
-                    topGiftSaveTimeout = setTimeout(() => {
-                        config.saveSettings({ token: connector.token, topGift: connector.stats.topGift });
-                    }, 3000);
-                }
-
-                if (data.repeatCount > (connector.stats.topStreak?.count || 0)) {
-                    connector.stats.topStreak = {
-                        userId: data.userId,
-                        uniqueId: data.uniqueId,
-                        nickname: data.nickname,
-                        count: data.repeatCount,
-                        giftName: giftName,
-                        giftIcon: giftIcon
-                    };
-                    if (topStreakSaveTimeout) clearTimeout(topStreakSaveTimeout);
-                    topStreakSaveTimeout = setTimeout(() => {
-                        config.saveSettings({ token: connector.token, topStreak: connector.stats.topStreak });
-                    }, 3000);
-                }
-            }
-        }
-
-        broadcastStatsImmediate(connector);
-        emitStats('gift', data, connector.token);
-
-        getUserInfo(data.uniqueId, data).then(info => {
-            if (info) {
-                data.nickname = info.nickname || data.nickname;
-                data.profilePictureUrl = info.profilePictureUrl || data.profilePictureUrl;
-                queueLeaderboardUpdate(connector.token, data, 0, 0);
-            }
-            updateLastEvent(connector, 'gift', data);
-        });
+        // The streak engine calls handleNewGifts() with the exact number of NEW gifts
+        getGiftTracker(connector).push(data);
     });
 
     tiktokConnection.on('follow', (data) => {
         data = normalizeSocial(data);
+        if (isDuplicateMessage(connector, data)) return;
+        // Unfollow + follow again must not trigger actions twice in the same live
+        if (!isFirstTimeThisLive(connector, 'follow', data)) return;
+
         updateStats(connector, 'follows', 1);
+        liveFeatures.onSocial(connector, 'follow', data);
         actionManager.executeAction('follow', data, connector);
         emitStats('follow', data, connector.token);
         emitEvent('notify', { type: 'follow', user: data.uniqueId }, connector.token);
+        emitEvent('tiktok_alert', { type: 'follow', data: alertPayload(data) }, connector.token);
 
         getUserInfo(data.uniqueId, data).then(info => {
             if (info) {
@@ -661,8 +799,12 @@ function registerEvents(tiktokConnection, connector) {
 
     tiktokConnection.on('share', (data) => {
         data = normalizeSocial(data);
+        if (isDuplicateMessage(connector, data)) return;
+
         updateStats(connector, 'shares', 1);
+        liveFeatures.onSocial(connector, 'share', data);
         emitStats('share', data, connector.token);
+        emitEvent('tiktok_alert', { type: 'share', data: alertPayload(data) }, connector.token);
         actionManager.executeAction('share', data, connector);
 
         getUserInfo(data.uniqueId, data).then(info => {
@@ -676,6 +818,7 @@ function registerEvents(tiktokConnection, connector) {
 
     tiktokConnection.on('like', async (data) => {
         data = normalizeLike(data);
+        if (isDuplicateMessage(connector, data)) return;
         const likeCountNow = data.likeCount || 1;
         const totalLikeCount = data.totalLikeCount;
 
@@ -691,7 +834,8 @@ function registerEvents(tiktokConnection, connector) {
         }
 
         // [NEW] UPDATE PERSISTENT LEADERBOARD (Likes)
-        queueLeaderboardUpdate(connector.token, data, 0, likeCountNow);
+        if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, 0, likeCountNow);
+        liveFeatures.onLike(connector, data, likeCountNow);
 
         if (!connector.topLikesMap) connector.topLikesMap = new Map();
         const currentLikeUser = connector.topLikesMap.get(data.uniqueId) || {
@@ -711,13 +855,6 @@ function registerEvents(tiktokConnection, connector) {
             .sort((a, b) => b.count - a.count)
             .slice(0, limitLikes);
 
-        if (topLikesSaveTimeout) clearTimeout(topLikesSaveTimeout);
-        topLikesSaveTimeout = setTimeout(() => {
-            config.saveSettings({
-                token: connector.token,
-                topLikes: connector.stats.topLikes
-            });
-        }, 5000);
 
         broadcastStats(connector);
 
@@ -732,11 +869,11 @@ function registerEvents(tiktokConnection, connector) {
 
             const step = goal.goalStep || goal.initialGoal || 1000;
 
-            // Ensure goal.goal is aligned to the next step milestone if current likes exceed goal.goal
-            if (!goal.goal || goal.goal <= currentTotalLikes) {
-                if (goal.whenReached === 'increase') {
-                    goal.goal = Math.ceil((currentTotalLikes + 1) / step) * step;
-                }
+            // Only a goal that was ALREADY behind before these likes is moved to the next milestone (e.g. left
+            // over from a previous live). A goal crossed by these likes is handled below, so its reward action runs
+            // (re-aligning first made "increase" goals jump ahead without ever triggering the action).
+            if (!goal.goal || (previousCount >= goal.goal && goal.whenReached === 'increase')) {
+                goal.goal = Math.ceil((currentTotalLikes + 1) / step) * step;
             }
 
             let triggerCount = 0;
@@ -752,6 +889,7 @@ function registerEvents(tiktokConnection, connector) {
                     goal.goal *= 2;
                 } else if (goal.whenReached === 'hide') {
                     goal.enabled = false;
+                    goal.hiddenByReach = true; // shown again at the next live
                 } else {
                     break;
                 }
@@ -759,12 +897,12 @@ function registerEvents(tiktokConnection, connector) {
             }
 
             if (triggerCount > 0 && goal.actionId && goal.actionId !== 'none') {
-                for (let i = 0; i < triggerCount; i++) {
+                for (let i = 0; i < Math.min(triggerCount, 5); i++) {
                     actionManager.executeActionById(goal.actionId, connector);
                 }
             }
 
-            config.saveSettings({ token: connector.token, likesGoal: goal });
+            if (!connector.isSimulation) config.saveSettings({ token: connector.token, likesGoal: goal });
             emitEvent('likes_goal_update', goal, connector.token);
         }
 
@@ -789,7 +927,7 @@ function registerEvents(tiktokConnection, connector) {
                     broadcastStats(connector);
                 }
 
-                queueLeaderboardUpdate(connector.token, data, 0, 0);
+                if (!connector.isSimulation) queueLeaderboardUpdate(connector.token, data, 0, 0);
             }
             updateLastEvent(connector, 'like', data);
         });
@@ -797,14 +935,25 @@ function registerEvents(tiktokConnection, connector) {
 
     tiktokConnection.on('member', (data) => {
         data = normalizeMember(data);
+        if (isDuplicateMessage(connector, data)) return;
         checkUniqueViewer(connector, data.uniqueId);
         updateViewerCountIfPresent(connector, data);
+        liveFeatures.onSocial(connector, 'member', data);
         actionManager.executeAction('member', data, connector);
+        // small payload: the dashboard can welcome viewers out loud (TTS)
+        emitStats('member', { uniqueId: data.uniqueId, nickname: data.nickname || data.uniqueId, userId: data.userId }, connector.token);
     });
 
     tiktokConnection.on('subscribe', (data) => {
         data = normalizeSubscribe(data);
+        if (isDuplicateMessage(connector, data)) return;
+        if (!isFirstTimeThisLive(connector, 'subscribe', data)) return;
+
         logger.info(`🌟 [SUB] ${data.uniqueId} s'est abonné !`);
+        updateStats(connector, 'subscribers', 1);
+        liveFeatures.onSocial(connector, 'subscribe', data);
+        emitStats('subscribe', data, connector.token);
+        emitEvent('tiktok_alert', { type: 'subscribe', data: alertPayload(data, { subMonth: data.subMonth }) }, connector.token);
         actionManager.executeAction('subscribe', data, connector);
         getUserInfo(data.uniqueId, data).then(info => {
             if (info) {
@@ -828,8 +977,33 @@ function registerEvents(tiktokConnection, connector) {
         }
     });
 
+    // Subscriber emotes sent in the chat
+    tiktokConnection.on('emote', (data) => {
+        data = normalizeSocial(data);
+        if (isDuplicateMessage(connector, data) || isOldMessage(connector, data)) return;
+        const emote = Array.isArray(data.emotes) && data.emotes[0] ? data.emotes[0] : {};
+        actionManager.executeAction('emote', { ...data, emoteId: emote.emoteId, emoteImageUrl: emote.emoteImageUrl }, connector);
+        // Emojify overlay: the emote image flies across the screen
+        if (emote.emoteImageUrl) {
+            emitEvent('emote', {
+                uniqueId: data.uniqueId, nickname: data.nickname, profilePictureUrl: data.profilePictureUrl,
+                emoteImageUrl: emote.emoteImageUrl
+            }, connector.token);
+        }
+    });
+
+    // Questions asked with the TikTok "Q&A" feature
+    tiktokConnection.on('questionNew', (data) => {
+        data = normalizeSocial(data);
+        if (isDuplicateMessage(connector, data)) return;
+        const question = data.questionText || data.content || '';
+        actionManager.executeAction('question', { ...data, comment: question, message: question }, connector);
+        emitEvent('tiktok_alert', { type: 'question', data: alertPayload(data, { question }) }, connector.token);
+    });
+
     tiktokConnection.on('streamEnd', () => {
         logger.warn('⏹️ Le stream est terminé.');
+        connector.streamEnded = true;
         emitEvent('notification', {
             type: 'info',
             title: 'Stream terminé',
@@ -839,4 +1013,4 @@ function registerEvents(tiktokConnection, connector) {
     });
 }
 
-module.exports = { registerEvents };
+module.exports = { registerEvents, flushLeaderboardBuffer };

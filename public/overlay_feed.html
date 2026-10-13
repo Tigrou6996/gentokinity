@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Fil d'activité</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --accent: #fe2c55; --size: 18px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        #feed { position: fixed; left: 0; right: 0; top: 0; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: rgba(0, 0, 0, .55);
+            color: #fff; font-size: var(--size); animation: slide .35s ease-out; border-left: 4px solid var(--c, var(--accent)); }
+        .row img.avatar { width: calc(var(--size) * 1.8); height: calc(var(--size) * 1.8); border-radius: 50%; object-fit: cover; background: #333; flex-shrink: 0; }
+        .row img.gift { width: calc(var(--size) * 1.8); height: calc(var(--size) * 1.8); object-fit: contain; margin-left: auto; flex-shrink: 0; }
+        .row .who { font-weight: 800; }
+        .row .what { opacity: .9; }
+        /* Keep the colored side bar (event type) with the shared styles */
+        html[class*="ovt-"] .row.ov-surface { border-left: 4px solid var(--c, var(--accent)) !important; }
+        @keyframes slide { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: none; } }
+    </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
+</head>
+
+<body>
+    <div id="feed"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters:
+        //   events=follow,gift,subscribe,share   événements listés
+        //   max=6       nombre de lignes, mingift=0 valeur minimale d'un combo de cadeaux
+        //   size=18, color=fe2c55, lang=fr|en|es|de|pt|it, demo=1
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 18), 10), 60)}px`);
+
+        const enabled = G.listParam('events', ['follow', 'gift', 'subscribe', 'share', 'question']);
+        const max = Math.min(Math.max(G.numParam('max', 6), 1), 30);
+        const minGift = G.numParam('mingift', 0);
+        const feed = document.getElementById('feed');
+        const COLORS = { follow: '#4ade80', gift: '#fbbf24', subscribe: '#a78bfa', share: '#60a5fa', question: '#f472b6' };
+
+        function add(payload) {
+            if (!payload || !enabled.includes(payload.type)) return;
+            const d = payload.data || {};
+            if (payload.type === 'gift' && (Number(d.coins) || 0) < minGift) return;
+
+            const t = G.t;
+            let what = '';
+            if (payload.type === 'follow') what = t('did.followShort');
+            else if (payload.type === 'subscribe') what = t('did.subscribe');
+            else if (payload.type === 'share') what = t('did.share');
+            else if (payload.type === 'question') what = `${t('did.question')} : ${G.escapeHtml(d.question || '')}`;
+            else if (payload.type === 'gift') what = `${t('did.gift')} ${G.escapeHtml(d.repeatCount || 1)}× ${G.escapeHtml(d.giftName || t('gift'))}`;
+
+            const avatar = G.safeUrl(d.profilePictureUrl) || '/logo.png';
+            const gift = payload.type === 'gift' ? G.safeUrl(d.giftIcon) : '';
+            const row = document.createElement('div');
+            row.className = 'row ov-surface';
+            row.style.setProperty('--c', COLORS[payload.type] || '');
+            row.innerHTML = `
+                <img class="avatar" src="${G.escapeHtml(avatar)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">
+                <span><span class="who">${G.escapeHtml(d.nickname || d.uniqueId)}</span> <span class="what">${what}</span></span>
+                ${gift ? `<img class="gift" src="${G.escapeHtml(gift)}" referrerpolicy="no-referrer">` : ''}`;
+            feed.prepend(row);
+            while (feed.children.length > max) feed.lastChild.remove();
+        }
+
+        const socket = G.connect();
+        socket.on('tiktok_alert', add);
+
+        if (G.isDemo) {
+            const types = ['follow', 'gift', 'share', 'subscribe'];
+            let i = 0;
+            setInterval(() => {
+                const type = types[i++ % types.length];
+                const data = { ...G.demoUser() };
+                if (type === 'gift') Object.assign(data, { giftName: 'Rose', repeatCount: 10, coins: 10, giftIcon: '/img/tiktok/5655.png' });
+                add({ type, data });
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

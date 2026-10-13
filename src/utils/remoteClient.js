@@ -1,3 +1,4 @@
+const APP_VERSION = (() => { try { return require('../../package.json').version; } catch (e) { return null; } })();
 const io = require('socket.io-client');
 const config = require('../config');
 const logger = require('./logger');
@@ -5,6 +6,7 @@ const { pressKey } = require('../actions/keyboardAction');
 const { sendRconCommand } = require('../actions/rconAction');
 
 let socket = null;
+const LOCAL_API = `http://localhost:${process.env.PORT || 3000}`;
 
 /**
  * Initializes a connection to the remote server to listen for remote commands.
@@ -31,11 +33,49 @@ function initRemoteClient() {
     socket.on('connect', () => {
         logger.info('✅ Application connected to remote server.');
 
-        // Identify as an "app" for this token
+        // Identify as an "app" for this token (with the version, shown on the website)
         socket.emit('identify', {
             token: config.licenseToken,
-            type: 'app'
+            type: 'app',
+            version: APP_VERSION,
+            relay: config.relayMode
+        }, () => {
+            // Secure app: a live running on this PC is announced again after a reconnection (or a server
+            // restart), otherwise the server would ignore its events
+            try {
+                const connector = require('../server').getConnector(config.licenseToken);
+                if (config.relayMode && connector && connector.hasConnected && !connector.isStopping && connector.announceRelay) connector.announceRelay();
+            } catch (e) { /* no live */ }
         });
+    });
+
+    // Secure app: the server lost the live it was processing (restart...) and asks for it again
+    socket.on('live_relay_resync', () => {
+        try {
+            const connector = require('../server').getConnector(config.licenseToken);
+            if (connector && connector.hasConnected && !connector.isStopping && connector.announceRelay) connector.announceRelay();
+        } catch (e) { }
+    });
+
+    // The scene, its events or its actions were changed from the dashboard: reload them for the live
+    let reloadTimer = null;
+    socket.on('app_reload_session', () => {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(async () => {
+            try {
+                if (!config.licenseToken) return;
+                await config.loadSession(config.licenseToken);
+                logger.info('🔄 Scène / actions / événements rechargés depuis le tableau de bord.');
+            } catch (e) {
+                logger.warn(`⚠️ Rechargement de la scène impossible : ${e.message}`);
+            }
+        }, 400);
+    });
+
+    // Chat bot (method "application"): the server asks the app to post a message in the live chat
+    socket.on('chatbot_send', (data) => {
+        if (!data || !data.text) return;
+        require('./tiktokWebChat').send(data.username, data.text).catch(() => { /* logged by tiktokWebChat */ });
     });
 
     socket.on('remote_keyboard', (data) => {
@@ -51,21 +91,33 @@ function initRemoteClient() {
     });
 
     socket.on('remote_start', async (data) => {
-        logger.info(`🛰️ Remote Start Command for ${data.username}`);
+        // the web dashboard sends the typed name as uniqueId (relayed as is), the HTTP route as username
+        const username = String((data && (data.username || data.uniqueId)) || '').replace(/^@/, '').trim() || undefined;
+        logger.info(`🛰️ Remote Start Command for ${username || '(pseudo enregistré)'}`);
         try {
             const axios = require('axios');
-            // Call local API to start the connector
-            await axios.post('http://localhost:3000/api/start', { username: data.username });
+            // Call local API to start the connector (for the account this app is logged into)
+            await axios.post(`${LOCAL_API}/api/start`, { username, token: config.licenseToken });
         } catch (e) {
             logger.error(`🚨 Error executing remote start: ${e.message}`);
         }
+    });
+
+    // The web dashboard took the session over: the live running on this PC stops (it used to keep running
+    // alongside a second live started from the web, doubling every action and point)
+    socket.on('force_disconnect', async (data) => {
+        logger.warn(`🔌 Session reprise depuis le site : arrêt du live sur ce PC (${(data && data.message) || ''})`);
+        try {
+            const axios = require('axios');
+            await axios.post(`${LOCAL_API}/api/stop`, { token: config.licenseToken });
+        } catch (e) { /* not running */ }
     });
 
     socket.on('remote_stop', async () => {
         logger.info('🛰️ Remote Stop Command received');
         try {
             const axios = require('axios');
-            await axios.post('http://localhost:3000/api/stop');
+            await axios.post(`${LOCAL_API}/api/stop`, { token: config.licenseToken });
         } catch (e) {
             logger.error(`🚨 Error executing remote stop: ${e.message}`);
         }
@@ -75,7 +127,7 @@ function initRemoteClient() {
         logger.info(`🛰️ Remote Stats Reset Command received: ${data.type}`);
         try {
             const axios = require('axios');
-            await axios.post('http://localhost:3000/api/stats/reset', { type: data.type });
+            await axios.post(`${LOCAL_API}/api/stats/reset`, { type: data.type });
         } catch (e) {
             logger.error(`🚨 Error executing remote stats reset: ${e.message}`);
         }
@@ -87,6 +139,24 @@ function initRemoteClient() {
             await sendRconCommand(data.command, data.settings);
         } catch (e) {
             logger.error(`🚨 Error executing remote RCON: ${e.message}`);
+        }
+    });
+
+    socket.on('remote_obs', async (data) => {
+        try {
+            const { runObsAction } = require('../actions/obsAction');
+            await runObsAction(data.action || {}, data.settings || {});
+        } catch (e) {
+            logger.error(`🚨 Error executing remote OBS action: ${e.message}`);
+        }
+    });
+
+    socket.on('remote_streamerbot', async (data) => {
+        try {
+            const { runStreamerbotAction } = require('../actions/streamerbotAction');
+            await runStreamerbotAction(data.payload, data.settings || {});
+        } catch (e) {
+            logger.error(`🚨 Error executing remote Streamer.bot action: ${e.message}`);
         }
     });
 
@@ -113,7 +183,8 @@ function reauthRemoteClient() {
     if (socket && socket.connected && config.licenseToken) {
         socket.emit('identify', {
             token: config.licenseToken,
-            type: 'app'
+            type: 'app',
+            version: APP_VERSION
         });
     }
 }

@@ -10,13 +10,16 @@ const SettingsSchema = new mongoose.Schema({
         id: String,
         title: String,
         isPreset: { type: Boolean, default: false },
+        independent: { type: Boolean, default: false }, // own points / levels / gift history instead of the shared ones
         likesGoal: { type: Object, default: null }, // [NEW] Per-scene Likes Goal
         topGift: { type: Object, default: null }, // [NEW] Per-scene Top Gift
         topStreak: { type: Object, default: null }, // [NEW] Per-scene Top Streak
         topCoins: { type: Object, default: { limit: 10, title: 'TOP COINS', style: 1, transparent: true, showTitle: true } }, // [NEW] Per-scene Top Coins Leaderboard
         topLikes: { type: Object, default: { limit: 10, title: 'TOP LIKES', style: 1, transparent: true, showTitle: true } }, // [NEW] Per-scene Top Likes Leaderboard
         autoResetTopStats: { type: Boolean, default: false }, // [NEW] Per-scene Auto Reset
-        autoResetLastX: { type: Boolean, default: false } // [NEW] Per-scene Auto Reset
+        autoResetLastX: { type: Boolean, default: false }, // [NEW] Per-scene Auto Reset
+        tts: { type: Object, default: null },    // per-scene TTS settings (voice, what is read...)
+        points: { type: Object, default: null }  // points rules of an independent scene
     }], // [NEW] Persisted scenes list
 
     // [GLOBAL FALLBACKS] Root-level settings when no scene is active
@@ -28,6 +31,20 @@ const SettingsSchema = new mongoose.Schema({
     autoResetTopStats: { type: Boolean, default: false },
     autoResetLastX: { type: Boolean, default: false },
 
+    obs: {
+        host: { type: String, default: '127.0.0.1' },
+        port: { type: Number, default: 4455 },
+        password: { type: String, default: '' }
+    },
+    language: { type: String, default: 'fr' }, // dashboard + overlays language
+    runMode: { type: String, enum: ['auto', 'cloud', 'pc'], default: 'auto' }, // where the live connection runs
+    streamerbot: {
+        host: { type: String, default: '127.0.0.1' },
+        port: { type: Number, default: 7474 }
+    },
+    points: { type: Object, default: null }, // points system settings (see features/points.js)
+    giftPanel: { type: Object, default: null }, // "Panneau cadeaux" designed in Overlay Custom (public/overlay-maker), shown by /overlay/giftpanel
+    chatbot: { type: Object, default: null }, // TikTok account answering !score / !top in the chat (features/chatbot.js); never sent to the browser
     minecraft: {
         host: { type: String, default: 'localhost' },
         port: { type: Number, default: 4567 },
@@ -88,7 +105,10 @@ const SettingsSchema = new mongoose.Schema({
         maxLength: { type: Number, default: 100 },
         filterSpam: { type: Boolean, default: true },
         filterMentions: { type: Boolean, default: true },
-        filterCommands: { type: Boolean, default: true }
+        filterCommands: { type: Boolean, default: true },
+        readChat: { type: Boolean, default: true }, // read chat messages (events can be read without the chat)
+        // Spoken announcements of live events: { gift: { enabled, minCoins, text }, follow: {...}, share, subscribe, member }
+        events: { type: Object, default: {} }
     },
     lastEvents: {
         follower: { type: Object, default: null },

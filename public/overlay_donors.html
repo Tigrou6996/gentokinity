@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Donateurs présents</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        html, body { margin: 0; background: #121216; color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body.transparent { background: transparent; }
+        header { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px 6px; font-weight: 800; }
+        header small { color: #9aa3b2; font-weight: 600; }
+        .row { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; margin: 0 8px 6px; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.04); border-left: 3px solid #555; }
+        .row img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #222; }
+        .row b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row small { color: #9aa3b2; font-size: 12px; }
+        .coins { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .coins small { display: block; color: #4ade80; font-weight: 700; }
+        .whale { border-left-color: #22d3ee; background: rgba(34,211,238,.1); }
+        .big { border-left-color: #a78bfa; background: rgba(167,139,250,.09); }
+        .supporter { border-left-color: #fbbf24; }
+        .small { border-left-color: #34d399; }
+        .row.flash { animation: flash 1.6s ease-out; }
+        @keyframes flash { 0% { box-shadow: 0 0 0 0 rgba(251,191,36,.9); } 100% { box-shadow: 0 0 0 14px rgba(251,191,36,0); } }
+        .empty { padding: 20px 12px; color: #9aa3b2; text-align: center; }
+    </style>
+</head>
+
+<body>
+    <header><span>💰 <span id="title"></span></span><small id="count"></small></header>
+    <div id="list"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Private overlay for the streamer (OBS dock / window next to TikTok Live Studio): viewers in the live
+        // sorted by what they already gave. URL parameters: token, max=15, donorsOnly=1, transparent=1, demo=1
+        const G = window.Gentok;
+        const fr = !G.lang || G.lang === 'fr';
+        const MAX = Math.min(Math.max(G.numParam('max', 15), 3), 50);
+        const ONLY = new URLSearchParams(location.search).get('donorsOnly') === '1';
+        if (new URLSearchParams(location.search).get('transparent') === '1') document.body.classList.add('transparent');
+        document.getElementById('title').textContent = fr ? 'Donateurs présents' : 'Donors in the live';
+        const ICON = { whale: '🐋', big: '💎', supporter: '⭐', small: '🎁', new: '👋' };
+        let flashId = null;
+
+        function render(d) {
+            const rows = (d.viewers || []).filter(v => !ONLY || v.totalCoins > 0).slice(0, MAX);
+            document.getElementById('count').textContent = `${G.formatNumber(d.donors || 0)} / ${G.formatNumber(d.present || 0)}`;
+            document.getElementById('list').innerHTML = rows.length ? rows.map(v => `
+                <div class="row ${v.tier}${v.uniqueId === flashId ? ' flash' : ''}">
+                    <img src="${G.escapeHtml(v.profilePictureUrl || '/logo.png')}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">
+                    <div><b>${ICON[v.tier] || ''} ${G.escapeHtml(v.nickname)}</b><small>@${G.escapeHtml(v.uniqueId)}</small></div>
+                    <div class="coins">${v.known ? G.formatNumber(v.totalCoins) : '…'}${v.liveCoins ? `<small>+${G.formatNumber(v.liveCoins)}</small>` : ''}</div>
+                </div>`).join('') : `<div class="empty">${fr ? 'En attente des spectateurs…' : 'Waiting for viewers…'}</div>`;
+        }
+
+        const socket = G.connect();
+        socket.on('donors_update', render);
+        socket.on('donor_arrived', (v) => { flashId = v && v.uniqueId; setTimeout(() => { flashId = null; }, 2000); });
+        if (G.isDemo) { /* demo list below */ } else if (G.token) fetch(`/api/donors?token=${encodeURIComponent(G.token)}`).then(r => r.json()).then(render).catch(() => render({}));
+        else render({});
+
+        if (G.isDemo) {
+            const tiers = [['whale', 25400], ['big', 3200], ['big', 1500], ['supporter', 420], ['small', 35], ['new', 0], ['new', 0]];
+            render({ present: 42, donors: 5, viewers: tiers.map(([tier, c], i) => ({ ...G.demoUser(), tier, totalCoins: c, liveCoins: i === 1 ? 300 : 0, known: true })) });
+        }
+    </script>
+</body>
+
+</html>

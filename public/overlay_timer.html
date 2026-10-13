@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Timer Subathon</title>
+    <style>
+        :root { --accent: #fe2c55; --size: 72px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .timer { position: relative; display: inline-flex; flex-direction: column; align-items: center; padding: 12px 28px; margin: calc(var(--size) * .6) 10px 10px;
+            border-radius: 20px; background: rgba(0, 0, 0, .6); color: #fff; }
+        .title { font-size: calc(var(--size) * .3); font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
+        .time { font-size: var(--size); font-weight: 900; font-variant-numeric: tabular-nums; text-shadow: 0 3px 10px #000; }
+        .timer.ended .time { color: var(--accent); }
+        .plus { position: absolute; right: 10px; top: 0; font-weight: 900; font-size: calc(var(--size) * .35); color: #4ade80;
+            text-shadow: 0 2px 6px #000; animation: up 1.6s ease-out forwards; }
+        @keyframes up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-50px); } }
+    </style>
+    <link rel="stylesheet" href="/overlay-themes.css">
+</head>
+
+<body>
+    <div class="timer ov-surface" id="timer">
+        <span class="title" id="title"></span>
+        <span class="time" id="time">00:00:00</span>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters (temps ajouté en secondes) :
+        //   start=60      durée de départ en minutes
+        //   coin=5        secondes ajoutées par pièce reçue en cadeau
+        //   follow=30     par nouveau follow       sub=300   par abonnement
+        //   share=10      par partage              like=0    par tranche de 100 likes
+        //   maxh=0        durée maximale en heures (0 = illimitée)
+        //   title=SUBATHON, size=72, color=fe2c55
+        //   reset=1       remet le timer à zéro (à retirer ensuite de l'URL)
+        // L'état est mémorisé dans la source OBS : il survit à un rafraîchissement.
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        document.documentElement.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 72), 16), 300)}px`);
+        document.getElementById('title').textContent = G.param('title', G.t('timer.title'));
+
+        const rates = {
+            coin: G.numParam('coin', 5), follow: G.numParam('follow', 30), subscribe: G.numParam('sub', 300),
+            share: G.numParam('share', 10), like: G.numParam('like', 0)
+        };
+        const maxMs = G.numParam('maxh', 0) * 3600 * 1000;
+        const storageKey = `gentok_timer_${G.token || 'demo'}`;
+        const timerEl = document.getElementById('timer');
+        let state = null;
+        let likeBuffer = 0;
+
+        function load() {
+            try { state = JSON.parse(localStorage.getItem(storageKey)); } catch (e) { state = null; }
+            if (!state || typeof state.endAt !== 'number' || G.boolParam('reset', false)) {
+                state = { endAt: Date.now() + G.numParam('start', 60) * 60 * 1000, startedAt: Date.now() };
+                save();
+            }
+        }
+        function save() { try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) { } }
+
+        function addSeconds(sec) {
+            if (!sec || sec <= 0) return;
+            const now = Date.now();
+            if (state.endAt <= now) return; // timer finished: nothing more is added
+            let endAt = state.endAt + sec * 1000;
+            if (maxMs > 0) endAt = Math.min(endAt, state.startedAt + maxMs);
+            if (endAt === state.endAt) return;
+            state.endAt = endAt;
+            save();
+            const plus = document.createElement('span');
+            plus.className = 'plus';
+            plus.textContent = '+' + (sec >= 60 ? `${Math.floor(sec / 60)}m${sec % 60 ? (sec % 60) + 's' : ''}` : `${Math.round(sec)}s`);
+            timerEl.appendChild(plus);
+            setTimeout(() => plus.remove(), 1700);
+        }
+
+        function tick() {
+            const left = Math.max(0, state.endAt - Date.now());
+            const s = Math.floor(left / 1000);
+            const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+            const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+            const ss = String(s % 60).padStart(2, '0');
+            document.getElementById('time').textContent = `${hh}:${mm}:${ss}`;
+            timerEl.classList.toggle('ended', left === 0);
+        }
+
+        load();
+        tick();
+        setInterval(tick, 250);
+
+        const socket = G.connect();
+        socket.on('stats', (p) => {
+            if (!p || !p.type) return;
+            const d = p.data || {};
+            if (p.type === 'gift') addSeconds((Number(d.coins) || 0) * rates.coin);
+            else if (p.type === 'follow') addSeconds(rates.follow);
+            else if (p.type === 'subscribe') addSeconds(rates.subscribe);
+            else if (p.type === 'share') addSeconds(rates.share);
+            else if (p.type === 'like' && rates.like > 0) {
+                likeBuffer += Number(d.likeCount) || 1;
+                const blocks = Math.floor(likeBuffer / 100);
+                if (blocks > 0) { likeBuffer -= blocks * 100; addSeconds(blocks * rates.like); }
+            }
+        });
+
+        if (G.isDemo) setInterval(() => addSeconds(rates.follow), 3000);
+    </script>
+</body>
+
+</html>

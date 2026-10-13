@@ -38,6 +38,8 @@ async function initSpotify(token) {
         refreshToken: spotifySettings.refreshToken,
         redirectUri: `${config.remoteDashboardUrl}/api/spotify/callback`
     });
+    // A new client has no access token yet: the next safeRefresh must fetch one
+    inst.lastRefresh = 0;
 }
 
 async function safeRefresh(token, force = false) {
@@ -52,22 +54,40 @@ async function safeRefresh(token, force = false) {
 
     if (!spotifySettings.refreshToken) return false;
 
+    // Access tokens last 1 hour: refresh every 30 minutes (or when forced after a 401)
     const REFRESH_COOLDOWN = 30 * 60 * 1000;
-    if (!force && inst.lastRefresh > 0 && (Date.now() - inst.lastRefresh < REFRESH_COOLDOWN)) {
+    if (!force && inst.api.getAccessToken() && inst.lastRefresh > 0 && (Date.now() - inst.lastRefresh < REFRESH_COOLDOWN)) {
         return true;
     }
 
     try {
+        inst.api.setRefreshToken(spotifySettings.refreshToken);
         const data = await inst.api.refreshAccessToken();
         inst.api.setAccessToken(data.body['access_token']);
         inst.lastRefresh = Date.now();
+        // Spotify may hand out a new refresh token: keep it, or the next restart would be disconnected
+        if (data.body['refresh_token'] && data.body['refresh_token'] !== spotifySettings.refreshToken) {
+            await config.saveSettings({ token, spotify: { refreshToken: data.body['refresh_token'] } });
+        }
         return true;
     } catch (err) {
         if (Date.now() - inst.lastErrorLogTime > 60000) {
-            logger.error(`[Spotify:${token}] Refresh Error:`, err.message);
+            logger.error(`[Spotify:${String(token).substring(0, 8)}] Refresh Error: ${err.message}`);
             inst.lastErrorLogTime = Date.now();
         }
         return false;
+    }
+}
+
+/** Runs a Spotify call, retrying once with a fresh token after a 401 */
+async function withApi(token, fn) {
+    const inst = getInstance(token);
+    await safeRefresh(token);
+    try {
+        return await fn(inst.api);
+    } catch (err) {
+        if (err.statusCode === 401 && await safeRefresh(token, true)) return fn(inst.api);
+        throw err;
     }
 }
 
@@ -117,28 +137,30 @@ module.exports = {
 
         const settings = await config.getSettings(token);
         const spotifySettings = settings.spotify;
+        if (spotifySettings.enabled && !inst.api) await initSpotify(token); // e.g. right after a restart
         if (!spotifySettings.enabled || !inst.api) return { success: false, reason: 'disabled' };
+        if (!spotifySettings.refreshToken) return { success: false, reason: 'not_connected' };
+        if (inst.localQueue.length >= (spotifySettings.maxQueueSize || 50)) return { success: false, reason: 'queue_full' };
 
         const currentCount = inst.userTracksCount.get(userId) || 0;
         if (!isModerator && !isSubscriber && currentCount >= spotifySettings.maxTracksPerUser) {
-            logger.info(`[Spotify:${token}] Limite atteinte pour ${userName}`);
+            logger.info(`[Spotify:${String(token).substring(0, 8)}] Limite atteinte pour ${userName}`);
             return { success: false, reason: 'limit_reached' };
         }
 
         if (!query || query.length < 2) return { success: false, reason: 'query_too_short' };
 
         try {
-            await safeRefresh(token);
             let track = null;
 
             // Handle Spotify Link or URI
             const trackIdMatch = query.match(/track[/:]([a-zA-Z0-9]+)/);
             if (trackIdMatch) {
                 const trackId = trackIdMatch[1];
-                const res = await inst.api.getTrack(trackId);
+                const res = await withApi(token, api => api.getTrack(trackId));
                 track = res.body;
             } else {
-                const search = await inst.api.searchTracks(query, { limit: 1 });
+                const search = await withApi(token, api => api.searchTracks(query, { limit: 1 }));
                 track = search.body.tracks.items[0];
             }
 
@@ -155,6 +177,7 @@ module.exports = {
                 uri: track.uri,
                 title: track.name,
                 artist: track.artists.map(a => a.name).join(', '),
+                albumArt: track.album && track.album.images && track.album.images.length ? track.album.images[track.album.images.length > 1 ? 1 : 0].url : null,
                 duration: track.duration_ms,
                 requestedBy: userName,
                 userId: userId,
@@ -162,10 +185,10 @@ module.exports = {
             });
 
             inst.userTracksCount.set(userId, currentCount + 1);
-            logger.info(`[Spotify:${token}] ${userName} a ajouté : ${track.name}`);
+            logger.info(`[Spotify:${String(token).substring(0, 8)}] ${userName} a ajouté : ${track.name}`);
             return { success: true, track };
         } catch (err) {
-            logger.error(`[Spotify:${token}] Error search/play:`, err.message);
+            logger.error(`[Spotify:${String(token).substring(0, 8)}] Error search/play: ${err.message}`);
             return { success: false, reason: 'api_error' };
         }
     },
@@ -173,6 +196,7 @@ module.exports = {
     async skipTrack(token, userId, userName, isModerator, isSubscriber, followRole) {
         // console.log(`⏭️ [DEBUG] Appel skipTrack: Utilisateur=${userName}, Modo=${isModerator}, Sub=${isSubscriber}, Rôle=${followRole} (Type: ${typeof followRole})`);
         const inst = getInstance(token);
+        if (inst && !inst.api) await initSpotify(token);
         if (!inst || !inst.api) return { success: false, reason: 'api_unavailable' };
 
         const settings = await config.getSettings(token);
@@ -237,16 +261,16 @@ module.exports = {
                 }
 
                 try {
-                    const devices = await inst.api.getMyDevices();
+                    const devices = await withApi(token, api => api.getMyDevices());
                     const hasActive = devices.body.devices.some(d => d.is_active);
 
                     if (!hasActive) return { success: false, reason: 'no_active_device' };
 
                     if (trackToPlay) {
-                        await inst.api.play({ uris: [trackToPlay.uri] });
+                        await withApi(token, api => api.play({ uris: [trackToPlay.uri] }));
                         trackToPlay.isQueuedInSpotify = true;
                     } else {
-                        await inst.api.skipToNext();
+                        await withApi(token, api => api.skipToNext());
                     }
 
                     inst.skipVotes.clear();
@@ -256,7 +280,7 @@ module.exports = {
                     throw apiErr;
                 }
             } catch (err) {
-                logger.error(`[Spotify:${token}] Skip Error:`, err.message);
+                logger.error(`[Spotify:${String(token).substring(0, 8)}] Skip Error: ${err.message}`);
                 return { success: false, reason: 'api_error', message: err.message };
             }
         }

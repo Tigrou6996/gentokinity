@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Gift Cannon</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --accent: #fe2c55; --size: 64px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; width: 100%; height: 100%; }
+        .cannon { position: fixed; bottom: -18px; width: 170px; height: 150px; pointer-events: none; }
+        .cannon.right { right: 4%; }
+        .cannon.left { left: 4%; transform: scaleX(-1); }
+        .barrel { position: absolute; left: 40px; bottom: 50px; width: 150px; height: 54px; transform-origin: 20px 50%; transform: rotate(-35deg);
+            border-radius: 12px 26px 26px 12px; background: linear-gradient(180deg, #8a8f99, #3c3f46 55%, #23252a); box-shadow: inset 0 3px 0 rgba(255,255,255,.25), 0 6px 14px rgba(0,0,0,.5); }
+        .barrel::after { content: ''; position: absolute; right: -6px; top: -4px; width: 20px; height: 62px; border-radius: 10px; background: linear-gradient(180deg, #a3a8b2, #43464d); }
+        .cannon.fire .barrel { animation: recoil .35s ease-out; }
+        .wheel { position: absolute; left: 22px; bottom: 6px; width: 74px; height: 74px; border-radius: 50%; background: radial-gradient(circle, #5b3a1e 18%, #3a2410 20% 62%, #6b4423 64% 74%, #2a190b 76%);
+            box-shadow: 0 4px 10px rgba(0,0,0,.5); }
+        .proj { position: fixed; left: 0; top: 0; width: var(--size); height: var(--size); pointer-events: none; will-change: transform; }
+        .proj .av { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 0 16px var(--accent); background: #222; }
+        .proj .gift { position: absolute; right: -14%; bottom: -14%; width: 62%; height: 62%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+        .smoke { position: fixed; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.8), rgba(200,200,200,0) 70%);
+            pointer-events: none; animation: puff .9s ease-out forwards; }
+        @keyframes recoil { 30% { transform: rotate(-35deg) translateX(-18px); } }
+        @keyframes puff { from { transform: scale(.3); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
+    </style>
+</head>
+
+<body>
+    <div class="cannon" id="cannon"><div class="barrel"></div><div class="wheel"></div></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Gift Cannon : la photo du spectateur est tirée par un canon avec son cadeau.
+        // Conseil : source navigateur en 1920x1080.
+        // URL parameters: side=right|left, size=64, max=8 (tirs par cadeau), mingift=0 (pièces min.), cannon=1 (afficher le canon), color, demo=1
+        const G = window.Gentok;
+        document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
+        const SIZE = Math.min(Math.max(G.numParam('size', 64), 24), 200);
+        document.documentElement.style.setProperty('--size', SIZE + 'px');
+        const side = G.param('side', 'right') === 'left' ? 'left' : 'right';
+        const maxShots = Math.min(Math.max(G.numParam('max', 8), 1), 30);
+        const minGift = Math.max(0, G.numParam('mingift', 0));
+        const cannon = document.getElementById('cannon');
+        cannon.classList.add(side);
+        if (!G.boolParam('cannon', true)) cannon.style.display = 'none';
+        const queue = [];
+        let firing = false;
+
+        function muzzle() {
+            const r = cannon.getBoundingClientRect();
+            // barrel end, rotated -35deg (mirrored on the left side)
+            const x = side === 'right' ? r.left + 40 + 20 + Math.cos(-35 * Math.PI / 180) * 140 : r.right - 40 - 20 - Math.cos(-35 * Math.PI / 180) * 140;
+            const y = r.bottom - 50 - 27 + Math.sin(-35 * Math.PI / 180) * 140;
+            return { x, y };
+        }
+
+        function shoot(d) {
+            const { x, y } = muzzle();
+            cannon.classList.remove('fire'); void cannon.offsetWidth; cannon.classList.add('fire');
+            const smoke = document.createElement('div');
+            smoke.className = 'smoke'; smoke.style.left = (x - 35) + 'px'; smoke.style.top = (y - 35) + 'px';
+            document.body.appendChild(smoke); setTimeout(() => smoke.remove(), 1000);
+
+            const el = document.createElement('div');
+            el.className = 'proj';
+            const gift = G.giftImage(d);
+            el.innerHTML = `<img class="av" src="${G.escapeHtml(G.avatarOf(d))}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">` +
+                (gift ? `<img class="gift" src="${G.escapeHtml(gift)}" referrerpolicy="no-referrer" onerror="this.remove()">` : '');
+            document.body.appendChild(el);
+            const dir = side === 'right' ? -1 : 1;
+            const W = window.innerWidth, H = window.innerHeight;
+            let px = x - SIZE / 2, py = y - SIZE / 2;
+            let vx = dir * (W * (0.55 + Math.random() * 0.45));
+            let vy = -(H * (1.0 + Math.random() * 0.45));
+            const g = H * 1.6;
+            let rot = 0; const vr = dir * (200 + Math.random() * 400);
+            let last = performance.now();
+            const step = (now) => {
+                const dt = Math.min((now - last) / 1000, 0.05); last = now;
+                vy += g * dt; px += vx * dt; py += vy * dt; rot += vr * dt;
+                el.style.transform = `translate(${px}px, ${py}px) rotate(${rot}deg)`;
+                if (py > H + SIZE * 2 || px < -SIZE * 3 || px > W + SIZE * 3) { el.remove(); return; }
+                requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        function pump() {
+            if (firing || !queue.length) return;
+            firing = true;
+            shoot(queue.shift());
+            setTimeout(() => { firing = false; pump(); }, 260);
+        }
+
+        function onGift(d) {
+            if ((Number(d.unitPrice) || Number(d.coins) || 0) < minGift) return;
+            const n = Math.min(Math.max(1, Number(d.repeatCount) || 1), maxShots);
+            for (let i = 0; i < n && queue.length < 60; i++) queue.push(d);
+            pump();
+        }
+
+        const socket = G.connect();
+        socket.on('stats', (p) => { if (p && p.type === 'gift' && p.data) onGift(p.data); });
+
+        if (G.isDemo) setInterval(() => onGift({ ...G.demoUser(), ...G.demoGift(), repeatCount: 1 + Math.floor(Math.random() * 3) }), 1400);
+    </script>
+</body>
+
+</html>

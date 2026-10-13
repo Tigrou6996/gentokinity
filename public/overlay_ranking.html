@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Ranking</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        :root { --c1: #fe2c55; --c2: #ff8a00; --w: 380px; --size: 16px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .board { width: var(--w); max-width: calc(100vw - 20px); margin: 10px; color: #fff; font-size: var(--size); }
+        .title { font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; font-size: 1.25em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .list { display: flex; flex-direction: column; gap: 7px; }
+        .item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 14px; transition: transform .4s ease; animation: enter .35s ease-out; }
+        .rank { width: 30px; text-align: center; font-weight: 900; font-size: 1.05em; flex-shrink: 0; }
+        .avatar { width: 2.3em; height: 2.3em; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #333; }
+        .name { flex: 1; min-width: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .score { font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .score i { font-style: normal; opacity: .85; margin-left: 3px; }
+        .empty { opacity: .75; font-style: italic; padding: 8px 2px; text-shadow: 0 2px 4px #000; }
+        .item.bump .score { animation: bump .5s ease; }
+        @keyframes enter { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+        @keyframes bump { 50% { transform: scale(1.25); color: var(--c2); } }
+        .r1 .rank { color: #fbbf24; } .r2 .rank { color: #e5e7eb; } .r3 .rank { color: #f59e0b; }
+
+        /* Themes */
+        .theme-glass .item { background: rgba(255,255,255,.10); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.18); }
+        .theme-glass .r1 { background: linear-gradient(90deg, rgba(251,191,36,.35), rgba(255,255,255,.08)); }
+        .theme-glass .title { text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+
+        .theme-neon .item { background: rgba(5,5,15,.85); border: 1px solid var(--c1); box-shadow: 0 0 12px color-mix(in srgb, var(--c1) 60%, transparent); }
+        .theme-neon .title, .theme-neon .score { text-shadow: 0 0 10px var(--c1); }
+        .theme-neon .r1 { border-color: #fbbf24; box-shadow: 0 0 16px #fbbf24; }
+
+        .theme-minimal .item { padding: 4px 2px; border-radius: 0; text-shadow: 0 2px 4px #000, 0 0 2px #000; }
+        .theme-minimal .avatar { width: 1.9em; height: 1.9em; }
+
+        .theme-gradient .item { background: linear-gradient(90deg, var(--c1), var(--c2)); box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+        .theme-gradient .item:not(.r1) { opacity: .92; }
+
+        /* Podium: top 3 on stairs, then the list */
+        .podium { display: none; align-items: flex-end; justify-content: center; gap: 8px; margin-bottom: 10px; }
+        .theme-podium .podium { display: flex; }
+        .theme-podium .item { background: rgba(0,0,0,.55); }
+        .step { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 31%; animation: enter .4s ease-out; }
+        .step img { width: 3.6em; height: 3.6em; border-radius: 50%; object-fit: cover; border: 3px solid var(--c1); background: #333; }
+        .step.p1 img { width: 4.6em; height: 4.6em; border-color: #fbbf24; box-shadow: 0 0 18px #fbbf24; }
+        .step .n { font-weight: 800; font-size: .85em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 4px #000; }
+        .step .s { font-weight: 900; font-size: .85em; text-shadow: 0 2px 4px #000; }
+        .step .block { width: 100%; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4em;
+            background: linear-gradient(180deg, var(--c1), color-mix(in srgb, var(--c1) 50%, #000)); }
+        .step.p1 .block { height: 90px; background: linear-gradient(180deg, #fbbf24, #b45309); }
+        .step.p2 .block { height: 64px; background: linear-gradient(180deg, #e5e7eb, #6b7280); color: #111; }
+        .step.p3 .block { height: 46px; background: linear-gradient(180deg, #f59e0b, #78350f); }
+        .crown { font-size: 1.4em; margin-bottom: -6px; }
+
+        /* Classic (TikFinity-like): transparent, medals, crown on #1, value under the name */
+        .theme-classic .title { display: none; }
+        .theme-classic .list { gap: 4px; }
+        .theme-classic .item { padding: 4px 2px; gap: 12px; }
+        .theme-classic .rank { width: 34px; font-size: 1.35em; font-weight: 900; color: #e5e7eb; text-shadow: 0 2px 4px rgba(0,0,0,.6); }
+        .theme-classic .av-wrap { position: relative; flex-shrink: 0; }
+        .theme-classic .avatar { width: 2.9em; height: 2.9em; border: 2px solid rgba(255,255,255,.85); }
+        .theme-classic .r1 .avatar { border-color: #fbbf24; }
+        .theme-classic .r2 .avatar { border-color: #cbd5e1; }
+        .theme-classic .r3 .avatar { border-color: #f59e0b; }
+        .theme-classic .crown { position: absolute; left: 50%; top: -1.05em; transform: translateX(-50%); font-size: 1.2em; filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+        .theme-classic .txt { display: flex; flex-direction: column; min-width: 0; }
+        .theme-classic .name { font-weight: 900; color: var(--name, #fff); text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+        .theme-classic .score { font-size: .9em; color: #fde68a; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+        .theme-classic .score i { margin: 0 4px 0 0; }
+
+        /* Ticker: one scrolling line */
+        .theme-ticker .board, .board.theme-ticker { width: auto; max-width: none; }
+        .theme-ticker .list { flex-direction: row; gap: 26px; white-space: nowrap; animation: scroll var(--speed, 25s) linear infinite; width: max-content; }
+        .theme-ticker .item { padding: 6px 12px; background: rgba(0,0,0,.6); }
+        .theme-ticker .title { display: none; }
+        .ticker-wrap { overflow: hidden; }
+        @keyframes scroll { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+    </style>
+</head>
+
+<body>
+    <div class="board" id="board">
+        <div class="title" id="title"></div>
+        <div class="podium" id="podium"></div>
+        <div class="ticker-wrap"><div class="list" id="list"></div></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters:
+        //   type=coins|likes|points       ce qui est classé (défaut coins)
+        //   period=live|all|weekly        live = le live en cours, all = depuis toujours, weekly = cette semaine (coins/likes)
+        //   theme=glass|neon|podium|minimal|gradient|ticker|classic   (défaut glass ; classic = style TikFinity)
+        //   limit=5, avatars=1, title=..., width=380, size=16, color=fe2c55, color2=ff8a00, font=..., lang=..., demo=1
+        const G = window.Gentok;
+        const root = document.documentElement;
+        root.style.setProperty('--c1', G.colorParam('color', '#fe2c55'));
+        root.style.setProperty('--c2', G.colorParam('color2', '#ff8a00'));
+        root.style.setProperty('--w', `${Math.min(Math.max(G.numParam('width', 380), 200), 1600)}px`);
+        root.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 16), 10), 48)}px`);
+
+        const type = ['coins', 'likes', 'points'].includes(G.param('type', 'coins')) ? G.param('type', 'coins') : 'coins';
+        const period = type === 'points' ? 'all' : (['live', 'all', 'weekly'].includes(G.param('period', 'live')) ? G.param('period', 'live') : 'live');
+        const theme = ['glass', 'neon', 'podium', 'minimal', 'gradient', 'ticker', 'classic'].includes(G.param('theme', 'glass')) ? G.param('theme', 'glass') : 'glass';
+        const limit = Math.min(Math.max(G.numParam('limit', 5), 1), 20);
+        const showAvatars = G.boolParam('avatars', true);
+        const board = document.getElementById('board');
+        board.classList.add('theme-' + theme);
+        if (type === 'likes') board.style.setProperty('--name', '#5fb6f0');
+        const ICON = { coins: '🪙', likes: '❤️', points: '🏅' };
+        document.getElementById('title').textContent = `${ICON[type]} ${G.param('title', G.t('rank.' + type))}`;
+
+        let previous = new Map();
+
+        function render(rows) {
+            rows = rows.slice(0, limit);
+            const list = document.getElementById('list');
+            const podium = document.getElementById('podium');
+            if (!rows.length) {
+                podium.innerHTML = '';
+                list.innerHTML = `<div class="empty">${G.escapeHtml(G.t('rank.empty'))}</div>`;
+                return;
+            }
+            const avatar = (r) => G.escapeHtml(G.safeUrl(r.avatar) || '/logo.png');
+            let rest = rows;
+            if (theme === 'podium') {
+                const order = [rows[1], rows[0], rows[2]];
+                podium.innerHTML = order.map((r, i) => {
+                    if (!r) return '<div class="step"></div>';
+                    const place = [2, 1, 3][i];
+                    return `<div class="step p${place}">${place === 1 ? '<div class="crown">👑</div>' : ''}
+                        <img src="${avatar(r)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">
+                        <div class="n">${G.escapeHtml(r.name)}</div><div class="s">${G.formatNumber(r.score)} ${ICON[type]}</div>
+                        <div class="block">${place}</div></div>`;
+                }).join('');
+                rest = rows.slice(3);
+            }
+            const MEDALS = ['🥇', '🥈', '🥉'];
+            if (theme === 'classic') {
+                list.innerHTML = rows.map((r, i) => {
+                    const bumped = previous.has(r.key) && previous.get(r.key) < r.score;
+                    return `<div class="item r${i + 1}${bumped ? ' bump' : ''}">
+                        <span class="rank">${MEDALS[i] || (i + 1) + '.'}</span>
+                        ${showAvatars ? `<span class="av-wrap">${i === 0 ? '<span class="crown">👑</span>' : ''}<img class="avatar" src="${avatar(r)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'"></span>` : ''}
+                        <span class="txt"><span class="name">${G.escapeHtml(r.name)}</span><span class="score"><i>${ICON[type]}</i>${G.formatNumber(r.score)}</span></span></div>`;
+                }).join('');
+                previous = new Map(rows.map(r => [r.key, r.score]));
+                return;
+            }
+            const html = rest.map((r, i) => {
+                const rank = rows.indexOf(r) + 1;
+                const bumped = previous.has(r.key) && previous.get(r.key) < r.score;
+                return `<div class="item r${rank}${bumped ? ' bump' : ''}">
+                    <span class="rank">${rank === 1 && theme !== 'podium' ? '👑' : rank}</span>
+                    ${showAvatars ? `<img class="avatar" src="${avatar(r)}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">` : ''}
+                    <span class="name">${G.escapeHtml(r.name)}</span>
+                    <span class="score">${G.formatNumber(r.score)}<i>${ICON[type]}</i></span></div>`;
+            }).join('');
+            list.innerHTML = theme === 'ticker' ? html + html : html;
+            if (theme === 'ticker') list.style.setProperty('--speed', `${Math.max(15, rows.length * 5)}s`);
+            previous = new Map(rows.map(r => [r.key, r.score]));
+        }
+
+        const fromSession = (arr, field) => (Array.isArray(arr) ? arr : []).map(u => ({
+            key: u.uniqueId, name: u.nickname || u.uniqueId, avatar: u.profilePictureUrl, score: Number(u[field]) || 0
+        })).sort((a, b) => b.score - a.score);
+
+        async function fetchRows() {
+            if (!G.token) return;
+            try {
+                if (type === 'points') {
+                    const res = await fetch(`/api/points/top?token=${encodeURIComponent(G.token)}&limit=${limit}`);
+                    const data = await res.json();
+                    if (Array.isArray(data)) render(data.map(u => ({ key: u.uniqueId, name: u.nickname, avatar: u.profilePictureUrl, score: u.points })));
+                } else {
+                    const res = await fetch(`/api/leaderboard?token=${encodeURIComponent(G.token)}&type=${type}&period=${period === 'weekly' ? 'weekly' : 'all'}&limit=${limit}`, { credentials: 'omit' });
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        const field = period === 'weekly' ? (type === 'likes' ? 'weeklyLikes' : 'weeklyCoins') : (type === 'likes' ? 'totalLikes' : 'totalCoins');
+                        render(data.map(u => ({ key: u.uniqueId, name: u.nickname || u.uniqueId, avatar: u.profilePictureUrl, score: u[field] || 0 })));
+                    }
+                }
+            } catch (e) { /* keep last render */ }
+        }
+
+        render([]);
+        const socket = G.connect();
+        if (period === 'live' && type !== 'points') {
+            socket.on('session_stats', (s) => {
+                if (!s) return;
+                if (type === 'coins' && s.topCoins !== undefined) render(fromSession(s.topCoins, 'coins'));
+                if (type === 'likes' && s.topLikes !== undefined) render(fromSession(s.topLikes, 'count'));
+            });
+        } else {
+            fetchRows();
+            setInterval(fetchRows, 15000);
+            socket.on('leaderboard_sync', fetchRows);
+            socket.on('points_score', fetchRows);
+        }
+
+        if (G.isDemo) {
+            const demo = ['Léa 🎮', 'Max', 'Sarah', 'Tom', 'Inès ✨', 'Hugo', 'Nina'].map((n, i) => ({ key: n, name: n, avatar: '/logo.png', score: (8 - i) * 137 }));
+            render(demo);
+            setInterval(() => { demo[Math.floor(Math.random() * demo.length)].score += Math.floor(Math.random() * 300); render([...demo].sort((a, b) => b.score - a.score)); }, 1800);
+        }
+    </script>
+</body>
+
+</html>

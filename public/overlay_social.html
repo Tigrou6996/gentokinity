@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Social</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --c1: #fe2c55; --size: 26px; }
+        html, body { margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: #fff; }
+        .wrap { padding: 12px; display: flex; gap: 12px; flex-wrap: wrap; font-size: var(--size); }
+        .item { display: inline-flex; align-items: center; gap: .55em; padding: .45em .9em .45em .5em; border-radius: 999px; font-weight: 800; white-space: nowrap; }
+        .icon { width: 1.6em; height: 1.6em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .9em; flex-shrink: 0; background: var(--brand); color: #fff; }
+        .handle { letter-spacing: .3px; }
+
+        /* rotate: one network at a time */
+        .rotate .item { position: absolute; opacity: 0; transform: translateY(20px) scale(.95); transition: opacity .5s ease, transform .5s cubic-bezier(.2,1.3,.4,1); }
+        .rotate .item.on { opacity: 1; transform: none; }
+        .rotate { position: relative; height: 2.6em; }
+
+        /* Themes */
+        .theme-pill .item { background: rgba(10,10,18,.82); box-shadow: 0 6px 18px rgba(0,0,0,.35); border: 2px solid color-mix(in srgb, var(--brand) 70%, transparent); }
+        .theme-glass .item { background: rgba(255,255,255,.14); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.3); text-shadow: 0 2px 6px rgba(0,0,0,.5); }
+        .theme-neon .item { background: rgba(5,5,15,.88); border: 2px solid var(--brand); box-shadow: 0 0 14px var(--brand), inset 0 0 10px color-mix(in srgb, var(--brand) 35%, transparent); }
+        .theme-neon .handle { text-shadow: 0 0 10px var(--brand); }
+        .theme-brand .item { background: var(--brand); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+        .theme-brand .icon { background: rgba(0,0,0,.25); }
+        .theme-minimal .item { padding-left: 0; text-shadow: 0 2px 4px #000, 0 0 2px #000; }
+    </style>
+</head>
+
+<body>
+    <div class="wrap" id="wrap"></div>
+
+    <script src="/overlay-common.js"></script>
+    <script>
+        // Affiche vos réseaux sociaux, l'un après l'autre (layout=rotate) ou tous ensemble (layout=row).
+        // URL parameters:
+        //   items=instagram:moncompte,youtube:Gentok,discord:discord.gg/xxx,web:gentok.fr
+        //         réseaux : tiktok, instagram, youtube, twitch, discord, x, snapchat, facebook, kick, web
+        //   layout=rotate|row, interval=6 (secondes), theme=pill|glass|neon|brand|minimal, size=26, font, demo=1
+        const G = window.Gentok;
+        const NETWORKS = {
+            tiktok: { icon: 'fa-brands fa-tiktok', color: '#fe2c55', prefix: '@' },
+            instagram: { icon: 'fa-brands fa-instagram', color: '#e1306c', prefix: '@' },
+            youtube: { icon: 'fa-brands fa-youtube', color: '#ff0000', prefix: '' },
+            twitch: { icon: 'fa-brands fa-twitch', color: '#9146ff', prefix: '' },
+            discord: { icon: 'fa-brands fa-discord', color: '#5865f2', prefix: '' },
+            x: { icon: 'fa-brands fa-x-twitter', color: '#111111', prefix: '@' },
+            twitter: { icon: 'fa-brands fa-x-twitter', color: '#111111', prefix: '@' },
+            snapchat: { icon: 'fa-brands fa-snapchat', color: '#f7c600', prefix: '' },
+            facebook: { icon: 'fa-brands fa-facebook-f', color: '#1877f2', prefix: '' },
+            kick: { icon: 'fa-solid fa-k', color: '#53fc18', prefix: '' },
+            web: { icon: 'fa-solid fa-globe', color: '#0ea5e9', prefix: '' }
+        };
+
+        const root = document.documentElement;
+        root.style.setProperty('--size', `${Math.min(Math.max(G.numParam('size', 26), 12), 80)}px`);
+        const theme = ['pill', 'glass', 'neon', 'brand', 'minimal'].includes(G.param('theme', 'pill')) ? G.param('theme', 'pill') : 'pill';
+        const layout = G.param('layout', 'rotate') === 'row' ? 'row' : 'rotate';
+        const interval = Math.min(Math.max(G.numParam('interval', 6), 2), 120);
+        const wrap = document.getElementById('wrap');
+        wrap.classList.add('theme-' + theme, layout);
+
+        const raw = G.param('items', '') || (G.isDemo ? 'tiktok:gentok_live,instagram:gentok.fr,youtube:Gentok,discord:discord.gg/gentok' : '');
+        const items = raw.split(',').map(s => s.trim()).filter(Boolean).map(s => {
+            const i = s.indexOf(':');
+            const key = (i > 0 ? s.slice(0, i) : s).trim().toLowerCase();
+            const value = (i > 0 ? s.slice(i + 1) : '').trim();
+            return NETWORKS[key] && value ? { ...NETWORKS[key], value: value.replace(/^@/, '') } : null;
+        }).filter(Boolean).slice(0, 12);
+
+        wrap.innerHTML = items.map(n => `<span class="item" style="--brand:${n.color}">
+            <span class="icon"><i class="${n.icon}"></i></span><span class="handle">${G.escapeHtml(n.prefix + n.value)}</span></span>`).join('');
+
+        if (layout === 'rotate' && items.length) {
+            const els = wrap.querySelectorAll('.item');
+            let i = 0;
+            els[0].classList.add('on');
+            if (els.length > 1) {
+                setInterval(() => {
+                    els[i].classList.remove('on');
+                    i = (i + 1) % els.length;
+                    els[i].classList.add('on');
+                }, interval * 1000);
+            }
+        }
+    </script>
+</body>
+
+</html>

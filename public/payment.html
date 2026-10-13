@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gentok - Paiement</title>
+    <link rel="icon" href="/logo.png">
+    <link rel="stylesheet" href="/vendor/bootstrap.min.css">
+    <script src="/i18n.js"></script>
+    <style>
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #121216; padding: 16px; }
+        .box { max-width: 460px; width: 100%; background: #1c1c23; border: 1px solid rgba(255, 255, 255, .1); border-radius: 12px; padding: 2rem; text-align: center; }
+        .box img { width: 56px; margin-bottom: 1rem; }
+        .icon { font-size: 2.6rem; line-height: 1; margin-bottom: .6rem; }
+    </style>
+</head>
+
+<body>
+    <!-- Return page of the Stripe checkout opened from the Windows app: Premium activates in the app by itself. -->
+    <div class="box">
+        <img src="/logo.png" alt="Gentok">
+        <div id="ok" hidden>
+            <div class="icon text-success">✓</div>
+            <h1 class="h4">Paiement reçu, merci !</h1>
+            <p class="text-secondary">Retournez dans l'application Gentok : Premium s'y active tout seul dans quelques secondes. Vous pouvez fermer cet onglet.</p>
+            <p class="small text-secondary mb-0">La facture vous est envoyée par e-mail par Stripe.</p>
+        </div>
+        <div id="ko" hidden>
+            <div class="icon text-secondary">×</div>
+            <h1 class="h4">Paiement annulé</h1>
+            <p class="text-secondary mb-0">Rien n'a été débité. Vous pouvez fermer cet onglet et réessayer depuis le bouton Premium de l'application.</p>
+        </div>
+    </div>
+    <script>
+        document.getElementById(new URLSearchParams(location.search).get('payment') === 'success' ? 'ok' : 'ko').hidden = false;
+    </script>
+</body>
+
+</html>

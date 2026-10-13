@@ -1,6 +1,6 @@
 {
   "name": "gentok",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "",
   "main": "src/index.js",
   "bin": "src/index.js",
@@ -14,8 +14,8 @@
     "dev": "electron .",
     "build:local": "node build.js",
     "build:prod": "node build.js --prod",
-    "installer": "electron-builder build --win nsis",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "installer": "node scripts/write-build-env.js && electron-builder build --win nsis",
+    "check": "node scripts/check.js"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +29,7 @@
     "electron-updater": "^6.7.3",
     "express": "^5.2.1",
     "mongoose": "^9.1.6",
+    "msedge-tts": "^2.0.9",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "rcon-client": "^4.2.5",
@@ -38,7 +39,8 @@
     "spotify-web-api-node": "^5.0.2",
     "stripe": "^20.3.1",
     "tiktok-live-connector": "^2.4.4",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "ws": "^8.18.3"
   },
   "build": {
     "appId": "electron.gentok",

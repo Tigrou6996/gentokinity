@@ -1,3 +1,8 @@
+// Escapes text coming from Spotify / TikTok viewers before it is put into innerHTML
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // 1. Parse Params & Setup Debug
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token');
@@ -197,7 +202,7 @@ socket.on('overlayUpdate', data => {
 
             if (requesterEl) {
                 if (data.current.requestedBy) {
-                    requesterEl.innerText = `Demandé par ${data.current.requestedBy}`;
+                    requesterEl.innerText = (window.Gentok ? window.Gentok.t('spotify.requestedBy', { name: data.current.requestedBy }) : `Demandé par ${data.current.requestedBy}`);
                     requesterEl.classList.remove('hidden');
                 } else {
                     requesterEl.classList.add('hidden');
@@ -244,10 +249,10 @@ socket.on('overlayUpdate', data => {
                 div.className = 'queue-track';
                 div.innerHTML = `
                     <div class="queue-track-info">
-                        <span class="queue-title">${track.title}</span>
-                        <span class="queue-artist">${track.artist}</span>
+                        <span class="queue-title">${escapeHtml(track.title)}</span>
+                        <span class="queue-artist">${escapeHtml(track.artist)}</span>
                     </div>
-                    <div class="queue-requested">${track.requestedBy || 'Bot'}</div>
+                    <div class="queue-requested">${escapeHtml(track.requestedBy || 'Bot')}</div>
                 `;
                 queueList.appendChild(div);
             });

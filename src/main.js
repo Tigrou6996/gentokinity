@@ -1,33 +1,120 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { startServer } = require('./server');
+const { startServer, stopAllConnectors } = require('./server');
 const logger = require('./utils/logger');
-const config = require('./config');
 const axios = require('axios');
 const { autoUpdater } = require('electron-updater');
 const { ipcMain } = require('electron');
 const DiscordRPC = require('discord-rpc');
+
+let mainWindow = null;
+let ipcHandlersRegistered = false; // ipcMain.handle() throws if a channel is registered twice
+const PORT = process.env.PORT || 3000;
+
+// Only web pages (https) can be opened in the browser from the dashboard
+function isExternalAllowed(url) {
+    try {
+        return new URL(url).protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+}
+
+// Sends a message to the dashboard window only if it still exists
+function sendToWindow(channel, payload) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(channel, payload);
+    }
+}
 
 // Configure autoUpdater
 autoUpdater.autoDownload = true; // [AUTO] Download immediately
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.allowPrerelease = false;
 
+// Last known state of the updater: the launcher and the dashboard ask for it when they load,
+// so an update found before they were displayed is never missed.
+// status: idle | checking | downloading | downloaded | up-to-date | error | dev
+let updateState = { status: 'idle', version: null, percent: 0, current: app.getVersion(), checkedAt: null };
+const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
+
+function setUpdateState(patch) {
+    updateState = { ...updateState, ...patch };
+    sendToWindow('update-state', updateState);
+}
+
+// A proxy set in Windows (often left behind by a VPN or a proxy tool that is no longer running) made every
+// request of the app fail with net::ERR_PROXY_CONNECTION_FAILED (update check, login, dashboard). When the
+// system proxy does not answer, the app connects directly instead.
+const PROXY_ERRORS = /ERR_PROXY_CONNECTION_FAILED|ERR_TUNNEL_CONNECTION_FAILED|ERR_PROXY_CERTIFICATE_INVALID|ERR_NO_SUPPORTED_PROXIES|ERR_PROXY_AUTH/;
+let proxyBypassed = false;
+async function useDirectConnection(reason) {
+    if (proxyBypassed) return false;
+    proxyBypassed = true;
+    logger.warn(`🌐 Proxy système injoignable (${reason}) : connexion directe utilisée.`);
+    // the app's pages use the default session; the auto-updater uses its own one ("electron-updater")
+    try {
+        const { session } = require('electron');
+        for (const ses of [session.defaultSession, session.fromPartition('electron-updater')]) {
+            await ses.setProxy({ mode: 'direct' });
+            await ses.closeAllConnections();
+        }
+    } catch (e) { logger.warn(`Proxy : ${e.message}`); }
+    return true;
+}
+async function ensureWorkingProxy() {
+    try {
+        const { session } = require('electron');
+        const rule = await session.defaultSession.resolveProxy('https://tiktok.gentok.fr');
+        const m = /(?:PROXY|HTTPS)\s+\[?([^\];\s]+?)\]?:(\d+)/i.exec(rule || '');
+        if (!m) return; // DIRECT
+        const reachable = await new Promise((resolve) => {
+            const sock = require('net').connect({ host: m[1], port: Number(m[2]) });
+            const end = (v) => { sock.destroy(); resolve(v); };
+            sock.setTimeout(2500, () => end(false));
+            sock.once('connect', () => end(true));
+            sock.once('error', () => end(false));
+        });
+        if (!reachable) await useDirectConnection(`${m[1]}:${m[2]}`);
+    } catch (e) { /* keep the system settings */ }
+}
+
+async function checkForUpdates() {
+    if (!app.isPackaged) {
+        // electron-updater only works in the installed app
+        setUpdateState({ status: 'dev', checkedAt: Date.now() });
+        return updateState;
+    }
+    if (['downloading', 'downloaded'].includes(updateState.status)) return updateState;
+    try {
+        await autoUpdater.checkForUpdates();
+    } catch (err) {
+        // the proxy answers but refuses: direct connection, then one more try
+        if (PROXY_ERRORS.test(err.message || '') && await useDirectConnection(err.message)) return checkForUpdates();
+        logger.error(`❌ Vérification des mises à jour impossible : ${err.message}`);
+        setUpdateState({ status: 'error', error: err.message, checkedAt: Date.now() });
+    }
+    return updateState;
+}
+
 function setupAutoUpdater() {
     autoUpdater.on('checking-for-update', () => {
         logger.info('🔍 Vérification des mises à jour...');
+        setUpdateState({ status: 'checking', error: null });
     });
 
     autoUpdater.on('update-available', (info) => {
         logger.info(`📦 Mise à jour disponible : ${info.version}. Téléchargement automatique...`);
-        mainWindow.webContents.send('update-available', info);
+        setUpdateState({ status: 'downloading', version: info.version, percent: 0, checkedAt: Date.now() });
+        sendToWindow('update-available', info);
         // Window is hidden by default, we'll show it only to show progress if needed
-        mainWindow.show();
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
     });
 
     autoUpdater.on('update-not-available', () => {
         logger.info('✅ Application à jour.');
+        setUpdateState({ status: 'up-to-date', checkedAt: Date.now() });
         // If no update, we can safely show the dashboard
         if (mainWindow && !mainWindow.isVisible()) {
             mainWindow.show();
@@ -38,9 +125,14 @@ function setupAutoUpdater() {
         const is404 = err.message && (err.message.includes('404') || err.message.includes('latest.yml'));
         if (is404) {
             logger.info('ℹ️ Aucun fichier de mise à jour trouvé (Normal).');
+            setUpdateState({ status: 'up-to-date', checkedAt: Date.now() });
+        } else if (PROXY_ERRORS.test(err.message || '') && !proxyBypassed) {
+            useDirectConnection(err.message).then(() => checkForUpdates());
+            return;
         } else {
             logger.error(`❌ Erreur Auto-Updater : ${err.message}`);
-            mainWindow.webContents.send('update-error', err.message);
+            setUpdateState({ status: 'error', error: err.message, checkedAt: Date.now() });
+            sendToWindow('update-error', err.message);
         }
         // Even on error, we show the app so the user isn't stuck
         if (mainWindow && !mainWindow.isVisible()) {
@@ -49,11 +141,13 @@ function setupAutoUpdater() {
     });
 
     autoUpdater.on('download-progress', (progressObj) => {
-        mainWindow.webContents.send('update-progress', progressObj);
+        setUpdateState({ status: 'downloading', percent: Math.floor(progressObj.percent || 0) });
+        sendToWindow('update-progress', progressObj);
     });
 
     autoUpdater.on('update-downloaded', (info) => {
         logger.info('✅ Mise à jour prête. Notification et installation...');
+        setUpdateState({ status: 'downloaded', version: info.version, percent: 100 });
 
         // Native Notification BEFORE quit
         const { Notification } = require('electron');
@@ -65,7 +159,7 @@ function setupAutoUpdater() {
             }).show();
         }
 
-        mainWindow.webContents.send('update-downloaded', info);
+        sendToWindow('update-downloaded', info);
 
         // Auto-install after 4 seconds to let the user see the notification/UI message
         setTimeout(() => {
@@ -94,6 +188,23 @@ function setupAutoUpdater() {
         return app.getVersion();
     });
 
+    ipcMain.handle('open-external', (event, url) => {
+        if (!isExternalAllowed(url)) return false;
+        shell.openExternal(url);
+        return true;
+    });
+
+    // Chat bot without Euler Stream: the bot TikTok account is logged in inside the app (utils/tiktokWebChat.js)
+    ipcMain.handle('chatbot-login', () => require('./utils/tiktokWebChat').login());
+    ipcMain.handle('chatbot-logout', async () => { await require('./utils/tiktokWebChat').logout(); return false; });
+    ipcMain.handle('chatbot-status', () => require('./utils/tiktokWebChat').isLoggedIn());
+    ipcMain.handle('chatbot-test', async (event, username, text) => {
+        try { await require('./utils/tiktokWebChat').send(username, text || '👋 Gentok est connecté !'); return { ok: true }; }
+        catch (e) { return { ok: false, error: e.message }; }
+    });
+    ipcMain.handle('get-update-state', () => updateState);
+    ipcMain.handle('check-for-updates', () => checkForUpdates());
+
     ipcMain.handle('update-rpc', (event, data) => {
         updateRPC(data);
     });
@@ -102,7 +213,7 @@ function setupAutoUpdater() {
 // ==========================================
 // [NEW] DISCORD RICH PRESENCE
 // ==========================================
-const clientId = '1481929370355630120'; // Replace with a real Client ID if available
+const clientId = '1481929370355630120'; // Discord application ID (public, not a secret)
 DiscordRPC.register(clientId);
 
 const rpc = new DiscordRPC.Client({ transport: 'ipc' });
@@ -157,7 +268,29 @@ function createWindow() {
         }
     });
 
-    setupAutoUpdater();
+    // Payment pages and external links open in the user's browser, never inside the app window
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        // Gentok's own pages (Overlay Custom editor, overlay previews) open in an app window,
+        // everything else (Stripe, help, download) in the user's browser
+        try {
+            const u = new URL(url);
+            if ((u.hostname === 'localhost' || u.hostname === '127.0.0.1') && String(u.port || '80') === String(PORT)) {
+                return { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, icon: path.join(__dirname, '../public/logo.png') } };
+            }
+        } catch (e) { /* not a URL */ }
+        if (isExternalAllowed(url)) shell.openExternal(url);
+        return { action: 'deny' };
+    });
+    mainWindow.webContents.on('will-navigate', (e, url) => {
+        if (/^https:\/\/checkout\.stripe\.com\//.test(url)) {
+            e.preventDefault();
+            shell.openExternal(url);
+        }
+    });
+
+    const registerHandlers = !ipcHandlersRegistered;
+    ipcHandlersRegistered = true;
+    if (registerHandlers) setupAutoUpdater();
 
     // [CACHE CLEAR] Clear cache AND cookies on startup to ensure fresh TikTok connection
     const { session } = require('electron');
@@ -170,13 +303,14 @@ function createWindow() {
     logger.info('🚀 Démarrage du serveur interne...');
     startServer().then(() => {
         // Load the Launcher (Splash Screen) from LOCAL server when ready
-        const launcherUrl = 'http://localhost:3000/launcher.html?mode=app';
+        const launcherUrl = `http://localhost:${PORT}/launcher.html?mode=app`;
         logger.info(`🌐 Chargement du launcher local : ${launcherUrl}`);
         mainWindow.loadURL(launcherUrl);
         mainWindow.show(); // [NEW] Show window immediately to see the launcher progress
     }).catch(err => {
         logger.error(`🚨 Fatal: Le serveur interne n'a pas pu démarrer: ${err.message}`);
-        // Optionally show an error page or message
+        const { dialog } = require('electron');
+        dialog.showErrorBox('Gentok', `Le serveur interne n'a pas pu démarrer :\n${err.message}`);
     });
 
     mainWindow.on('closed', function () {
@@ -188,7 +322,6 @@ function createWindow() {
     // ==========================================
     const GENTOK_DIR = path.join(app.getPath('appData'), 'Gentok');
     const MC_DIR = path.join(GENTOK_DIR, 'minecraft', 'GentokBoxTNT');
-    const fs = require('fs'); // Added fs require
     const { exec, spawn } = require('child_process');
     const { promisify } = require('util');
     const execAsync = promisify(exec);
@@ -196,8 +329,8 @@ function createWindow() {
     // Helper: Download a file
     async function downloadFile(url, dest, event, label) {
         event.sender.send('mc-log', `Téléchargement de ${label}...`);
+        const response = await axios({ url, method: 'GET', responseType: 'stream', timeout: 30000 });
         const writer = fs.createWriteStream(dest);
-        const response = await axios({ url, method: 'GET', responseType: 'stream' });
 
         let lastLogged = 0;
         let downloaded = 0;
@@ -212,11 +345,25 @@ function createWindow() {
                     lastLogged = percent;
                 }
             });
+            // a cut connection used to leave the setup waiting forever, with a half-written file
+            const fail = (err) => {
+                writer.destroy();
+                fs.unlink(dest, () => { });
+                reject(new Error(`Téléchargement de ${label} interrompu : ${err.message}`));
+            };
+            response.data.on('error', fail);
+            response.data.on('aborted', () => fail(new Error('connexion coupée')));
             response.data.pipe(writer);
-            writer.on('finish', resolve);
-            writer.on('error', reject);
+            writer.on('finish', () => {
+                if (total > 0 && downloaded < total) return fail(new Error(`fichier incomplet (${downloaded}/${total} octets)`));
+                resolve();
+            });
+            writer.on('error', fail);
         });
     }
+
+    // Everything below registers IPC handlers: only do it for the first window
+    if (!registerHandlers) return;
 
     ipcMain.handle('install-jdk21', async (event) => {
         logger.info('🛠️ Starting real JDK 21 Installation...');
@@ -275,9 +422,15 @@ function createWindow() {
             } catch (tarError) {
                 logger.warn(`Tar extraction failed: ${tarError.message}`);
                 event.sender.send('mc-log', '⚠️ Tentative via PowerShell...');
-                await execAsync(`powershell -Command "Expand-Archive -Path '${rarDest}' -DestinationPath '${MC_DIR}' -Force"`).catch(() => { });
+                await execAsync(`powershell -Command "Expand-Archive -Path '${rarDest}' -DestinationPath '${MC_DIR}' -Force"`).catch((err) => {
+                    logger.warn(`PowerShell extraction failed: ${err.message}`);
+                });
             }
             if (fs.existsSync(rarDest)) fs.unlinkSync(rarDest);
+            // The pack brings the plugins (Gentok + ServerTap): without them the box cannot receive the live actions
+            if (!fs.existsSync(path.join(MC_DIR, 'plugins'))) {
+                throw new Error("Le pack GentokBoxTNT n'a pas pu être extrait (dossier plugins absent). Vérifiez l'antivirus et l'espace disque, puis réessayez.");
+            }
 
             // 3. Download LATEST Paper Spigot
             event.sender.send('mc-log', 'Mise à jour vers la dernière version de Paper...');
@@ -307,6 +460,28 @@ function createWindow() {
 
     let mcProcess = null;
 
+    // Resolves when this process has exited (or right away if it already has); kills it after `ms`
+    function waitForExit(proc, ms) {
+        return new Promise((resolve) => {
+            if (!proc || proc.exitCode !== null || proc.signalCode !== null) return resolve();
+            const timer = setTimeout(() => {
+                logger.warn('⚠️ Server shutdown taking too long, killing process...');
+                try { proc.kill(); } catch (e) { }
+            }, ms);
+            proc.once('close', () => { clearTimeout(timer); resolve(); });
+        });
+    }
+
+    async function stopMinecraft(ms = 15000) {
+        const proc = mcProcess;
+        if (!proc) return;
+        logger.info('🛑 Stopping Minecraft Server...');
+        try { proc.stdin.write('stop\n'); } catch (e) { try { proc.kill(); } catch (err) { } }
+        await waitForExit(proc, ms);
+        if (mcProcess === proc) mcProcess = null;
+    }
+    stopMinecraftOnQuit = () => stopMinecraft(8000);
+
     async function launchMinecraftServer(event, token) {
         if (mcProcess) return { success: false, message: 'Déjà en cours' };
 
@@ -334,30 +509,43 @@ function createWindow() {
 
         // Structure check: Temurin zip extracts to a subfolder like jdk-21.0.1+12
         const jdkBase = path.join(MC_DIR, 'jdk21');
-        const subdirs = fs.readdirSync(jdkBase);
+        const subdirs = fs.existsSync(jdkBase) ? fs.readdirSync(jdkBase) : [];
         const jdkRoot = subdirs.find(d => d.includes('jdk'));
         const javaPath = jdkRoot ? path.join(jdkBase, jdkRoot, 'bin', 'java.exe') : 'java';
 
         event.sender.send('mc-log', `Utilisation de: ${javaPath}`);
 
-        mcProcess = spawn(javaPath, ['-Xmx2G', '-jar', 'server.jar', '--nogui'], { cwd: MC_DIR });
+        // Handlers only clear `mcProcess` if it is still this process: after a restart, the old one's
+        // "close" arrived once the new one was running and made the app lose track of it
+        const proc = spawn(javaPath, ['-Xmx2G', '-jar', 'server.jar', '--nogui'], { cwd: MC_DIR });
+        mcProcess = proc;
+        const send = (channel, data) => { if (!event.sender.isDestroyed()) event.sender.send(channel, data); };
 
-        mcProcess.stdout.on('data', (data) => {
+        proc.on('error', (err) => {
+            // e.g. Java not installed: without this handler the whole app crashes
+            logger.error(`🚨 Minecraft process error: ${err.message}`);
+            send('mc-log', `❌ Impossible de lancer Java : ${err.message}`);
+            if (mcProcess === proc) mcProcess = null;
+        });
+        proc.stdin.on('error', (err) => logger.warn(`Minecraft stdin: ${err.message}`));
+
+        proc.stdout.on('data', (data) => {
             const line = data.toString().trim();
-            if (line) event.sender.send('mc-log', line);
+            if (line) send('mc-log', line);
             if (line.includes('Done')) {
-                event.sender.send('mc-status', { paper: 'online', servertap: 'connected' });
+                send('mc-status', { paper: 'online', servertap: 'connected' });
             }
         });
 
-        mcProcess.stderr.on('data', (data) => {
-            event.sender.send('mc-log', `[ERR] ${data.toString()}`);
+        proc.stderr.on('data', (data) => {
+            send('mc-log', `[ERR] ${data.toString()}`);
         });
 
-        mcProcess.on('close', (code) => {
+        proc.on('close', (code) => {
+            if (mcProcess !== proc) return; // an older process (restart): the new one keeps running
             mcProcess = null;
-            event.sender.send('mc-log', `Le serveur s'est arrêté (Code: ${code})`);
-            event.sender.send('mc-status', { paper: 'offline', servertap: 'disconnected' });
+            send('mc-log', `Le serveur s'est arrêté (Code: ${code})`);
+            send('mc-status', { paper: 'offline', servertap: 'disconnected' });
         });
 
         return { success: true };
@@ -377,59 +565,25 @@ function createWindow() {
 
     ipcMain.handle('send-minecraft-command', async (event, command) => {
         if (!mcProcess) return { success: false, message: 'Le serveur n\'est pas lancé' };
-        mcProcess.stdin.write(command + '\n');
+        // One command per call: a line break would let a single call run several commands.
+        // The server console takes commands without the "/" typed in the game chat.
+        const line = String(command).replace(/[\r\n]+/g, ' ').trim().replace(/^\/+/, '');
+        if (!line) return { success: false, message: 'Commande vide' };
+        mcProcess.stdin.write(line + '\n');
         return { success: true };
     });
 
     ipcMain.handle('stop-minecraft-server', async () => {
-        if (!mcProcess) return { success: true };
-
-        logger.info('🛑 Stopping Minecraft Server...');
-        mcProcess.stdin.write('stop\n');
-
-        // Timeout to force kill if it doesn't stop
-        const killTimeout = setTimeout(() => {
-            if (mcProcess) {
-                logger.warn('⚠️ Server shutdown taking too long, killing process...');
-                mcProcess.kill();
-                mcProcess = null;
-            }
-        }, 15000);
-
-        return new Promise((resolve) => {
-            const checkInterval = setInterval(() => {
-                if (!mcProcess) {
-                    clearTimeout(killTimeout);
-                    clearInterval(checkInterval);
-                    resolve({ success: true });
-                }
-            }, 500);
-        });
+        await stopMinecraft(15000);
+        return { success: true };
     });
 
     ipcMain.handle('restart-minecraft-server', async (event, token) => {
         if (mcProcess) {
             event.sender.send('mc-log', '🔄 Redémarrage demandé...');
-            // Use the same stop logic
-            mcProcess.stdin.write('stop\n');
-            await new Promise((resolve) => {
-                const timeout = setTimeout(() => {
-                    if (mcProcess) {
-                        mcProcess.kill();
-                        mcProcess = null;
-                        resolve();
-                    }
-                }, 10000);
-                const check = setInterval(() => {
-                    if (!mcProcess) {
-                        clearTimeout(timeout);
-                        clearInterval(check);
-                        resolve();
-                    }
-                }, 500);
-            });
+            // waits for the old process to really exit: the world files are still in use until then
+            await stopMinecraft(10000);
         }
-        // Now it's stopped (or wasn't running), let's start it
         return await launchMinecraftServer(event, token);
     });
 
@@ -469,13 +623,27 @@ app.on('ready', async () => {
         app.setAppUserModelId('electron.gentok');
     }
 
+    await ensureWorkingProxy();
     createWindow();
 
-    // Check for updates immediately
+    // Check for updates now, then every 30 minutes (a stream can last hours)
     logger.info(`🚀 Gentok v${app.getVersion()} - Vérification initiale des mises à jour...`);
-    autoUpdater.checkForUpdates().catch(err => {
-        logger.error(`❌ Échec vérification initiale : ${err.message}`);
-    });
+    checkForUpdates();
+    setInterval(checkForUpdates, UPDATE_CHECK_INTERVAL);
+});
+
+// Closing the app during a live: stop the connection first so the live is saved in the history
+let quitting = false;
+// Set when the Minecraft handlers are registered (see the Minecraft section)
+let stopMinecraftOnQuit = async () => { };
+
+app.on('before-quit', (e) => {
+    if (quitting) return;
+    quitting = true;
+    e.preventDefault();
+    // The live is saved and the Minecraft server stopped cleanly (it kept running, with the world open, after Gentok closed)
+    const timeout = new Promise(r => setTimeout(r, 9000));
+    Promise.race([Promise.all([stopAllConnectors(), stopMinecraftOnQuit()]), timeout]).catch(() => { }).finally(() => app.quit());
 });
 
 app.on('window-all-closed', function () {

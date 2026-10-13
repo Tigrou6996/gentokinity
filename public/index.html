@@ -1,18 +1,45 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-bs-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gentok</title>
     <link rel="icon" type="image/png" href="/logo.png">
+    <script src="/i18n.js"></script>
 
+    <link rel="stylesheet" href="vendor/bootstrap.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="pro.css">
+    <link rel="stylesheet" href="theme-studio.css">
+    <link rel="stylesheet" href="ui-classic.css">
+    <script>
+        // Interface style chosen in Settings (default: Épuré), applied before the page draws to avoid a flash
+        (function () {
+            var style = 'clean';
+            try { style = localStorage.getItem('gentok_ui_style') || 'clean'; } catch (e) { }
+            // "Épuré" is the Classique style with a refined finish (ui-clean.css)
+            if (style === 'clean') document.documentElement.classList.add('ui-classic', 'ui-clean');
+            if (style === 'classic' || style === 'studio') document.documentElement.classList.add('ui-' + style);
+            // Interface size (Settings > Apparence): compact | normal | large
+            var density = 'normal';
+            try { density = localStorage.getItem('gentok_ui_density') || 'normal'; } catch (e) { }
+            document.documentElement.setAttribute('data-density', density);
+        })();
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Luckiest+Guy&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css">
+    <link rel="stylesheet" href="layout.css">
+    <!-- "Épuré" style (default): fonts + finish, see ui-clean.css -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="ui-clean.css">
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="editors.css">
     <style>
         .font-selector {
             background: rgba(255,255,255,0.05);
@@ -228,16 +255,14 @@
                 </div>
             </div>
 
-            <div class="pro-banner" onclick="openProModal()">
-                <div class="pro-icon">
-                    <i class="fas fa-star"></i>
-                </div>
-                <div class="pro-text">
-                    <span class="pro-title">Gentok Premium ✨</span>
-                    <span class="pro-subtitle">Débloquez tout</span>
-                </div>
-                <i class="fas fa-chevron-right"></i>
-            </div>
+            <button type="button" class="pro-banner" id="pro-banner">
+                <span class="pro-icon"><i class="fas fa-crown"></i></span>
+                <span class="pro-text">
+                    <span class="pro-title">Passer à Premium</span>
+                    <span class="pro-subtitle">dès 6,66 €/mois</span>
+                </span>
+                <i class="fas fa-chevron-right pro-chevron"></i>
+            </button>
 
             <ul class="nav-links">
                 <li class="active scene-required">
@@ -315,6 +340,15 @@
                     </a>
                 </li>
                 <li class="scene-required">
+                    <a href="#points" onclick="showSection('points')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-medal"></i>
+                            <span>Utilisateurs &amp; Points</span>
+                        </span>
+                        <span class="beta-tag">NEW</span>
+                    </a>
+                </li>
+                <li class="scene-required">
                     <a href="#settings" onclick="showSection('settings')">
                         <span class="nav-item-content">
                             <i class="fas fa-cog"></i>
@@ -362,6 +396,15 @@
                 <!-- CATEGORY: OVERLAYS -->
                 <li class="nav-category scene-required">WIDGETS LIVE</li>
                 <li class="scene-required">
+                    <a href="#gallery" onclick="showSection('gallery')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-images"></i>
+                            <span>Galerie d'overlays</span>
+                        </span>
+                        <span class="beta-tag">NEW</span>
+                    </a>
+                </li>
+                <li class="scene-required">
                     <a href="#overlays" onclick="showSection('overlays'); activateOverlay('goals')">
                         <span class="nav-item-content">
                             <i class="fas fa-bullseye"></i>
@@ -403,9 +446,53 @@
                     </a>
                 </li>
 
+                <!-- CATEGORY: OUTILS LIVE -->
+                <li class="nav-category scene-required">OUTILS LIVE</li>
+                <li class="scene-required">
+                    <a href="#battle" onclick="showSection('battle')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-fist-raised"></i>
+                            <span>Batailles d'équipes</span>
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#donors" onclick="showSection('donors')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-sack-dollar"></i>
+                            <span>Donateurs présents</span>
+                        </span>
+                        <span class="beta-tag">NEW</span>
+                    </a>
+                </li>
+                <li class="scene-required">
+                    <a href="#giveaway" onclick="showSection('giveaway')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-gift"></i>
+                            <span>Giveaway & Points Drop</span>
+                        </span>
+                        <span class="beta-tag">NEW</span>
+                    </a>
+                </li>
+                <li class="scene-required">
+                    <a href="#simulator" onclick="showSection('simulator')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-flask"></i>
+                            <span>Simulateur</span>
+                        </span>
+                    </a>
+                </li>
                 <!-- CATEGORY: SYSTEME -->
                 <li class="nav-category">SYSTÈME</li>
-                <li class="scene-required">
+                <li>
+                    <a href="#premium" onclick="showSection('premium')">
+                        <span class="nav-item-content">
+                            <i class="fas fa-crown" style="color: #fbbf24;"></i>
+                            <span>Mon offre</span>
+                        </span>
+                    </a>
+                </li>
+                <li id="nav-console" class="admin-only" style="display: none;">
                     <a href="#logs" onclick="showSection('logs')">
                         <span class="nav-item-content">
                             <i class="fas fa-terminal"></i>
@@ -414,7 +501,7 @@
                         <span class="beta-tag">Beta</span>
                     </a>
                 </li>
-                <li id="nav-admin" class="scene-required" style="display: none;">
+                <li id="nav-admin" class="admin-only" style="display: none;">
                     <a href="#admin" onclick="showSection('admin')">
                         <span class="nav-item-content">
                             <i class="fas fa-shield-alt"></i>
@@ -429,6 +516,11 @@
                 <div class="status-group">
                     <div id="status-indicator" class="status offline"></div>
                     <span id="status-text">Hors ligne</span>
+                </div>
+                <div class="language-group" style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-globe" style="color: var(--text-dim);"></i>
+                    <select id="language-select" data-language-select aria-label="Langue"
+                        style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff; border-radius: 8px; padding: 6px 8px; font-size: 0.8rem;"></select>
                 </div>
             </div>
         </nav>
@@ -680,6 +772,7 @@
                         <h2><i class="fas fa-trophy" style="color: #ffd700; margin-right: 10px;"></i> Classement Général
                         </h2>
                         <p class="text-dim">Historique cumulé de vos spectateurs sur ce compte.</p>
+                        <div class="scene-sync"></div>
                     </div>
                     <div class="tabs" style="display: flex; gap: 10px;">
                         <button class="btn-tab active" onclick="switchRankingTab('legends', this)">
@@ -895,7 +988,7 @@
             <section id="actions-section" class="card" style="display: none;">
                 <div class="card-header"
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2>⚡ Actions</h2>
+                    <h2><i class="fas fa-bolt"></i> Actions</h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-secondary" onclick="deleteUnusedActions()" style="border-color: rgba(239, 68, 68, 0.4); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Supprimer toutes les actions non liées à un événement">
                             <i class="fas fa-broom"></i> Supprimer non-liées
@@ -929,7 +1022,7 @@
             <section id="events-section" class="card" style="display: none;">
                 <div class="card-header"
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2>📅 Événements</h2>
+                    <h2><i class="fas fa-calendar-days"></i> Événements</h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-secondary" onclick="deleteEventsWithoutActions()" style="border-color: rgba(239, 68, 68, 0.4); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Supprimer tous les événements qui n'ont aucune action liée">
                             <i class="fas fa-broom"></i> Supprimer sans action
@@ -964,7 +1057,7 @@
                 <div class="card-header" style="margin-bottom: 2rem;">
                     <div style="display: flex; justify-content: space-between; align-items: start;">
                         <div>
-                            <h2>📦 Gestion des Scènes</h2>
+                            <h2>Gestion des Scènes</h2>
                             <p class="text-dim">Sélectionnez vos packs d'automatisations et Presets Chaos</p>
                         </div>
                         <div style="display: flex; gap: 10px;">
@@ -977,6 +1070,27 @@
                                     style="padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white;">
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Full presets shared with a code (public/presetcodes.js) -->
+                <div class="pcode-card">
+                    <div class="pcode-col">
+                        <h3><i class="fas fa-share-nodes"></i> Partager ma scène</h3>
+                        <p class="text-dim">Crée un code avec tout ce que contient la scène active : actions, événements, réglages TTS, objectif de likes, règles de points et options des overlays.</p>
+                        <button class="btn-primary" onclick="GentokPresetCodes.create()"><i class="fas fa-wand-magic-sparkles"></i> Générer un code</button>
+                    </div>
+                    <div class="pcode-col">
+                        <h3><i class="fas fa-download"></i> Charger avec un code</h3>
+                        <p class="text-dim">Collez le code reçu (ex : GTK-7F3K-92QD) pour récupérer la scène complète.</p>
+                        <div class="pcode-load">
+                            <input type="text" id="pcode-input" placeholder="GTK-XXXX-XXXX" maxlength="20" autocomplete="off" spellcheck="false">
+                            <button class="btn-primary" onclick="GentokPresetCodes.preview()"><i class="fas fa-magnifying-glass"></i> Charger</button>
+                        </div>
+                    </div>
+                    <div class="pcode-mine">
+                        <h4>Mes codes</h4>
+                        <div id="pcode-list" class="pcode-list"><span class="text-dim">Aucun code pour le moment.</span></div>
                     </div>
                 </div>
 
@@ -1010,7 +1124,7 @@
                 <div class="modal-content card" style="max-width: 500px;">
                     <button class="btn-close" onclick="closeModal('modal-publish-preset')"><i
                             class="fas fa-times"></i></button>
-                    <h2>🚀 Publier un Preset</h2>
+                    <h2>Publier un Preset</h2>
                     <p class="text-dim" style="margin-bottom: 20px;">Créez un pack à partir de votre configuration
                         actuelle (Actions + Événements).</p>
 
@@ -1065,7 +1179,7 @@
             <!-- SECTION OVERLAYS -->
             <section id="overlays-section" class="card" style="display: none;">
                 <div class="card-header" style="margin-bottom: 1.5rem;">
-                    <h2>🖥️ Overlays</h2>
+                    <h2><i class="fas fa-display"></i> Overlays</h2>
                     <p class="text-dim">Gérez vos overlays pour OBS / TikTok Live Studio.</p>
                 </div>
 
@@ -1306,8 +1420,8 @@
                                                     class="fas fa-copy"></i></button>
                                         </div>
                                         <div
-                                            style="margin-top: 8px; height: 350px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative;">
-                                            <iframe src="/overlay/top-gift"
+                                            style="margin-top: 8px; height: 230px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative;">
+                                            <iframe title="Aperçu de l'overlay"
                                                 style="width: 100%; height: 100%; border: none;"></iframe>
                                         </div>
                                     </div>
@@ -1344,8 +1458,8 @@
                                                     class="fas fa-copy"></i></button>
                                         </div>
                                         <div
-                                            style="margin-top: 8px; height: 350px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative;">
-                                            <iframe src="/overlay/top-streak"
+                                            style="margin-top: 8px; height: 230px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative;">
+                                            <iframe title="Aperçu de l'overlay"
                                                 style="width: 100%; height: 100%; border: none;"></iframe>
                                         </div>
                                     </div>
@@ -1449,6 +1563,7 @@
                                             <div class="input-group"
                                                 style="display: flex; gap: 5px; margin-bottom:10px;">
                                                 <input type="text" id="topLikesUrl" readonly
+                                                    value="https://tiktok.gentok.fr/overlay/leaderboard?type=likes&amp;limit=10&amp;style=1&amp;transparent=true&amp;showTitle=true&amp;rtl=false"
                                                     style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.75rem;">
                                                 <button class="btn-secondary" style="padding: 0 10px;"
                                                     onclick="copyOverlayUrl(document.getElementById('topLikesUrl').value)"><i
@@ -1543,6 +1658,7 @@
                                             <div class="input-group"
                                                 style="display: flex; gap: 5px; margin-bottom:10px;">
                                                 <input type="text" id="topCoinsUrl" readonly
+                                                    value="https://tiktok.gentok.fr/overlay/leaderboard?type=coins&amp;limit=10&amp;style=1&amp;transparent=true&amp;showTitle=true&amp;rtl=false"
                                                     style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.75rem;">
                                                 <button class="btn-secondary" style="padding: 0 10px;"
                                                     onclick="copyOverlayUrl(document.getElementById('topCoinsUrl').value)"><i
@@ -1580,6 +1696,181 @@
                         </div>
                     </div>
 
+                    <!-- Pro Overlays (configured through URL parameters) -->
+                    <div id="overlay-item-pro" class="overlay-item"
+                        style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                        <div class="overlay-header" onclick="toggleOverlayAccordion(this)"
+                            style="padding: 18px 20px; background: rgba(255,255,255,0.03); cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: white;">
+                            <span style="font-weight: 600; font-size: 1.05rem;"><i class="fas fa-magic"
+                                    style="width: 24px; color: #fe2c55;"></i> Overlays Pro (Alertes, Chat, Objectifs, Timer…)</span>
+                            <i class="fas fa-chevron-right transition-icon" style="font-size: 0.9rem;"></i>
+                        </div>
+                        <div class="overlay-body"
+                            style="display: none; padding: 20px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border);">
+                            <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--text-dim);">
+                                Ajoutez l'URL dans OBS / TikTok Live Studio comme <b>source navigateur</b>. Personnalisez en ajoutant des
+                                paramètres à la fin de l'URL (ex : <code>&amp;color=00ff99</code>). Ajoutez <code>&amp;demo=1</code> pour voir un aperçu sans être en live.
+                                La langue des overlays suit celle du tableau de bord (<code>&amp;lang=en</code> pour la forcer).
+                            </p>
+                            <div class="overlay-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-bell" style="width: 22px; color: #fe2c55;"></i> Alertes animées</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Follow, cadeaux (combo compté une fois), abonnements, partages + vos actions « Alerte ».</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/alerts" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : events=follow,gift,subscribe,share · mingift=10 · duration=5 · color=fe2c55 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-comments" style="width: 22px; color: #60a5fa;"></i> Chat en direct</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Messages du live avec avatars et badges MOD / SUB.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/chat" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : max=10 · fade=30 · avatars=1 · badges=1 · bg=1 · size=18 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-stream" style="width: 22px; color: #4ade80;"></i> Fil d'activité</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Liste des derniers follows, cadeaux, abonnements et partages.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/feed" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : events=follow,gift · max=6 · mingift=0 · size=18 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-bullseye" style="width: 22px; color: #fbbf24;"></i> Objectif personnalisable</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Barre de progression pour n'importe quelle stat du live.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/goal?stat=follows&target=100" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">stat= likes · diamonds · gifts · follows · shares · subscribers · chats · viewers — target=100 · step=50 · title=... · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-tachometer-alt" style="width: 22px; color: #a78bfa;"></i> Compteur</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Un nombre en direct : spectateurs, likes, pièces, follows…</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/counter?stat=viewers" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">stat= viewers · likes · diamonds · gifts · follows · shares · subscribers · chats — label=... · icon=👁️ · size=48 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-hourglass-half" style="width: 22px; color: #f97316;"></i> Timer Subathon</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Compte à rebours qui s'allonge avec les pièces, follows, abonnements et partages.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/timer?start=60&coin=5&follow=30&sub=300&share=10" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">start (min) · coin, follow, sub, share (secondes ajoutées) · like (par 100 likes) · maxh · reset=1 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-dharmachakra" style="width: 22px; color: #fbbf24;"></i> Roue de la fortune</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Affiche les tirages des actions « Roue de la fortune » (chaque case peut lancer une action).</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/wheel" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : size=520 · hold=5 · persist=1 · color=fe2c55</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-heart" style="width: 22px; color: #fe2c55;"></i> Objectif de likes (thèmes)</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Barre d'objectif de likes animée avec cœurs qui s'envolent. Suit l'objectif du tableau de bord quand il est activé.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/likegoal?theme=neon&target=10000" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">theme= neon · glass · gradient · minimal · candy · retro — target · title · emoji · footer=1 · hearts=1 · width=560 · color · color2</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-ranking-star" style="width: 22px; color: #fbbf24;"></i> Top pièces / Top likes</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Classement en direct des meilleurs donateurs ou des meilleurs likeurs, avec podium, néon, bandeau défilant…</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/ranking?type=coins&theme=podium&limit=5" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">type= coins · likes · points — period= live · all · weekly — theme= glass · neon · podium · minimal · gradient · ticker — limit · avatars=1 · title · width · size</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-star" style="width: 22px; color: #a855f7;"></i> Points & !score</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Carte du spectateur quand il tape !score (points, niveau, rang) et le top 5 avec !top.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/points" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : duration=7 · toasts=1 · color · color2 · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-people-pulling" style="width: 22px; color: #25f4ee;"></i> Bataille d'équipes</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Affiche la bataille lancée dans Outils live › Batailles (tir à la corde à 2 équipes, barres à 3-4).</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/battle" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : hold=10 (secondes d'affichage du gagnant) · theme= glass · dark · light · neon · gradient · minimal · candy · retro · cyber · tiktok</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-share-nodes" style="width: 22px; color: #e1306c;"></i> Réseaux sociaux</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Bandeau qui fait défiler vos réseaux (Instagram, YouTube, Discord…). Remplacez les pseudos dans l'URL.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/social?items=instagram:moncompte,youtube:MaChaine,discord:discord.gg/xxx&theme=pill" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">items= tiktok · instagram · youtube · twitch · discord · x · snapchat · facebook · kick · web — layout= rotate · row — theme= pill · glass · neon · brand · minimal — interval=6 · size=26</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-jar" style="width: 22px; color: #fbbf24;"></i> Pot à cadeaux</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Chaque cadeau reçu tombe dans un bocal et s'empile, avec le total des pièces en dessous.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/jar?style=glass" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">style= glass · neon · wood · gold — size=34 · max=160 · width=420 · likes=1 · counter=1 · title · persist=1 · reset=1</p>
+                                </div>
+                                <div class="overlay-sub-item" style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+                                    <label style="display:block; color:white; font-weight:600; font-size:0.95rem; margin-bottom:4px;"><i class="fas fa-cloud-showers-heavy" style="width: 22px; color: #38bdf8;"></i> Pluie de cadeaux</label>
+                                    <p style="margin: 0 0 8px 0; font-size: 0.78rem; color: var(--text-dim);">Les cadeaux reçus tombent à l'écran (un par cadeau), cœurs pour les likes.</p>
+                                    <div class="input-group" style="display: flex; gap: 5px;">
+                                        <input type="text" value="https://tiktok.gentok.fr/overlay/rain" readonly
+                                            style="flex: 1; padding: 8px; background: rgba(0,0,0,0.3); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; font-size:0.8rem;">
+                                        <button class="btn-secondary" title="Copier l'URL"><i class="fas fa-copy"></i></button>
+                                        <button class="btn-secondary" title="Ouvrir"><i class="fas fa-external-link-alt"></i></button>
+                                    </div>
+                                    <p style="margin: 6px 0 0 0; font-size: 0.7rem; color: var(--text-dim); opacity: 0.8;">Paramètres : gifts=1 · likes=1 · follows=1 · shares=1 · size=64 · max=80</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Last X Overlays -->
                     <div id="overlay-item-lastx" class="overlay-item"
                         style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
@@ -1608,7 +1899,7 @@
                                     </div>
                                     <div
                                         style="margin-top: 8px; height: 120px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                                        <iframe src="/overlay/last-follower"
+                                        <iframe title="Aperçu de l'overlay"
                                             style="width: 100%; height: 100%; border: none;"></iframe>
                                     </div>
                                 </div>
@@ -1627,7 +1918,7 @@
                                     </div>
                                     <div
                                         style="margin-top: 8px; height: 120px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                                        <iframe src="/overlay/last-gifter"
+                                        <iframe title="Aperçu de l'overlay"
                                             style="width: 100%; height: 100%; border: none;"></iframe>
                                     </div>
                                 </div>
@@ -1647,7 +1938,7 @@
                                     </div>
                                     <div
                                         style="margin-top: 8px; height: 120px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                                        <iframe src="/overlay/last-subscriber"
+                                        <iframe title="Aperçu de l'overlay"
                                             style="width: 100%; height: 100%; border: none;"></iframe>
                                     </div>
                                 </div>
@@ -1666,7 +1957,7 @@
                                     </div>
                                     <div
                                         style="margin-top: 8px; height: 120px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                                        <iframe src="/overlay/last-share"
+                                        <iframe title="Aperçu de l'overlay"
                                             style="width: 100%; height: 100%; border: none;"></iframe>
                                     </div>
                                 </div>
@@ -1685,7 +1976,7 @@
                                     </div>
                                     <div
                                         style="margin-top: 8px; height: 120px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                                        <iframe src="/overlay/last-like"
+                                        <iframe title="Aperçu de l'overlay"
                                             style="width: 100%; height: 100%; border: none;"></iframe>
                                     </div>
                                 </div>
@@ -1705,7 +1996,7 @@
                                     </div>
                                     <div
                                         style="margin-top: 8px; height: 120px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                                        <iframe src="/overlay/last-chatter"
+                                        <iframe title="Aperçu de l'overlay"
                                             style="width: 100%; height: 100%; border: none;"></iframe>
                                     </div>
                                 </div>
@@ -1799,6 +2090,7 @@
                             Lisez les commentaires du chat automatiquement avec la synthèse vocale (TTS).<br>
                             La voix est jouée directement dans le navigateur. Aucune overlay requise !
                         </p>
+                        <span class="scene-scope-hint"></span>
                     </div>
                 </div>
 
@@ -1823,10 +2115,16 @@
                             <select id="tts-language">
                                 <option value="fr-FR">Français (France)</option>
                                 <option value="fr-CA">Français (Canada)</option>
+                                <option value="fr-BE">Français (Belgique)</option>
+                                <option value="fr-CH">Français (Suisse)</option>
                                 <option value="en-US">English (US)</option>
                                 <option value="en-GB">English (UK)</option>
-                                <option value="es-ES">Español</option>
+                                <option value="es-ES">Español (España)</option>
+                                <option value="es-MX">Español (México)</option>
                                 <option value="de-DE">Deutsch</option>
+                                <option value="it-IT">Italiano</option>
+                                <option value="pt-BR">Português (Brasil)</option>
+                                <option value="pt-PT">Português (Portugal)</option>
                             </select>
                         </div>
 
@@ -1842,9 +2140,10 @@
                                 </label>
                             </div>
                             <select id="tts-voice">
-                                <!-- Populated by JS -->
-                                <option value="default">Défaut</option>
+                                <!-- Populated by JS (loadVoices) -->
+                                <option value="">Automatique (voix naturelle)</option>
                             </select>
+                            <small class="text-dim d-block mt-1 mb-2">Voix naturelles gratuites (Microsoft Edge), générées par le serveur Gentok. Les voix de l'ordinateur restent disponibles en dessous.</small>
                         </div>
 
                         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -1957,7 +2256,341 @@
                         </div>
                     </div>
 
+                    <!-- Spoken announcements of live events (built by app.js: renderTTSEvents) -->
+                    <div class="card tts-events-card" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); grid-column: 1 / -1;">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <h3 style="color: var(--secondary); margin-bottom: 4px; font-size: 1rem;">Que lire à voix haute ?</h3>
+                                <p class="text-dim small mb-0">Le TTS peut aussi annoncer les cadeaux, follows, partages… avec la voix choisie. Variables : <code>{pseudo}</code>, <code>{cadeau}</code>, <code>{nombre}</code>, <code>{pieces}</code>.</p>
+                            </div>
+                            <label class="d-flex align-items-center gap-2 small fw-semibold mb-0">
+                                <input type="checkbox" id="tts-read-chat"> Lire les messages du chat
+                            </label>
+                        </div>
+                        <div id="tts-events-list" class="tts-events-list"></div>
+                    </div>
+
                 </div>
+            </section>
+
+            <!-- SECTION POINTS (viewer points / levels, like TikFinity "User & Points") -->
+            <section id="points-section" class="card" style="display: none;">
+                <div class="card-header" style="margin-bottom: 1rem;">
+                    <h2><i class="fas fa-medal"></i> Utilisateurs &amp; Points</h2>
+                    <div class="scene-sync"></div>
+                </div>
+                <div class="pro-tabs" data-tabs="points">
+                    <button class="active" data-tab="points-users">Utilisateurs</button>
+                    <button data-tab="points-transactions">Transactions</button>
+                    <button data-tab="points-settings">Réglages des points</button>
+                </div>
+
+                <div class="pro-tab active" id="points-users">
+                    <p class="pro-intro">Voici la liste de vos spectateurs avec leurs points, niveaux et activité. Vous avez
+                        <b id="points-user-count">0</b> utilisateurs sur un maximum de <b id="points-user-max">1 000</b>.
+                        Les spectateurs tapent <b id="points-score-cmd">!score</b> dans le chat pour afficher leur carte dans l'overlay Points.</p>
+                    <div class="pro-toolbar">
+                        <input type="search" id="points-search" class="grow form-control" placeholder="Rechercher un spectateur...">
+                        <button class="btn-secondary btn" onclick="GentokPro.points.load()" title="Actualiser"><i class="fas fa-sync-alt"></i></button>
+                        <button class="btn-secondary btn" onclick="GentokPro.points.pickImport()" title="Importer des spectateurs depuis un fichier (JSON ou CSV)"><i class="fas fa-file-import"></i> Importer</button>
+                        <button class="btn-secondary btn" onclick="GentokPro.points.exportCsv()" title="Exporter (CSV)"><i class="fas fa-file-csv"></i> CSV</button>
+                    </div>
+                    <div class="pro-table-wrap">
+                        <table class="pro-table table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-sort="nickname">Utilisateur</th>
+                                    <th class="sortable" data-sort="level">Niveau</th>
+                                    <th class="sortable" data-sort="points" id="pts-col-points">Points disponibles</th>
+                                    <th class="sortable" data-sort="levelPoints" title="Expérience : fait monter le niveau, ne baisse jamais">XP</th>
+                                    <th class="sortable" data-sort="coins">Pièces</th>
+                                    <th class="sortable" data-sort="likes">Likes</th>
+                                    <th class="sortable" data-sort="firstActivity">Première activité</th>
+                                    <th class="sortable" data-sort="lastActivity">Dernière activité</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="points-tbody"><tr><td colspan="9" class="pro-empty">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+                    <div class="pro-pager"><button class="pro-mini-btn" onclick="GentokPro.points.page(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <span id="points-page">1 / 1</span>
+                        <button class="pro-mini-btn" onclick="GentokPro.points.page(1)"><i class="fas fa-chevron-right"></i></button></div>
+                </div>
+
+                <div class="pro-tab" id="points-transactions">
+                    <div class="pro-toolbar">
+                        <input type="search" id="points-tx-search" class="grow form-control" placeholder="Filtrer par spectateur...">
+                        <button class="btn-secondary btn" onclick="GentokPro.points.loadTransactions()"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                    <div class="pro-table-wrap">
+                        <table class="pro-table table table-hover align-middle mb-0">
+                            <thead><tr><th>Date</th><th>Utilisateur</th><th>Points</th><th>Raison</th><th>Détails</th></tr></thead>
+                            <tbody id="points-tx-tbody"><tr><td colspan="5" class="pro-empty">Chargement...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="pro-tab" id="points-settings">
+                    <p class="pro-intro">Définissez ce que vos spectateurs gagnent. Les points disponibles peuvent être dépensés
+                        (boutique de points Premium : un événement peut coûter des points) ; le niveau, lui, ne baisse jamais.</p>
+                    <div class="pro-form-grid">
+                        <div class="pro-field"><label>Système de points</label><select class="form-select" id="pts-enabled"><option value="1">Activé</option><option value="0">Désactivé</option></select></div>
+                        <div class="pro-field"><label>Points par pièce offerte</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perCoin"></div>
+                        <div class="pro-field"><label>Points par like</label><input class="form-control" type="number" step="0.01" min="0" id="pts-perLike"></div>
+                        <div class="pro-field"><label>Points par follow</label><input class="form-control" type="number" step="1" min="0" id="pts-perFollow"></div>
+                        <div class="pro-field"><label>Points par partage</label><input class="form-control" type="number" step="1" min="0" id="pts-perShare"></div>
+                        <div class="pro-field"><label>Points par abonnement</label><input class="form-control" type="number" step="1" min="0" id="pts-perSub"></div>
+                        <div class="pro-field"><label>Points par message</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perChat"></div>
+                        <div class="pro-field"><label>Délai entre 2 messages comptés (s)</label><input class="form-control" type="number" step="1" min="0" id="pts-chatCooldown"></div>
+                        <div class="pro-field"><label>Points par minute de présence</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perActiveMinute"><small>Spectateurs actifs dans les 5 dernières minutes</small></div>
+                        <div class="pro-field"><label>Nom de la monnaie</label><input class="form-control" type="text" maxlength="24" id="pts-currencyName" placeholder="points"><small>ex : cookies, pièces, étoiles…</small></div>
+                        <div class="pro-field"><label>Emoji de la monnaie</label><input class="form-control" type="text" maxlength="8" id="pts-currencyEmoji" placeholder="🪙"></div>
+                        <div class="pro-field"><label>Commande score</label><input class="form-control" type="text" id="pts-scoreCommand" placeholder="!score"></div>
+                        <div class="pro-field"><label>Commande classement</label><input class="form-control" type="text" id="pts-topCommand" placeholder="!top"></div>
+                        <div class="pro-field"><label>Délai entre 2 commandes (s)</label><input class="form-control" type="number" step="1" min="0" id="pts-commandCooldown"></div>
+                        <div class="pro-field"><label>Bonus quotidien</label><input class="form-control" type="number" step="1" min="0" id="pts-dailyAmount"><small>Gagné avec la commande ci-dessous, une fois toutes les 20 h (0 = désactivé)</small></div>
+                        <div class="pro-field"><label>Commande bonus quotidien</label><input class="form-control" type="text" id="pts-dailyCommand" placeholder="!daily"></div>
+                        <div class="pro-field"><label>Dons entre spectateurs</label><select class="form-select" id="pts-giveEnabled"><option value="0">Désactivés</option><option value="1">Activés</option></select><small>ex : !give @pseudo 100 — le niveau ne change pas</small></div>
+                        <div class="pro-field"><label>Commande de don</label><input class="form-control" type="text" id="pts-giveCommand" placeholder="!give"></div>
+                    </div>
+
+                    <div class="pro-section-title"><i class="fas fa-star"></i> Niveaux (XP)</div>
+                    <p class="pro-intro">L'XP fait monter le niveau et ne baisse jamais, même quand le spectateur dépense sa monnaie.</p>
+                    <div class="pro-form-grid">
+                        <div class="pro-field"><label>Gain d'XP</label><select class="form-select" id="pts-xpMode" onchange="GentokPro.points.toggleXp()">
+                            <option value="same">Identique à la monnaie gagnée</option>
+                            <option value="custom">Barème d'XP personnalisé</option></select></div>
+                        <div class="pro-field"><label>Difficulté des niveaux</label><input class="form-control" type="number" step="1" min="1" id="pts-levelFactor"><small>Niveau N = N² × cette valeur en XP</small></div>
+                        <div class="pro-field"><label>Aperçu</label><div class="pts-level-preview" id="pts-level-preview"></div></div>
+                    </div>
+                    <div class="pro-form-grid" id="pts-xp-custom" hidden>
+                        <div class="pro-field"><label>XP par pièce offerte</label><input class="form-control" type="number" step="0.1" min="0" id="pts-xpPerCoin"></div>
+                        <div class="pro-field"><label>XP par like</label><input class="form-control" type="number" step="0.01" min="0" id="pts-xpPerLike"></div>
+                        <div class="pro-field"><label>XP par follow</label><input class="form-control" type="number" step="1" min="0" id="pts-xpPerFollow"></div>
+                        <div class="pro-field"><label>XP par partage</label><input class="form-control" type="number" step="1" min="0" id="pts-xpPerShare"></div>
+                        <div class="pro-field"><label>XP par abonnement</label><input class="form-control" type="number" step="1" min="0" id="pts-xpPerSub"></div>
+                        <div class="pro-field"><label>XP par message</label><input class="form-control" type="number" step="0.1" min="0" id="pts-xpPerChat"></div>
+                        <div class="pro-field"><label>XP par minute de présence</label><input class="form-control" type="number" step="0.1" min="0" id="pts-xpPerActiveMinute"></div>
+                    </div>
+                    <div style="margin-top: 1rem;"><button class="btn-primary btn" onclick="GentokPro.points.saveSettings()"><i class="fas fa-save"></i> Enregistrer</button></div>
+
+                    <!-- TikTok account answering !score / !top in the live chat (src/features/chatbot.js) -->
+                    <div class="pro-section-title"><i class="fab fa-tiktok"></i> Compte TikTok bot (réponses dans le chat)</div>
+                    <p class="pro-intro">Quand un spectateur tape <b>!score</b> ou <b>!top</b>, ce compte répond dans le chat du live, ex. « @lea tu as 1 250 🪙 points — niveau 7 ». Utilisez de préférence un <b>second compte</b> TikTok : un compte qui écrit trop vite peut être limité par TikTok.</p>
+                    <div class="chatbot-card" id="chatbot-card">
+                        <div class="chatbot-status" id="chatbot-status">Chargement…</div>
+                        <div class="chatbot-methods" role="radiogroup">
+                            <label class="chatbot-method"><input type="radio" name="chatbot-method" value="app"> <span><b>Application Gentok</b> <em class="cb-reco">recommandé · gratuit</em><small>Le compte bot est connecté une fois dans l'application Gentok sur votre PC, qui écrit les messages dans le chat du live. Aucune clé, aucun cookie à copier. L'application doit être ouverte pendant le live.</small></span></label>
+                            <label class="chatbot-method"><input type="radio" name="chatbot-method" value="euler"> <span><b>Euler Stream</b><small>Le serveur envoie les messages avec les cookies du compte bot et une clé Euler Stream autorisée à écrire dans le chat. Fonctionne sans l'application.</small></span></label>
+                        </div>
+                        <div id="chatbot-app" class="chatbot-app">
+                            <div id="chatbot-app-status" class="chatbot-status"></div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn-primary btn" id="chatbot-app-login" onclick="GentokPro.chatbot.appLogin()"><i class="fab fa-tiktok"></i> Connecter le compte bot</button>
+                                <button class="btn-secondary btn" id="chatbot-app-logout" onclick="GentokPro.chatbot.appLogout()"><i class="fas fa-right-from-bracket"></i> Déconnecter</button>
+                            </div>
+                        </div>
+                        <div id="chatbot-euler">
+                        <div class="pro-form-grid">
+                            <div class="pro-field"><label>Cookie <code>sessionid</code> du compte bot</label><input class="form-control" type="password" autocomplete="off" id="chatbot-sessionId" placeholder="Laisser vide pour garder l'actuel"></div>
+                            <div class="pro-field"><label>Cookie <code>tt-target-idc</code></label><input class="form-control" type="text" autocomplete="off" id="chatbot-ttTargetIdc" placeholder="ex : useast2a"></div>
+                        </div>
+                        <details class="chatbot-help"><summary>Où trouver ces cookies ?</summary>
+                            <ol>
+                                <li>Connectez-vous au compte bot sur <b>tiktok.com</b> dans votre navigateur (PC).</li>
+                                <li>Appuyez sur <b>F12</b> › onglet <b>Application</b> (Chrome/Edge) ou <b>Stockage</b> (Firefox) › <b>Cookies</b> › https://www.tiktok.com.</li>
+                                <li>Copiez la valeur de <code>sessionid</code> et celle de <code>tt-target-idc</code>.</li>
+                            </ol>
+                            Ces cookies donnent accès au compte : ils restent sur le serveur Gentok et ne sont jamais réaffichés. Se déconnecter de TikTok dans ce navigateur les invalide.
+                        </details>
+                        </div>
+                        <div class="pro-field" style="max-width:240px"><label>Délai entre 2 messages (s)</label><input class="form-control" type="number" min="2" max="60" id="chatbot-minInterval"></div>
+                        <div class="pro-field"><label>Réponse à !score</label><input class="form-control" type="text" maxlength="200" id="chatbot-scoreTemplate"><small>{nickname} {points} {currency} {emoji} {level} {xp} {rank}</small></div>
+                        <div class="pro-field"><label>Réponse à !top</label><input class="form-control" type="text" maxlength="200" id="chatbot-topTemplate"><small>{top} {currency} {emoji} {nickname}</small></div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <label class="d-flex align-items-center gap-2 me-2 mb-0"><input type="checkbox" id="chatbot-enabled"> Répondre dans le chat</label>
+                            <button class="btn-primary btn" onclick="GentokPro.chatbot.save()"><i class="fas fa-save"></i> Enregistrer</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.chatbot.test()"><i class="fas fa-paper-plane"></i> Message de test</button>
+                            <button class="btn-secondary btn" id="chatbot-euler-disconnect" onclick="GentokPro.chatbot.disconnect()"><i class="fas fa-right-from-bracket"></i> Supprimer les cookies</button>
+                        </div>
+                    </div>
+
+                    <div class="pro-section-title"><i class="fas fa-user-edit"></i> Ajouter / retirer des points</div>
+                    <div class="pro-toolbar">
+                        <input type="text" id="pts-adjust-user" class="grow form-control" placeholder="Pseudo TikTok (sans @)">
+                        <input class="form-control" type="text" id="pts-adjust-amount" style="width: 120px;" placeholder="ex: 500 ou -200">
+                        <button class="btn-secondary btn" onclick="GentokPro.points.adjustFromForm()">Appliquer</button>
+                    </div>
+
+                    <div class="pro-danger">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Zone de danger</h4>
+                        <p class="pro-intro" style="margin-bottom: 10px;">Supprime tous les spectateurs, leurs points et l'historique des transactions.</p>
+                        <button class="btn-danger" onclick="GentokPro.points.resetAll()">Réinitialiser tous les points</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION PREMIUM (plans comparison) -->
+            <section id="premium-section" class="card" style="display: none;">
+                <div class="card-header" style="margin-bottom: 1rem;">
+                    <h2>⭐ Mon offre</h2>
+                    <p class="text-dim" id="premium-status-text">Chargement...</p>
+                </div>
+                <div class="pro-usage" id="premium-usage"></div>
+                <div class="plan-grid" id="plan-grid"></div>
+            </section>
+
+            <!-- SECTION BATTLE (team battles) -->
+            <!-- SECTION DONORS: who is in the live and what they already gave (public/donors.js) -->
+            <section id="donors-section" class="card" style="display: none;">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3" style="margin-bottom: 1rem;">
+                    <div>
+                        <h2><i class="fas fa-sack-dollar"></i> Donateurs présents</h2>
+                        <p class="text-dim mb-0">Les spectateurs actuellement dans votre live, classés selon ce qu'ils vous ont déjà offert (tous vos lives Gentok + ce live). Visible par vous seul.</p>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <label class="small text-dim mb-0">Alerte dès <input type="number" id="donors-alert-min" class="form-control form-control-sm d-inline-block" min="0" step="100" value="1000" style="width: 95px"> pièces</label>
+                        <label class="small mb-0 d-flex align-items-center gap-1"><input type="checkbox" id="donors-only"> Donateurs uniquement</label>
+                    </div>
+                </div>
+                <div class="donors-stats" id="donors-stats"></div>
+                <div id="donors-list" class="donors-list"></div>
+                <div class="donors-help text-dim small mt-3">
+                    <i class="fas fa-circle-info"></i> Overlay privé : <code id="donors-overlay-url">/overlay/donors</code>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="donors-copy"><i class="fas fa-copy"></i> Copier</button>
+                    <div class="mt-1">À ouvrir comme <b>dock</b> dans OBS (Docks › Docks de navigateur personnalisés) ou dans une fenêtre à côté de TikTok Live Studio. Ne l'ajoutez pas comme source de scène : vos spectateurs le verraient. Gentok ne connaît que les cadeaux envoyés pendant vos lives.</div>
+                </div>
+            </section>
+
+            <section id="giveaway-section" class="card" style="display: none;">
+                <div class="card-header" style="margin-bottom: 1rem;">
+                    <h2><i class="fas fa-gift"></i> Giveaway & Points Drop</h2>
+                    <p class="text-dim">Organisez un tirage au sort ou lâchez des points pendant le live. Overlays : Galerie d'overlays › Giveaway et Points Drop.</p>
+                </div>
+                <div class="gw-grid">
+                    <div class="gw-card">
+                        <h3><i class="fas fa-gift"></i> Giveaway (tirage au sort)</h3>
+                        <div class="pro-form-grid">
+                            <div class="pro-field"><label>Titre</label><input class="form-control" type="text" id="gw-title" value="Giveaway"></div>
+                            <div class="pro-field"><label>Lot à gagner</label><input class="form-control" type="text" id="gw-prize" placeholder="ex: Carte cadeau 20 €"></div>
+                            <div class="pro-field"><label>Mot-clé</label><input class="form-control" type="text" id="gw-keyword" value="!join"></div>
+                            <div class="pro-field"><label>Durée des inscriptions</label><select class="form-select" id="gw-duration">
+                                <option value="0">Jusqu'à fermeture manuelle</option><option value="60">1 min</option><option value="120">2 min</option><option value="300" selected>5 min</option><option value="600">10 min</option><option value="1800">30 min</option></select></div>
+                            <div class="pro-field"><label>+1 ticket tous les X pièces (0 = non)</label><input class="form-control" type="number" id="gw-coins" value="0" min="0"></div>
+                            <div class="pro-field"><label>Nombre de gagnants</label><input class="form-control" type="number" id="gw-count" value="1" min="1" max="20"></div>
+                        </div>
+                        <div class="gw-checks">
+                            <label><input type="checkbox" id="gw-followers"> Followers uniquement</label>
+                            <label><input type="checkbox" id="gw-subs"> Abonnés uniquement</label>
+                        </div>
+                        <div class="battle-actions">
+                            <button class="btn-primary btn" onclick="GentokPro.giveaway.start()"><i class="fas fa-play"></i> Ouvrir les inscriptions</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.giveaway.cmd('close')"><i class="fas fa-lock"></i> Fermer</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.giveaway.draw()"><i class="fas fa-dice"></i> Tirer au sort</button>
+                            <button class="btn-ghost btn" onclick="GentokPro.giveaway.cmd('reset')"><i class="fas fa-rotate-left"></i> Réinitialiser</button>
+                        </div>
+                        <div class="gw-live" id="gw-live"><span class="text-dim">Aucun giveaway en cours.</span></div>
+                    </div>
+                    <div class="gw-card">
+                        <h3><i class="fas fa-coins"></i> Points Drop</h3>
+                        <p class="text-dim" style="margin:0 0 10px;font-size:.85rem;">Les premiers spectateurs qui tapent le mot-clé gagnent des points (Utilisateurs & Points).</p>
+                        <div class="pro-form-grid">
+                            <div class="pro-field"><label>Points par spectateur</label><input class="form-control" type="number" id="pd-amount" value="100" min="1"></div>
+                            <div class="pro-field"><label>Mot-clé</label><input class="form-control" type="text" id="pd-keyword" value="!catch"></div>
+                            <div class="pro-field"><label>Durée (s)</label><input class="form-control" type="number" id="pd-duration" value="30" min="5" max="600"></div>
+                            <div class="pro-field"><label>Spectateurs max</label><input class="form-control" type="number" id="pd-max" value="10" min="1" max="500"></div>
+                        </div>
+                        <div class="battle-actions">
+                            <button class="btn-primary btn" onclick="GentokPro.drop.start()"><i class="fas fa-parachute-box"></i> Lâcher les points</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.drop.stop()"><i class="fas fa-stop"></i> Arrêter</button>
+                        </div>
+                        <div class="gw-live" id="pd-live"><span class="text-dim">Aucun drop en cours.</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="battle-section" class="card" style="display: none;">
+                <div class="card-header" style="margin-bottom: 1rem;">
+                    <h2><i class="fas fa-fist-raised"></i> Batailles d'équipes</h2>
+                    <p class="text-dim">Les spectateurs rejoignent une équipe en tapant sa commande dans le chat, puis leurs likes et/ou cadeaux font gagner des points à leur équipe.</p>
+                </div>
+                <div class="battle-live" style="margin: 0 0 16px;" id="battle-live"><span class="text-dim">Aucune bataille en cours.</span></div>
+                <div class="pro-form-grid" style="margin-bottom: 14px;">
+                    <div class="pro-field"><label>Titre</label><input class="form-control" type="text" id="battle-title" value="Bataille de likes"></div>
+                    <div class="pro-field"><label>Mode</label><select class="form-select" id="battle-mode">
+                        <option value="likes">Likes</option><option value="gifts">Cadeaux (pièces)</option><option value="both">Likes + Cadeaux</option><option value="votes">Sondage (1 vote par spectateur)</option></select></div>
+                    <div class="pro-field"><label>Durée (minutes)</label><input class="form-control" type="number" id="battle-duration" min="1" max="180" value="3"></div>
+                    <div class="pro-field"><label>Valeur d'un like</label><input class="form-control" type="number" id="battle-like-value" min="0" step="0.1" value="1"><small>En mode « Likes + Cadeaux », 1 pièce = 1 point</small></div>
+                    <div class="pro-field"><label>Nombre d'équipes</label><select class="form-select" id="battle-team-count"><option value="2">2</option><option value="3">3 (Premium)</option><option value="4">4 (Premium)</option></select></div>
+                </div>
+                <div class="battle-teams" id="battle-teams"></div>
+                <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+                    <button class="btn-primary btn" onclick="GentokPro.battle.start()"><i class="fas fa-play"></i> Lancer la bataille</button>
+                    <button class="btn-ghost btn" onclick="GentokPro.battle.stop()"><i class="fas fa-flag-checkered"></i> Terminer maintenant</button>
+                </div>
+            </section>
+
+            <!-- SECTION SIMULATOR (test triggers without being live) -->
+            <section id="gallery-section" class="card" style="display: none;">
+                <div class="card-header" style="margin-bottom: 0.8rem;">
+                    <h2><i class="fas fa-images"></i> Galerie d'overlays</h2>
+                    <p class="text-dim">Ajoutez l'URL dans OBS ou TikTok Live Studio comme source navigateur (fond transparent). Chaque aperçu tourne en mode démo. Le bouton Test envoie un vrai événement simulé à votre overlay, et Personnaliser règle l'overlay et met l'URL à jour.</p>
+                </div>
+                <div class="gal-toolbar">
+                    <div class="gal-filters" id="gallery-filters"></div>
+                    <input class="form-control" type="search" id="gallery-search" placeholder="Rechercher un overlay...">
+                    <select class="form-select" id="gallery-bg" title="Fond des aperçus">
+                        <option value="dark">Fond sombre</option>
+                        <option value="checker">Damier (transparent)</option>
+                        <option value="game">Fond « jeu »</option>
+                        <option value="light">Fond clair</option>
+                    </select>
+                </div>
+                <div class="gal-grid" id="gallery-grid" data-bg="dark"></div>
+            </section>
+
+            <section id="simulator-section" class="card" style="display: none;">
+                <div class="card-header" style="margin-bottom: 1rem;">
+                    <h2><i class="fas fa-flask"></i> Simulateur d'événements</h2>
+                    <p class="text-dim">Testez vos déclencheurs, actions et overlays sans être en live. Les événements simulés passent par le même moteur que les vrais, mais ne sont jamais enregistrés dans vos classements ni dans les points.</p>
+                </div>
+                <div class="sim-grid">
+                    <div class="sim-card">
+                        <h4><i class="fas fa-user"></i> Spectateur simulé</h4>
+                        <input class="form-control" type="text" id="sim-user" value="gentok_test" placeholder="Pseudo">
+                        <label style="display:flex;gap:8px;align-items:center;font-size:0.85rem;"><input type="checkbox" id="sim-follower" checked style="width:auto;"> Follower</label>
+                        <label style="display:flex;gap:8px;align-items:center;font-size:0.85rem;"><input type="checkbox" id="sim-sub" style="width:auto;"> Abonné</label>
+                        <label style="display:flex;gap:8px;align-items:center;font-size:0.85rem;"><input type="checkbox" id="sim-mod" style="width:auto;"> Modérateur</label>
+                    </div>
+                    <div class="sim-card">
+                        <h4><i class="fas fa-bolt"></i> Événements rapides</h4>
+                        <div class="sim-quick">
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('follow')">➕ Follow</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('share')">🔁 Partage</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('subscribe')">⭐ Abonnement</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.sim.send('member')">🚪 Rejoint le live</button>
+                        </div>
+                    </div>
+                    <div class="sim-card">
+                        <h4><i class="fas fa-heart"></i> Likes</h4>
+                        <div class="inline"><input class="form-control" type="number" id="sim-likes" value="15" min="1" max="1000"><button class="btn-secondary btn" onclick="GentokPro.sim.send('like')">Envoyer</button></div>
+                    </div>
+                    <div class="sim-card">
+                        <h4><i class="fas fa-comment"></i> Message / commande</h4>
+                        <input class="form-control" type="text" id="sim-comment" value="!score" placeholder="Message ou !commande">
+                        <div class="inline"><button class="btn-secondary btn" onclick="GentokPro.sim.send('chat')">💬 Chat</button><button class="btn-secondary btn" onclick="GentokPro.sim.send('question')">❓ Question</button></div>
+                    </div>
+                    <div class="sim-card">
+                        <h4><i class="fas fa-gift"></i> Cadeau</h4>
+                        <input class="form-control" type="text" id="sim-gift" list="sim-gift-list" placeholder="Rechercher un cadeau..." value="Rose">
+                        <datalist id="sim-gift-list"></datalist>
+                        <div class="inline"><input class="form-control" type="number" id="sim-gift-count" value="5" min="1" max="200" title="Quantité"><label style="display:flex;gap:6px;align-items:center;font-size:0.8rem;"><input type="checkbox" id="sim-gift-combo" checked style="width:auto;"> Combo</label></div>
+                        <button class="btn-primary btn" onclick="GentokPro.sim.send('gift')"><i class="fas fa-gift"></i> Envoyer le cadeau</button>
+                    </div>
+                </div>
+                <div class="pro-section-title"><i class="fas fa-stream"></i> Journal de simulation</div>
+                <div id="sim-log" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); max-height: 200px; overflow: auto; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 10px;"></div>
             </section>
 
             <section id="settings-section" class="card" style="display: none; padding: 0;">
@@ -2006,6 +2639,28 @@
                             </div>
 
                             <!-- UI & Theme -->
+                            <!-- Add actions / events / sounds from other tools (endpoints in src/server.js) -->
+                            <div class="settings-group-premium api-card" style="margin-bottom: 2rem;">
+                                <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: .6rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-code"></i> API Gentok (ajouter des actions, événements et sons)
+                                </h3>
+                                <p class="text-dim small">Ajoutez, modifiez ou supprimez un élément de la scène active depuis Streamer.bot, un script ou un autre outil. Chaque appel ne touche que l'élément indiqué. Envoyez votre clé dans <code>token</code> (corps JSON) — elle donne accès à votre compte : ne la partagez jamais.</p>
+                                <table class="api-table">
+                                    <tr><td><b>POST</b></td><td><code>/api/actions/item</code></td><td><code>{ token, action: { name, type, … } }</code> — ajoute (ou modifie si <code>id</code> existe)</td></tr>
+                                    <tr><td><b>PUT</b></td><td><code>/api/actions/:id</code></td><td><code>{ token, action }</code> — remplace l'action</td></tr>
+                                    <tr><td><b>DELETE</b></td><td><code>/api/actions/:id</code></td><td><code>{ token }</code> — la retire aussi des événements</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/events/item</code></td><td><code>{ token, event: { triggerType, actions: [ids], … } }</code></td></tr>
+                                    <tr><td><b>PUT / DELETE</b></td><td><code>/api/events/:id</code></td><td>comme pour les actions</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/sounds/item</code></td><td><code>{ token, name, url, volume }</code> — ajoute un son au Soundboard</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/actions/changes</code></td><td><code>{ token, upsert: [...], remove: [ids] }</code> — plusieurs changements d'un coup</td></tr>
+                                    <tr><td><b>POST</b></td><td><code>/api/test-action/:id</code></td><td><code>{ token }</code> — lance une action</td></tr>
+                                </table>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <button type="button" class="btn-secondary btn-sm" onclick="copyApiExample()"><i class="fas fa-copy"></i> Copier un exemple (curl)</button>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="copyApiToken()"><i class="fas fa-key"></i> Copier ma clé</button>
+                                </div>
+                            </div>
+
                             <div class="settings-group-premium" style="margin-bottom: 2rem;">
                                 <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-palette"></i> Apparence & Thème
@@ -2024,12 +2679,110 @@
                                     <div class="form-group">
                                         <label>Style de l'interface</label>
                                         <select id="setting-ui-style" onchange="updateUIStyle(this.value)">
-                                            <option value="modern">Moderne (Défaut)</option>
+                                            <option value="clean">Épuré (Défaut)</option>
+                                            <option value="classic">Classique</option>
+                                            <option value="studio">Studio</option>
+                                            <option value="modern">Néon</option>
                                             <option value="compact">Compact (Plus d'infos)</option>
                                             <option value="glass">Full Glass (Translucide)</option>
                                         </select>
                                     </div>
+                                    <div class="form-group">
+                                        <label>Taille de l'interface</label>
+                                        <select id="setting-ui-density" onchange="setUiDensity(this.value)">
+                                            <option value="compact">Petite (plus d'infos à l'écran)</option>
+                                            <option value="normal">Normale (Défaut)</option>
+                                            <option value="large">Grande</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Menu</label>
+                                        <select id="setting-nav-style" onchange="setNavStyle(this.value)">
+                                            <option value="classic">Menu complet (Défaut)</option>
+                                            <option value="rail">Barre d'icônes par catégorie (façon TikFinity)</option>
+                                        </select>
+                                    </div>
                                 </div>
+                            </div>
+
+                            <!-- Where the live connection runs (public/runmode.js) -->
+                            <div class="settings-group-premium rm-card" id="runmode-card" style="margin-bottom: 2rem;">
+                                <div class="rm-head">
+                                    <span class="rm-head-icon"><i class="fas fa-tower-broadcast"></i></span>
+                                    <div>
+                                        <h3>Connexion au live</h3>
+                                        <p>Où Gentok se connecte à votre live TikTok. Réglages, overlays et classements restent les mêmes.</p>
+                                    </div>
+                                </div>
+
+                                <div class="rm-options" role="radiogroup">
+                                    <label class="rm-option rm-auto">
+                                        <input type="radio" name="runmode" value="auto">
+                                        <span class="rm-badge">Recommandé</span>
+                                        <span class="rm-bubble"><i class="fas fa-wand-magic-sparkles"></i></span>
+                                        <b>Automatique</b>
+                                        <small>Votre PC quand l'application est ouverte, sinon le Cloud. Rien à penser.</small>
+                                    </label>
+                                    <label class="rm-option rm-cloud">
+                                        <input type="radio" name="runmode" value="cloud">
+                                        <span class="rm-bubble"><i class="fas fa-cloud"></i></span>
+                                        <b>Cloud</b>
+                                        <small>Les serveurs Gentok s'en occupent. PC éteint possible, idéal en live téléphone.</small>
+                                    </label>
+                                    <label class="rm-option rm-pc">
+                                        <input type="radio" name="runmode" value="pc">
+                                        <span class="rm-bubble"><i class="fas fa-desktop"></i></span>
+                                        <b>Sur mon PC</b>
+                                        <small>L'application Windows se connecte avec votre IP. Toutes les actions PC en direct.</small>
+                                    </label>
+                                </div>
+
+                                <div id="runmode-status" class="rm-status"></div>
+
+                                <details class="rm-compare">
+                                    <summary><i class="fas fa-scale-balanced"></i> Quelle différence entre Cloud et PC ?</summary>
+                                    <div class="rm-grid">
+                                        <div class="rm-col-head"></div>
+                                        <div class="rm-col-head"><i class="fas fa-cloud"></i> Cloud</div>
+                                        <div class="rm-col-head"><i class="fas fa-desktop"></i> Sur mon PC</div>
+
+                                        <div class="rm-label">Installation</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Aucune</div>
+                                        <div class="rm-mid"><i class="fas fa-download"></i> Application Windows</div>
+
+                                        <div class="rm-label">PC allumé pendant le live</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Pas besoin</div>
+                                        <div class="rm-mid"><i class="fas fa-power-off"></i> Oui, appli ouverte</div>
+
+                                        <div class="rm-label">Overlays, alertes, TTS, points</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Oui</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Oui</div>
+
+                                        <div class="rm-label">Clavier, OBS, Minecraft, Streamer.bot</div>
+                                        <div class="rm-mid"><i class="fas fa-circle-half-stroke"></i> Si l'appli est ouverte</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Oui, en direct</div>
+
+                                        <div class="rm-label">Adresse IP vue par TikTok</div>
+                                        <div class="rm-mid"><i class="fas fa-server"></i> Celle de Gentok</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> La vôtre</div>
+
+                                        <div class="rm-label">Réactivité des actions</div>
+                                        <div class="rm-yes"><i class="fas fa-bolt"></i> Très bonne</div>
+                                        <div class="rm-yes"><i class="fas fa-bolt"></i> Maximale</div>
+
+                                        <div class="rm-label">Ressources de votre PC</div>
+                                        <div class="rm-yes"><i class="fas fa-circle-check"></i> Aucune</div>
+                                        <div class="rm-yes"><i class="fas fa-feather"></i> Très faibles</div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <!-- Application & updates (filled by appstatus.js) -->
+                            <div class="settings-group-premium" id="app-update-card" style="margin-bottom: 2rem;">
+                                <h3 style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-desktop"></i> Application & mises à jour
+                                </h3>
+                                <div id="app-update-body"><span class="text-dim">Détection de l'application...</span></div>
                             </div>
 
                             <!-- Automation -->
@@ -2096,7 +2849,7 @@
 
                         <!-- Minecraft Tab -->
                         <div id="settings-tab-minecraft" class="settings-tab" style="display: none;">
-                            <h2 style="margin-bottom: 1.5rem;">🎮 Minecraft / Server</h2>
+                            <h2 style="margin-bottom: 1.5rem;"><i class="fas fa-gamepad"></i> Minecraft / Server</h2>
                             <div class="settings-grid"
                                 style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                                 <div class="form-group">
@@ -2777,7 +3530,7 @@
     <div id="modal-action" class="modal">
         <div class="modal-content card">
             <button class="btn-close" onclick="closeModal('modal-action')"><i class="fas fa-times"></i></button>
-            <h2>⚡ Nouvelle Action</h2>
+            <h2><i class="fas fa-bolt"></i> Nouvelle Action</h2>
             <form id="form-action">
                 <div class="form-group">
                     <label>Nom de l'action</label>
@@ -2797,6 +3550,16 @@
                                 (Touches)</div>
                             <div class="custom-option" data-value="rcon"><i class="fas fa-cube"></i> Minecraft (Serveur)
                             </div>
+                            <div class="custom-option" data-value="alert"><i class="fas fa-bell"></i> Alerte à l'écran
+                                (Overlay)</div>
+                            <div class="custom-option" data-value="tts"><i class="fas fa-volume-up"></i> Synthèse vocale
+                                (TTS)</div>
+                            <div class="custom-option" data-value="obs"><i class="fas fa-video"></i> OBS Studio (scène /
+                                source) <span class="premium-lock">PREMIUM</span></div>
+                            <div class="custom-option" data-value="wheel"><i class="fas fa-dharmachakra"></i> Roue de la
+                                fortune <span class="premium-lock">PREMIUM</span></div>
+                            <div class="custom-option" data-value="streamerbot"><i class="fas fa-robot"></i> Streamer.bot
+                                <span class="premium-lock">PREMIUM</span></div>
 
                         </div>
                     </div>
@@ -2805,11 +3568,31 @@
                         <option value="webhook">Webhook (HTTP)</option>
                         <option value="keyboard">Clavier (Touches)</option>
                         <option value="rcon">Minecraft (Serveur)</option>
+                        <option value="alert">Alerte à l'écran (Overlay)</option>
+                        <option value="tts">Synthèse vocale (TTS)</option>
+                        <option value="obs">OBS Studio (scène / source)</option>
+                        <option value="wheel">Roue de la fortune</option>
+                        <option value="streamerbot">Streamer.bot</option>
 
                     </select>
                 </div>
                 <div id="action-details-container">
                     <!-- Dynamic fields here -->
+                </div>
+                <div class="form-group">
+                    <label>Cooldown (secondes) <span style="opacity: 0.6; font-weight: 400;">— délai minimum entre deux
+                            exécutions, 0 = aucun</span></label>
+                    <input type="number" id="action-cooldown" min="0" max="3600" value="0" style="width: 120px;">
+                </div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="form-group">
+                        <label>Cooldown par spectateur (secondes)</label>
+                        <input type="number" id="action-user-cooldown" min="0" max="86400" value="0" style="width: 120px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Délai avant exécution (secondes)</label>
+                        <input type="number" id="action-delay" min="0" max="600" value="0" style="width: 120px;">
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-ghost" onclick="closeModal('modal-action')">Annuler</button>
@@ -2823,7 +3606,7 @@
     <div id="modal-event" class="modal">
         <div class="modal-content card">
             <button class="btn-close" onclick="closeModal('modal-event')"><i class="fas fa-times"></i></button>
-            <h2>📅 Nouvel Événement</h2>
+            <h2><i class="fas fa-calendar-days"></i> Nouvel Événement</h2>
             <form id="form-event">
                 <div class="form-group">
                     <label>Qui peut déclencher ?</label>
@@ -2884,6 +3667,13 @@
                                 Chat (!mot)</div>
                             <div class="custom-option" data-value="gift_min"><i class="fas fa-coins"></i> Cadeau (Valeur
                                 min. pièces)</div>
+                            <div class="custom-option" data-value="first_message"><i class="fas fa-hand-sparkles"></i>
+                                Premier message d'un spectateur</div>
+                            <div class="custom-option" data-value="emote"><i class="fas fa-smile"></i> Emote d'abonné</div>
+                            <div class="custom-option" data-value="question"><i class="fas fa-question-circle"></i>
+                                Question posée (Q&amp;R)</div>
+                            <div class="custom-option" data-value="level_up"><i class="fas fa-arrow-up-wide-short"></i>
+                                Passage de niveau (points)</div>
                         </div>
                     </div>
                     <select id="event-trigger-type" style="display: none;">
@@ -2897,6 +3687,10 @@
                         <option value="chat">Message dans le Chat (Tout)</option>
                         <option value="command">Commande Chat (!mot)</option>
                         <option value="gift_min">Cadeau (Valeur min. pièces)</option>
+                        <option value="first_message">Premier message d'un spectateur</option>
+                        <option value="emote">Emote d'abonné</option>
+                        <option value="question">Question posée (Q&amp;R)</option>
+                        <option value="level_up">Passage de niveau (points)</option>
                     </select>
                 </div>
                 <div id="event-trigger-details">
@@ -2907,6 +3701,15 @@
                     <div id="event-action-list" class="action-checkbox-grid">
                         <!-- Populated by JS -->
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Niveau d'équipe TikTok requis <span style="opacity: 0.6; font-weight: 400;">— 0 = tout le monde, même sans rejoindre votre équipe</span></label>
+                    <input type="number" id="event-team-level" min="0" max="50" step="1" value="0" style="width: 140px;">
+                </div>
+                <div class="form-group">
+                    <label>Coût en points <span class="premium-lock">PREMIUM</span> <span style="opacity: 0.6; font-weight: 400;">— le
+                            spectateur paie avec ses points, 0 = gratuit</span></label>
+                    <input type="number" id="event-points-cost" min="0" step="1" value="0" style="width: 140px;">
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-ghost" onclick="closeModal('modal-event')">Annuler</button>
@@ -2920,7 +3723,7 @@
     <div id="modal-quick-sound" class="modal">
         <div class="modal-content card">
             <button class="btn-close" onclick="closeModal('modal-quick-sound')"><i class="fas fa-times"></i></button>
-            <h2>🔗 Lier un Son à un Déclencheur</h2>
+            <h2>Lier un Son à un Déclencheur</h2>
             <form id="form-quick-sound">
                 <input type="hidden" id="qs-sound-url">
                 <input type="hidden" id="qs-sound-name">
@@ -2961,6 +3764,11 @@
                                 Chat (!mot)</div>
                             <div class="custom-option" data-value="gift_min"><i class="fas fa-coins"></i> Cadeau (Valeur
                                 min. pièces)</div>
+                            <div class="custom-option" data-value="first_message"><i class="fas fa-hand-sparkles"></i>
+                                Premier message d'un spectateur</div>
+                            <div class="custom-option" data-value="emote"><i class="fas fa-smile"></i> Emote d'abonné</div>
+                            <div class="custom-option" data-value="question"><i class="fas fa-question-circle"></i>
+                                Question posée (Q&amp;R)</div>
                         </div>
                     </div>
                     <select id="qs-trigger-type" style="display: none;" onchange="updateQuickSoundTriggerFields()">
@@ -2973,6 +3781,9 @@
                         <option value="chat">💬 Message dans le Chat (Tout)</option>
                         <option value="command">⌨️ Commande Chat (!mot)</option>
                         <option value="gift_min">💰 Cadeau (Valeur min. pièces)</option>
+                        <option value="first_message">👋 Premier message d'un spectateur</option>
+                        <option value="emote">😀 Emote d'abonné</option>
+                        <option value="question">❓ Question posée (Q&amp;R)</option>
                     </select>
                 </div>
 
@@ -3028,7 +3839,7 @@
                     class="fas fa-times"></i></button>
 
             <div class="modal-header">
-                <h2>📈 Analyse détaillée du Live</h2>
+                <h2>Analyse détaillée du Live</h2>
                 <div id="sd-date" class="text-dim">---</div>
             </div>
 
@@ -3066,13 +3877,18 @@
             <div class="charts-container"
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 30px;">
                 <div class="chart-box">
-                    <h3>📊 Répartition des Actions</h3>
+                    <h3><i class="fas fa-chart-line"></i> Répartition des Actions</h3>
                     <canvas id="actionsChart"></canvas>
                 </div>
                 <div class="chart-box">
-                    <h3>🎁 Top Cadeaux</h3>
+                    <h3><i class="fas fa-gift"></i> Top Cadeaux</h3>
                     <canvas id="giftsChart"></canvas>
                 </div>
+            </div>
+
+            <div class="chart-box sd-gifts-box" style="margin-top: 30px;">
+                <h3><i class="fas fa-list"></i> Cadeaux reçus pendant ce live</h3>
+                <div id="sd-gifts-table" class="sd-gifts-table"></div>
             </div>
 
             <div class="form-actions" style="margin-top: 30px;">
@@ -3200,7 +4016,9 @@
 
             <div
                 style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <p style="color: var(--text-muted); font-size: 0.75rem; opacity: 0.8;">© 2026 Gentok • Version 1.0.5</p>
+                <select data-language-select aria-label="Langue"
+                    style="margin-bottom: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;"></select>
+                <p style="color: var(--text-muted); font-size: 0.75rem; opacity: 0.8;">© 2026 Gentok • Version <span class="gentok-version">1.0.7</span></p>
             </div>
         </div>
     </div>
@@ -3208,7 +4026,7 @@
     <div id="toast-container" class="toast-container"></div>
 
     <div id="app-footer" style="display: none;">
-        <span id="app-version-display">Gentok v1.0.5</span>
+        <span id="app-version-display">Gentok v1.0.7</span>
     </div>
     <!-- PRO MODAL -->
     <!-- PRO MODAL (Redesigned) -->
@@ -3217,10 +4035,11 @@
             <button class="pro-close-btn" onclick="closeProModal()"><i class="fas fa-times"></i></button>
 
             <div class="pro-modal-header">
-                <div class="pro-header-badge">OFFRE LIMITÉE</div>
+                <div class="pro-header-badge">GENTOK PREMIUM</div>
                 <h2>Passez à Gentok Premium</h2>
                 <p>Propulsez vos lives TikTok au niveau supérieur avec nos outils premium.</p>
             </div>
+            <div id="pro-modal-status" class="pro-modal-status" hidden></div>
 
             <div class="pro-pricing-grid four-cards">
                 <!-- 1 Month -->
@@ -3234,7 +4053,7 @@
                         <li><i class="fas fa-check"></i> Contrôle des jeux</li>
                         <li><i class="fas fa-check"></i> Support Prioritaire</li>
                     </ul>
-                    <button class="pro-btn-secondary" onclick="subscribePlan('1m')">Choisir</button>
+                    <button type="button" class="pro-btn-secondary" onclick="subscribePlan('1m', this)">Choisir</button>
                 </div>
 
                 <!-- 3 Months -->
@@ -3250,7 +4069,7 @@
                         <li><i class="fas fa-check"></i> Rôle Discord "Soutien"</li>
                         <li><i class="fas fa-check"></i> Priorité files d'attente</li>
                     </ul>
-                    <button class="pro-btn-secondary" onclick="subscribePlan('3m')">Choisir</button>
+                    <button type="button" class="pro-btn-secondary" onclick="subscribePlan('3m', this)">Choisir</button>
                 </div>
 
                 <!-- 6 Months -->
@@ -3266,7 +4085,7 @@
                         <li><i class="fas fa-check"></i> Accès Beta (Nouveaux jeux)</li>
                         <li><i class="fas fa-check"></i> Support dédié</li>
                     </ul>
-                    <button class="pro-btn-primary" onclick="subscribePlan('6m')">Choisir</button>
+                    <button type="button" class="pro-btn-primary" onclick="subscribePlan('6m', this)">Choisir</button>
                 </div>
 
                 <!-- 12 Months -->
@@ -3282,7 +4101,7 @@
                         <li><i class="fas fa-check"></i> Setup personnalisé</li>
                         <li><i class="fas fa-check"></i> Mises à jour garanties</li>
                     </ul>
-                    <button class="pro-btn-primary" onclick="subscribePlan('12m')">Choisir</button>
+                    <button type="button" class="pro-btn-primary" onclick="subscribePlan('12m', this)">Choisir</button>
                 </div>
             </div>
 
@@ -3297,7 +4116,7 @@
             </div>
 
             <div class="pro-modal-footer">
-                <p><i class="fas fa-lock"></i> Paiement sécurisé par Stripe • Annulable à tout moment</p>
+                <p><i class="fas fa-lock"></i> Paiement sécurisé par Stripe (carte, Revolut Pay) • Paiement unique, sans renouvellement automatique • Facture envoyée par e-mail</p>
             </div>
         </div>
     </div>
@@ -3306,8 +4125,18 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script src="app.js"></script>
-    <script src="previews.js"></script>
+    <script src="premium.js"></script>
     <script src="router.js"></script>
+    <script src="navrail.js"></script>
+    <script src="frames.js"></script>
+    <script src="pro.js"></script>
+    <script src="gallery.js"></script>
+    <script src="appstatus.js"></script>
+    <script src="donors.js"></script>
+    <script src="runmode.js"></script>
+    <script src="presetcodes.js"></script>
+    <script src="home.js"></script>
+    <script src="action-editor.js"></script>
 
     <!-- MODAL MINECRAFT OPTIONS -->
     <div id="modal-mc-options" class="modal-overlay hidden" style="z-index: 11000;">
@@ -3339,7 +4168,7 @@
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <span
                                 style="font-size: 0.65rem; color: var(--primary); font-weight: 800; letter-spacing: 1px;"><i
-                                    class="fas fa-microchip"></i> GENTOK KERNEL v1.0.5</span>
+                                    class="fas fa-microchip"></i> GENTOK KERNEL v<span class="gentok-version">1.0.7</span></span>
                             <span
                                 style="font-size: 0.65rem; color: #444; font-family: monospace;">SYSTEM_SCANNING...</span>
                         </div>
@@ -3491,7 +4320,7 @@
                 Il semblerait que Gentok soit déjà ouvert dans un autre onglet.<br>
                 Pour éviter les bugs, une seule session est active.
             </p>
-            <button id="btn-take-over" class="btn-primary"
+            <button id="btn-take-over" class="btn-primary" onclick="takeOverSession()"
                 style="width: 100%; padding: 15px; font-size: 1rem; border-radius: 12px; font-weight: 700;">
                 Prendre la main sur cette session
             </button>

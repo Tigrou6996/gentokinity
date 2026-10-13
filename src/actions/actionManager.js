@@ -1,14 +1,97 @@
+const crypto = require('crypto');
 const logger = require('../utils/logger');
+const { getPlan, canUseActionType, PREMIUM_ONLY_ACTION_TYPES } = require('../features/plans');
 const config = require('../config');
 const { pressKey } = require('./keyboardAction');
 const { sendWebhook } = require('./webhookAction');
 const { sendRconCommand } = require('./rconAction');
-const { emitToApp, isAppConnected, emitEvent } = require('../utils/socket');
+const { emitToApp, emitToDesktopApp, isAppConnected, emitEvent } = require('../utils/socket');
 const { translateGift } = require('../utils/giftTranslator');
+
+/**
+ * Values available in action texts / commands, e.g. "Merci {nickname} pour {repeatcount} {giftname} !"
+ * Line breaks are removed: values come from TikTok viewers and a line break could chain
+ * extra Minecraft commands.
+ */
+function buildPlaceholders(context = {}, extra = {}) {
+    const values = {
+        '{user}': context.uniqueId || '',
+        '{username}': context.uniqueId || '', // TikTok @username
+        '{nickname}': context.nickname || context.uniqueId || '',
+        '{comment}': context.comment || context.message || '',
+        '{giftname}': context.giftName || '',
+        '{coins}': context.diamondCount || context.coins || '',
+        '{repeatcount}': context.repeatCount || '1',
+        '{combo}': context.comboCount || context.repeatCount || '1',
+        '{likecount}': context.likeCount || '',
+        '{totallikecount}': context.totalLikeCount || '',
+        '{submonth}': context.subMonth || '',
+        '{level}': context.level || '',
+        ...extra
+    };
+    for (const key of Object.keys(values)) {
+        values[key] = String(values[key]).replace(/[\r\n]+/g, ' ');
+    }
+    return values;
+}
+
+const MAX_RUNS_PER_TRIGGER = 50; // safety cap for one trigger (e.g. a 1000-rose combo)
+
+/** What an action does: its list of effects (several since the TikFinity-like editor), or its single type */
+const EFFECT_TYPES = ['alert', 'sound', 'tts', 'chatbot', 'webhook', 'keyboard', 'rcon', 'obs', 'streamerbot', 'wheel'];
+function actionEffects(action) {
+    const list = Array.isArray(action.effects) && action.effects.length ? action.effects : [action.type];
+    return [...new Set(list.filter(t => EFFECT_TYPES.includes(t)))];
+}
+
+function safeJson(text) {
+    try {
+        const v = JSON.parse(text);
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function fillPlaceholders(template, context, extra) {
+    let out = String(template || '');
+    const values = buildPlaceholders(context, extra);
+    for (const [key, val] of Object.entries(values)) {
+        out = out.split(key).join(val);
+    }
+    return out;
+}
 
 class ActionManager {
     constructor() {
         this.donors = new Map(); // token -> Map(uniqueId -> totalDiamonds)
+        this.lastRunAt = new Map(); // `${token}:${actionId}` -> timestamp (cooldowns)
+    }
+
+    /**
+     * Optional per-action cooldown (seconds): returns false if the action ran too recently.
+     */
+    passesCooldown(token, action, context = {}, peekOnly = false) {
+        const now = Date.now();
+        const globalS = Number(action.cooldown) || 0;
+        const userS = Number(action.userCooldown) || 0;
+        const viewer = context.userId || context.uniqueId;
+        const globalKey = `${token}:${action.id}`;
+        const userKey = `${token}:${action.id}:${viewer}`;
+
+        if (globalS > 0 && now - (this.lastRunAt.get(globalKey) || 0) < globalS * 1000) return false;
+        if (userS > 0 && viewer && now - (this.lastRunAt.get(userKey) || 0) < userS * 1000) return false;
+        if (peekOnly) return true;
+
+        if (globalS > 0) this.lastRunAt.set(globalKey, now);
+        if (userS > 0 && viewer) this.lastRunAt.set(userKey, now);
+
+        // Keep the map small on long lives
+        if (this.lastRunAt.size > 20000) {
+            const limit = now - 3600 * 1000;
+            for (const [k, t] of this.lastRunAt) if (t < limit) this.lastRunAt.delete(k);
+        }
+        return true;
     }
 
     /**
@@ -44,7 +127,9 @@ class ActionManager {
             const unitPrice = getGiftPrice(context);
             const totalAmount = unitPrice * repeatCount;
 
-            if (unitPrice > 0 && context.repeatEnd) {
+            // Only the "gift:<name>" call records the donation (gift_min is called with the same gifts)
+            // (simulator gifts don't count: a test gift used to hold a "top donateur" slot for every later live)
+            if (unitPrice > 0 && context.repeatEnd && triggerCode.startsWith('gift:') && !connector.isSimulation) {
                 if (!this.donors.has(token)) this.donors.set(token, new Map());
                 const tokenDonors = this.donors.get(token);
 
@@ -65,111 +150,146 @@ class ActionManager {
         const events = settings.events || [];
         const actionDefinitions = settings.actions || [];
 
-        // Trouver les événements qui correspondent au triggerCode
-        const matchedEvents = events.filter(e => {
-            // 1. FILTER BY AUDIENCE (WHO)
-            if (e.who === 'follower') {
-                if (context.followRole !== 2) return false;
-            } else if (e.who === 'subscriber') {
-                if (!context.isSubscriber) return false;
-            } else if (e.who === 'moderator') {
-                if (!context.isModerator) return false;
-            } else if (e.who === 'specific_user') {
-                if (e.specificUser && context.uniqueId !== e.specificUser) return false;
-            } else if (e.who === 'top_gifter') {
-                if (!context.topGifterRank || context.topGifterRank > 3) return false;
-            }
+        // Trouver les événements qui correspondent au triggerCode.
+        // Chaque événement retenu indique combien de fois il se déclenche (`times`).
+        const matched = [];
+        const plan = getPlan(settings);
+        for (const e of events) {
+            if (!e || e.active === false) continue;
+            if (!this.matchesAudience(e, context)) continue;
+            const times = this.matchTrigger(e, triggerCode, context, connector);
+            if (times <= 0) continue;
 
-            // 2. FILTER BY TRIGGER
-            let triggerMatched = false;
-
-            if (e.triggerType === 'gift') {
-                if (triggerCode.startsWith('gift:') || triggerCode === 'gift') {
-                    if (!e.giftName || e.giftName.trim() === '' || e.giftName.toLowerCase() === 'any gift' || e.giftName.toLowerCase() === 'tous les cadeaux') {
-                        triggerMatched = true;
-                    } else if (e.giftId && context.giftId && String(e.giftId) === String(context.giftId)) {
-                        triggerMatched = true;
-                    } else {
-                        const giftNameToCheck = context.giftName || (triggerCode.startsWith('gift:') ? triggerCode.substring(5) : '');
-                        if (giftNameToCheck && giftNameToCheck !== 'undefined') {
-                            const translatedName = translateGift(giftNameToCheck);
-                            const eventGiftName = e.giftName.trim().toLowerCase().replace(/^gift\s+/i, '');
-                            const targetRaw = giftNameToCheck.trim().toLowerCase().replace(/^gift\s+/i, '');
-                            const targetTranslated = translatedName.trim().toLowerCase().replace(/^gift\s+/i, '');
-
-                            if (eventGiftName === targetRaw || eventGiftName === targetTranslated) {
-                                triggerMatched = true;
-                            } else if (targetRaw.length > 2 && eventGiftName.length > 2) {
-                                if (targetRaw.includes(eventGiftName) || eventGiftName.includes(targetRaw) || targetTranslated.includes(eventGiftName) || eventGiftName.includes(targetTranslated)) {
-                                    triggerMatched = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            } else if (e.triggerType === triggerCode) {
-                triggerMatched = true;
-
-                // Special check for Like Threshold (Check totalLikeCount or likeCount)
-                if (triggerCode === 'like' && e.likeThreshold) {
-                    const currentLikes = context.totalLikeCount || context.likeCount || 0;
-                    if (currentLikes < e.likeThreshold) {
-                        triggerMatched = false;
-                    }
-                }
-
-                // Check for Command match
-                if (triggerCode === 'command' && e.command) {
-                    const msg = (context.message || '').trim().toLowerCase();
-                    const cmd = e.command.trim().toLowerCase();
-                    if (msg !== cmd && !msg.startsWith(cmd + ' ')) {
-                        triggerMatched = false;
-                    }
-                }
-
-                // Check for Min Coins Gift match
-                if (triggerCode === 'gift_min' && e.minCoins) {
-                    const unitPrice = context.unitPrice || 0;
-                    if (unitPrice < e.minCoins) {
-                        triggerMatched = false;
-                    }
-                }
-
-                // Check for Chat Message match
-                if (triggerCode === 'chat' && e.message) {
-                    const msg = (context.message || '').toLowerCase();
-                    const requiredMsg = e.message.toLowerCase();
-                    if (!msg.includes(requiredMsg)) {
-                        triggerMatched = false;
-                    }
+            // Points shop (Premium): the viewer pays the event with his points
+            const cost = Number(e.pointsCost) || 0;
+            if (cost > 0 && plan.pointsStore && context.uniqueId && !connector.isSimulation) {
+                // nothing to pay if every action of the event is still in cooldown (it would not run)
+                const ids = Array.isArray(e.actions) ? e.actions : [e.actions];
+                const defs = ids.map(id => actionDefinitions.find(a => a.id === id)).filter(Boolean);
+                if (defs.length && !defs.some(d => this.passesCooldown(token, d, context, true))) continue;
+                const points = require('../features/points');
+                const paid = await points.spend(token, context, cost * times, 'spend', e.command || e.triggerType);
+                if (!paid) {
+                    emitEvent('points_insufficient', { uniqueId: context.uniqueId, nickname: context.nickname || context.uniqueId, cost: cost * times }, token);
+                    logger.info(`💸 [${token.substring(0, 8)}] ${context.uniqueId} n'a pas assez de points (${cost * times}).`);
+                    continue;
                 }
             }
-
-            return triggerMatched;
-        });
-
-        const executedActionIds = new Set();
-        const allActionDefs = [];
-
-        for (const event of matchedEvents) {
-            if (!event.active) continue;
-
-            const actionIds = Array.isArray(event.actions) ? event.actions : [event.actions];
-            for (const actionId of actionIds) {
-                if (executedActionIds.has(actionId)) continue;
-                executedActionIds.add(actionId);
-
-                const actionDef = actionDefinitions.find(a => a.id === actionId);
-                if (actionDef) allActionDefs.push(actionDef);
-            }
+            matched.push({ event: e, times });
         }
 
-        if (allActionDefs.length > 0) {
-            const repeat = (context && typeof context.repeatCount === 'number' && context.repeatCount > 0) ? context.repeatCount : 1;
-            const count = Math.min(20, repeat);
-            for (let i = 0; i < count; i++) {
-                this.enqueueActionBatch(token, allActionDefs, triggerCode, context, connector);
+        // Group actions by number of runs so that a gift combo of 5 runs its actions 5 times,
+        // and an action linked to several matching events still runs only once per trigger.
+        const runsByAction = new Map(); // actionId -> { def, times }
+        for (const { event, times } of matched) {
+            const actionIds = Array.isArray(event.actions) ? event.actions : [event.actions];
+            for (const actionId of actionIds) {
+                const def = actionDefinitions.find(a => a.id === actionId);
+                if (!def) continue;
+                // "Répéter avec les combos" off: a combo of 5 roses runs the action once
+                const runs = def.comboRepeat === false ? Math.min(times, 1) : times;
+                const prev = runsByAction.get(actionId);
+                if (!prev || prev.times < runs) runsByAction.set(actionId, { def, times: runs });
             }
+        }
+        if (runsByAction.size === 0) return;
+
+        const batches = new Map(); // times -> [defs]
+        for (const { def, times } of runsByAction.values()) {
+            if (!batches.has(times)) batches.set(times, []);
+            batches.get(times).push(def);
+        }
+        for (const [times, defs] of batches) {
+            const count = Math.min(MAX_RUNS_PER_TRIGGER, times);
+            // run once per gift: each run stands for ONE gift, so {repeatcount} is 1 in each
+            // (5 roses = 5 runs of "give tnt {repeatcount}" = 5 TNT, not 5 x 5)
+            const runContext = count > 1 ? { ...context, repeatCount: 1 } : context;
+            for (let i = 0; i < count; i++) {
+                this.enqueueActionBatch(token, defs, triggerCode, runContext, connector);
+            }
+        }
+    }
+
+    /** "Qui peut déclencher ?" filter */
+    matchesAudience(e, context) {
+        // "Niveau d'équipe requis" (TikTok team / fan club level), 0 = everyone
+        const minTeam = Number(e.minTeamLevel) || 0;
+        if (minTeam > 0 && (Number(context.teamMemberLevel) || 0) < minTeam) return false;
+        switch (e.who) {
+            case 'follower':
+                // followRole: 0 = not following, 1 = follower, 2 = friend (mutual follow)
+                return Number(context.followRole) >= 1;
+            case 'subscriber':
+                return !!context.isSubscriber;
+            case 'moderator':
+                return !!context.isModerator;
+            case 'specific_user':
+                return !e.specificUser || String(context.uniqueId || '').toLowerCase() === String(e.specificUser).replace(/^@/, '').trim().toLowerCase();
+            case 'top_gifter':
+                return !!context.topGifterRank && context.topGifterRank <= 3;
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Returns how many times the event fires for this trigger (0 = no match).
+     */
+    matchTrigger(e, triggerCode, context, connector) {
+        const repeat = (typeof context.repeatCount === 'number' && context.repeatCount > 0) ? context.repeatCount : 1;
+
+        if (e.triggerType === 'gift') {
+            if (!(triggerCode.startsWith('gift:') || triggerCode === 'gift')) return 0;
+            const anyGift = !e.giftName || e.giftName.trim() === '' || ['any gift', 'tous les cadeaux'].includes(e.giftName.toLowerCase());
+            if (anyGift) return repeat;
+
+            // Same id: match. Different ids: still compare the names (seasonal / regional variants of a gift
+            // have their own id with the same name)
+            if (e.giftId && context.giftId && String(e.giftId) === String(context.giftId)) return repeat;
+
+            const giftNameToCheck = context.giftName || (triggerCode.startsWith('gift:') ? triggerCode.substring(5) : '');
+            if (!giftNameToCheck || giftNameToCheck === 'undefined') return 0;
+            const clean = (v) => String(v).trim().toLowerCase().replace(/^gift\s+/i, '');
+            const wanted = clean(e.giftName);
+            return (wanted === clean(giftNameToCheck) || wanted === clean(translateGift(giftNameToCheck))) ? repeat : 0;
+        }
+
+        if (e.triggerType !== triggerCode) return 0;
+
+        switch (triggerCode) {
+            case 'like': {
+                // Fires every time a viewer reaches `likeThreshold` likes (accumulated per viewer)
+                const threshold = Math.max(1, parseInt(e.likeThreshold, 10) || 1);
+                const sent = Math.max(1, parseInt(context.likeCount, 10) || 1);
+                // threshold 1: once per like message (a message often carries 15+ taps, one run per tap flooded the queue)
+                if (threshold <= 1) return 1;
+                if (!connector.likeAccumulators) connector.likeAccumulators = new Map();
+                const key = `${e.id}:${context.userId || context.uniqueId}`;
+                const total = (connector.likeAccumulators.get(key) || 0) + sent;
+                const times = Math.floor(total / threshold);
+                connector.likeAccumulators.set(key, total - times * threshold);
+                return times;
+            }
+            case 'command': {
+                if (!e.command) return 0;
+                const msg = String(context.message || context.comment || '').trim().toLowerCase();
+                const cmd = e.command.trim().toLowerCase().replace(/^!/, '');
+                const first = msg.split(/\s+/)[0] || '';
+                return (first === cmd || first === '!' + cmd) ? 1 : 0;
+            }
+            case 'chat': {
+                if (!e.message) return 1;
+                const msg = String(context.message || context.comment || '').toLowerCase();
+                return msg.includes(e.message.toLowerCase()) ? 1 : 0;
+            }
+            case 'gift_min': {
+                const unitPrice = context.unitPrice || 0;
+                return (!e.minCoins || unitPrice >= e.minCoins) ? repeat : 0;
+            }
+            case 'level_up':
+                return (!e.minLevel || Number(context.level) >= e.minLevel) ? 1 : 0;
+            default:
+                return 1;
         }
     }
 
@@ -178,9 +298,12 @@ class ActionManager {
      */
     clearQueue(token) {
         if (this.actionQueues && this.actionQueues.has(token)) {
-            const q = this.actionQueues.get(token);
-            q.items = [];
-            q.isProcessing = false;
+            // a new queue object: the loop of the old one (maybe sleeping) stops on its own instead of
+            // running alongside the next one
+            this.actionQueues.get(token).items = [];
+            this.actionQueues.set(token, { items: [], isProcessing: false });
+            // "top donateur (session)" starts again at the next live
+            this.donors.delete(token);
             logger.info(`🛑 [${token.substring(0, 8)}] File d'attente d'actions vidée.`);
         }
     }
@@ -194,6 +317,8 @@ class ActionManager {
             this.actionQueues.set(token, { items: [], isProcessing: false });
         }
         const q = this.actionQueues.get(token);
+        // likes can't pile up: past 10 waiting like actions, new ones are dropped (gifts and follows stay on time)
+        if (triggerCode === 'like' && q.items.filter(i => i.triggerCode === 'like').length >= 10) return;
         q.items.push({ actionDefs, triggerCode, context, connector });
         this.processActionQueue(token);
     }
@@ -210,6 +335,8 @@ class ActionManager {
             const { actionDefs, triggerCode, context, connector } = task;
 
             const actionNames = actionDefs.map(a => a.name || a.type).join(' + ');
+            let plan = getPlan(false);
+            try { plan = getPlan(await config.getSettings(token)); } catch (e) { }
             logger.info(`🔥 [${token.substring(0, 8)}] Déclenchement simultané (${q.items.length} cadeaux en attente) : ${actionNames}`);
 
             let maxDuration = 1.5;
@@ -217,10 +344,20 @@ class ActionManager {
             // Exécute TOUTES les actions associées au cadeau (Webhook + Son) EXACTEMENT EN MÊME TEMPS
             await Promise.all(actionDefs.map(async (actionDef) => {
                 try {
-                    if (actionDef.duration && typeof actionDef.duration === 'number' && actionDef.duration > maxDuration) {
-                        maxDuration = actionDef.duration;
+                    // keyboard "duration" is the key hold time in MILLISECONDS (form: 50-2000 ms); read as seconds it
+                    // used to freeze the whole queue for 100 s (or 33 min) after a single key action
+                    const durS = Number(actionDef.duration) > 0 ? (actionDef.type === 'keyboard' ? Number(actionDef.duration) / 1000 : Number(actionDef.duration)) : 0;
+                    if (durS > maxDuration) maxDuration = Math.min(durS, 30);
+                    // Optional delay (Premium): runs later without blocking the other actions of the queue
+                    const delayS = plan.actionDelay ? Math.min(Math.max(Number(actionDef.delay) || 0, 0), 600) : 0;
+                    if (delayS > 0) {
+                        setTimeout(() => {
+                            if (connector && connector.isStopping) return;
+                            this.runAction(actionDef, triggerCode, context, connector).catch(() => { });
+                        }, delayS * 1000);
+                    } else {
+                        await this.runAction(actionDef, triggerCode, context, connector);
                     }
-                    await this.runAction(actionDef, triggerCode, context, connector);
                 } catch (err) {
                     logger.error(`🚨 Erreur action ${actionDef.id}: ${err.message}`);
                 }
@@ -244,6 +381,43 @@ class ActionManager {
         if (!connector || !connector.token) return;
         const token = connector.token;
 
+        // switched off in the actions list (a manual test still runs it)
+        if (action.enabled === false && triggerCode !== 'manual') return;
+
+        // An action can do several things at once (show an alert + play a sound + read a text...)
+        let effects = actionEffects(action);
+        // Premium-only effects: the other effects of the action still run
+        if (effects.some(t => PREMIUM_ONLY_ACTION_TYPES.includes(t))) {
+            const plan = getPlan(await config.getSettings(token));
+            const allowed = effects.filter(t => canUseActionType(plan, t));
+            if (allowed.length < effects.length) logger.warn(`🔒 [${token.substring(0, 8)}] Action "${action.name || action.type}" : ${effects.filter(t => !allowed.includes(t)).join(', ')} réservé à Gentok Premium.`);
+            effects = allowed;
+            if (!effects.length && !action.soundUrl) return;
+        }
+
+        // Manual tests (dashboard "Tester") and goal rewards ignore cooldowns
+        if (triggerCode !== 'manual' && !this.passesCooldown(token, action, context)) {
+            logger.info(`⏳ [${token.substring(0, 8)}] Action "${action.name || action.id}" ignorée (cooldown).`);
+            return;
+        }
+
+        // Points: the viewer who triggered it earns them (points > 0) or pays them (points < 0, the action
+        // does not run if he cannot afford it)
+        const pointsDelta = Math.trunc(Number(action.points) || 0);
+        if (pointsDelta && context.uniqueId && triggerCode !== 'manual' && !connector.isSimulation) {
+            const points = require('../features/points');
+            if (pointsDelta < 0) {
+                const paid = await points.spend(token, context, -pointsDelta, 'spend', action.name || 'action');
+                if (!paid) {
+                    emitEvent('points_insufficient', { uniqueId: context.uniqueId, nickname: context.nickname || context.uniqueId, cost: -pointsDelta }, token);
+                    logger.info(`💸 [${token.substring(0, 8)}] ${context.uniqueId} n'a pas assez de points pour "${action.name || action.id}" (${-pointsDelta}).`);
+                    return;
+                }
+            } else {
+                points.award(token, context, pointsDelta, 'action', {}, 0);
+            }
+        }
+
         // [NEW] Actions Breakdown tracking
         if (connector.stats) {
             if (!connector.stats.actionsBreakdown) connector.stats.actionsBreakdown = {};
@@ -252,105 +426,12 @@ class ActionManager {
         }
 
         try {
-            if (action.type === 'webhook') {
-                let url = action.url;
-                if (context.uniqueId) {
-                    url = url.replace(/{user}/g, context.uniqueId);
-                    url = url.replace(/{username}/g, context.uniqueId);
+            for (const type of effects) {
+                try {
+                    await this.runEffect(type, action, triggerCode, context, connector);
+                } catch (err) {
+                    logger.error(`🚨 Erreur action ${action.name || action.id} (${type}) : ${err.message}`);
                 }
-
-                await sendWebhook({
-                    url: url,
-                    method: action.method || 'GET',
-                    data: action.data || {}
-                });
-            } else if (action.type === 'keyboard') {
-                const isApp = config.isAppMode;
-                // If we are in APP MODE, execute locally
-                if (isApp) {
-                    pressKey(action.key, false, action.duration || 100);
-                } else {
-                    // If we are the VPS, relay to the connected EXE
-                    emitToApp(token, 'remote_keyboard', {
-                        key: action.key,
-                        duration: action.duration || 100
-                    });
-                }
-            } else if (action.type === 'rcon') {
-                let command = action.command;
-
-                // Get Minecraft settings for THIS token first (needed for {playername})
-                const settings = await config.getSettings(token);
-                const mcSettings = settings.minecraft || {};
-                const mcPlayerName = mcSettings.playerName || mcSettings.currentPlayerName || '';
-
-                // Advanced Placeholder Replacement
-                if (context) {
-                    // Normalize context keys to lowercase for matching if needed, but usually we map explicitly
-                    const replacements = {
-                        '{user}': context.uniqueId || '',
-                        '{username}': context.uniqueId || '', // TikTok Username
-                        '{nickname}': context.nickname || '',
-                        '{comment}': context.comment || '',
-                        '{giftname}': context.giftName || '',
-                        '{coins}': context.diamondCount || context.coins || '', // diamondCount is usually coins in TikTok Live libs
-                        '{repeatcount}': context.repeatCount || '1',
-                        '{likecount}': context.likeCount || '',
-                        '{totallikecount}': context.totalLikeCount || '',
-                        '{submonth}': context.subMonth || '',
-                        '{playername}': mcPlayerName // Minecraft Player Name
-                    };
-
-                    // Replace all placeholders
-                    Object.keys(replacements).forEach(key => {
-                        const val = String(replacements[key]);
-                        // Global replace
-                        command = command.split(key).join(val);
-                    });
-                }
-
-
-
-                if (!mcSettings || !mcSettings.host) {
-                    logger.warn(`⚠️ [${token.substring(0, 8)}] Minecraft action skipped: No settings configured.`);
-                    return;
-                }
-
-                // Auto-execute AT the player's position if a player name is configured
-                // AND the command doesn't already allow specific targeting (like 'execute')
-                if (mcPlayerName && mcPlayerName.trim() !== '' && !command.startsWith('execute')) {
-                    // Check if command is safe to wrap? Usually yes.
-                    // If user manually typed "execute at ...", we don't wrap.
-                    command = `execute at ${mcPlayerName} run ${command}`;
-                }
-
-                const appConnected = isAppConnected(token);
-                const isLocal = config.isAppMode;
-
-                // [FIX] In App/Local mode, the server IS on the same machine as Minecraft.
-                // Just call ServerTap HTTP directly — no relay needed!
-                if (isLocal) {
-                    logger.info(`🎮 [Local] Direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
-                    await sendRconCommand(command, mcSettings);
-                } else if (appConnected) {
-                    // VPS mode: relay to Electron app via socket
-                    logger.info(`📡 Relaying RCON to App (EXE) for token ${token.substring(0, 8)}...`);
-                    emitToApp(token, 'remote_rcon', { command, settings: mcSettings });
-                } else {
-                    // VPS mode, no app connected: only possible if host is not localhost
-                    if (mcSettings.host && mcSettings.host !== 'localhost' && mcSettings.host !== '127.0.0.1') {
-                        logger.info(`🎮 Executing direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
-                        await sendRconCommand(command, mcSettings);
-                    } else {
-                        logger.warn(`⚠️ [${token.substring(0, 8)}] RCON skipped: Host is ${mcSettings.host} but no App is connected.`);
-                    }
-                }
-
-
-            } else if (action.type === 'sound') {
-                // Handled below by audioUrl check
-            } else {
-                logger.warn(`⚠️ Type d'action inconnu : ${action.type}`);
             }
 
             // Play audio if action is of type 'sound' OR has an attached soundUrl (e.g. Soundboard audio alerts)
@@ -366,6 +447,210 @@ class ActionManager {
             logger.error(`🚨 Erreur lors de l'exécution de l'action ${action.type}: ${err.message}`);
         }
     }
+
+    /** Runs one effect of an action (webhook, keyboard, Minecraft, alert, TTS, OBS...) */
+    async runEffect(type, action, triggerCode, context, connector) {
+        const token = connector.token;
+        if (type === 'webhook') {
+            let url = action.url;
+            if (!url) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Webhook ignoré : URL manquante (${action.name || action.id}).`);
+                return;
+            }
+            if (context.uniqueId) {
+                url = url.replace(/{user}/g, context.uniqueId);
+                url = url.replace(/{username}/g, context.uniqueId);
+            }
+
+            await sendWebhook({
+                url: url,
+                method: action.method || 'GET',
+                data: action.data || {}
+            });
+        } else if (type === 'keyboard') {
+            const isApp = config.isAppMode;
+            // If we are in APP MODE, execute locally
+            if (isApp) {
+                pressKey(action.key, false, action.duration || 100);
+            } else {
+                // If we are the VPS, relay to the connected EXE
+                emitToApp(token, 'remote_keyboard', {
+                    key: action.key,
+                    duration: action.duration || 100
+                });
+            }
+        } else if (type === 'rcon') {
+            let command = action.command || '';
+            if (!command.trim()) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Commande Minecraft vide (${action.name || action.id}).`);
+                return;
+            }
+
+            // Get Minecraft settings for THIS token first (needed for {playername})
+            const settings = await config.getSettings(token);
+            const mcSettings = settings.minecraft || {};
+            const mcPlayerName = mcSettings.playerName || mcSettings.currentPlayerName || '';
+
+            // Placeholders ({username}, {giftname}, {playername}...)
+            command = fillPlaceholders(command, context, { '{playername}': mcPlayerName });
+
+            if (!mcSettings || !mcSettings.host) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Minecraft action skipped: No settings configured.`);
+                return;
+            }
+
+            // Auto-execute AT the player's position if a player name is configured
+            // AND the command doesn't already allow specific targeting (like 'execute')
+            if (mcPlayerName && mcPlayerName.trim() !== '' && !command.startsWith('execute')) {
+                // Check if command is safe to wrap? Usually yes.
+                // If user manually typed "execute at ...", we don't wrap.
+                command = `execute at ${mcPlayerName} run ${command}`;
+            }
+
+            const appConnected = isAppConnected(token);
+            const isLocal = config.isAppMode;
+
+            // [FIX] In App/Local mode, the server IS on the same machine as Minecraft.
+            // Just call ServerTap HTTP directly — no relay needed!
+            if (isLocal) {
+                logger.info(`🎮 [Local] Direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
+                await sendRconCommand(command, mcSettings);
+            } else if (appConnected) {
+                // VPS mode: relay to Electron app via socket
+                logger.info(`📡 Relaying RCON to App (EXE) for token ${token.substring(0, 8)}...`);
+                // only to the desktop app: the ServerTap key must not reach overlays / dashboards
+                emitToDesktopApp(token, 'remote_rcon', { command, settings: mcSettings });
+            } else {
+                // VPS mode, no app connected: only possible if host is not localhost
+                if (mcSettings.host && mcSettings.host !== 'localhost' && mcSettings.host !== '127.0.0.1') {
+                    logger.info(`🎮 Executing direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
+                    await sendRconCommand(command, mcSettings);
+                } else {
+                    logger.warn(`⚠️ [${token.substring(0, 8)}] RCON skipped: Host is ${mcSettings.host} but no App is connected.`);
+                }
+            }
+
+
+        } else if (type === 'sound') {
+            // Handled below by audioUrl check
+        } else if (type === 'alert') {
+            // On-screen alert shown by the "Alertes" overlay (image / GIF / video + text)
+            emitEvent('overlay_alert', {
+                text: fillPlaceholders(action.text || '', context),
+                mediaUrl: action.mediaUrl || '',
+                duration: Math.min(Math.max(Number(action.alertDuration) || 5, 1), 60),
+                nickname: context.nickname || context.uniqueId || '',
+                uniqueId: context.uniqueId || '',
+                profilePictureUrl: context.profilePictureUrl || '',
+                giftIcon: context.url || context.giftIcon || '',
+                // "screen" of the Alerts overlay (several overlays: /overlay/alerts?screen=2), fade, skip
+                screen: Math.min(Math.max(parseInt(action.screen, 10) || 1, 1), 8),
+                fade: action.fade !== false,
+                skipOnNext: !!action.skipOnNext
+            }, token);
+        } else if (type === 'obs') {
+            const settings = await config.getSettings(token);
+            const obsSettings = settings.obs || {};
+            const obsAction = { obsAction: action.obsAction, obsScene: action.obsScene, obsSource: action.obsSource, obsDuration: action.obsDuration };
+            const isLocalHost = !obsSettings.host || ['localhost', '127.0.0.1'].includes(obsSettings.host);
+
+            if (config.isAppMode) {
+                const { runObsAction } = require('./obsAction');
+                await runObsAction(obsAction, obsSettings);
+            } else if (isAppConnected(token)) {
+                // OBS runs on the streamer's PC: the desktop app executes it
+                emitToDesktopApp(token, 'remote_obs', { action: obsAction, settings: obsSettings });
+            } else if (!isLocalHost) {
+                const { runObsAction } = require('./obsAction');
+                await runObsAction(obsAction, obsSettings);
+            } else {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Action OBS ignorée : lancez l'application Gentok sur le PC où tourne OBS.`);
+            }
+        } else if (type === 'streamerbot') {
+            const settings = await config.getSettings(token);
+            const sb = settings.streamerbot || {};
+            const args = {
+                user: context.uniqueId || '', nickname: context.nickname || '', comment: context.comment || context.message || '',
+                giftName: context.giftName || '', giftId: context.giftId || '', coins: context.diamondCount || context.coins || 0,
+                repeatCount: context.repeatCount || 1, likeCount: context.likeCount || 0, trigger: triggerCode,
+                ...(action.sbArgs ? safeJson(fillPlaceholders(action.sbArgs, context)) : {})
+            };
+            const payload = { action: { id: action.sbActionId || undefined, name: action.sbActionName || undefined }, args };
+            const isLocalHost = !sb.host || ['localhost', '127.0.0.1'].includes(sb.host);
+            if (config.isAppMode || !isLocalHost) {
+                const { runStreamerbotAction } = require('./streamerbotAction');
+                await runStreamerbotAction(payload, sb);
+            } else if (isAppConnected(token)) {
+                emitToDesktopApp(token, 'remote_streamerbot', { payload, settings: sb });
+            } else {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Action Streamer.bot ignorée : lancez l'application Gentok sur le PC de Streamer.bot.`);
+            }
+        } else if (type === 'wheel') {
+            await this.spinWheel(action, context, connector);
+        } else if (type === 'tts') {
+            // Text read aloud by the dashboard (same voice settings as the chat TTS)
+            const text = fillPlaceholders(action.ttsText !== undefined ? action.ttsText : (action.text || ''), context).trim();
+            if (text) emitEvent('tts_speak', { text: text.slice(0, 300), user: context.uniqueId || 'action' }, token);
+        } else if (type === 'chatbot') {
+            // message posted in the live chat by the streamer's bot account
+            const text = fillPlaceholders(action.chatText || '', context).trim();
+            if (text) require('../features/chatbot').say(connector, await config.getSettings(token), text.slice(0, 150));
+        } else {
+            logger.warn(`⚠️ Type d'action inconnu : ${type}`);
+        }
+    }
+
+    /**
+     * "Roue de la fortune": picks a segment, animates it on the Wheel overlay, then runs the
+     * action linked to the winning segment ("Texte => Nom de l'action").
+     */
+    async spinWheel(action, context, connector) {
+        const token = connector.token;
+        const segments = String(action.segments || '')
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean)
+            .slice(0, 24)
+            .map(line => {
+                const [label, linked] = line.split('=>').map(p => (p || '').trim());
+                return { label: label.slice(0, 40), linked: linked || null };
+            })
+            .filter(s => s.label);
+        if (segments.length < 2) {
+            logger.warn(`⚠️ [${token.substring(0, 8)}] Roue "${action.name}" : il faut au moins 2 cases.`);
+            return;
+        }
+
+        const winnerIndex = crypto.randomInt(segments.length);
+        const winner = segments[winnerIndex];
+        const spinMs = 6000;
+        emitEvent('wheel_spin', {
+            id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            title: action.name || '',
+            segments: segments.map(s => s.label),
+            winnerIndex,
+            spinMs,
+            nickname: context.nickname || context.uniqueId || '',
+            profilePictureUrl: context.profilePictureUrl || ''
+        }, token);
+        logger.info(`🎡 [${token.substring(0, 8)}] Roue "${action.name}" : ${winner.label} (${context.uniqueId || 'test'})`);
+
+        if (winner.linked) {
+            const settings = await config.getSettings(token);
+            const target = (settings.actions || []).find(a =>
+                a.id !== action.id && (a.name || '').trim().toLowerCase() === winner.linked.toLowerCase());
+            if (!target) {
+                logger.warn(`⚠️ Roue : action « ${winner.linked} » introuvable.`);
+                return;
+            }
+            // Run the reward once the wheel has stopped on the overlay
+            setTimeout(() => {
+                if (connector.isStopping) return;
+                this.runAction(target, 'wheel', { ...context, wheelResult: winner.label }, connector).catch(() => { });
+            }, spinMs + 500);
+        }
+    }
+
     async executeActionById(actionId, connector, context = {}) {
         if (!connector || !connector.token) return;
         const token = connector.token;
@@ -383,3 +668,4 @@ class ActionManager {
 }
 
 module.exports = new ActionManager();
+module.exports.fillPlaceholders = fillPlaceholders;

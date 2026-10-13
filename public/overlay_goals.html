@@ -429,6 +429,7 @@
 
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
     <script>
         const socket = io();
         const container = document.getElementById('goal-container');
@@ -571,7 +572,7 @@
             footerEl.style.display = (goal.showFooter !== false) ? 'block' : 'none';
 
             const remaining = Math.max(target - current, 0);
-            footerEl.textContent = remaining > 0 ? `Plus que ${remaining.toLocaleString()} likes !` : 'Objectif Atteint !';
+            footerEl.textContent = remaining > 0 ? window.Gentok.t('goal.remaining', { n: remaining.toLocaleString() }) : window.Gentok.t('goal.reached');
 
             // Apply Font
             if (goal.font) {

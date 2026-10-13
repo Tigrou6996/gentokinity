@@ -6,6 +6,7 @@ let onAppConnectedCallback = null;
 // Track connected clients by token
 // Structure: { [token]: { dashboard: [sockets], app: [sockets], status: 'offline' } }
 const clientsByToken = {};
+const appInfoByToken = {}; // token -> { version, since } of the connected desktop app
 const socketCache = {}; // [NEW] Store last stats for remote apps (VPS side)
 
 function initSocket(server) {
@@ -20,11 +21,22 @@ function initSocket(server) {
         let identifiedToken = null;
         let identifiedType = 'dashboard';
 
-        socket.on('identify', async (data) => {
-            const { token, type } = data; // type: 'dashboard' or 'app'
+        socket.on('identify', async (data, ack) => {
+            const { token, type } = data || {}; // type: 'dashboard' or 'app'
             if (!token || token.length < 8) {
                 console.warn(`⚠️ [Socket] Tentative d'identification invalide (Token: ${token})`);
                 return;
+            }
+
+            // Same socket identifying again (reconnect, config reload) or switching account: forget its previous
+            // registration first, so it never counts as its own duplicate nor stays in the old account's rooms
+            if (identifiedToken && clientsByToken[identifiedToken]) {
+                const old = clientsByToken[identifiedToken];
+                ['dashboard', 'app', 'overlay'].forEach(k => { if (old[k]) old[k] = old[k].filter(id => id !== socket.id); });
+                if (identifiedToken !== token) {
+                    socket.leave(`room:${identifiedToken}`);
+                    socket.leave(`app:${identifiedToken}`);
+                }
             }
 
             identifiedToken = token;
@@ -33,6 +45,7 @@ function initSocket(server) {
             if (!clientsByToken[token]) {
                 clientsByToken[token] = { dashboard: [], app: [], overlay: [], status: 'offline' };
             }
+            ['dashboard', 'app', 'overlay'].forEach(k => { if (clientsByToken[token][k]) clientsByToken[token][k] = clientsByToken[token][k].filter(id => id !== socket.id); });
 
             // MUTUAL EXCLUSION LOGIC
             if (identifiedType === 'app') {
@@ -49,33 +62,50 @@ function initSocket(server) {
                     onAppConnectedCallback(token);
                 }
 
-                // Add App socket
+                // Add App socket (and remember its version for the "application detected" badge)
                 clientsByToken[token].app.push(socket.id);
+                appInfoByToken[token] = {
+                    version: String(data.version || '').replace(/[^0-9a-zA-Z.-]/g, '').slice(0, 20) || null,
+                    since: Date.now()
+                };
 
                 socket.join(`room:${token}`);
                 socket.join(`app:${token}`);
 
                 // Notify that app is online
                 io.to(`room:${token}`).emit('app_status', 'online');
+                io.to(`room:${token}`).emit('app_info', { connected: true, ...appInfoByToken[token] });
 
             } else if (identifiedType === 'overlay') {
                 socket.join(`room:${token}`);
+                // which overlay page and "screen" (Alerts overlay ?screen=2): the action editor warns about
+                // a screen that is not open in OBS
+                socket.data.overlayPage = String((data && data.page) || '').slice(0, 60);
+                socket.data.overlayScreen = Math.min(Math.max(parseInt(data && data.screen, 10) || 1, 1), 8);
                 if (!clientsByToken[token].overlay) clientsByToken[token].overlay = [];
                 clientsByToken[token].overlay.push(socket.id);
             } else {
-                // If Dashboard connects, check if App is already active
-                if (clientsByToken[token].app.length > 0) {
-                    socket.emit('session_duplicate', { message: 'L\'application (EXE) est déjà ouverte. Veuillez l\'utiliser.' });
-                }
-
-                // Check for duplicate dashboards
-                if (clientsByToken[token].dashboard.length > 0) {
+                // Another tab already open (a real, still connected one): it would play the sounds, alerts and TTS
+                // twice. The warning stays (it used to be hidden right away by session_active) until "take over".
+                // The open desktop app is not a duplicate: the header badge shows it and Cloud mode uses both.
+                // A socket of this same tab (it reconnected before the server noticed the old one was gone) is not
+                // another tab: close the stale one instead of warning the streamer about themselves
+                const tabId = data && typeof data.tabId === 'string' ? data.tabId.slice(0, 64) : '';
+                socket.data.tabId = tabId;
+                const others = clientsByToken[token].dashboard.filter(id => {
+                    const s = id !== socket.id && io.sockets.sockets.get(id);
+                    if (!s) return false;
+                    if (tabId && s.data.tabId === tabId) { s.leave(`room:${token}`); s.disconnect(true); return false; }
+                    return true;
+                });
+                clientsByToken[token].dashboard = others.concat(socket.id);
+                if (others.length > 0) {
+                    // not in the live room until "Prendre la main": this tab plays nothing twice meanwhile
                     socket.emit('session_duplicate', { message: 'Une session est déjà ouverte dans un autre onglet.' });
+                } else {
+                    socket.join(`room:${token}`);
+                    socket.emit('session_active');
                 }
-
-                clientsByToken[token].dashboard.push(socket.id);
-                socket.join(`room:${token}`);
-                socket.emit('session_active');
             }
 
             // [NEW] Send current session stats (live or persistent) immediately on identification
@@ -83,6 +113,7 @@ function initSocket(server) {
 
             // [NEW] Send current status for this token specifically
             socket.emit('status', clientsByToken[token].status || 'offline');
+            if (typeof ack === 'function') ack({ ok: true });
         });
 
         // [NEW] Take Over Session Handler
@@ -104,6 +135,7 @@ function initSocket(server) {
                 }
             });
             clientsByToken[token].dashboard = [socket.id];
+            socket.join(`room:${token}`);
 
             // 2. [INVERSE] Kick App if it was master
             if (clientsByToken[token].app.length > 0) {
@@ -150,12 +182,35 @@ function initSocket(server) {
             'updateLeaderboard', // [NEW] Sync Legend details
             'displayGift',    // [NEW] Sync Legend displays
             'hideGift',       // [NEW] Sync Legend hides
-            'status'          // [NEW] Relay status (online/offline) to VPS
+            'status',         // [NEW] Relay status (online/offline) to VPS
+            'tiktok_alert',   // follow / gift / sub / share alerts for the Alerts overlay
+            'overlay_alert',  // "Alerte" actions
+            'tts_speak',      // "Synthèse vocale" actions
+            'wheel_spin',     // "Roue de la fortune" actions
+            'points_score',   // !score
+            'points_top',     // !top
+            'points_levelup', // a viewer reached a new level
+            'points_insufficient',
+            'battle_update',  // team battles
+            'battle_end',
+            'coinmatch_update', // Coin Match (gift auction)
+            'coinmatch_end',
+            'overlay_command',  // dashboard buttons for an overlay (e.g. empty the gift jar)
+            'giveaway_update',  // giveaway (prize draw)
+            'giveaway_draw',
+            'pointsdrop_update', // points drop
+            'pointsdrop_catch',
+            'emote',            // subscriber emotes (Emojify overlay)
+            'donors_update',    // viewers in the live and their budget (Donateurs présents)
+            'donor_arrived'
         ];
 
         relayEvents.forEach(eventName => {
             socket.on(eventName, (data) => {
-                if (identifiedToken) {
+                // only the desktop app of this account relays live events (an overlay page or a taken-over app
+                // could otherwise push fake alerts / TTS onto the streamer's live)
+                const isLiveApp = identifiedToken && identifiedType === 'app' && clientsByToken[identifiedToken] && clientsByToken[identifiedToken].app.includes(socket.id);
+                if (isLiveApp) {
                     // [NEW] Cache stats/events on VPS to help new clients sync immediately
                     if (eventName === 'session_stats') {
                         if (!socketCache[identifiedToken]) socketCache[identifiedToken] = {};
@@ -180,7 +235,9 @@ function initSocket(server) {
 
         // [LEGENDS] Show/Hide Gift Legends
         socket.on('show_gift_legend', async (data) => {
-            const { token, giftId, period } = data; // [NEW] periode support
+            // only for the account this socket identified as (any socket could push displays to any account)
+            const token = identifiedToken;
+            const { giftId, period } = data || {};
             if (!token || !giftId) return;
 
             try {
@@ -282,39 +339,19 @@ function initSocket(server) {
             }
         });
 
-        // [REMOTE CONTROL] Handle keyboard actions from VPS
-        socket.on('remote_keyboard', (data) => {
-            const { key } = data;
-            if (key) {
-                console.log(`⌨️ Action Clavier distante reçue : ${key}`);
-                try {
-                    const { pressKey } = require('../actions/keyboardAction');
-                    pressKey(key);
-                } catch (e) {
-                    console.error('Erreur exécution touche distante:', e);
-                }
-            }
-        });
-
-        // [REMOTE CONTROL] Handle RCON (Minecraft) actions relayed from VPS
-        socket.on('remote_rcon', async (data) => {
-            const { command, settings: mcSettings } = data;
-            if (command && mcSettings) {
-                console.log(`🎮 Remote RCON reçu : ${command}`);
-                try {
-                    const { sendRconCommand } = require('../actions/rconAction');
-                    await sendRconCommand(command, mcSettings);
-                    console.log(`✅ Remote RCON exécuté : ${command}`);
-                } catch (e) {
-                    console.error('Erreur Remote RCON:', e.message);
-                }
-            }
-        });
+        // NOTE: 'remote_keyboard' / 'remote_rcon' are sent BY this server TO the desktop app
+        // (handled in remoteClient.js). They must never be accepted from incoming sockets,
+        // otherwise any page or LAN device could press keys / run commands on the PC.
 
         // [NEW] Relay Connection Commands (Dashboard -> App)
-        socket.on('setUniqueId', (data, callback) => {
+        socket.on('setUniqueId', async (data, callback) => {
             if (identifiedToken && identifiedType === 'dashboard') {
-                if (isAppConnected(identifiedToken)) {
+                // "Cloud" chosen in Settings > Connexion au live: the live starts on the Gentok servers (HTTP /api/start)
+                let runMode = 'auto';
+                try { runMode = (await require('../config').getSettings(identifiedToken)).runMode || 'auto'; } catch (e) { }
+                if (runMode === 'cloud') {
+                    if (callback) callback({ success: false, error: 'CLOUD_MODE' });
+                } else if (isAppConnected(identifiedToken)) {
                     console.log(`📡 Relaying 'setUniqueId' for ${data.uniqueId} to connected app...`);
                     emitToApp(identifiedToken, 'remote_start', data);
                     if (callback) callback({ success: true, relayed: true });
@@ -344,6 +381,19 @@ function initSocket(server) {
         // Removed global status emission - now handled in 'identify'
 
         // Stop connector when client disconnects (page closed/refreshed)
+        // Secure desktop app: the live it connects to on the streamer's PC, processed here (utils/liveRelay.js).
+        // Only from the registered app socket of the account, like the other relayed events.
+        const isAccountApp = () => identifiedToken && identifiedType === 'app' && clientsByToken[identifiedToken] && clientsByToken[identifiedToken].app.includes(socket.id);
+        socket.on('live_relay_start', (info) => {
+            if (isAccountApp() && liveRelayHooks.start) liveRelayHooks.start(identifiedToken, info && typeof info === 'object' ? info : {});
+        });
+        socket.on('live_relay_event', (msg) => {
+            if (isAccountApp() && liveRelayHooks.event && msg && typeof msg.event === 'string') liveRelayHooks.event(identifiedToken, msg.event, msg.data);
+        });
+        socket.on('live_relay_stop', () => {
+            if (isAccountApp() && liveRelayHooks.stop) liveRelayHooks.stop(identifiedToken);
+        });
+
         socket.on('disconnect', () => {
             console.log(`🔌 Client déconnecté : ${socket.id}`);
 
@@ -356,7 +406,13 @@ function initSocket(server) {
 
                 // If it was the last app client, notify dashboards
                 if (identifiedType === 'app' && prevAppCount > 0 && clientsByToken[identifiedToken].app.length === 0) {
+                    // the copy of the app's live data is over: overlays fall back on the saved settings
+                    // (an old goal / old stats were served forever, even during a later Cloud live)
+                    delete socketCache[identifiedToken];
+                    delete appInfoByToken[identifiedToken];
                     io.to(`room:${identifiedToken}`).emit('app_status', 'offline');
+                    io.to(`room:${identifiedToken}`).emit('app_info', { connected: false });
+                    if (liveRelayHooks.appGone) liveRelayHooks.appGone(identifiedToken);
                 }
             }
         });
@@ -394,12 +450,14 @@ async function sendInitialStats(socket, token) {
             topCoinsTransparent: settings.topCoins?.transparent !== false,
             topCoinsShowTitle: settings.topCoins?.showTitle !== false,
             topCoinsRtl: settings.topCoins?.rtl === true,
+            topCoinsFont: settings.topCoins?.font || '',
             topLikesTitle: settings.topLikes?.title || 'TOP LIKES',
             topLikesLimit: settings.topLikes?.limit || 10,
             topLikesStyle: settings.topLikes?.style || 1,
             topLikesTransparent: settings.topLikes?.transparent !== false,
             topLikesShowTitle: settings.topLikes?.showTitle !== false,
-            topLikesRtl: settings.topLikes?.rtl === true
+            topLikesRtl: settings.topLikes?.rtl === true,
+            topLikesFont: settings.topLikes?.font || ''
         };
 
         // If there is an active connector for THIS token, use its live stats
@@ -417,18 +475,16 @@ async function sendInitialStats(socket, token) {
             }
         }
 
-        socket.emit('session_stats', stats);
-        socket.emit('initialLastEvents', lastEvents);
-
-        // [NEW] Use cache for likes goal too if available
+        // Likes goal first, and also when it is disabled: an overlay that received the stats without any goal
+        // used to show a default "x / 10000" bar for a goal the streamer had turned off
         let finalLikesGoal = settings.likesGoal;
         if (socketCache[token] && socketCache[token].likesGoal) {
             finalLikesGoal = socketCache[token].likesGoal;
         }
+        if (finalLikesGoal) socket.emit('likes_goal_update', finalLikesGoal);
 
-        if (finalLikesGoal && finalLikesGoal.enabled) {
-            socket.emit('likes_goal_update', finalLikesGoal);
-        }
+        socket.emit('session_stats', stats);
+        socket.emit('initialLastEvents', lastEvents);
     } catch (e) {
         console.error('Error sending initial stats:', e);
     }
@@ -450,15 +506,18 @@ function emitLog(level, message, token = null) {
             message,
             timestamp: new Date().toLocaleTimeString()
         };
+        const config = require('../config');
         if (token) {
             io.to(`room:${token}`).emit('log', payload);
-        } else {
+        } else if (config.isAppMode) {
+            // Desktop app: a single local user, broadcasting is fine
             io.emit('log', payload);
         }
+        // On the shared VPS, token-less logs stay server-side: broadcasting them would
+        // leak every streamer's activity to every connected dashboard.
 
         // [RELAY]
         try {
-            const config = require('../config');
             if (config.isAppMode) {
                 const { emitRemote } = require('./remoteClient');
                 emitRemote('log', payload);
@@ -548,13 +607,16 @@ function emitEvent(eventName, data, token = null) {
  */
 function emitToApp(token, event, data) {
     if (io && token) {
-        const roomName = `room:${token}`;
-        const room = io.sockets.adapter.rooms.get(roomName);
-        const count = room ? room.size : 0;
-
-        io.to(roomName).emit(event, data);
-        // console.log(`📡 Broadcast to ${roomName.substring(0, 13)}... [event: ${event}, clients: ${count}]`);
+        io.to(`room:${token}`).emit(event, data);
     }
+}
+
+/**
+ * Emit only to the desktop app sockets of a token (not to dashboards / overlays).
+ * Used for commands carrying private settings (e.g. the OBS password).
+ */
+function emitToDesktopApp(token, event, data) {
+    if (io && token) io.to(`app:${token}`).emit(event, data);
 }
 
 /**
@@ -565,8 +627,20 @@ function isAppConnected(token) {
     return clientsByToken[token].app.length > 0;
 }
 
+/** Version and connection time of the desktop app connected for this token (null when none) */
+function getAppInfo(token) {
+    if (!isAppConnected(token)) return null;
+    return appInfoByToken[token] || { version: null, since: null };
+}
+
 function setOnAppConnected(cb) {
     onAppConnectedCallback = cb;
+}
+
+// Set by server.js (it owns the live connectors): { start, event, stop, appGone }
+let liveRelayHooks = {};
+function setLiveRelayHooks(hooks) {
+    liveRelayHooks = hooks || {};
 }
 
 function getActiveTokens() {
@@ -577,7 +651,19 @@ function getSocketCache(token) {
     return socketCache[token] || null;
 }
 
+/** Screens of the Alerts overlay currently open for an account (OBS / Live Studio browser sources) */
+function getOverlayScreens(token, page = '/overlay/alerts') {
+    const ids = (clientsByToken[token] && clientsByToken[token].overlay) || [];
+    const screens = new Set();
+    for (const id of ids) {
+        const s = io && io.sockets.sockets.get(id);
+        if (s && s.data.overlayPage === page) screens.add(s.data.overlayScreen || 1);
+    }
+    return [...screens].sort((a, b) => a - b);
+}
+
 module.exports = {
+    getAppInfo,
     initSocket,
     getIO,
     emitLog,
@@ -585,8 +671,11 @@ module.exports = {
     emitStatus,
     emitEvent,
     emitToApp,
+    emitToDesktopApp,
     isAppConnected,
     setOnAppConnected,
+    setLiveRelayHooks,
     getActiveTokens,
-    getSocketCache
+    getSocketCache,
+    getOverlayScreens
 };

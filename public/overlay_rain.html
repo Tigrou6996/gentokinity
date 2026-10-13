@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gentok - Pluie</title>
+    <meta name="referrer" content="no-referrer">
+    <style>
+        html, body { margin: 0; background: transparent; overflow: hidden; width: 100vw; height: 100vh; }
+        .drop { position: fixed; top: -120px; will-change: transform; pointer-events: none; animation: fall linear forwards; }
+        .drop img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
+        .drop span { display: block; text-align: center; line-height: 1; }
+        @keyframes fall {
+            from { transform: translateY(0) rotate(var(--r0)); }
+            to { transform: translateY(calc(100vh + 160px)) rotate(var(--r1)); }
+        }
+    </style>
+</head>
+
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script>
+        // URL parameters:
+        //   gifts=1     les cadeaux reçus tombent (une image par cadeau, combos compris)
+        //   likes=1     des cœurs tombent avec les likes
+        //   follows=1   une étoile par nouveau follow, shares=1 une flèche par partage
+        //   size=64     taille des images (px), max=80 éléments à l'écran en même temps, demo=1
+        const G = window.Gentok;
+        const size = Math.min(Math.max(G.numParam('size', 64), 16), 256);
+        const maxOnScreen = Math.min(Math.max(G.numParam('max', 80), 5), 300);
+        const opts = { gifts: G.boolParam('gifts', true), likes: G.boolParam('likes', true), follows: G.boolParam('follows', true), shares: G.boolParam('shares', true) };
+        let onScreen = 0;
+
+        function spawn(content, isImage, delayMs = 0) {
+            if (onScreen >= maxOnScreen) return;
+            onScreen++;
+            setTimeout(() => {
+                const el = document.createElement('div');
+                el.className = 'drop';
+                const s = size * (0.75 + Math.random() * 0.5);
+                el.style.width = el.style.height = s + 'px';
+                el.style.left = Math.random() * (window.innerWidth - s) + 'px';
+                el.style.setProperty('--r0', (Math.random() * 60 - 30) + 'deg');
+                el.style.setProperty('--r1', (Math.random() * 720 - 360) + 'deg');
+                el.style.animationDuration = (3 + Math.random() * 3) + 's';
+                if (isImage) {
+                    const img = document.createElement('img');
+                    img.src = content;
+                    img.referrerPolicy = 'no-referrer';
+                    el.appendChild(img);
+                } else {
+                    const span = document.createElement('span');
+                    span.textContent = content;
+                    span.style.fontSize = s * 0.85 + 'px';
+                    el.appendChild(span);
+                }
+                el.addEventListener('animationend', () => { el.remove(); onScreen--; });
+                document.body.appendChild(el);
+            }, delayMs);
+        }
+
+        function burst(content, isImage, count) {
+            const n = Math.min(count, 25);
+            for (let i = 0; i < n; i++) spawn(content, isImage, i * 120);
+        }
+
+        const socket = G.connect();
+        socket.on('stats', (p) => {
+            if (!p || !p.type) return;
+            const d = p.data || {};
+            if (p.type === 'gift' && opts.gifts) {
+                const icon = G.safeUrl(d.url || d.giftIcon);
+                if (icon) burst(icon, true, Number(d.repeatCount) || 1); else burst('🎁', false, Number(d.repeatCount) || 1);
+            } else if (p.type === 'like' && opts.likes) {
+                burst(['❤️', '💖', '💗'][Math.floor(Math.random() * 3)], false, Math.min(Number(d.likeCount) || 1, 5));
+            } else if (p.type === 'follow' && opts.follows) {
+                burst('⭐', false, 3);
+            } else if (p.type === 'share' && opts.shares) {
+                burst('🔁', false, 3);
+            }
+        });
+
+        if (G.isDemo) {
+            setInterval(() => burst('/img/tiktok/5655.png', true, 3), 1500);
+            setInterval(() => burst('❤️', false, 2), 900);
+        }
+    </script>
+</body>
+
+</html>
