@@ -32,6 +32,11 @@ const DEFAULT_SETTINGS = {
     // XP never decreases (spending points in the shop keeps the level).
     xpMode: 'same',
     xpPerCoin: 10, xpPerLike: 0.2, xpPerFollow: 50, xpPerShare: 20, xpPerSub: 300, xpPerChat: 2, xpPerActiveMinute: 1,
+    // !daily: bonus once every 20 h (0 = off); !give @pseudo 100: a viewer gives some of their currency (off by default)
+    dailyAmount: 0,
+    dailyCommand: '!daily',
+    giveEnabled: false,
+    giveCommand: '!give',
     scoreCommand: '!score',
     topCommand: '!top',
     commandCooldown: 15
@@ -289,6 +294,66 @@ async function adjust(token, uniqueId, delta, nickname) {
     return doc;
 }
 
+const DAILY_EVERY_MS = 20 * 3600 * 1000;
+
+/**
+ * !daily: adds the bonus if the viewer did not get it in the last 20 hours.
+ * @returns {Promise<{ ok: boolean, points?: number, nextInMs?: number }>}
+ */
+async function claimDaily(token, user, amount, xp = amount) {
+    token = scopeOf(token);
+    if (!(amount > 0) || !user || !user.uniqueId) return { ok: false };
+    await flushToken(token);
+    const now = new Date();
+    const inc = { points: amount };
+    if (xp > 0) inc.levelPoints = xp;
+    const doc = await ViewerPoints.findOneAndUpdate(
+        { token, uniqueId: user.uniqueId, $or: [{ lastDaily: { $exists: false } }, { lastDaily: null }, { lastDaily: { $lt: new Date(now - DAILY_EVERY_MS) } }] },
+        { $inc: inc, $set: { lastDaily: now, lastActivity: now } },
+        { new: true }
+    ).catch(() => null);
+    if (!doc) {
+        const existing = await ViewerPoints.findOne({ token, uniqueId: user.uniqueId }).select('lastDaily').lean();
+        if (!existing) {
+            // first time we see this viewer: create them with the bonus
+            try {
+                const created = await ViewerPoints.create({ token, uniqueId: user.uniqueId, userId: user.userId, nickname: user.nickname || user.uniqueId, profilePictureUrl: user.profilePictureUrl, points: amount, levelPoints: xp > 0 ? xp : 0, lastDaily: now });
+                await PointTransaction.create({ token, uniqueId: user.uniqueId, nickname: user.nickname, delta: amount, reason: 'daily' });
+                userCountCache.delete(token);
+                return { ok: true, points: created.points };
+            } catch (e) { return { ok: false }; }
+        }
+        return { ok: false, nextInMs: Math.max(0, new Date(existing.lastDaily).getTime() + DAILY_EVERY_MS - now.getTime()) };
+    }
+    await PointTransaction.create({ token, uniqueId: user.uniqueId, nickname: user.nickname, delta: amount, reason: 'daily' });
+    return { ok: true, points: doc.points };
+}
+
+/**
+ * !give: moves points from one viewer to another (the level / XP of neither changes).
+ * @returns {Promise<{ ok: boolean, reason?: 'self'|'amount'|'unknown'|'funds', from?: number, to?: number, nickname?: string }>}
+ */
+async function transfer(token, from, toUniqueId, amount) {
+    token = scopeOf(token);
+    amount = Math.floor(Number(amount));
+    toUniqueId = String(toUniqueId || '').replace(/^@/, '').trim();
+    if (!toUniqueId || toUniqueId.toLowerCase() === String(from.uniqueId).toLowerCase()) return { ok: false, reason: 'self' };
+    if (!Number.isFinite(amount) || amount < 1 || amount > 1e9) return { ok: false, reason: 'amount' };
+    await flushToken(token);
+    const target = await ViewerPoints.findOne({ token, uniqueId: new RegExp(`^${toUniqueId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }).select('uniqueId nickname').lean();
+    if (!target) return { ok: false, reason: 'unknown' };
+    const paid = await ViewerPoints.findOneAndUpdate(
+        { token, uniqueId: from.uniqueId, points: { $gte: amount } },
+        { $inc: { points: -amount }, $set: { lastActivity: new Date() } }, { new: true });
+    if (!paid) return { ok: false, reason: 'funds' };
+    const got = await ViewerPoints.findOneAndUpdate({ token, uniqueId: target.uniqueId }, { $inc: { points: amount } }, { new: true });
+    await PointTransaction.insertMany([
+        { token, uniqueId: from.uniqueId, nickname: from.nickname, delta: -amount, reason: 'give', details: `→ ${target.uniqueId}` },
+        { token, uniqueId: target.uniqueId, nickname: target.nickname, delta: amount, reason: 'give', details: `← ${from.uniqueId}` }
+    ], { ordered: false });
+    return { ok: true, from: paid.points, to: got ? got.points : amount, nickname: target.nickname || target.uniqueId, uniqueId: target.uniqueId };
+}
+
 async function reset(token) {
     token = scopeOf(token);
     buffers.delete(token);
@@ -299,7 +364,7 @@ async function reset(token) {
 }
 
 module.exports = {
-    scopeOf, tokenOf, xpOf, formatAmount,
+    scopeOf, tokenOf, xpOf, formatAmount, claimDaily, transfer,
     DEFAULT_SETTINGS, getSettings, award, flushToken, flushAll, getViewer, getTop, spend, adjust, reset,
     levelFromPoints, pointsForLevel, decorate, countUsers, setConnectorLookup
 };

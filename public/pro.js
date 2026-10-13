@@ -89,7 +89,7 @@
             try {
                 const search = document.getElementById('points-tx-search').value.trim();
                 const data = await api('/api/points/transactions', { query: { search, limit: 100 } });
-                const REASONS = { gift: '🎁 Cadeau', like: '❤️ Likes', follow: '➕ Follow', share: '🔁 Partage', chat: '💬 Chat', sub: '⭐ Abonnement', watch: '⏱️ Présence', manual: '✏️ Manuel', spend: '💸 Dépense', battle: '⚔️ Bataille' };
+                const REASONS = { gift: '🎁 Cadeau', like: '❤️ Likes', follow: '➕ Follow', share: '🔁 Partage', chat: '💬 Chat', sub: '⭐ Abonnement', watch: '⏱️ Présence', manual: '✏️ Manuel', spend: '💸 Dépense', battle: '⚔️ Bataille', daily: '🎁 Bonus quotidien', give: '🤝 Don', drop: '🪂 Points Drop' };
                 tbody.innerHTML = data.items.length ? data.items.map(x => `
                     <tr><td>${fmtDate(x.date)}</td><td>@${esc(x.uniqueId)}</td>
                     <td class="pro-num" style="color:${x.delta < 0 ? '#ef4444' : '#10b981'}">${x.delta > 0 ? '+' : ''}${fmt(x.delta)}</td>
@@ -100,7 +100,7 @@
             }
         },
 
-        FIELDS: ['perCoin', 'perLike', 'perFollow', 'perShare', 'perSub', 'perChat', 'chatCooldown', 'perActiveMinute', 'levelFactor', 'commandCooldown',
+        FIELDS: ['perCoin', 'perLike', 'perFollow', 'perShare', 'perSub', 'perChat', 'chatCooldown', 'perActiveMinute', 'levelFactor', 'commandCooldown', 'dailyAmount',
             'xpPerCoin', 'xpPerLike', 'xpPerFollow', 'xpPerShare', 'xpPerSub', 'xpPerChat', 'xpPerActiveMinute'],
 
         toggleXp() {
@@ -124,6 +124,9 @@
                 this.FIELDS.forEach(f => { const el = document.getElementById(`pts-${f}`); if (el) el.value = s[f]; });
                 document.getElementById('pts-scoreCommand').value = s.scoreCommand || '!score';
                 document.getElementById('pts-topCommand').value = s.topCommand || '!top';
+                document.getElementById('pts-dailyCommand').value = s.dailyCommand || '!daily';
+                document.getElementById('pts-giveCommand').value = s.giveCommand || '!give';
+                document.getElementById('pts-giveEnabled').value = s.giveEnabled ? '1' : '0';
                 document.getElementById('points-score-cmd').textContent = s.scoreCommand || '!score';
                 document.getElementById('pts-currencyName').value = s.currencyName || 'points';
                 document.getElementById('pts-currencyEmoji').value = s.currencyEmoji || '';
@@ -140,6 +143,9 @@
             const cmd = (v, def) => { v = (v || '').trim().toLowerCase().split(/\s+/)[0] || def; return v.startsWith('!') ? v : '!' + v; };
             pts.scoreCommand = cmd(document.getElementById('pts-scoreCommand').value, '!score');
             pts.topCommand = cmd(document.getElementById('pts-topCommand').value, '!top');
+            pts.dailyCommand = cmd(document.getElementById('pts-dailyCommand').value, '!daily');
+            pts.giveCommand = cmd(document.getElementById('pts-giveCommand').value, '!give');
+            pts.giveEnabled = document.getElementById('pts-giveEnabled').value === '1';
             pts.currencyName = document.getElementById('pts-currencyName').value.trim().slice(0, 24) || 'points';
             pts.currencyEmoji = document.getElementById('pts-currencyEmoji').value.trim().slice(0, 8);
             pts.xpMode = document.getElementById('pts-xpMode').value === 'custom' ? 'custom' : 'same';

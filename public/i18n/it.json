@@ -122,7 +122,9 @@
   "Le serveur Gentok ne répond pas correctement (erreur {0}). Il redémarre peut-être : réessayez dans une minute.": "Il server Gentok non risponde correttamente (errore {0}). Forse si sta riavviando: riprova tra un minuto.",
   "Réponse inattendue du serveur Gentok (erreur {0}).": "Risposta inattesa dal server Gentok (errore {0}).",
   "Service de signature injoignable : {0}": "Servizio di firma non raggiungibile: {0}",
-  "Vérification du compte impossible (erreur {0}).": "Impossibile verificare l'account (errore {0})."
+  "Vérification du compte impossible (erreur {0}).": "Impossibile verificare l'account (errore {0}).",
+  "🎁 {0} : bonus quotidien +{1}": "🎁 {0}: bonus giornaliero +{1}",
+  "🤝 {0} donne {1} à {2}": "🤝 {0} dona {1} a {2}"
  },
  "texts": {
   "0 / 3 Scènes": "0 / 3 Scene",
@@ -1945,6 +1947,19 @@
   "MONGODB_URI manquante dans le fichier .env du serveur": "MONGODB_URI mancante nel file .env del server",
   "Pas de connexion internet.": "Nessuna connessione a internet.",
   "Serveur Gentok indisponible": "Server Gentok non disponibile",
-  "Trop de connexions TikTok en une minute, patientez.": "Troppe connessioni a TikTok in un minuto, attendi."
+  "Trop de connexions TikTok en une minute, patientez.": "Troppe connessioni a TikTok in un minuto, attendi.",
+  "!daily": "!daily",
+  "!give": "!give",
+  "Activés": "Attive",
+  "Désactivés": "Disattivate",
+  "Bonus quotidien": "Bonus giornaliero",
+  "Commande bonus quotidien": "Comando bonus giornaliero",
+  "Commande de don": "Comando di dono",
+  "Dons entre spectateurs": "Doni tra spettatori",
+  "Gagné avec la commande ci-dessous, une fois toutes les 20 h (0 = désactivé)": "Si ottiene con il comando qui sotto, una volta ogni 20 h (0 = disattivato)",
+  "ex : !give @pseudo 100 — le niveau ne change pas": "es.: !give @nome 100 — il livello non cambia",
+  "🎁 Bonus quotidien": "🎁 Bonus giornaliero",
+  "🤝 Don": "🤝 Dono",
+  "🪂 Points Drop": "🪂 Points Drop"
  }
 }

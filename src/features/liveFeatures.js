@@ -65,7 +65,10 @@ async function handleCommands(connector, data, s) {
     const cmd = msg.split(/\s+/)[0];
     const isScore = cmd === String(s.scoreCommand || '!score').toLowerCase();
     const isTop = cmd === String(s.topCommand || '!top').toLowerCase();
-    if (!isScore && !isTop) return;
+    const isDaily = Number(s.dailyAmount) > 0 && cmd === String(s.dailyCommand || '!daily').toLowerCase();
+    const isGive = !!s.giveEnabled && cmd === String(s.giveCommand || '!give').toLowerCase();
+    if (!isScore && !isTop && !isDaily && !isGive) return;
+    if ((isDaily || isGive) && !canPersist(connector)) return; // simulator: never changes balances
 
     // Per-viewer cooldown to avoid spam on the overlay
     if (!connector.commandCooldowns) connector.commandCooldowns = new Map();
@@ -75,6 +78,34 @@ async function handleCommands(connector, data, s) {
     connector.commandCooldowns.set(key, Date.now());
 
     const settings = await config.getSettings(connector.token);
+    const who = data.nickname || data.uniqueId;
+    if (isDaily) {
+        const amount = Number(s.dailyAmount);
+        const r = await points.claimDaily(connector.token, userOf(data), amount); // the bonus also counts as XP
+        if (r.ok) {
+            emit(connector, 'log', { level: 'info', message: `🎁 ${who} : bonus quotidien +${points.formatAmount(s, amount)}` });
+            chatbot.say(connector, settings, `@${who} +${points.formatAmount(s, amount)} 🎁 (total ${points.formatAmount(s, r.points)})`);
+        } else if (r.nextInMs) {
+            const h = Math.ceil(r.nextInMs / 3600000);
+            chatbot.say(connector, settings, `@${who} bonus déjà reçu, reviens dans ${h} h`);
+        }
+        return;
+    }
+    if (isGive) {
+        // !give @pseudo 100  (or !give 100 @pseudo)
+        const parts = String(data.comment || '').trim().split(/\s+/).slice(1);
+        const target = parts.find(p => /^@?[\w.]{2,}$/.test(p) && !/^\d+$/.test(p));
+        const amount = parts.find(p => /^\d+$/.test(p));
+        const r = await points.transfer(connector.token, userOf(data), target, amount);
+        if (r.ok) {
+            emit(connector, 'log', { level: 'info', message: `🤝 ${who} donne ${points.formatAmount(s, amount)} à ${r.nickname}` });
+            chatbot.say(connector, settings, `@${who} a donné ${points.formatAmount(s, amount)} à @${r.uniqueId} 🤝`);
+        } else {
+            const why = { funds: `solde insuffisant`, unknown: `@${String(target || '').replace(/^@/, '')} introuvable`, self: `précise à qui donner : ${s.giveCommand || '!give'} @pseudo 100`, amount: `montant invalide : ${s.giveCommand || '!give'} @pseudo 100` }[r.reason] || 'impossible';
+            chatbot.say(connector, settings, `@${who} ${why}`);
+        }
+        return;
+    }
     if (isScore) {
         const viewer = await points.getViewer(connector.token, data.uniqueId, settings);
         const payload = viewer || { ...userOf(data), points: 0, levelPoints: 0, level: 0, rank: null, progress: 0, nextLevelPoints: points.pointsForLevel(1, s.levelFactor) };

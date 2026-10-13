@@ -19,6 +19,7 @@ const ViewerPointsSchema = new mongoose.Schema({
         subs: { type: Number, default: 0 },
         watchMinutes: { type: Number, default: 0 }
     },
+    lastDaily: Date,                             // last !daily bonus
     firstActivity: { type: Date, default: Date.now },
     lastActivity: { type: Date, default: Date.now }
 });

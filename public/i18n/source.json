@@ -1,6 +1,8 @@
 {
  "texts": [
   "!bleu",
+  "!daily",
+  "!give",
   "!jaune",
   "!play",
   "!remove",
@@ -66,6 +68,7 @@
   "Activer",
   "Activer TTS",
   "Activé",
+  "Activés",
   "Actualiser",
   "Admin activé !",
   "Admin désactivé",
@@ -230,6 +233,7 @@
   "Bleu",
   "Bocal",
   "Bonbon",
+  "Bonus quotidien",
   "Bot arrêté",
   "Bot arrêté (commande envoyée).",
   "Bulle « a offert »",
@@ -334,7 +338,9 @@
   "Commande Play",
   "Commande Remove",
   "Commande Skip",
+  "Commande bonus quotidien",
   "Commande classement",
+  "Commande de don",
   "Commande inconnue",
   "Commande relayée à l'application locale (Utilise votre IP).",
   "Commande score",
@@ -448,6 +454,7 @@
   "Disposition",
   "Donateurs présents",
   "Donateurs uniquement",
+  "Dons entre spectateurs",
   "Dossier d'installation",
   "Dossier non trouvé",
   "Doubler l'objectif",
@@ -490,6 +497,7 @@
   "Départ (min)",
   "Déposer ici",
   "Désactivé",
+  "Désactivés",
   "Désinstaller le serveur",
   "Désinstaller le serveur ?",
   "Désolé, impossible de charger les données.",
@@ -643,6 +651,7 @@
   "GENTOK PREMIUM",
   "GTK-XXXX-XXXX",
   "Gagnants",
+  "Gagné avec la commande ci-dessous, une fois toutes les 20 h (0 = désactivé)",
   "Gain d'XP",
   "Galerie d'overlays",
   "Garder inchangé",
@@ -1593,6 +1602,7 @@
   "dès 6,66 €/mois",
   "est dans le live",
   "et celle de",
+  "ex : !give @pseudo 100 — le niveau ne change pas",
   "ex : cookies, pièces, étoiles…",
   "ex : useast2a",
   "ex: 500 ou -200",
@@ -1715,6 +1725,7 @@
   "🆙 Passage de niveau",
   "🌐 Mode VPS activé (Relais)",
   "🌟 Gentok Pro",
+  "🎁 Bonus quotidien",
   "🎁 Cadeau",
   "🎁 Cadeau spécifique",
   "🎉🥳🔥 GG",
@@ -1741,7 +1752,9 @@
   "🚪 Rejoint le Live",
   "🚪 Rejoint le live",
   "🛑 Bot arrêté.",
-  "🧪 Test envoyé !"
+  "🤝 Don",
+  "🧪 Test envoyé !",
+  "🪂 Points Drop"
  ],
  "patterns": [
   "'{0}', 'Outfit', sans-serif",
@@ -1847,6 +1860,7 @@
   "❌ {0}: Non autorisé",
   "❤️ Likes (Obj: {0})",
   "⭐ Gentok Premium{0}",
+  "🎁 {0} : bonus quotidien +{1}",
   "🎡 {0} cases",
   "🎵 [Spotify] {0} a ajouté : {1}",
   "💰 Min: {0} pièces",
@@ -1857,6 +1871,7 @@
   "🔴 EN DIRECT : {0}",
   "🗑️ [Spotify] {0} a retiré sa dernière musique.",
   "🛰️ Lancement de la connexion pour {0}...",
+  "🤝 {0} donne {1} à {2}",
   "🪙 {0} points"
  ]
 }
