@@ -187,6 +187,28 @@ const _sessions = new Map();
 let _lastActiveToken = null; // Track the last used token for legacy fallback getters
 let _settingsCache = {}; // Cache for per-token settings (10s TTL)
 
+// Secure desktop app ("relay mode"): the packaged app has no database address (nor any other secret). It only
+// connects to the TikTok live and runs the PC actions; the Gentok server processes the live (points, rankings,
+// actions...) with the events the app relays to it (see utils/liveRelay.js). Its session lives in memory and
+// the account it is logged into is kept in a local file.
+const fs = require('fs');
+const path = require('path');
+function appDataFile() {
+    const base = process.env.APPDATA || (process.platform === 'darwin'
+        ? path.join(require('os').homedir(), 'Library', 'Application Support')
+        : path.join(require('os').homedir(), '.config'));
+    return path.join(base, 'Gentok', 'app-session.json');
+}
+function readLocalToken() {
+    try { return JSON.parse(fs.readFileSync(appDataFile(), 'utf8')).token || null; } catch (e) { return null; }
+}
+function writeLocalToken(token) {
+    try {
+        fs.mkdirSync(path.dirname(appDataFile()), { recursive: true });
+        fs.writeFileSync(appDataFile(), JSON.stringify({ token }), { mode: 0o600 });
+    } catch (e) { /* read-only profile: the account is asked again next time */ }
+}
+
 // "Last active token" fallback: only in the desktop app (one streamer). On the VPS many streamers share the
 // server, so a request without a token must never fall back on whoever was loaded last (it exposed their
 // config, OBS password and token, and let anonymous requests change their data).
@@ -209,6 +231,13 @@ module.exports = {
     async loadSession(token) {
         if (!token) return;
         _lastActiveToken = token;
+        if (this.relayMode) {
+            // no database in the secure app: a session in memory (the server holds the real settings)
+            const s = _sessions.get(token) || Object.assign(getSessionDefaults(), { token });
+            _sessions.set(token, s);
+            if (readLocalToken() !== token) writeLocalToken(token);
+            return;
+        }
 
         // [ATOMIC] Build new session state locally to avoid race conditions
         const newSession = getSessionDefaults();
@@ -306,7 +335,7 @@ module.exports = {
     set tiktokUsername(val) {
         const s = getSession();
         s.username = val;
-        if (s.token) Settings.updateOne({ token: s.token }, { username: val }, { upsert: true }).exec();
+        if (s.token && !this.relayMode) Settings.updateOne({ token: s.token }, { username: val }, { upsert: true }).exec();
     },
 
     get licenseToken() { return fallbackToken(); },
@@ -315,6 +344,10 @@ module.exports = {
     // Never hardcode credentials here: they come from .env (dev / VPS) or from
     // src/build-env.json, generated at build time by scripts/write-build-env.js.
     mongodbUri: process.env.MONGODB_URI || buildEnv.MONGODB_URI || null,
+    /** Desktop app without database access (the packaged app): the server processes the live */
+    get relayMode() { return this.isAppMode && !this.mongodbUri; },
+    readLocalToken,
+    writeLocalToken,
     // Optional Euler Stream key: raises TikTok signature rate limits (fewer connection failures)
     signApiKey: process.env.SIGN_API_KEY || buildEnv.SIGN_API_KEY || null,
     remoteServerUrl: process.env.REMOTE_SERVER || 'https://tiktok.gentok.fr',
@@ -343,6 +376,7 @@ module.exports = {
     async getSettings(token) {
         const t = token || fallbackToken();
         if (!t) return getSessionDefaults();
+        if (this.relayMode) return _sessions.get(t) || Object.assign(getSessionDefaults(), { token: t });
         if (_sessions.has(t)) return _sessions.get(t);
         const CACHE_TTL = 10000;
         if (_settingsCache[t] && (Date.now() - _settingsCache[t].timestamp < CACHE_TTL)) return _settingsCache[t].data;
@@ -449,6 +483,7 @@ module.exports = {
      */
     async setSceneIndependent(token, sceneId, independent) {
         if (!token || !sceneId) throw new Error('Scène manquante');
+        if (this.relayMode) throw new Error('Indisponible dans l\'application : utilisez le serveur Gentok');
         const doc = await Settings.findOne({ token }).select(['scenes', ...SHARED_FIELDS].join(' ')).lean();
         const idx = doc && Array.isArray(doc.scenes) ? doc.scenes.findIndex(sc => sc.id === sceneId) : -1;
         if (idx === -1) throw new Error('Scène introuvable');
@@ -473,6 +508,7 @@ module.exports = {
     },
 
     async saveEvents(events, token) {
+        if (this.relayMode) return; // the server keeps the events
         const s = await this.getSessionFor(token); if (!s.token) return;
         const list = cleanItems(events);
         s.events = (!s.isPremium && list.length > 5) ? list.slice(0, 5) : list;
@@ -480,6 +516,7 @@ module.exports = {
     },
 
     async saveActions(actions, token) {
+        if (this.relayMode) return; // the server keeps the actions
         const s = await this.getSessionFor(token); if (!s.token) return;
         const list = cleanItems(actions);
         s.actions = (!s.isPremium && list.length > 5) ? list.slice(0, 5) : list;
@@ -494,6 +531,7 @@ module.exports = {
      * @returns {Promise<{ items: object[], removed: string[], total: number }>}
      */
     async applyItemChanges(kind, token, { upsert = [], remove = [] } = {}) {
+        if (this.relayMode) throw Object.assign(new Error('Indisponible dans l\'application : utilisez le serveur Gentok'), { status: 409 });
         const Model = kind === 'actions' ? Action : Event;
         const s = await this.getSessionFor(token);
         if (!s.token) throw Object.assign(new Error('Session introuvable'), { status: 401 });
@@ -532,6 +570,13 @@ module.exports = {
 
     async saveSettings(data) {
         const t = data.token || fallbackToken(); if (!t) return;
+        if (this.relayMode) {
+            // memory only (e.g. the username of the live started on this PC); the server stores the settings
+            const s = _sessions.get(t) || Object.assign(getSessionDefaults(), { token: t });
+            for (const k of ['username', 'likesGoal', 'topGift', 'topStreak', 'lastEvents', 'runMode']) if (data[k] !== undefined) s[k] = data[k];
+            _sessions.set(t, s);
+            return;
+        }
         if (!_sessions.has(t)) await this.loadSession(t);
         const s = _sessions.get(t);
         const previousSceneId = s.activeSceneId;

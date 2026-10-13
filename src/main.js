@@ -44,6 +44,39 @@ function setUpdateState(patch) {
     sendToWindow('update-state', updateState);
 }
 
+// A proxy set in Windows (often left behind by a VPN or a proxy tool that is no longer running) made every
+// request of the app fail with net::ERR_PROXY_CONNECTION_FAILED (update check, login, dashboard). When the
+// system proxy does not answer, the app connects directly instead.
+const PROXY_ERRORS = /ERR_PROXY_CONNECTION_FAILED|ERR_TUNNEL_CONNECTION_FAILED|ERR_PROXY_CERTIFICATE_INVALID|ERR_NO_SUPPORTED_PROXIES|ERR_PROXY_AUTH/;
+let proxyBypassed = false;
+async function useDirectConnection(reason) {
+    if (proxyBypassed) return false;
+    proxyBypassed = true;
+    logger.warn(`🌐 Proxy système injoignable (${reason}) : connexion directe utilisée.`);
+    try {
+        const { session } = require('electron');
+        await session.defaultSession.setProxy({ mode: 'direct' });
+        await session.defaultSession.closeAllConnections();
+    } catch (e) { logger.warn(`Proxy : ${e.message}`); }
+    return true;
+}
+async function ensureWorkingProxy() {
+    try {
+        const { session } = require('electron');
+        const rule = await session.defaultSession.resolveProxy('https://tiktok.gentok.fr');
+        const m = /(?:PROXY|HTTPS)\s+\[?([^\];\s]+?)\]?:(\d+)/i.exec(rule || '');
+        if (!m) return; // DIRECT
+        const reachable = await new Promise((resolve) => {
+            const sock = require('net').connect({ host: m[1], port: Number(m[2]) });
+            const end = (v) => { sock.destroy(); resolve(v); };
+            sock.setTimeout(2500, () => end(false));
+            sock.once('connect', () => end(true));
+            sock.once('error', () => end(false));
+        });
+        if (!reachable) await useDirectConnection(`${m[1]}:${m[2]}`);
+    } catch (e) { /* keep the system settings */ }
+}
+
 async function checkForUpdates() {
     if (!app.isPackaged) {
         // electron-updater only works in the installed app
@@ -54,6 +87,8 @@ async function checkForUpdates() {
     try {
         await autoUpdater.checkForUpdates();
     } catch (err) {
+        // the proxy answers but refuses: direct connection, then one more try
+        if (PROXY_ERRORS.test(err.message || '') && await useDirectConnection(err.message)) return checkForUpdates();
         logger.error(`❌ Vérification des mises à jour impossible : ${err.message}`);
         setUpdateState({ status: 'error', error: err.message, checkedAt: Date.now() });
     }
@@ -88,6 +123,9 @@ function setupAutoUpdater() {
         if (is404) {
             logger.info('ℹ️ Aucun fichier de mise à jour trouvé (Normal).');
             setUpdateState({ status: 'up-to-date', checkedAt: Date.now() });
+        } else if (PROXY_ERRORS.test(err.message || '') && !proxyBypassed) {
+            useDirectConnection(err.message).then(() => checkForUpdates());
+            return;
         } else {
             logger.error(`❌ Erreur Auto-Updater : ${err.message}`);
             setUpdateState({ status: 'error', error: err.message, checkedAt: Date.now() });
@@ -574,6 +612,7 @@ app.on('ready', async () => {
         app.setAppUserModelId('electron.gentok');
     }
 
+    await ensureWorkingProxy();
     createWindow();
 
     // Check for updates now, then every 30 minutes (a stream can last hours)

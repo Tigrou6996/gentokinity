@@ -21,8 +21,8 @@ function initSocket(server) {
         let identifiedToken = null;
         let identifiedType = 'dashboard';
 
-        socket.on('identify', async (data) => {
-            const { token, type } = data; // type: 'dashboard' or 'app'
+        socket.on('identify', async (data, ack) => {
+            const { token, type } = data || {}; // type: 'dashboard' or 'app'
             if (!token || token.length < 8) {
                 console.warn(`⚠️ [Socket] Tentative d'identification invalide (Token: ${token})`);
                 return;
@@ -100,6 +100,7 @@ function initSocket(server) {
 
             // [NEW] Send current status for this token specifically
             socket.emit('status', clientsByToken[token].status || 'offline');
+            if (typeof ack === 'function') ack({ ok: true });
         });
 
         // [NEW] Take Over Session Handler
@@ -367,6 +368,19 @@ function initSocket(server) {
         // Removed global status emission - now handled in 'identify'
 
         // Stop connector when client disconnects (page closed/refreshed)
+        // Secure desktop app: the live it connects to on the streamer's PC, processed here (utils/liveRelay.js).
+        // Only from the registered app socket of the account, like the other relayed events.
+        const isAccountApp = () => identifiedToken && identifiedType === 'app' && clientsByToken[identifiedToken] && clientsByToken[identifiedToken].app.includes(socket.id);
+        socket.on('live_relay_start', (info) => {
+            if (isAccountApp() && liveRelayHooks.start) liveRelayHooks.start(identifiedToken, info && typeof info === 'object' ? info : {});
+        });
+        socket.on('live_relay_event', (msg) => {
+            if (isAccountApp() && liveRelayHooks.event && msg && typeof msg.event === 'string') liveRelayHooks.event(identifiedToken, msg.event, msg.data);
+        });
+        socket.on('live_relay_stop', () => {
+            if (isAccountApp() && liveRelayHooks.stop) liveRelayHooks.stop(identifiedToken);
+        });
+
         socket.on('disconnect', () => {
             console.log(`🔌 Client déconnecté : ${socket.id}`);
 
@@ -385,6 +399,7 @@ function initSocket(server) {
                     delete appInfoByToken[identifiedToken];
                     io.to(`room:${identifiedToken}`).emit('app_status', 'offline');
                     io.to(`room:${identifiedToken}`).emit('app_info', { connected: false });
+                    if (liveRelayHooks.appGone) liveRelayHooks.appGone(identifiedToken);
                 }
             }
         });
@@ -607,6 +622,12 @@ function setOnAppConnected(cb) {
     onAppConnectedCallback = cb;
 }
 
+// Set by server.js (it owns the live connectors): { start, event, stop, appGone }
+let liveRelayHooks = {};
+function setLiveRelayHooks(hooks) {
+    liveRelayHooks = hooks || {};
+}
+
 function getActiveTokens() {
     return Object.keys(clientsByToken);
 }
@@ -627,6 +648,7 @@ module.exports = {
     emitToDesktopApp,
     isAppConnected,
     setOnAppConnected,
+    setLiveRelayHooks,
     getActiveTokens,
     getSocketCache
 };

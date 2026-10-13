@@ -1,6 +1,16 @@
 let GentokPushConnection = null;
 async function getWebcastPushConnection() {
     if (!GentokPushConnection) {
+        // Secure desktop app: TikTok signatures go through the Gentok server, which adds its Euler Stream key
+        // (the key is no longer packaged in the app). Read by the library when it loads.
+        const cfg = require('./config');
+        if (cfg.relayMode && !process.env.SIGN_API_URL) {
+            const remote = cfg.remoteServerUrl.replace(/\/+$/, '');
+            try {
+                const info = await require('axios').get(`${remote}/api/app/sign-info`, { timeout: 5000 });
+                if (info.data && info.data.proxy) process.env.SIGN_API_URL = `${remote}/api/sign-proxy`;
+            } catch (e) { /* server unreachable: direct signing (free tier) */ }
+        }
         const mod = await import('tiktok-live-connector/legacy');
 
         // The legacy "simplified" format overwrites the gift struct sent by TikTok, losing the
@@ -243,15 +253,16 @@ class TikTokConnector {
         // [FIX] Emit initial stats and goal immediately so overlays update (e.g. reset to 0)
         // even before the actual TikTok connection is established.
         const { emitEvent } = require('./utils/socket');
-        emitEvent('session_stats', this.stats, this.token);
-        if (settings.likesGoal && settings.likesGoal.enabled) {
+        // (the secure app does not process the live: the server sends these for its relayed live)
+        if (!config.relayMode) emitEvent('session_stats', this.stats, this.token);
+        if (!config.relayMode && settings.likesGoal && settings.likesGoal.enabled) {
             // Re-fetch to ensure we have the version with count=0 if it was reset
             const currentSettings = await config.getSettings(this.token);
             if (currentSettings.likesGoal) {
                 emitEvent('likes_goal_update', currentSettings.likesGoal, this.token);
             }
         }
-        emitEvent('initialLastEvents', this.lastEvents, this.token);
+        if (!config.relayMode) emitEvent('initialLastEvents', this.lastEvents, this.token);
 
         // Per-session de-duplication state (see handlers/eventManager.js)
         this.giftTracker = null;
@@ -330,6 +341,8 @@ class TikTokConnector {
             enableExtendedGiftInfo: false
         };
         if (config.signApiKey) options.signApiKey = config.signApiKey;
+        // the sign proxy of the Gentok server knows the account by its token (it never leaves the app otherwise)
+        else if (config.relayMode && this.token && process.env.SIGN_API_URL) options.signApiKey = this.token;
 
         let lastError = null;
         for (let attempt = 0; attempt <= retries; attempt++) {
@@ -339,7 +352,9 @@ class TikTokConnector {
             const connection = new WebcastPushClass(this.username, options);
             this.connection = connection;
             fixProfilePictures(connection);
-            registerEvents(connection, this);
+            // secure app: the live is processed by the Gentok server (no database here)
+            if (config.relayMode) require('./utils/liveRelay').attachAppRelay(connection, this);
+            else registerEvents(connection, this);
 
             // Any decoded message proves the socket is alive (used by the watchdog)
             connection.on('decodedData', () => { this.lastMessageAt = Date.now(); });
@@ -493,8 +508,13 @@ class TikTokConnector {
         // Gifts / likes still waiting for the 2 s leaderboard save (the app can quit right after)
         try { await require('./handlers/eventManager').flushLeaderboardBuffer(); } catch (e) { }
 
+        // Secure app: the server saves the history of the live it processed
+        if (config.relayMode) {
+            try { require('./utils/remoteClient').emitRemote('live_relay_stop', {}); } catch (e) { }
+        }
+
         // Save stats before clearing (even if we were between two reconnection attempts)
-        if (this.startTime) {
+        if (this.startTime && !config.relayMode) {
             try {
                 await this.saveSessionStats();
             } catch (e) {
@@ -518,7 +538,7 @@ class TikTokConnector {
         }
 
         // Save the viewers' points and stop the watch-time timer
-        try { require('./features/liveFeatures').onStop(this); } catch (e) { }
+        if (!config.relayMode) { try { require('./features/liveFeatures').onStop(this); } catch (e) { } }
 
         // Clear action queue and stop audio playback immediately on stop
         actionManager.clearQueue(this.token);
@@ -596,4 +616,58 @@ class TikTokConnector {
 
 }
 
+/**
+ * Server side of the secure desktop app: a live connected on the streamer's PC, whose events the app relays
+ * (utils/liveRelay.js). Same processing as a live connected here (points, rankings, actions, history), but
+ * there is no TikTok socket on this side: the app reconnects to TikTok itself.
+ */
+class RelayedConnector extends TikTokConnector {
+    constructor(username, token, info = {}) {
+        super(username, token);
+        this.isRelayed = true;
+        this.relayInfo = info;
+        this.pendingEvents = [];
+    }
+
+    async openConnection() {
+        const { EventEmitter } = require('events');
+        const conn = new EventEmitter();
+        conn.roomId = this.relayInfo.roomId || null;
+        conn.roomInfo = this.relayInfo.roomInfo || null;
+        conn.connect = async () => { };
+        conn.disconnect = async () => { };
+        this.connection = conn;
+        registerEvents(conn, this);
+        this.isConnected = true;
+        this.lastMessageAt = Date.now();
+        conn.emit('connected', { roomId: conn.roomId });
+        // events relayed while the live was being set up
+        const queued = this.pendingEvents;
+        this.pendingEvents = [];
+        for (const [event, data] of queued) conn.emit(event, data);
+    }
+
+    updateRelay(info = {}) {
+        this.relayInfo = { ...this.relayInfo, ...info };
+        if (this.connection && info.roomId) this.connection.roomId = info.roomId;
+    }
+
+    feed(event, data) {
+        const { LIVE_EVENTS } = require('./utils/liveRelay');
+        if (this.isStopping || !LIVE_EVENTS.includes(event) || !data || typeof data !== 'object' || Array.isArray(data)) return;
+        if (!this.connection) {
+            if (this.pendingEvents.length < 500) this.pendingEvents.push([event, data]);
+            return;
+        }
+        this.lastMessageAt = Date.now();
+        this.connection.emit(event, data);
+    }
+
+    // the TikTok connection (and its reconnections) belongs to the app
+    startWatchdog() { }
+    scheduleReconnect() { }
+    handleDisconnect() { }
+}
+
 module.exports = TikTokConnector;
+module.exports.RelayedConnector = RelayedConnector;

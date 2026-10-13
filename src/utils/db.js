@@ -3,6 +3,13 @@ const logger = require('./logger');
 const config = require('../config');
 
 const connectDB = async () => {
+    if (config.relayMode) {
+        // Secure desktop app: no database address in it; anything that would still query the database
+        // fails at once instead of waiting 10 s for a connection that never comes
+        mongoose.set('bufferCommands', false);
+        logger.info('🔒 Application sécurisée : aucune base de données locale, le serveur Gentok traite le live.');
+        return;
+    }
     try {
         const uri = config.mongodbUri;
         if (!uri) {

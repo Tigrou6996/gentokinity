@@ -226,6 +226,17 @@ async function init() {
         console.log(isAppUA ? '📱 App Mode (Electron) detected.' : '📱 App Mode (Web Forced) detected.');
         // [FIX] Default to local mode in App Mode for Smart Relay compatibility
         isLocalMode = true;
+        // Secure app (no database in it): the dashboard works like the website; the app only connects to the
+        // TikTok live and runs the PC actions the Gentok server sends it
+        try {
+            const ping = await fetch(`${getLocalApiBase()}/api/app/ping`, { cache: 'no-store' }).then(r => r.json());
+            if (ping && ping.relay) {
+                window.gentokRelayApp = true;
+                isLocalMode = false;
+                const t = localStorage.getItem('gentok_token');
+                if (t) await fetch(`${getLocalApiBase()}/api/app/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t }) }).catch(() => { });
+            }
+        } catch (e) { /* older app */ }
     } else {
         showDownloadButton();
     }
@@ -1297,7 +1308,7 @@ function setupSocketListeners() {
 
 // ===== LOCAL APP DETECTION =====
 function initLocalAppDetection() {
-    if (isLocalMode) return; // Already local
+    if (isLocalMode || window.gentokRelayApp) return; // Already local, or the secure app (it works with the server)
 
     const appGroup = document.querySelector('#app-status-group');
     const appStatusIndicator = document.querySelector('#app-status-indicator');
@@ -1314,7 +1325,12 @@ function initLocalAppDetection() {
         autoConnect: true
     });
 
-    tempSocket.on('connect', () => {
+    tempSocket.on('connect', async () => {
+        // the secure app processes nothing locally: the website stays connected to the Gentok server
+        try {
+            const ping = await fetch(`${getLocalApiBase()}/api/app/ping`, { cache: 'no-store' }).then(r => r.json());
+            if (ping && ping.relay) { tempSocket.disconnect(); return; }
+        } catch (e) { }
         console.log('✅ App Local DETECTED! Switching to Local Mode.');
 
         // Disconnect Remote
@@ -2266,7 +2282,7 @@ window.testActionWithDelay = (id) => {
 
     const executeTest = async () => {
         try {
-            const base = window.electronAPI ? getLocalApiBase() : getApiBase();
+            const base = (window.electronAPI && !window.gentokRelayApp) ? getLocalApiBase() : getApiBase();
             const token = localStorage.getItem('gentok_token');
             console.log(`[TEST-ACTION] Appel API: ${base}/api/test-action/${id}`);
             const res = await fetch(`${base}/api/test-action/${id}?token=${token}`, {
@@ -3994,8 +4010,8 @@ async function sync(type, data) {
     }
 
     // [FIX] In App/Electron mode, ALSO sync to local server so that test-action reads updated config
-    // (test-action goes to localhost, which reads its own in-memory config)
-    if (window.electronAPI) {
+    // (test-action goes to localhost, which reads its own in-memory config). Not the secure app: it has no data.
+    if (window.electronAPI && !window.gentokRelayApp) {
         try {
             const localBase = getLocalApiBase();
             await fetch(`${localBase}/api/${type}`, {
@@ -4303,7 +4319,7 @@ async function handleTestMinecraft() {
     resultEl.style.color = "var(--text-muted)";
 
     try {
-        const base = window.electronAPI ? getLocalApiBase() : getApiBase();
+        const base = (window.electronAPI && !window.gentokRelayApp) ? getLocalApiBase() : getApiBase();
         const res = await fetch(`${base}/api/minecraft/test`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -10272,7 +10288,7 @@ async function saveCurrentConfig() {
         await syncDiff('actions', currentActions);
         await syncDiff('events', currentEvents);
 
-        const base = window.electronAPI ? getLocalApiBase() : getApiBase();
+        const base = (window.electronAPI && !window.gentokRelayApp) ? getLocalApiBase() : getApiBase();
         const token = localStorage.getItem('gentok_token');
         await fetch(`${base}/api/settings`, {
             method: 'POST',

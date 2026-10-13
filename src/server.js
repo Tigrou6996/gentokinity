@@ -18,7 +18,7 @@ const multer = require('multer');
 const logger = require('./utils/logger');
 const config = require('./config');
 const TikTokConnector = require('./connector');
-const { initSocket, setOnAppConnected, isAppConnected, emitToApp, emitToDesktopApp, emitEvent } = require('./utils/socket'); // [RESTORED]
+const { initSocket, setOnAppConnected, setLiveRelayHooks, isAppConnected, emitToApp, emitToDesktopApp, emitEvent } = require('./utils/socket'); // [RESTORED]
 
 // The Windows app runs the live with its own copy of the scene (events / actions): it must reload it
 // when the dashboard changes them on the server, otherwise the live keeps the old scene.
@@ -60,6 +60,8 @@ initSocket(server); // [NEW] Init Socket.io
 // [MUTUAL EXCLUSION] Stop VPS connector if an App connects
 setOnAppConnected(async (token) => {
     const connector = activeConnectors.get(token);
+    // a live relayed by this same app (it reconnected to the server): it goes on
+    if (connector && connector.isRelayed) return;
     if (connector) {
         // "Cloud" chosen: the live stays on the servers, the app only runs the PC actions it receives
         let runMode = 'auto';
@@ -70,6 +72,74 @@ setOnAppConnected(async (token) => {
             await connector.stop();
             activeConnectors.delete(token);
         }
+    }
+});
+
+// Secure desktop app: it connects to the TikTok live on the streamer's PC and relays the events here, where the
+// live is processed like a cloud live (utils/liveRelay.js, RelayedConnector in connector.js)
+const { RelayedConnector } = TikTokConnector;
+const relayGoneTimers = new Map();
+const relayResyncAt = new Map();
+setLiveRelayHooks({
+    async start(token, info) {
+        clearTimeout(relayGoneTimers.get(token));
+        relayGoneTimers.delete(token);
+        const username = String(info.username || '').replace(/^@/, '').trim().slice(0, 64);
+        if (!username) return;
+        let connector = activeConnectors.get(token);
+        if (connector && connector.isRelayed && connector.username === username && !connector.isStopping) {
+            connector.updateRelay(info); // reconnection of the app or of its TikTok socket
+            return;
+        }
+        if (connector) {
+            await connector.stop().catch(() => { });
+            activeConnectors.delete(token);
+        }
+        await config.loadSession(token);
+        connector = new RelayedConnector(username, token, {
+            roomId: info.roomId ? String(info.roomId).slice(0, 40) : null,
+            roomInfo: info.roomInfo && typeof info.roomInfo === 'object' ? info.roomInfo : null
+        });
+        connector.onStopped = (c) => { if (activeConnectors.get(token) === c) activeConnectors.delete(token); };
+        activeConnectors.set(token, connector);
+        try {
+            await connector.start();
+            logger.info(`📡 [${token.substring(0, 8)}] Live de ${username} relayé par l'application (PC).`);
+        } catch (e) {
+            if (activeConnectors.get(token) === connector) activeConnectors.delete(token);
+            logger.warn(`⚠️ Live relayé impossible à démarrer : ${e.message}`);
+        }
+    },
+    event(token, event, data) {
+        const connector = activeConnectors.get(token);
+        if (connector && connector.isRelayed) return connector.feed(event, data);
+        // the server restarted during the live: the app announces it again (at most every 10 s)
+        if (Date.now() - (relayResyncAt.get(token) || 0) > 10000) {
+            relayResyncAt.set(token, Date.now());
+            emitToDesktopApp(token, 'live_relay_resync', {});
+        }
+    },
+    async stop(token) {
+        const connector = activeConnectors.get(token);
+        if (connector && connector.isRelayed) {
+            await connector.stop().catch(() => { });
+            activeConnectors.delete(token);
+        }
+    },
+    // the app lost the server: its live is kept 2 minutes (network blip), then saved and closed
+    appGone(token) {
+        const connector = activeConnectors.get(token);
+        if (!connector || !connector.isRelayed) return;
+        clearTimeout(relayGoneTimers.get(token));
+        relayGoneTimers.set(token, setTimeout(() => {
+            relayGoneTimers.delete(token);
+            const c = activeConnectors.get(token);
+            if (c && c.isRelayed && !isAppConnected(token)) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Application déconnectée depuis 2 min : fin du live relayé.`);
+                c.stop().catch(() => { });
+                activeConnectors.delete(token);
+            }
+        }, 120000));
     }
 });
 
@@ -187,6 +257,50 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 });
 
 // [CRITICAL] Body parsing middleware MUST be before all routes (except Stripe Webhook)
+// Secure desktop app: TikTok signatures (Euler Stream) go through this server, which adds its key. The app
+// authenticates with the account token (sent where the library sends an API key). Raw bytes in both ways.
+const signProxyUse = new Map(); // token -> { count, since }
+const signProxyAccounts = new Map(); // token -> valid until
+app.use('/api/sign-proxy', express.raw({ type: () => true, limit: '2mb' }), async (req, res) => {
+    if (config.isAppMode) return res.status(404).end();
+    if (!config.signApiKey) return res.status(503).json({ message: 'Clé Euler Stream non configurée sur le serveur Gentok (SIGN_API_KEY).' });
+    const token = String(req.get('x-api-key') || req.query.apiKey || '');
+    if (!/^[\w-]{8,128}$/.test(token)) return res.status(401).json({ message: 'Compte Gentok requis' });
+    try {
+        if (!(signProxyAccounts.get(token) > Date.now())) {
+            if (!(await User.exists({ token }))) return res.status(401).json({ message: 'Compte Gentok inconnu' });
+            signProxyAccounts.set(token, Date.now() + 10 * 60000);
+        }
+    } catch (e) {
+        return res.status(503).json({ message: 'Serveur Gentok indisponible' });
+    }
+    const use = signProxyUse.get(token) || { count: 0, since: Date.now() };
+    if (Date.now() - use.since > 60000) { use.count = 0; use.since = Date.now(); }
+    if (++use.count > 60) return res.status(429).json({ message: 'Trop de connexions TikTok en une minute, patientez.' });
+    signProxyUse.set(token, use);
+
+    const upstream = new URL(req.url, 'https://api.eulerstream.com');
+    if (upstream.searchParams.has('apiKey')) upstream.searchParams.set('apiKey', config.signApiKey);
+    const headers = {};
+    for (const [k, v] of Object.entries(req.headers)) {
+        if (!['host', 'x-api-key', 'content-length', 'connection', 'accept-encoding', 'x-forwarded-for', 'x-real-ip', 'origin', 'referer', 'cookie'].includes(k)) headers[k] = v;
+    }
+    headers['x-api-key'] = config.signApiKey;
+    try {
+        const r = await axios({
+            method: req.method, url: upstream.toString(), headers,
+            data: req.body && req.body.length ? req.body : undefined,
+            responseType: 'arraybuffer', validateStatus: () => true, timeout: 20000, maxRedirects: 0
+        });
+        for (const [k, v] of Object.entries(r.headers)) {
+            if (!['transfer-encoding', 'connection', 'content-encoding', 'content-length', 'access-control-allow-origin'].includes(k)) res.setHeader(k, v);
+        }
+        res.status(r.status).send(Buffer.from(r.data));
+    } catch (e) {
+        res.status(502).json({ message: `Service de signature injoignable : ${e.message}` });
+    }
+});
+
 app.use(express.json());
 
 // A token is always text: an object such as {"$ne": null} would match ANY account in a MongoDB query
@@ -426,6 +540,12 @@ app.get('/api/verify-license', async (req, res) => {
 
         // Sync config with MongoDB for this token
         await config.loadSession(token);
+        if (config.relayMode) {
+            // secure app: no database; the account is remembered in a local file (config.loadSession)
+            config.licenseToken = token;
+            reauthRemoteClient();
+            return res.json(response.data);
+        }
 
         // Capture and persist client IP (handle proxy lists and prioritize IPv4)
         let clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
@@ -1587,7 +1707,25 @@ app.get('/api/app/ping', (req, res) => {
     if (!config.isAppMode) return res.status(404).json({ app: false });
     let version = null;
     try { version = require('../package.json').version; } catch (e) { /* ignore */ }
-    res.json({ app: true, version, account: !!config.licenseToken });
+    res.json({ app: true, version, account: !!config.licenseToken, relay: config.relayMode });
+});
+
+// Secure app: is the signing proxy usable (the server has an Euler Stream key)?
+app.get('/api/app/sign-info', (req, res) => res.json({ proxy: !config.isAppMode && !!config.signApiKey }));
+
+// Secure app: the dashboard window tells the app's local engine which account is logged in (it has no
+// database to find it). Only from the app's own page (same origin), never from another site.
+app.post('/api/app/session', async (req, res) => {
+    if (!config.isAppMode) return res.status(404).end();
+    const origin = req.get('origin');
+    const port = process.env.PORT || 3000;
+    if (origin && origin !== `http://localhost:${port}` && origin !== `http://127.0.0.1:${port}`) return res.status(403).end();
+    const token = req.body && req.body.token;
+    if (typeof token !== 'string' || !/^[\w-]{8,128}$/.test(token)) return res.status(400).json({ error: 'Token invalide' });
+    await config.loadSession(token);
+    config.licenseToken = token;
+    reauthRemoteClient(); // connects to the Gentok server, or identifies again with this account
+    res.json({ success: true });
 });
 
 // API: Version Check
@@ -2952,7 +3090,7 @@ async function startServer() {
         try {
             logger.info('🔌 Initialisation de la base de données...');
             await connectDB();
-            if (connectDB.status()) logger.warn(`⚠️ Démarrage sans base de données (${connectDB.status()}) : l'API répond « Base de données indisponible ».`);
+            if (connectDB.status() && !config.relayMode) logger.warn(`⚠️ Démarrage sans base de données (${connectDB.status()}) : l'API répond « Base de données indisponible ».`);
             else logger.info('✅ Base de données prête.');
 
             const PORT = process.env.PORT || 3000;
@@ -2961,7 +3099,9 @@ async function startServer() {
             // A failure here (e.g. database offline) must not prevent the server from starting
             try {
                 const lastTokenKey = config.isAppMode ? `lastActiveToken_${os.hostname()}` : 'lastActiveToken';
-                const lastToken = await Global.findOne({ key: lastTokenKey }).maxTimeMS(5000);
+                // secure app: the account comes from a local file (no database in the app)
+                const localToken = config.relayMode ? config.readLocalToken() : null;
+                const lastToken = config.relayMode ? (localToken ? { value: localToken } : null) : await Global.findOne({ key: lastTokenKey }).maxTimeMS(5000);
                 if (lastToken && lastToken.value) {
                     logger.info(`✨ Restauration de la session (${config.isAppMode ? 'Locale' : 'VPS'}) pour : ${String(lastToken.value).substring(0, 8)}...`);
                     await config.loadSession(lastToken.value);

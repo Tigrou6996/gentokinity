@@ -37,8 +37,24 @@ function initRemoteClient() {
         socket.emit('identify', {
             token: config.licenseToken,
             type: 'app',
-            version: APP_VERSION
+            version: APP_VERSION,
+            relay: config.relayMode
+        }, () => {
+            // Secure app: a live running on this PC is announced again after a reconnection (or a server
+            // restart), otherwise the server would ignore its events
+            try {
+                const connector = require('../server').getConnector(config.licenseToken);
+                if (config.relayMode && connector && connector.hasConnected && !connector.isStopping && connector.announceRelay) connector.announceRelay();
+            } catch (e) { /* no live */ }
         });
+    });
+
+    // Secure app: the server lost the live it was processing (restart...) and asks for it again
+    socket.on('live_relay_resync', () => {
+        try {
+            const connector = require('../server').getConnector(config.licenseToken);
+            if (connector && connector.hasConnected && !connector.isStopping && connector.announceRelay) connector.announceRelay();
+        } catch (e) { }
     });
 
     // The scene, its events or its actions were changed from the dashboard: reload them for the live

@@ -22,7 +22,7 @@
 
     // In the app, the dashboard socket follows the mode (local engine, or the Gentok servers for "cloud")
     function syncAppSocket() {
-        if (!isApp || !window.socket) return;
+        if (!isApp || !window.socket || window.gentokRelayApp) return; // the secure app always works with the server
         const uri = (window.socket.io && window.socket.io.uri) || '';
         const onLocal = uri.includes('localhost');
         if (mode() === 'cloud' && onLocal && typeof connectToRemote === 'function') connectToRemote();
