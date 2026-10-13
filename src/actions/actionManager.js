@@ -37,6 +37,13 @@ function buildPlaceholders(context = {}, extra = {}) {
 
 const MAX_RUNS_PER_TRIGGER = 50; // safety cap for one trigger (e.g. a 1000-rose combo)
 
+/** What an action does: its list of effects (several since the TikFinity-like editor), or its single type */
+const EFFECT_TYPES = ['alert', 'sound', 'tts', 'chatbot', 'webhook', 'keyboard', 'rcon', 'obs', 'streamerbot', 'wheel'];
+function actionEffects(action) {
+    const list = Array.isArray(action.effects) && action.effects.length ? action.effects : [action.type];
+    return [...new Set(list.filter(t => EFFECT_TYPES.includes(t)))];
+}
+
 function safeJson(text) {
     try {
         const v = JSON.parse(text);
@@ -179,8 +186,10 @@ class ActionManager {
             for (const actionId of actionIds) {
                 const def = actionDefinitions.find(a => a.id === actionId);
                 if (!def) continue;
+                // "Répéter avec les combos" off: a combo of 5 roses runs the action once
+                const runs = def.comboRepeat === false ? Math.min(times, 1) : times;
                 const prev = runsByAction.get(actionId);
-                if (!prev || prev.times < times) runsByAction.set(actionId, { def, times });
+                if (!prev || prev.times < runs) runsByAction.set(actionId, { def, times: runs });
             }
         }
         if (runsByAction.size === 0) return;
@@ -203,6 +212,9 @@ class ActionManager {
 
     /** "Qui peut déclencher ?" filter */
     matchesAudience(e, context) {
+        // "Niveau d'équipe requis" (TikTok team / fan club level), 0 = everyone
+        const minTeam = Number(e.minTeamLevel) || 0;
+        if (minTeam > 0 && (Number(context.teamMemberLevel) || 0) < minTeam) return false;
         switch (e.who) {
             case 'follower':
                 // followRole: 0 = not following, 1 = follower, 2 = friend (mutual follow)
@@ -369,19 +381,41 @@ class ActionManager {
         if (!connector || !connector.token) return;
         const token = connector.token;
 
-        // Premium-only action types
-        if (PREMIUM_ONLY_ACTION_TYPES.includes(action.type)) {
+        // switched off in the actions list (a manual test still runs it)
+        if (action.enabled === false && triggerCode !== 'manual') return;
+
+        // An action can do several things at once (show an alert + play a sound + read a text...)
+        let effects = actionEffects(action);
+        // Premium-only effects: the other effects of the action still run
+        if (effects.some(t => PREMIUM_ONLY_ACTION_TYPES.includes(t))) {
             const plan = getPlan(await config.getSettings(token));
-            if (!canUseActionType(plan, action.type)) {
-                logger.warn(`🔒 [${token.substring(0, 8)}] Action "${action.name || action.type}" réservée à Gentok Premium.`);
-                return;
-            }
+            const allowed = effects.filter(t => canUseActionType(plan, t));
+            if (allowed.length < effects.length) logger.warn(`🔒 [${token.substring(0, 8)}] Action "${action.name || action.type}" : ${effects.filter(t => !allowed.includes(t)).join(', ')} réservé à Gentok Premium.`);
+            effects = allowed;
+            if (!effects.length && !action.soundUrl) return;
         }
 
         // Manual tests (dashboard "Tester") and goal rewards ignore cooldowns
         if (triggerCode !== 'manual' && !this.passesCooldown(token, action, context)) {
             logger.info(`⏳ [${token.substring(0, 8)}] Action "${action.name || action.id}" ignorée (cooldown).`);
             return;
+        }
+
+        // Points: the viewer who triggered it earns them (points > 0) or pays them (points < 0, the action
+        // does not run if he cannot afford it)
+        const pointsDelta = Math.trunc(Number(action.points) || 0);
+        if (pointsDelta && context.uniqueId && triggerCode !== 'manual' && !connector.isSimulation) {
+            const points = require('../features/points');
+            if (pointsDelta < 0) {
+                const paid = await points.spend(token, context, -pointsDelta, 'spend', action.name || 'action');
+                if (!paid) {
+                    emitEvent('points_insufficient', { uniqueId: context.uniqueId, nickname: context.nickname || context.uniqueId, cost: -pointsDelta }, token);
+                    logger.info(`💸 [${token.substring(0, 8)}] ${context.uniqueId} n'a pas assez de points pour "${action.name || action.id}" (${-pointsDelta}).`);
+                    return;
+                }
+            } else {
+                points.award(token, context, pointsDelta, 'action', {}, 0);
+            }
         }
 
         // [NEW] Actions Breakdown tracking
@@ -392,144 +426,12 @@ class ActionManager {
         }
 
         try {
-            if (action.type === 'webhook') {
-                let url = action.url;
-                if (!url) {
-                    logger.warn(`⚠️ [${token.substring(0, 8)}] Webhook ignoré : URL manquante (${action.name || action.id}).`);
-                    return;
+            for (const type of effects) {
+                try {
+                    await this.runEffect(type, action, triggerCode, context, connector);
+                } catch (err) {
+                    logger.error(`🚨 Erreur action ${action.name || action.id} (${type}) : ${err.message}`);
                 }
-                if (context.uniqueId) {
-                    url = url.replace(/{user}/g, context.uniqueId);
-                    url = url.replace(/{username}/g, context.uniqueId);
-                }
-
-                await sendWebhook({
-                    url: url,
-                    method: action.method || 'GET',
-                    data: action.data || {}
-                });
-            } else if (action.type === 'keyboard') {
-                const isApp = config.isAppMode;
-                // If we are in APP MODE, execute locally
-                if (isApp) {
-                    pressKey(action.key, false, action.duration || 100);
-                } else {
-                    // If we are the VPS, relay to the connected EXE
-                    emitToApp(token, 'remote_keyboard', {
-                        key: action.key,
-                        duration: action.duration || 100
-                    });
-                }
-            } else if (action.type === 'rcon') {
-                let command = action.command || '';
-                if (!command.trim()) {
-                    logger.warn(`⚠️ [${token.substring(0, 8)}] Commande Minecraft vide (${action.name || action.id}).`);
-                    return;
-                }
-
-                // Get Minecraft settings for THIS token first (needed for {playername})
-                const settings = await config.getSettings(token);
-                const mcSettings = settings.minecraft || {};
-                const mcPlayerName = mcSettings.playerName || mcSettings.currentPlayerName || '';
-
-                // Placeholders ({username}, {giftname}, {playername}...)
-                command = fillPlaceholders(command, context, { '{playername}': mcPlayerName });
-
-                if (!mcSettings || !mcSettings.host) {
-                    logger.warn(`⚠️ [${token.substring(0, 8)}] Minecraft action skipped: No settings configured.`);
-                    return;
-                }
-
-                // Auto-execute AT the player's position if a player name is configured
-                // AND the command doesn't already allow specific targeting (like 'execute')
-                if (mcPlayerName && mcPlayerName.trim() !== '' && !command.startsWith('execute')) {
-                    // Check if command is safe to wrap? Usually yes.
-                    // If user manually typed "execute at ...", we don't wrap.
-                    command = `execute at ${mcPlayerName} run ${command}`;
-                }
-
-                const appConnected = isAppConnected(token);
-                const isLocal = config.isAppMode;
-
-                // [FIX] In App/Local mode, the server IS on the same machine as Minecraft.
-                // Just call ServerTap HTTP directly — no relay needed!
-                if (isLocal) {
-                    logger.info(`🎮 [Local] Direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
-                    await sendRconCommand(command, mcSettings);
-                } else if (appConnected) {
-                    // VPS mode: relay to Electron app via socket
-                    logger.info(`📡 Relaying RCON to App (EXE) for token ${token.substring(0, 8)}...`);
-                    // only to the desktop app: the ServerTap key must not reach overlays / dashboards
-                    emitToDesktopApp(token, 'remote_rcon', { command, settings: mcSettings });
-                } else {
-                    // VPS mode, no app connected: only possible if host is not localhost
-                    if (mcSettings.host && mcSettings.host !== 'localhost' && mcSettings.host !== '127.0.0.1') {
-                        logger.info(`🎮 Executing direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
-                        await sendRconCommand(command, mcSettings);
-                    } else {
-                        logger.warn(`⚠️ [${token.substring(0, 8)}] RCON skipped: Host is ${mcSettings.host} but no App is connected.`);
-                    }
-                }
-
-
-            } else if (action.type === 'sound') {
-                // Handled below by audioUrl check
-            } else if (action.type === 'alert') {
-                // On-screen alert shown by the "Alertes" overlay (image / GIF / video + text)
-                emitEvent('overlay_alert', {
-                    text: fillPlaceholders(action.text || '', context),
-                    mediaUrl: action.mediaUrl || '',
-                    duration: Math.min(Math.max(Number(action.alertDuration) || 5, 1), 60),
-                    nickname: context.nickname || context.uniqueId || '',
-                    uniqueId: context.uniqueId || '',
-                    profilePictureUrl: context.profilePictureUrl || '',
-                    giftIcon: context.url || context.giftIcon || ''
-                }, token);
-            } else if (action.type === 'obs') {
-                const settings = await config.getSettings(token);
-                const obsSettings = settings.obs || {};
-                const obsAction = { obsAction: action.obsAction, obsScene: action.obsScene, obsSource: action.obsSource, obsDuration: action.obsDuration };
-                const isLocalHost = !obsSettings.host || ['localhost', '127.0.0.1'].includes(obsSettings.host);
-
-                if (config.isAppMode) {
-                    const { runObsAction } = require('./obsAction');
-                    await runObsAction(obsAction, obsSettings);
-                } else if (isAppConnected(token)) {
-                    // OBS runs on the streamer's PC: the desktop app executes it
-                    emitToDesktopApp(token, 'remote_obs', { action: obsAction, settings: obsSettings });
-                } else if (!isLocalHost) {
-                    const { runObsAction } = require('./obsAction');
-                    await runObsAction(obsAction, obsSettings);
-                } else {
-                    logger.warn(`⚠️ [${token.substring(0, 8)}] Action OBS ignorée : lancez l'application Gentok sur le PC où tourne OBS.`);
-                }
-            } else if (action.type === 'streamerbot') {
-                const settings = await config.getSettings(token);
-                const sb = settings.streamerbot || {};
-                const args = {
-                    user: context.uniqueId || '', nickname: context.nickname || '', comment: context.comment || context.message || '',
-                    giftName: context.giftName || '', giftId: context.giftId || '', coins: context.diamondCount || context.coins || 0,
-                    repeatCount: context.repeatCount || 1, likeCount: context.likeCount || 0, trigger: triggerCode,
-                    ...(action.sbArgs ? safeJson(fillPlaceholders(action.sbArgs, context)) : {})
-                };
-                const payload = { action: { id: action.sbActionId || undefined, name: action.sbActionName || undefined }, args };
-                const isLocalHost = !sb.host || ['localhost', '127.0.0.1'].includes(sb.host);
-                if (config.isAppMode || !isLocalHost) {
-                    const { runStreamerbotAction } = require('./streamerbotAction');
-                    await runStreamerbotAction(payload, sb);
-                } else if (isAppConnected(token)) {
-                    emitToDesktopApp(token, 'remote_streamerbot', { payload, settings: sb });
-                } else {
-                    logger.warn(`⚠️ [${token.substring(0, 8)}] Action Streamer.bot ignorée : lancez l'application Gentok sur le PC de Streamer.bot.`);
-                }
-            } else if (action.type === 'wheel') {
-                await this.spinWheel(action, context, connector);
-            } else if (action.type === 'tts') {
-                // Text read aloud by the dashboard (same voice settings as the chat TTS)
-                const text = fillPlaceholders(action.text || '', context).trim();
-                if (text) emitEvent('tts_speak', { text: text.slice(0, 300), user: context.uniqueId || 'action' }, token);
-            } else {
-                logger.warn(`⚠️ Type d'action inconnu : ${action.type}`);
             }
 
             // Play audio if action is of type 'sound' OR has an attached soundUrl (e.g. Soundboard audio alerts)
@@ -545,6 +447,159 @@ class ActionManager {
             logger.error(`🚨 Erreur lors de l'exécution de l'action ${action.type}: ${err.message}`);
         }
     }
+
+    /** Runs one effect of an action (webhook, keyboard, Minecraft, alert, TTS, OBS...) */
+    async runEffect(type, action, triggerCode, context, connector) {
+        const token = connector.token;
+        if (type === 'webhook') {
+            let url = action.url;
+            if (!url) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Webhook ignoré : URL manquante (${action.name || action.id}).`);
+                return;
+            }
+            if (context.uniqueId) {
+                url = url.replace(/{user}/g, context.uniqueId);
+                url = url.replace(/{username}/g, context.uniqueId);
+            }
+
+            await sendWebhook({
+                url: url,
+                method: action.method || 'GET',
+                data: action.data || {}
+            });
+        } else if (type === 'keyboard') {
+            const isApp = config.isAppMode;
+            // If we are in APP MODE, execute locally
+            if (isApp) {
+                pressKey(action.key, false, action.duration || 100);
+            } else {
+                // If we are the VPS, relay to the connected EXE
+                emitToApp(token, 'remote_keyboard', {
+                    key: action.key,
+                    duration: action.duration || 100
+                });
+            }
+        } else if (type === 'rcon') {
+            let command = action.command || '';
+            if (!command.trim()) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Commande Minecraft vide (${action.name || action.id}).`);
+                return;
+            }
+
+            // Get Minecraft settings for THIS token first (needed for {playername})
+            const settings = await config.getSettings(token);
+            const mcSettings = settings.minecraft || {};
+            const mcPlayerName = mcSettings.playerName || mcSettings.currentPlayerName || '';
+
+            // Placeholders ({username}, {giftname}, {playername}...)
+            command = fillPlaceholders(command, context, { '{playername}': mcPlayerName });
+
+            if (!mcSettings || !mcSettings.host) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Minecraft action skipped: No settings configured.`);
+                return;
+            }
+
+            // Auto-execute AT the player's position if a player name is configured
+            // AND the command doesn't already allow specific targeting (like 'execute')
+            if (mcPlayerName && mcPlayerName.trim() !== '' && !command.startsWith('execute')) {
+                // Check if command is safe to wrap? Usually yes.
+                // If user manually typed "execute at ...", we don't wrap.
+                command = `execute at ${mcPlayerName} run ${command}`;
+            }
+
+            const appConnected = isAppConnected(token);
+            const isLocal = config.isAppMode;
+
+            // [FIX] In App/Local mode, the server IS on the same machine as Minecraft.
+            // Just call ServerTap HTTP directly — no relay needed!
+            if (isLocal) {
+                logger.info(`🎮 [Local] Direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
+                await sendRconCommand(command, mcSettings);
+            } else if (appConnected) {
+                // VPS mode: relay to Electron app via socket
+                logger.info(`📡 Relaying RCON to App (EXE) for token ${token.substring(0, 8)}...`);
+                // only to the desktop app: the ServerTap key must not reach overlays / dashboards
+                emitToDesktopApp(token, 'remote_rcon', { command, settings: mcSettings });
+            } else {
+                // VPS mode, no app connected: only possible if host is not localhost
+                if (mcSettings.host && mcSettings.host !== 'localhost' && mcSettings.host !== '127.0.0.1') {
+                    logger.info(`🎮 Executing direct RCON: ${command} to ${mcSettings.host}:${mcSettings.port}`);
+                    await sendRconCommand(command, mcSettings);
+                } else {
+                    logger.warn(`⚠️ [${token.substring(0, 8)}] RCON skipped: Host is ${mcSettings.host} but no App is connected.`);
+                }
+            }
+
+
+        } else if (type === 'sound') {
+            // Handled below by audioUrl check
+        } else if (type === 'alert') {
+            // On-screen alert shown by the "Alertes" overlay (image / GIF / video + text)
+            emitEvent('overlay_alert', {
+                text: fillPlaceholders(action.text || '', context),
+                mediaUrl: action.mediaUrl || '',
+                duration: Math.min(Math.max(Number(action.alertDuration) || 5, 1), 60),
+                nickname: context.nickname || context.uniqueId || '',
+                uniqueId: context.uniqueId || '',
+                profilePictureUrl: context.profilePictureUrl || '',
+                giftIcon: context.url || context.giftIcon || '',
+                // "screen" of the Alerts overlay (several overlays: /overlay/alerts?screen=2), fade, skip
+                screen: Math.min(Math.max(parseInt(action.screen, 10) || 1, 1), 8),
+                fade: action.fade !== false,
+                skipOnNext: !!action.skipOnNext
+            }, token);
+        } else if (type === 'obs') {
+            const settings = await config.getSettings(token);
+            const obsSettings = settings.obs || {};
+            const obsAction = { obsAction: action.obsAction, obsScene: action.obsScene, obsSource: action.obsSource, obsDuration: action.obsDuration };
+            const isLocalHost = !obsSettings.host || ['localhost', '127.0.0.1'].includes(obsSettings.host);
+
+            if (config.isAppMode) {
+                const { runObsAction } = require('./obsAction');
+                await runObsAction(obsAction, obsSettings);
+            } else if (isAppConnected(token)) {
+                // OBS runs on the streamer's PC: the desktop app executes it
+                emitToDesktopApp(token, 'remote_obs', { action: obsAction, settings: obsSettings });
+            } else if (!isLocalHost) {
+                const { runObsAction } = require('./obsAction');
+                await runObsAction(obsAction, obsSettings);
+            } else {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Action OBS ignorée : lancez l'application Gentok sur le PC où tourne OBS.`);
+            }
+        } else if (type === 'streamerbot') {
+            const settings = await config.getSettings(token);
+            const sb = settings.streamerbot || {};
+            const args = {
+                user: context.uniqueId || '', nickname: context.nickname || '', comment: context.comment || context.message || '',
+                giftName: context.giftName || '', giftId: context.giftId || '', coins: context.diamondCount || context.coins || 0,
+                repeatCount: context.repeatCount || 1, likeCount: context.likeCount || 0, trigger: triggerCode,
+                ...(action.sbArgs ? safeJson(fillPlaceholders(action.sbArgs, context)) : {})
+            };
+            const payload = { action: { id: action.sbActionId || undefined, name: action.sbActionName || undefined }, args };
+            const isLocalHost = !sb.host || ['localhost', '127.0.0.1'].includes(sb.host);
+            if (config.isAppMode || !isLocalHost) {
+                const { runStreamerbotAction } = require('./streamerbotAction');
+                await runStreamerbotAction(payload, sb);
+            } else if (isAppConnected(token)) {
+                emitToDesktopApp(token, 'remote_streamerbot', { payload, settings: sb });
+            } else {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Action Streamer.bot ignorée : lancez l'application Gentok sur le PC de Streamer.bot.`);
+            }
+        } else if (type === 'wheel') {
+            await this.spinWheel(action, context, connector);
+        } else if (type === 'tts') {
+            // Text read aloud by the dashboard (same voice settings as the chat TTS)
+            const text = fillPlaceholders(action.ttsText !== undefined ? action.ttsText : (action.text || ''), context).trim();
+            if (text) emitEvent('tts_speak', { text: text.slice(0, 300), user: context.uniqueId || 'action' }, token);
+        } else if (type === 'chatbot') {
+            // message posted in the live chat by the streamer's bot account
+            const text = fillPlaceholders(action.chatText || '', context).trim();
+            if (text) require('../features/chatbot').say(connector, await config.getSettings(token), text.slice(0, 150));
+        } else {
+            logger.warn(`⚠️ Type d'action inconnu : ${type}`);
+        }
+    }
+
     /**
      * "Roue de la fortune": picks a segment, animates it on the Wheel overlay, then runs the
      * action linked to the winning segment ("Texte => Nom de l'action").

@@ -17,7 +17,8 @@ const EventSchema = new mongoose.Schema({
     message: String, // chat trigger: text the message must contain
     pointsCost: Number, // Premium points shop: points paid by the viewer to trigger it
     minCoins: Number,
-    minLevel: Number // level_up trigger: only from this level
+    minLevel: Number, // level_up trigger: only from this level
+    minTeamLevel: Number // TikTok team (fan club) level needed, 0 = everyone
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token

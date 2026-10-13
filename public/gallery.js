@@ -41,8 +41,8 @@
             params: [{ key: 'theme', label: 'Style', type: 'select', options: ['classic', 'glass', 'neon', 'podium', 'minimal', 'gradient', 'ticker'], def: 'classic' }, { key: 'period', label: 'Période', type: 'select', options: ['live', 'weekly', 'all'] }, { key: 'limit', label: 'Nombre', type: 'number', def: 5 }, { key: 'avatars', label: 'Avatars', type: 'bool', def: true }, { key: 'title', label: 'Titre', type: 'text' }, size(16), color] },
         { id: 'toppoints', path: 'ranking', fixed: { type: 'points' }, cat: 'rankings', icon: 'fa-ranking-star', name: 'Classement des points', desc: 'Les spectateurs avec le plus de points (Utilisateurs & Points).', h: 340,
             params: [{ key: 'theme', label: 'Style', type: 'select', options: ['classic', 'glass', 'neon', 'podium', 'minimal', 'gradient', 'ticker'], def: 'classic' }, { key: 'limit', label: 'Nombre', type: 'number', def: 10 }, { key: 'avatars', label: 'Avatars', type: 'bool', def: true }, { key: 'title', label: 'Titre', type: 'text' }, size(16), color] },
-        { id: 'points', cat: 'rankings', icon: 'fa-star', name: 'Points & !score', desc: 'Carte du spectateur quand il tape !score, top 5 avec !top et passages de niveau.', h: 320, scale: true, test: { type: 'chat', comment: '!score' },
-            params: [{ key: 'duration', label: 'Durée (s)', type: 'number', def: 7 }, { key: 'levelup', label: 'Passages de niveau', type: 'bool', def: true }, { key: 'minlevel', label: 'Niveau min. fêté', type: 'number', def: 2 }, theme, color, color2] },
+        { id: 'points', cat: 'rankings', icon: 'fa-star', name: 'Points & !score', desc: 'Quand un spectateur tape !score : sa photo avec son score au-dessus. Top 5 avec !top et passages de niveau.', h: 320, scale: true, test: { type: 'chat', comment: '!score' },
+            params: [{ key: 'layout', label: 'Affichage', type: 'select', options: ['avatar', 'card'], def: 'avatar' }, { key: 'duration', label: 'Durée (s)', type: 'number', def: 7 }, { key: 'levelup', label: 'Passages de niveau', type: 'bool', def: true }, { key: 'minlevel', label: 'Niveau min. fêté', type: 'number', def: 2 }, theme, color, color2] },
 
         // ---- Goals & counters
         { id: 'goal', cat: 'goals', icon: 'fa-bullseye', name: 'Objectif', desc: 'Barre de progression pour les likes, pièces, follows, partages, abonnés ou spectateurs.', h: 170, test: { type: 'like', likeCount: 50 },
@@ -105,6 +105,7 @@
             else q.set(p.key, v);
         }
         if (chosen.font) q.set('font', chosen.font);
+        if (chosen.scale && Number(chosen.scale) !== 100) q.set('scale', chosen.scale);
         Object.entries(extra).forEach(([k, v]) => q.set(k, v));
         return q;
     }
@@ -143,6 +144,13 @@
         return '';
     }
 
+    // options every overlay has: overall size and font
+    function commonFieldsHtml(o) {
+        const chosen = options[o.id] || {};
+        return `<div class="gal-field"><label for="gal-${o.id}-scale">${esc(t('Taille globale (%)'))}</label><input type="number" class="form-control form-control-sm" id="gal-${o.id}-scale" data-k="scale" min="30" max="300" step="5" value="${esc(chosen.scale || 100)}"></div>
+            <div class="gal-field"><label>${esc(t('Police'))}</label><select class="form-select form-select-sm" data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option${chosen.font === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select></div>`;
+    }
+
     function fieldHtml(o, p) {
         const v = (options[o.id] || {})[p.key];
         const val = v === undefined ? (p.def === undefined ? '' : p.def) : v;
@@ -169,7 +177,7 @@
             </div>
             <div class="gal-custom" hidden>
                 <div class="gal-fields">${(o.params || []).map(p => fieldHtml(o, p)).join('')}
-                    <div class="gal-field"><label>${esc(t('Police'))}</label><select class="form-select form-select-sm" data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option${(options[o.id] || {}).font === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
+                    ${commonFieldsHtml(o)}
                 </div>
                 <button class="btn btn-sm btn-link gal-reset" data-act="defaults"><i class="fas fa-eraser"></i> ${esc(t('Valeurs par défaut'))}</button>
             </div>
@@ -269,7 +277,7 @@
                 const panel = card.querySelector('.gal-custom'); panel.hidden = !panel.hidden; btn.classList.toggle('active', !panel.hidden);
             } else if (act === 'defaults') {
                 delete options[o.id]; saveOptions();
-                card.querySelector('.gal-fields').outerHTML = `<div class="gal-fields">${(o.params || []).map(p => fieldHtml(o, p)).join('')}<div class="gal-field"><label>${esc(t('Police'))}</label><select class="form-select form-select-sm" data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div></div>`;
+                card.querySelector('.gal-fields').outerHTML = `<div class="gal-fields">${(o.params || []).map(p => fieldHtml(o, p)).join('')}${commonFieldsHtml(o)}</div>`;
                 refreshCard(card, true);
             } else if (act === 'test' && o.test && o.test.wheel) {
                 await api('/api/wheel/test', {});

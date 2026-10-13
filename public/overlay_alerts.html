@@ -43,17 +43,21 @@
         //   mingift=0      valeur minimale (pièces) d'un combo de cadeaux pour afficher une alerte
         //   duration=5     durée d'affichage en secondes
         //   actions=1      afficher aussi les actions "Alerte" (0 pour désactiver)
+        //   screen=1       "écran" des actions (1 à 8) : chaque action choisit l'écran où elle s'affiche ; les alertes
+        //                  TikTok (follow, cadeau...) ne s'affichent que sur l'écran 1, sauf si events=... est indiqué
         //   color=fe2c55   couleur principale, demo=1 pour un aperçu
         const G = window.Gentok;
         document.documentElement.style.setProperty('--accent', G.colorParam('color', '#fe2c55'));
 
-        const enabledTypes = G.listParam('events', ['follow', 'gift', 'subscribe', 'share', 'question']);
+        const screen = Math.min(Math.max(Math.round(G.numParam('screen', 1)), 1), 8);
+        const enabledTypes = G.listParam('events', screen === 1 ? ['follow', 'gift', 'subscribe', 'share', 'question'] : []);
         const minGift = G.numParam('mingift', 0);
         const duration = Math.min(Math.max(G.numParam('duration', 5), 1), 60);
         const showActions = G.boolParam('actions', true);
         const stage = document.getElementById('stage');
         const queue = [];
         let busy = false;
+        let current = null; // { end, skip }: the alert on screen
 
         const t = G.t;
 
@@ -93,6 +97,8 @@
         function enqueue(item) {
             if (queue.length > 30) queue.shift(); // never lag minutes behind the live
             queue.push(item);
+            // "Passer à l'action suivante": the alert on screen ends as soon as another one is waiting
+            if (current && current.skip) current.end();
             next();
         }
 
@@ -102,17 +108,26 @@
             const item = queue.shift();
             const el = document.createElement('div');
             el.className = 'alert ov-surface';
+            if (item.fade === false) el.style.transition = 'none';
             el.innerHTML = item.html;
             stage.appendChild(el);
             requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
 
             const video = el.querySelector('video');
             const showMs = item.duration * 1000;
-            setTimeout(() => {
+            let ended = false;
+            const end = () => {
+                if (ended) return;
+                ended = true;
+                clearTimeout(timer);
+                current = null;
                 el.classList.add('hide');
                 if (video) video.pause();
-                setTimeout(() => { el.remove(); busy = false; next(); }, 450);
-            }, showMs);
+                setTimeout(() => { el.remove(); busy = false; next(); }, item.fade === false ? 0 : 450);
+            };
+            const timer = setTimeout(end, showMs);
+            current = { end, skip: !!item.skip };
+            if (item.skip && queue.length) end();
         }
 
         function onTikTokAlert(payload) {
@@ -123,8 +138,8 @@
         }
 
         function onCustomAlert(d) {
-            if (!showActions || !d) return;
-            enqueue({ html: buildCustomAlert(d), duration: Math.min(Math.max(Number(d.duration) || duration, 1), 60) });
+            if (!showActions || !d || (Number(d.screen) || 1) !== screen) return;
+            enqueue({ html: buildCustomAlert(d), duration: Math.min(Math.max(Number(d.duration) || duration, 1), 60), fade: d.fade !== false, skip: !!d.skipOnNext });
         }
 
         const socket = G.connect();

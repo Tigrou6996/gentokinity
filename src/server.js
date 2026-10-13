@@ -1713,6 +1713,14 @@ app.get('/api/app/ping', (req, res) => {
 });
 
 // Secure app: is the signing proxy usable (the server has an Euler Stream key)?
+// Screens of the Alerts overlay open in OBS / Live Studio (the action editor warns about the others)
+app.get('/api/overlays/screens', (req, res) => {
+    const token = getRequestToken(req);
+    if (!token) return res.status(401).json({ error: 'Token manquant' });
+    const { getOverlayScreens } = require('./utils/socket');
+    res.json({ screens: getOverlayScreens(token) });
+});
+
 app.get('/api/app/sign-info', (req, res) => res.json({ proxy: !config.isAppMode && !!config.signApiKey }));
 
 // Secure app: the dashboard window tells the app's local engine which account is logged in (it has no

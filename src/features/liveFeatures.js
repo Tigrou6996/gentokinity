@@ -65,8 +65,8 @@ async function handleCommands(connector, data, s) {
     const cmd = msg.split(/\s+/)[0];
     const isScore = cmd === String(s.scoreCommand || '!score').toLowerCase();
     const isTop = cmd === String(s.topCommand || '!top').toLowerCase();
-    const isDaily = Number(s.dailyAmount) > 0 && cmd === String(s.dailyCommand || '!daily').toLowerCase();
-    const isGive = !!s.giveEnabled && cmd === String(s.giveCommand || '!give').toLowerCase();
+    const isDaily = !!s.enabled && Number(s.dailyAmount) > 0 && cmd === String(s.dailyCommand || '!daily').toLowerCase();
+    const isGive = !!s.enabled && !!s.giveEnabled && cmd === String(s.giveCommand || '!give').toLowerCase();
     if (!isScore && !isTop && !isDaily && !isGive) return;
     if ((isDaily || isGive) && !canPersist(connector)) return; // simulator: never changes balances
 
@@ -137,7 +137,8 @@ async function onChat(connector, data) {
             if (earn) connector.chatPointsAt.set(data.uniqueId, Date.now());
             points.award(connector.token, userOf(data), earn ? s.perChat : 0, 'chat', { chats: 1 }, earn ? points.xpOf(s, 'perChat', 1, s.perChat) : 0);
         }
-        if (s.enabled) await handleCommands(connector, data, s);
+        // !score / !top answer even when earning points is switched off (balances already earned stay visible)
+        await handleCommands(connector, data, s);
     } catch (e) {
         logger.warn(`[LIVE] onChat: ${e.message}`);
     }

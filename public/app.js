@@ -2754,6 +2754,8 @@ window.editItem = async (type, id) => {
 
         const costInput = document.querySelector('#event-points-cost');
         if (costInput) costInput.value = event.pointsCost || 0;
+        const teamInput = document.querySelector('#event-team-level');
+        if (teamInput) teamInput.value = event.minTeamLevel || 0;
 
         // Select actions
         const actionCheckboxes = document.querySelectorAll('#event-action-list input[type="checkbox"]');
@@ -3846,6 +3848,7 @@ async function saveNewEvent(e) {
 
     // Points shop (Premium): cost paid by the viewer
     event.pointsCost = Math.max(0, parseInt(document.querySelector('#event-points-cost')?.value) || 0);
+    event.minTeamLevel = Math.min(Math.max(parseInt(document.querySelector('#event-team-level')?.value) || 0, 0), 50);
     if (event.pointsCost > 0 && !isPremiumUser) {
         showNotify('🌟 Gentok Pro', 'La boutique de points est réservée à Gentok Premium.', 'info');
         event.pointsCost = 0;

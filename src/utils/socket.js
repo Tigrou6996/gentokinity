@@ -78,6 +78,10 @@ function initSocket(server) {
 
             } else if (identifiedType === 'overlay') {
                 socket.join(`room:${token}`);
+                // which overlay page and "screen" (Alerts overlay ?screen=2): the action editor warns about
+                // a screen that is not open in OBS
+                socket.data.overlayPage = String((data && data.page) || '').slice(0, 60);
+                socket.data.overlayScreen = Math.min(Math.max(parseInt(data && data.screen, 10) || 1, 1), 8);
                 if (!clientsByToken[token].overlay) clientsByToken[token].overlay = [];
                 clientsByToken[token].overlay.push(socket.id);
             } else {
@@ -647,6 +651,17 @@ function getSocketCache(token) {
     return socketCache[token] || null;
 }
 
+/** Screens of the Alerts overlay currently open for an account (OBS / Live Studio browser sources) */
+function getOverlayScreens(token, page = '/overlay/alerts') {
+    const ids = (clientsByToken[token] && clientsByToken[token].overlay) || [];
+    const screens = new Set();
+    for (const id of ids) {
+        const s = io && io.sockets.sockets.get(id);
+        if (s && s.data.overlayPage === page) screens.add(s.data.overlayScreen || 1);
+    }
+    return [...screens].sort((a, b) => a - b);
+}
+
 module.exports = {
     getAppInfo,
     initSocket,
@@ -661,5 +676,6 @@ module.exports = {
     setOnAppConnected,
     setLiveRelayHooks,
     getActiveTokens,
-    getSocketCache
+    getSocketCache,
+    getOverlayScreens
 };

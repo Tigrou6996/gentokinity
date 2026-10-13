@@ -29,7 +29,17 @@ const ActionSchema = new mongoose.Schema({
     segments: String,      // wheel: one segment per line, "Texte => Nom d'une action" to chain an action
     sbActionId: String,    // streamerbot: action id
     sbActionName: String,  // streamerbot: action name
-    sbArgs: String         // streamerbot: extra arguments (JSON, placeholders allowed)
+    sbArgs: String,        // streamerbot: extra arguments (JSON, placeholders allowed)
+    // Since the TikFinity-like editor an action can do several things at once
+    effects: { type: [String], default: undefined }, // e.g. ['alert', 'sound', 'tts'] (empty: just `type`)
+    ttsText: String,       // tts effect text when the action also shows an alert text
+    chatText: String,      // chatbot effect: message posted in the live chat
+    points: Number,        // > 0: points given to the viewer, < 0: points he pays (no run if he can't)
+    screen: Number,        // Alerts overlay screen 1-8 (/overlay/alerts?screen=N)
+    fade: Boolean,         // fade in / out on the overlay (default true)
+    comboRepeat: Boolean,  // gift combos: run once per gift (default) or once per combo (false)
+    skipOnNext: Boolean,   // the alert ends as soon as the next one is waiting
+    enabled: Boolean       // false: switched off in the actions list
 }, { timestamps: true });
 
 // Ensure uniqueness of id per token

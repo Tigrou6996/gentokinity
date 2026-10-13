@@ -52,7 +52,7 @@
     function connect() {
         const socket = io({ transports: ['websocket', 'polling'] });
         socket.on('connect', () => {
-            if (token) socket.emit('identify', { token, type: 'overlay' });
+            if (token) socket.emit('identify', { token, type: 'overlay', page: location.pathname, screen: numParam('screen', 1) });
         });
         socket.on('remote_reload', () => window.location.reload());
         return socket;
@@ -222,4 +222,8 @@
 
     const font = params.get('font') || (window.Gentok.theme === 'retro' ? 'Press Start 2P' : '');
     if (font) document.addEventListener('DOMContentLoaded', () => applyFont(font));
+
+    // Overall size of the overlay (scale=50..300 %, set in the gallery), on top of its own size options
+    const scale = numParam('scale', 100);
+    if (scale !== 100 && scale >= 20 && scale <= 400) document.documentElement.style.zoom = String(scale / 100);
 })();
