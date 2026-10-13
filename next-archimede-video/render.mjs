@@ -53,7 +53,9 @@ const fps = +a3, sub = Math.max(1, +a4), workers = Math.max(1, +a5), N = Math.ro
 const base = out.replace(/\.mp4$/, ''), silent = base + '_silent.mp4';
 const vf = sub > 1 ? ['-vf', `tmix=frames=${sub},select='eq(mod(n\\,${sub})\\,${sub - 1})',setpts=N/(${fps}*TB)`] : [];
 const t0 = Date.now(); let doneFrames = 0;
+const AUDIO_ONLY = process.env.AUDIO_ONLY === '1';
 const per = Math.ceil(N / workers), segs = [];
+if (!AUDIO_ONLY) {
 await Promise.all(Array.from({ length: workers }, async (_, w) => {
   const a = w * per, b = Math.min(N, a + per); if (a >= b) return;
   const seg = `${base}_seg${w}.mp4`; segs[w] = seg;
@@ -74,6 +76,7 @@ const list = base + '_segs.txt';
 writeFileSync(list, segs.filter(Boolean).map(s => `file '${path.resolve(s)}'`).join('\n'));
 await run(['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', silent]);
 segs.filter(Boolean).forEach(s => rmSync(s)); rmSync(list);
+}
 console.log(`\nvideo -> ${silent}  (${((Date.now() - t0) / 1000).toFixed(0)}s)`);
 
 const page = await openPage();
@@ -90,8 +93,11 @@ if (hasAudio) {
     return btoa(s);
   }, V.duration);
   const pcm = base + '.pcm'; writeFileSync(pcm, Buffer.from(b64, 'base64'));
+  // two-pass linear loudness normalisation (keeps the dynamics and the ending fade intact)
+  const meas = await new Promise((res, rej) => { const p = spawn('ffmpeg', ['-hide_banner','-f','s16le','-ar','48000','-ac','2','-i',pcm,'-af','loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json','-f','null','-']); let e=''; p.stderr.on('data', d => e += d); p.on('close', () => { try { res(JSON.parse(e.slice(e.lastIndexOf('{')))); } catch (x) { rej(x); } }); });
+  const ln = `loudnorm=I=-14:TP=-1.5:LRA=11:linear=true:measured_I=${meas.input_i}:measured_TP=${meas.input_tp}:measured_LRA=${meas.input_lra}:measured_thresh=${meas.input_thresh}:offset=${meas.target_offset}`;
   await run(['-v','error','-y','-i',silent,'-f','s16le','-ar','48000','-ac','2','-i',pcm,
-    '-filter_complex','[1:a]loudnorm=I=-14:TP=-1.5:LRA=9,aresample=48000,alimiter=limit=0.89[a]',
+    '-filter_complex',`[1:a]${ln},aresample=48000,alimiter=limit=0.84,afade=t=out:st=${V.duration - 0.8}:d=0.8[a]`,
     '-map','0:v','-map','[a]','-c:v','copy','-c:a','aac','-b:a','192k','-t',String(V.duration),'-movflags','+faststart',out]);
   rmSync(pcm); console.log('with audio ->', out);
 }
