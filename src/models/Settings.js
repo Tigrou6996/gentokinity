@@ -43,6 +43,7 @@ const SettingsSchema = new mongoose.Schema({
         port: { type: Number, default: 7474 }
     },
     points: { type: Object, default: null }, // points system settings (see features/points.js)
+    giftPanel: { type: Object, default: null }, // "Panneau cadeaux" designed in Overlay Custom (public/overlay-maker), shown by /overlay/giftpanel
     chatbot: { type: Object, default: null }, // TikTok account answering !score / !top in the chat (features/chatbot.js); never sent to the browser
     minecraft: {
         host: { type: String, default: 'localhost' },

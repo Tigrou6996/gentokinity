@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gentok - Panneau cadeaux</title>
+    <link rel="stylesheet" href="/gift-panel.css">
+    <style>
+        html, body { margin: 0; background: transparent; overflow: hidden; }
+        body { display: flex; justify-content: center; align-items: flex-start; padding: 8px; box-sizing: border-box; }
+        #panel { max-width: 100%; transform-origin: top center; }
+    </style>
+</head>
+<body>
+    <!-- "Panneau cadeaux" designed in Overlay Custom. The cell of a gift lights up when it is sent in the live.
+         URL: /overlay/giftpanel?token=...   (demo=1: example panel and fake gifts, for previews) -->
+    <div id="panel"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/overlay-common.js"></script>
+    <script src="/gift-panel-render.js"></script>
+    <script>
+        const G = window.Gentok;
+        const el = document.getElementById('panel');
+        let panel = null;
+
+        const DEMO = {
+            title: 'Envoie un cadeau pour…',
+            items: [
+                { giftId: '5655', name: 'Rose', icon: '/img/tiktok/5655.png', coins: 1, text1: 'Rose', text2: 'TNT' },
+                { giftId: '5487', name: 'Finger Heart', icon: '/img/tiktok/5487.png', coins: 5, text1: 'Finger Heart', text2: 'Zombie' },
+                { giftId: '5827', name: 'Ice Cream Cone', icon: '/img/tiktok/5827.png', coins: 1, text1: 'Glace', text2: 'Saut' },
+                { giftId: '6064', name: 'GG', icon: '/img/tiktok/6064.png', coins: 1, text1: 'GG', text2: 'Danse' }
+            ]
+        };
+
+        // fits the panel in the OBS source width
+        function fit() {
+            el.style.transform = '';
+            const w = el.offsetWidth, max = window.innerWidth - 16;
+            if (w > max) el.style.transform = `scale(${max / w})`;
+        }
+        function draw(p) {
+            panel = p;
+            GiftPanel.render(el, p || DEMO);
+            fit();
+        }
+        window.addEventListener('resize', fit);
+
+        async function load() {
+            if (G.isDemo || !G.token) return draw(DEMO);
+            try {
+                const r = await fetch(`/api/gift-panel?token=${encodeURIComponent(G.token)}`, { cache: 'no-store' });
+                const p = r.ok ? await r.json() : null;
+                draw(p && p.items && p.items.length ? p : DEMO);
+            } catch (e) { draw(DEMO); }
+        }
+        load();
+
+        const socket = G.connect();
+        socket.on('gift_panel_update', (p) => draw(p && p.items && p.items.length ? p : DEMO));
+        socket.on('tiktok_alert', (payload) => {
+            if (!payload || payload.type !== 'gift' || !payload.data) return;
+            const d = payload.data;
+            GiftPanel.highlight(el, { giftId: d.giftId, giftName: d.giftName, nickname: d.nickname || d.uniqueId });
+        });
+
+        if (G.isDemo) {
+            let i = 0;
+            setInterval(() => {
+                const it = DEMO.items[i++ % DEMO.items.length];
+                GiftPanel.highlight(el, { giftId: it.giftId, nickname: G.demoUser().nickname });
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

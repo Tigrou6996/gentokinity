@@ -1,355 +1,374 @@
 /**
- * GENTOK - TikTok Overlay Maker
- * Final Stability & Visibility Overhaul (v12)
+ * Gentok · Panneau cadeaux (Overlay Custom)
+ * Designs the grid "gift → action" shown to viewers. Saved on the Gentok server (shown live in OBS by
+ * /overlay/giftpanel?token=...), exported as a PNG. Rendering: /gift-panel-render.js (shared with the overlay).
  */
+(function () {
+    'use strict';
+    const $ = (id) => document.getElementById(id);
+    const token = (() => { try { return localStorage.getItem('gentok_token') || ''; } catch (e) { return ''; } })();
+    const LOCAL_KEY = 'gentok_gift_panel_v2';
+    const OLD_KEY = 'gentok_overlay_config_v12';
+    let API = ''; // same origin, or the Gentok server when opened from the Windows app (which has no data)
+    let panel = GiftPanel.normalize({});
+    let gifts = []; // catalogue: { id, name, icon, price }
+    let pickerTarget = null; // index of the item whose gift is being chosen, or -1 to add one
+    let zoom = 'fit';
 
-document.addEventListener('DOMContentLoaded', () => {
-    // ---- DATA & CONSTANTS ----
-    let GIFT_DATA = [];
-    let availableFonts = [];
-    let items = [];
-    let selectedIndex = null;
-    let currentTheme = 'dark-gamer';
-    
-    // GUARANTEED BRIGHT DEFAULTS
-    const SAFE_DEFAULTS = {
-        font: "'Anton', sans-serif", fSize: 22, lSpacing: 0,
-        isBold: true, isItalic: false, isUpper: true, isUnderline: false, isStrike: false,
-        align: 'center', opacity: 100,
-        color1: '#ffffff', color2: '#00f2ff', outlineColor: '#000000', outlineWidth: 1.5
-    };
-    let globalStyle = { ...SAFE_DEFAULTS };
-
-    const GIFTS_API_URL = 'https://api.gentok.fr/tiktok/gift/fr-FR';
-    const FONTS_API_URL = 'https://gentok.fr/api/polices/';
-    const STORAGE_KEY = 'gentok_overlay_config_v12'; // VERSION 12
-
-    // ---- ELEMENTS ----
-    const el = {
-        grid: document.getElementById('overlay-grid'),
-        colsInput: document.getElementById('grid-columns'),
-        totalInput: document.getElementById('grid-total-items'),
-        gapInput: document.getElementById('grid-gap'),
-        paddingInput: document.getElementById('grid-padding'),
-        iconSizeInput: document.getElementById('icon-size'),
-        
-        tabBtns: document.querySelectorAll('.nav-tab'),
-        tabContents: document.querySelectorAll('.tab-content'),
-        presetDots: document.querySelectorAll('.preset-dot'),
-        captureArea: document.getElementById('capture-area'),
-        customBgLayer: document.getElementById('custom-bg-layer'),
-        bgOverlayLayer: document.getElementById('bg-overlay-layer'),
-        
-        fontSelect: document.getElementById('font-family'),
-        fontSize: document.getElementById('font-size'),
-        letterSpacing: document.getElementById('letter-spacing'),
-        textColor1: document.getElementById('text-color-1'),
-        textColor2: document.getElementById('text-color-2'),
-        outlineColor: document.getElementById('outline-color'),
-        outlineWidth: document.getElementById('outline-width'),
-        
-        btnBold: document.getElementById('btn-bold'),
-        btnItalic: document.getElementById('btn-italic'),
-        btnUnderline: document.getElementById('btn-underline'),
-        btnStrike: document.getElementById('btn-strike'),
-        btnUpper: document.getElementById('btn-upper'),
-        
-        btnAlignLeft: document.getElementById('btn-align-left'),
-        btnAlignCenter: document.getElementById('btn-align-center'),
-        btnAlignRight: document.getElementById('btn-align-right'),
-        
-        itemOpacity: document.getElementById('item-opacity'),
-        opacityVal: document.getElementById('opacity-val'),
-        
-        bgUploadTrigger: document.getElementById('bg-upload-trigger'),
-        bgFileInput: document.getElementById('bg-file-input'),
-        removeBgBtn: document.getElementById('remove-bg-btn'),
-        bgDarkness: document.getElementById('bg-darkness'),
-        bgBlur: document.getElementById('bg-blur'),
-        
-        colsVal: document.getElementById('columns-val'),
-        gapVal: document.getElementById('gap-val'),
-        paddingVal: document.getElementById('padding-val'),
-        iconVal: document.getElementById('icon-val'),
-        
-        exportFormat: document.getElementById('export-format'),
-        downloadBtn: document.getElementById('download-btn'),
-        resetBtn: document.getElementById('reset-btn'),
-
-        modalContainer: document.getElementById('modal-container'),
-        modalHeader: document.getElementById('modal-title'),
-        modalGiftView: document.getElementById('modal-gift-view'),
-        modalTextView: document.getElementById('modal-text-view'),
-        modalGiftLibrary: document.getElementById('modal-gift-library'),
-        modalGiftSearch: document.getElementById('modal-gift-search'),
-        modalGiftSort: document.getElementById('modal-gift-sort'),
-        modalText1: document.getElementById('modal-text-1'),
-        modalText2: document.getElementById('modal-text-2'),
-        modalBadge: document.getElementById('modal-badge'),
-        saveModalText: document.getElementById('save-modal-text'),
-        closeModal: document.getElementById('close-modal')
-    };
-
-    // ---- INITIALIZATION ----
-    async function init() {
-        setupEventListeners();
-        populateFonts();
-        await Promise.all([fetchAllData(), fetchFonts()]);
-        
-        if (!loadConfig()) {
-            resetAllItems();
-        }
-        
-        syncToolbar(); syncDisplays(); renderGrid();
+    // ---------- small helpers ----------
+    function toast(msg, isErr) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.className = `toast show${isErr ? ' err' : ''}`;
+        clearTimeout(toast.timer);
+        toast.timer = setTimeout(() => { t.className = 'toast'; }, 2600);
+    }
+    function setSaveState(text, cls) { const s = $('save-state'); s.textContent = text; s.className = `save-state ${cls || ''}`; }
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    async function api(path, opts) {
+        const r = await fetch(`${API}${path}${path.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`, { cache: 'no-store', ...(opts || {}) });
+        const data = await r.json().catch(() => null);
+        if (!r.ok) throw new Error((data && (data.error || data.message)) || `Erreur ${r.status}`);
+        return data;
     }
 
-    function resetAllItems() {
-        const count = parseInt(el.totalInput.value) || 12;
-        items = [];
-        for(let i = 0; i < count; i++) {
-            const rG = GIFT_DATA[i % GIFT_DATA.length] || null;
-            items.push({
-                icon: rG ? rG.icon : "https://p16-va.tiktokcdn.com/obj/tiktok-obj/7027546059275010054.png",
-                text1: "NOM", text2: "ACTION", badge: "", style: null 
-            });
-        }
-    }
-
-    async function fetchAllData() {
-        try {
-            const res = await fetch(GIFTS_API_URL);
-            const data = await res.json();
-            GIFT_DATA = (Array.isArray(data) ? data : (data.gifts || [])).map(g => ({
-                id: g.id, name: g.name, icon: g.url ? `https://images.weserv.nl/?url=${encodeURIComponent(g.url.replace(/^https?:\/\//, ''))}` : '', price: g.diamond_count || 0
-            }));
-        } catch (e) { GIFT_DATA = []; }
-        // Gift API unreachable: use the gift list of the Gentok server (same origin, so images export fine)
-        if (!GIFT_DATA.length) {
+    // ---------- save (debounced): on the server for OBS, and in the browser as a backup ----------
+    let saveTimer = null;
+    function changed() {
+        draw();
+        try { localStorage.setItem(LOCAL_KEY, JSON.stringify(panel)); } catch (e) { /* image too big for the browser storage */ }
+        if (!token) { setSaveState('Connectez-vous au tableau de bord pour enregistrer en ligne', 'err'); return; }
+        setSaveState('Enregistrement…');
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
             try {
-                const list = await (await fetch('/api/gifts')).json();
-                GIFT_DATA = (Array.isArray(list) ? list : []).map(g => ({ id: g.id, name: g.name, icon: `/img/tiktok/${g.id}.png`, price: g.price || 0 }));
-            } catch (e) { /* offline: the editor still works with its default icons */ }
-        }
-        renderModalGiftLibrary();
-    }
-
-    async function fetchFonts() {
-        try {
-            const res = await fetch(FONTS_API_URL);
-            const data = await res.json();
-            availableFonts = data.fonts || [];
-            populateFonts();
-        } catch (e) {}
-    }
-
-    function populateFonts() {
-        const cur = el.fontSelect.value;
-        el.fontSelect.innerHTML = '<option value="\'Inter\', sans-serif">Inter</option>';
-        ['Anton', 'Bebas Neue', 'Outfit', 'Luckiest Guy'].forEach(f => {
-            const opt = document.createElement('option');
-            const val = `'${f}', sans-serif`;
-            opt.value = val; opt.textContent = f; opt.style.fontFamily = val;
-            el.fontSelect.appendChild(opt);
-        });
-        availableFonts.forEach(font => {
-            const val = `'${font.name}', sans-serif`;
-            const opt = document.createElement('option');
-            opt.value = val; opt.textContent = font.name; opt.style.fontFamily = val;
-            el.fontSelect.appendChild(opt);
-            if (!document.getElementById(`f-${font.name}`)) {
-                const s = document.createElement('style'); s.id = `f-${font.name}`;
-                s.textContent = `@font-face { font-family: '${font.name}'; src: url('${font.url}'); font-display: swap; }`;
-                document.head.appendChild(s);
+                await api('/api/gift-panel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, panel }) });
+                setSaveState('Enregistré ✓', 'ok');
+            } catch (e) {
+                setSaveState(`Non enregistré : ${e.message}`, 'err');
             }
-        });
-        el.fontSelect.value = cur || globalStyle.font;
+        }, 700);
     }
 
-    // ---- RENDERING ----
-    function renderGrid() {
-        el.grid.style.gridTemplateColumns = `repeat(${el.colsInput.value}, 1fr)`;
-        el.grid.style.gap = `${el.gapInput.value}px`;
-        el.grid.style.padding = `${el.paddingInput.value}px`;
-        el.customBgLayer.style.filter = `blur(${el.bgBlur.value}px)`;
-        el.bgOverlayLayer.style.backgroundColor = `rgba(0, 0, 0, ${el.bgDarkness.value})`;
+    // ---------- render ----------
+    function draw() {
+        GiftPanel.render($('panel'), panel, { editable: true, onItem: (i, part) => (part === 'icon' ? openPicker(i) : focusItem(i)) });
+        fitZoom();
+    }
+    function fitZoom() {
+        const el = $('panel'), box = $('canvas');
+        el.style.transform = '';
+        if (zoom !== 'fit') return;
+        const s = Math.min(1, (box.clientWidth - 64) / el.offsetWidth, (box.clientHeight - 64) / el.offsetHeight);
+        if (s < 1) el.style.transform = `scale(${s})`;
+    }
+    window.addEventListener('resize', fitZoom);
 
-        el.grid.innerHTML = '';
-        items.forEach((item, index) => {
-            const isSel = selectedIndex === index;
-            const s = item.style || globalStyle;
-            const cell = document.createElement('div');
-            cell.className = `overlay-item ${isSel ? 'selected' : ''}`;
-            cell.style.opacity = (s.opacity || 100) / 100;
-            
-            const deco = (s.isUnderline ? 'underline ' : '') + (s.isStrike ? 'line-through' : '');
-            const combinedStyle = `
-                font-family: ${s.font}; font-size: ${s.fSize}px; letter-spacing: ${s.lSpacing}px;
-                font-weight: ${s.isBold ? '900' : 'normal'}; font-style: ${s.isItalic ? 'italic' : 'normal'};
-                text-transform: ${s.isUpper ? 'uppercase' : 'none'}; -webkit-text-stroke: ${s.outlineWidth}px ${s.outlineColor};
-                text-align: ${s.align || 'center'}; text-decoration: ${deco}; color: ${s.color1};
-            `;
-
-            cell.innerHTML = `
-                <div class="icon-wrapper">
-                    ${item.badge ? `<div class="gift-badge">${item.badge}</div>` : ''}
-                    <img src="${item.icon}" class="item-icon" style="height: ${el.iconSizeInput.value}px" crossorigin="anonymous">
-                    <div class="edit-hint-icon" title="Cadeau"><i class="fas fa-image"></i></div>
+    function renderItems() {
+        const ol = $('items');
+        $('count').textContent = `(${panel.items.length}/60)`;
+        ol.innerHTML = panel.items.map((it, i) => `
+            <li class="item" draggable="true" data-i="${i}">
+                <span class="grip" title="Glisser pour déplacer"><i class="fas fa-grip-vertical"></i></span>
+                <button class="thumb" data-act="pick" title="Changer de cadeau"><img src="${esc(it.icon || '/logo.png')}" alt="" referrerpolicy="no-referrer" onerror="this.src='/logo.png'"></button>
+                <div class="texts">
+                    <input type="text" class="t1" data-k="text1" maxlength="40" value="${esc(it.text1)}" placeholder="${esc(it.name || 'Cadeau')}" aria-label="Nom affiché">
+                    <input type="text" class="t2" data-k="text2" maxlength="50" value="${esc(it.text2)}" placeholder="Action (ex : TNT)" aria-label="Action">
+                    <input type="text" class="badge" data-k="badge" maxlength="16" value="${esc(it.badge)}" placeholder="x1" title="Pastille (facultatif, ex : x5)" aria-label="Pastille">
                 </div>
-                <div class="item-text" style="${combinedStyle}">
-                    <span class="t1" style="color: inherit; font-family: inherit; font-size: inherit;">${item.text1}</span>
-                    <span class="t2" style="color: ${s.color2}; font-family: inherit; font-size: 0.9em; display: block;">${item.text2}</span>
-                    <div class="edit-pencil-icon" title="Texte"><i class="fas fa-pencil-alt"></i></div>
-                </div>
-            `;
+                <button class="del" data-act="del" title="Retirer"><i class="fas fa-trash"></i></button>
+            </li>`).join('');
+    }
+    function focusItem(i) {
+        switchTab('items');
+        const input = document.querySelector(`.item[data-i="${i}"] .t2`);
+        if (input) { input.focus(); input.select(); }
+    }
 
-            cell.onclick = (e) => { e.stopPropagation(); selectedIndex = index; syncToolbar(); renderGrid(); };
-            cell.querySelector('.edit-pencil-icon').onclick = (e) => { e.stopPropagation(); openModal('text', index); };
-            cell.querySelector('.edit-hint-icon').onclick = (e) => { e.stopPropagation(); openModal('gift', index); };
-            el.grid.appendChild(cell);
+    // ---------- settings controls ----------
+    const RANGES = { columns: 'layout', iconSize: 'layout', gap: 'layout', padding: 'layout', radius: 'layout', size1: 'style', size2: 'style', outline: 'style', darkness: 'background', blur: 'background' };
+    const UNITS = { iconSize: 'px', gap: 'px', padding: 'px', radius: 'px', size1: 'px', size2: 'px', outline: 'px', blur: 'px' };
+    function syncControls() {
+        $('f-title').value = panel.title;
+        $('f-showTitle').checked = panel.layout.showTitle;
+        $('f-showCoins').checked = panel.layout.showCoins;
+        $('f-uppercase').checked = panel.style.uppercase;
+        for (const [k, group] of Object.entries(RANGES)) {
+            $(`f-${k}`).value = panel[group][k];
+            $(`v-${k}`).textContent = k === 'darkness' ? `${Math.round(panel[group][k] * 100)} %` : `${panel[group][k]}${UNITS[k] || ''}`;
+        }
+        for (const k of ['color1', 'color2', 'accent', 'outlineColor']) $(`f-${k}`).value = toHex(panel.style[k]);
+        $('f-bgColor').value = toHex(panel.background.color);
+        $('f-bgColor2').value = toHex(panel.background.color2);
+        $('f-font').value = panel.style.font;
+        setSeg('f-card', panel.layout.card);
+        setSeg('f-bgmode', panel.background.mode);
+        document.querySelectorAll('.theme').forEach(b => b.classList.toggle('on', b.dataset.theme === panel.style.theme));
+        const m = panel.background.mode;
+        $('bg-colors').style.display = m === 'color' || m === 'gradient' ? '' : 'none';
+        $('f-bgColor2').parentElement.style.display = m === 'gradient' ? '' : 'none';
+        for (const id of ['bg-image-field', 'bg-dark-field', 'bg-blur-field']) $(id).style.display = m === 'image' ? '' : 'none';
+    }
+    function toHex(c) {
+        if (/^#[0-9a-f]{6}$/i.test(c)) return c;
+        if (/^#[0-9a-f]{3}$/i.test(c)) return '#' + c.slice(1).split('').map(x => x + x).join('');
+        const m = String(c).match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+        return m ? '#' + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, '0')).join('') : '#000000';
+    }
+    function setSeg(id, v) { $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+    function switchTab(name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+        document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+    }
+
+    function bind() {
+        document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+        $('f-title').addEventListener('input', (e) => { panel.title = e.target.value; changed(); });
+        $('f-showTitle').addEventListener('change', (e) => { panel.layout.showTitle = e.target.checked; changed(); });
+        $('f-showCoins').addEventListener('change', (e) => { panel.layout.showCoins = e.target.checked; changed(); });
+        $('f-uppercase').addEventListener('change', (e) => { panel.style.uppercase = e.target.checked; changed(); });
+        for (const [k, group] of Object.entries(RANGES)) {
+            $(`f-${k}`).addEventListener('input', (e) => { panel[group][k] = Number(e.target.value); syncControls(); changed(); });
+        }
+        for (const k of ['color1', 'color2', 'accent', 'outlineColor']) $(`f-${k}`).addEventListener('input', (e) => { panel.style[k] = e.target.value; changed(); });
+        $('f-bgColor').addEventListener('input', (e) => { panel.background.color = e.target.value; changed(); });
+        $('f-bgColor2').addEventListener('input', (e) => { panel.background.color2 = e.target.value; changed(); });
+        $('f-font').addEventListener('change', (e) => { panel.style.font = e.target.value; changed(); });
+        $('f-card').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; panel.layout.card = b.dataset.v; syncControls(); changed(); });
+        $('f-bgmode').addEventListener('click', (e) => {
+            const b = e.target.closest('button'); if (!b) return;
+            panel.background.mode = b.dataset.v;
+            if (b.dataset.v === 'image' && !panel.background.image) $('f-bgfile').click();
+            syncControls(); changed();
         });
-        saveConfig();
-        syncDisplays();
-    }
+        $('zoom').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; zoom = b.dataset.v; setSeg('zoom', zoom); fitZoom(); });
 
-    function syncToolbar() {
-        const s = (selectedIndex !== null && items[selectedIndex].style) ? items[selectedIndex].style : globalStyle;
-        el.fontSelect.value = s.font || SAFE_DEFAULTS.font; 
-        el.fontSize.value = s.fSize || 22; 
-        el.letterSpacing.value = s.lSpacing || 0;
-        el.textColor1.value = s.color1 || '#ffffff'; 
-        el.textColor2.value = s.color2 || '#00f2ff'; 
-        el.outlineColor.value = s.outlineColor || '#000000'; 
-        el.outlineWidth.value = s.outlineWidth ?? 1.5;
-        el.itemOpacity.value = s.opacity ?? 100;
-        el.opacityVal.innerText = s.opacity ?? 100;
+        // themes
+        $('themes').innerHTML = Object.entries(GiftPanel.THEMES).map(([k, t]) => {
+            const bg = t.bg.mode === 'transparent' ? 'repeating-conic-gradient(#2a2f3a 0 25%, #1c2028 0 50%) 0 0 / 14px 14px'
+                : t.bg.mode === 'gradient' ? `linear-gradient(135deg, ${t.bg.color}, ${t.bg.color2})` : `linear-gradient(135deg, ${t.bg.color}, ${t.bg.color2})`;
+            return `<button class="theme" data-theme="${k}" style="background:${bg}"><span style="color:${t.color2}">${esc(t.label)}</span></button>`;
+        }).join('');
+        $('themes').addEventListener('click', (e) => {
+            const b = e.target.closest('.theme'); if (!b) return;
+            GiftPanel.applyTheme(panel, b.dataset.theme); syncControls(); changed();
+        });
+        $('f-font').innerHTML = GiftPanel.GOOGLE_FONTS.map(f => `<option value="${esc(f)}" style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('');
 
-        el.btnBold.classList.toggle('active', !!s.isBold); 
-        el.btnItalic.classList.toggle('active', !!s.isItalic); 
-        el.btnUnderline.classList.toggle('active', !!s.isUnderline); 
-        el.btnStrike.classList.toggle('active', !!s.isStrike); 
-        el.btnUpper.classList.toggle('active', !!s.isUpper);
-        
-        el.btnAlignLeft.classList.toggle('active', s.align === 'left');
-        el.btnAlignCenter.classList.toggle('active', s.align === 'center' || !s.align);
-        el.btnAlignRight.classList.toggle('active', s.align === 'right');
-    }
+        // gift list: edit texts, change / remove gifts, drag to reorder
+        const ol = $('items');
+        ol.addEventListener('input', (e) => {
+            const li = e.target.closest('.item'); const k = e.target.dataset.k;
+            if (!li || !k) return;
+            panel.items[Number(li.dataset.i)][k] = e.target.value;
+            changed();
+        });
+        ol.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-act]'); if (!btn) return;
+            const i = Number(btn.closest('.item').dataset.i);
+            if (btn.dataset.act === 'pick') openPicker(i);
+            if (btn.dataset.act === 'del') { panel.items.splice(i, 1); renderItems(); changed(); }
+        });
+        let dragFrom = null;
+        ol.addEventListener('dragstart', (e) => {
+            const li = e.target.closest('.item'); if (!li) return;
+            if (e.target.matches('input')) { e.preventDefault(); return; }
+            dragFrom = Number(li.dataset.i); li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
+        });
+        ol.addEventListener('dragover', (e) => {
+            const li = e.target.closest('.item'); if (dragFrom === null || !li) return;
+            e.preventDefault();
+            ol.querySelectorAll('.drop-above').forEach(x => x.classList.remove('drop-above'));
+            li.classList.add('drop-above');
+        });
+        ol.addEventListener('drop', (e) => {
+            const li = e.target.closest('.item'); if (dragFrom === null || !li) return;
+            e.preventDefault();
+            const to = Number(li.dataset.i);
+            const [moved] = panel.items.splice(dragFrom, 1);
+            panel.items.splice(to > dragFrom ? to - 1 : to, 0, moved);
+            dragFrom = null; renderItems(); changed();
+        });
+        ol.addEventListener('dragend', () => { dragFrom = null; ol.querySelectorAll('.dragging, .drop-above').forEach(x => x.classList.remove('dragging', 'drop-above')); });
+        $('btn-add').addEventListener('click', () => openPicker(-1));
 
-    function updateStyleFromToolbar() {
-        let align = 'center';
-        if(el.btnAlignLeft.classList.contains('active')) align = 'left';
-        if(el.btnAlignRight.classList.contains('active')) align = 'right';
+        // background image: resized in the browser so the panel stays light (≈ 450 KB max)
+        $('btn-bgimg').addEventListener('click', () => $('f-bgfile').click());
+        $('btn-bgimg-del').addEventListener('click', () => { panel.background.image = ''; panel.background.mode = 'color'; syncControls(); changed(); });
+        $('f-bgfile').addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0]; e.target.value = '';
+            if (!file) return;
+            try {
+                panel.background.image = await shrinkImage(file);
+                panel.background.mode = 'image'; syncControls(); changed();
+            } catch (err) { toast(err.message, true); }
+        });
 
-        const nS = {
-            font: el.fontSelect.value, fSize: parseInt(el.fontSize.value), lSpacing: parseInt(el.letterSpacing.value),
-            color1: el.textColor1.value, color2: el.textColor2.value, outlineColor: el.outlineColor.value, outlineWidth: parseFloat(el.outlineWidth.value),
-            isBold: el.btnBold.classList.contains('active'), 
-            isItalic: el.btnItalic.classList.contains('active'), 
-            isUnderline: el.btnUnderline.classList.contains('active'), 
-            isStrike: el.btnStrike.classList.contains('active'), 
-            isUpper: el.btnUpper.classList.contains('active'),
-            align: align, opacity: parseInt(el.itemOpacity.value)
-        };
-        if (selectedIndex !== null) items[selectedIndex].style = nS;
-        else globalStyle = nS;
-        renderGrid();
-    }
+        // top actions
+        $('btn-png').addEventListener('click', downloadPng);
+        $('btn-obs').addEventListener('click', copyObsUrl);
+        $('btn-import').addEventListener('click', importEvents);
+        $('btn-test').addEventListener('click', () => {
+            if (!panel.items.length) return toast('Ajoutez d\'abord un cadeau');
+            const it = panel.items[Math.floor(Math.random() * panel.items.length)];
+            GiftPanel.highlight($('panel'), { giftId: it.giftId, giftName: it.name, nickname: 'Léa' });
+        });
+        $('btn-reset').addEventListener('click', () => {
+            if (!confirm('Recommencer un panneau vide ? Le panneau actuel sera remplacé.')) return;
+            panel = GiftPanel.normalize({}); syncControls(); renderItems(); changed();
+        });
 
-    function renderModalGiftLibrary() {
-        const query = (el.modalGiftSearch.value || '').toLowerCase();
-        let gifts = GIFT_DATA.filter(g => g.name.toLowerCase().includes(query));
-        const sort = el.modalGiftSort.value;
-        if(sort === 'price-asc') gifts.sort((a,b) => a.price - b.price);
-        else if(sort === 'price-desc') gifts.sort((a,b) => b.price - a.price);
-        el.modalGiftLibrary.innerHTML = '';
-        gifts.forEach(gift => {
-            const div = document.createElement('div'); div.className = 'gift-icon-sel';
-            div.innerHTML = `<img src="${gift.icon}" crossorigin="anonymous"><div class="gift-price-tag">${gift.price}</div>`;
-            div.onclick = () => { if(selectedIndex !== null) { items[selectedIndex].icon = gift.icon; renderGrid(); closeModal(); } };
-            el.modalGiftLibrary.appendChild(div);
+        // picker
+        $('picker-close').addEventListener('click', closePicker);
+        $('picker').addEventListener('click', (e) => { if (e.target.id === 'picker') closePicker(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('picker').hidden) closePicker(); });
+        $('picker-search').addEventListener('input', renderPicker);
+        $('picker-sort').addEventListener('change', renderPicker);
+        $('picker-grid').addEventListener('click', (e) => {
+            const b = e.target.closest('.gift'); if (!b) return;
+            const g = gifts.find(x => String(x.id) === b.dataset.id); if (!g) return;
+            const fromGift = { giftId: String(g.id), name: g.name, icon: g.icon, coins: g.price || 0 };
+            if (pickerTarget === -1) {
+                if (panel.items.length >= 60) { toast('60 cadeaux maximum', true); return; }
+                panel.items.push({ ...fromGift, text1: g.name, text2: '', badge: '' });
+            } else {
+                const it = panel.items[pickerTarget];
+                const keepName = it.text1 && it.text1 !== it.name;
+                Object.assign(it, fromGift, keepName ? {} : { text1: g.name });
+            }
+            closePicker(); renderItems(); changed();
+            if (pickerTarget === -1) focusItem(panel.items.length - 1);
         });
     }
 
-    function openModal(type, index) {
-        selectedIndex = index; el.modalContainer.classList.remove('hidden');
-        if (type === 'gift') { el.modalHeader.innerText = "Icône"; el.modalGiftView.classList.remove('hidden'); el.modalTextView.classList.add('hidden'); renderModalGiftLibrary(); }
-        else { el.modalHeader.innerText = "Texte"; el.modalGiftView.classList.add('hidden'); el.modalTextView.classList.remove('hidden'); el.modalText1.value = items[index].text1; el.modalText2.value = items[index].text2; el.modalBadge.value = items[index].badge || ""; }
-    }
-
-    function closeModal() { el.modalContainer.classList.add('hidden'); }
-
-    function saveConfig() {
-        const config = {
-            grid: { cols: el.colsInput.value, total: el.totalInput.value, gap: el.gapInput.value, padding: el.paddingInput.value, iconSize: el.iconSizeInput.value },
-            theme: { global: globalStyle, darkness: el.bgDarkness.value, blur: el.bgBlur.value, preset: currentTheme },
-            items: items, customBg: el.customBgLayer.style.backgroundImage
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    }
-
-    function loadConfig() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return false;
-        try {
-            const c = JSON.parse(raw);
-            if(c.grid) { el.colsInput.value = c.grid.cols; el.totalInput.value = c.grid.total; el.gapInput.value = c.grid.gap; el.paddingInput.value = c.grid.padding; el.iconSizeInput.value = c.grid.iconSize; }
-            if(c.theme) { globalStyle = c.theme.global || globalStyle; el.bgDarkness.value = c.theme.darkness; el.bgBlur.value = c.theme.blur; currentTheme = c.theme.preset; el.captureArea.className = `preview-container ${currentTheme}`; }
-            if(c.items) items = c.items;
-            if(c.customBg) el.customBgLayer.style.backgroundImage = c.customBg;
-            return true;
-        } catch (e) { return false; }
-    }
-
-    function syncDisplays() {
-        el.colsVal.innerText = el.colsInput.value; el.gapVal.innerText = el.gapInput.value + "px"; el.paddingVal.innerText = el.paddingInput.value + "px"; el.iconVal.innerText = el.iconSizeInput.value + "px"; el.opacityVal.innerText = el.itemOpacity.value;
-    }
-
-    function setupEventListeners() {
-        el.closeModal.onclick = closeModal;
-        el.modalGiftSearch.oninput = renderModalGiftLibrary;
-        el.modalGiftSort.onchange = renderModalGiftLibrary;
-        el.saveModalText.onclick = () => { if(selectedIndex !== null) { items[selectedIndex].text1 = el.modalText1.value; items[selectedIndex].text2 = el.modalText2.value; items[selectedIndex].badge = el.modalBadge.value; renderGrid(); closeModal(); } };
-        el.tabBtns.forEach(btn => { btn.onclick = () => { el.tabBtns.forEach(b => b.classList.remove('active')); btn.classList.add('active'); const t = `${btn.dataset.tab}-tab`; el.tabContents.forEach(c => c.id === t ? c.classList.remove('hidden') : c.classList.add('hidden')); }; });
-        [el.colsInput, el.gapInput, el.paddingInput, el.iconSizeInput].forEach(i => i.oninput = renderGrid);
-        el.totalInput.onchange = () => { const count = parseInt(el.totalInput.value) || 0; if (count > items.length) { for (let i = items.length; i < count; i++) items.push({ icon: "https://p16-va.tiktokcdn.com/obj/tiktok-obj/7027546059275010054.png", text1: "NOM", text2: "ACTION", badge: "", style: null }); } else items = items.slice(0, count); renderGrid(); };
-        
-        el.btnBold.onclick = () => { el.btnBold.classList.toggle('active'); updateStyleFromToolbar(); };
-        el.btnItalic.onclick = () => { el.btnItalic.classList.toggle('active'); updateStyleFromToolbar(); };
-        el.btnUnderline.onclick = () => { el.btnUnderline.classList.toggle('active'); updateStyleFromToolbar(); };
-        el.btnStrike.onclick = () => { el.btnStrike.classList.toggle('active'); updateStyleFromToolbar(); };
-        el.btnUpper.onclick = () => { el.btnUpper.classList.toggle('active'); updateStyleFromToolbar(); };
-        el.btnAlignLeft.onclick = () => { el.btnAlignLeft.classList.add('active'); el.btnAlignCenter.classList.remove('active'); el.btnAlignRight.classList.remove('active'); updateStyleFromToolbar(); };
-        el.btnAlignCenter.onclick = () => { el.btnAlignCenter.classList.add('active'); el.btnAlignLeft.classList.remove('active'); el.btnAlignRight.classList.remove('active'); updateStyleFromToolbar(); };
-        el.btnAlignRight.onclick = () => { el.btnAlignRight.classList.add('active'); el.btnAlignLeft.classList.remove('active'); el.btnAlignCenter.classList.remove('active'); updateStyleFromToolbar(); };
-
-        el.itemOpacity.oninput = updateStyleFromToolbar;
-        [el.fontSelect, el.fontSize, el.letterSpacing, el.textColor1, el.textColor2, el.outlineColor, el.outlineWidth].forEach(i => i.oninput = updateStyleFromToolbar);
-
-        el.presetDots.forEach(dot => {
-            dot.onclick = () => {
-                el.presetDots.forEach(d => d.classList.remove('active')); dot.classList.add('active');
-                currentTheme = dot.dataset.theme; el.captureArea.className = `preview-container ${currentTheme}`;
-                if (currentTheme === 'dark-gamer') globalStyle = { ...SAFE_DEFAULTS, font: "'Anton', sans-serif" };
-                else if (currentTheme === 'light-agency') globalStyle = { ...SAFE_DEFAULTS, font: "'Outfit', sans-serif", color1: '#1e293b', color2: '#64748b', outlineWidth: 0 };
-                else if (currentTheme === 'glass-clean') globalStyle = { ...SAFE_DEFAULTS, font: "'Inter', sans-serif", isBold: false, isUpper: false };
-                else if (currentTheme === 'neon-vibe') globalStyle = { ...SAFE_DEFAULTS, font: "'Bebas Neue', cursive", color1: '#00f2ff', color2: '#ff00ff', outlineWidth: 0 };
-                items.forEach(it => it.style = null); syncToolbar(); renderGrid();
+    function shrinkImage(file) {
+        return new Promise((resolve, reject) => {
+            if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) return reject(new Error('Image PNG, JPG ou WEBP uniquement'));
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                const max = 1600;
+                if (Math.max(w, h) > max) { const s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+                const c = document.createElement('canvas'); c.width = w; c.height = h;
+                c.getContext('2d').drawImage(img, 0, 0, w, h);
+                let q = 0.85, data = c.toDataURL('image/jpeg', q);
+                while (data.length > 440000 && q > 0.4) { q -= 0.1; data = c.toDataURL('image/jpeg', q); }
+                URL.revokeObjectURL(img.src);
+                data.length > 440000 ? reject(new Error('Image trop lourde, choisissez-en une plus petite')) : resolve(data);
             };
+            img.onerror = () => reject(new Error('Image illisible'));
+            img.src = URL.createObjectURL(file);
         });
-
-        [el.bgDarkness, el.bgBlur].forEach(i => i.oninput = renderGrid);
-        el.bgUploadTrigger.onclick = () => el.bgFileInput.click();
-        el.bgFileInput.onchange = (e) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ex) => { el.customBgLayer.style.backgroundImage = `url('${ex.target.result}')`; el.removeBgBtn.classList.remove('hidden'); renderGrid(); }; r.readAsDataURL(f); };
-        el.removeBgBtn.onclick = () => { el.customBgLayer.style.backgroundImage = ''; el.removeBgBtn.classList.add('hidden'); renderGrid(); };
-        el.downloadBtn.onclick = downloadImage;
-        el.resetBtn.onclick = () => { if(confirm("RAZ ?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } };
-        document.querySelector('.workspace').onclick = (e) => { if (e.target.classList.contains('workspace')) { selectedIndex = null; syncToolbar(); renderGrid(); } };
     }
 
-    async function downloadImage() {
-        const btn = el.downloadBtn; btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-        renderGrid(); await new Promise(r => setTimeout(r, 600));
-        const format = el.exportFormat.value;
-        try { const canvas = await html2canvas(el.captureArea, { backgroundColor: null, scale: 2, useCORS: true, allowTaint: true }); const link = document.createElement('a'); link.href = canvas.toDataURL(format === 'png' ? 'image/png' : 'image/jpeg', 0.9); link.download = `gentok-canvas-${Date.now()}.${format}`; link.click(); } catch (e) { Swal.fire({ icon: 'error', title: 'Erreur' }); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Télécharger'; }
+    // ---------- gift picker ----------
+    function openPicker(i) {
+        pickerTarget = i;
+        $('picker').hidden = false;
+        $('picker-search').value = '';
+        renderPicker();
+        setTimeout(() => $('picker-search').focus(), 30);
     }
-    init();
-});
+    function closePicker() { $('picker').hidden = true; }
+    function renderPicker() {
+        const q = $('picker-search').value.trim().toLowerCase();
+        const sort = $('picker-sort').value;
+        let list = gifts.filter(g => !q || g.name.toLowerCase().includes(q));
+        list.sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : sort === 'desc' ? b.price - a.price : a.price - b.price);
+        const shown = list.slice(0, 150);
+        $('picker-grid').innerHTML = shown.map(g => `<button class="gift" data-id="${esc(g.id)}" title="${esc(g.name)}">
+            <img src="${esc(g.icon)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.src='/logo.png'"><b>${esc(g.name)}</b><small>${(g.price || 0).toLocaleString('fr-FR')}</small></button>`).join('')
+            || '<p class="hint" style="grid-column:1/-1;text-align:center;padding:20px">Aucun cadeau ne correspond.</p>';
+        $('picker-more').textContent = list.length > shown.length ? `${shown.length} sur ${list.length} : précisez la recherche pour voir les autres` : '';
+    }
+
+    // ---------- import from the scene's gift events ----------
+    async function importEvents() {
+        if (!token) return toast('Connectez-vous au tableau de bord d\'abord', true);
+        try {
+            const [events, actions] = await Promise.all([api('/api/events'), api('/api/actions')]);
+            const names = new Map((actions || []).map(a => [String(a.id), a.name || '']));
+            const rows = (events || []).filter(e => e.triggerType === 'gift' && e.active !== false).map(e => {
+                const g = gifts.find(x => (e.giftId && String(x.id) === String(e.giftId))) || gifts.find(x => e.giftName && x.name.toLowerCase() === String(e.giftName).toLowerCase());
+                const acts = (Array.isArray(e.actions) ? e.actions : [e.actions]).map(id => names.get(String(id))).filter(Boolean);
+                return {
+                    giftId: g ? String(g.id) : String(e.giftId || ''), name: g ? g.name : (e.giftName || 'Cadeau'),
+                    icon: g ? g.icon : '', coins: g ? g.price : 0,
+                    text1: g ? g.name : (e.giftName || 'Cadeau'), text2: acts.join(' + ') || 'Action', badge: ''
+                };
+            });
+            if (!rows.length) return toast('Aucun événement « cadeau » dans la scène active', true);
+            rows.sort((a, b) => a.coins - b.coins);
+            const replace = !panel.items.length || confirm(`${rows.length} cadeau(x) trouvé(s).\nOK : remplacer le panneau actuel\nAnnuler : les ajouter à la suite`);
+            panel.items = (replace ? rows : panel.items.concat(rows)).slice(0, 60);
+            renderItems(); changed();
+            toast(`${rows.length} cadeau(x) importé(s)`);
+        } catch (e) { toast(`Import impossible : ${e.message}`, true); }
+    }
+
+    // ---------- export / OBS ----------
+    async function downloadPng() {
+        const btn = $('btn-png');
+        btn.disabled = true;
+        const el = $('panel');
+        const prev = el.style.transform;
+        el.style.transform = '';
+        try {
+            const canvas = await html2canvas(el, { backgroundColor: null, scale: 2, useCORS: true });
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = 'gentok-panneau-cadeaux.png';
+            a.click();
+        } catch (e) {
+            toast('Export impossible (une image ne se laisse pas copier)', true);
+        } finally {
+            el.style.transform = prev; btn.disabled = false;
+        }
+    }
+    async function copyObsUrl() {
+        if (!token) return toast('Connectez-vous au tableau de bord d\'abord', true);
+        const url = `${API || location.origin}/overlay/giftpanel?token=${encodeURIComponent(token)}`;
+        try { await navigator.clipboard.writeText(url); toast('URL copiée : collez-la dans une source navigateur OBS'); }
+        catch (e) { prompt('URL de l\'overlay', url); }
+    }
+
+    // ---------- start ----------
+    function fromOldEditor() {
+        // the previous Overlay Custom (v12) kept its grid in the browser: it is taken over once
+        try {
+            const old = JSON.parse(localStorage.getItem(OLD_KEY) || 'null');
+            if (!old || !Array.isArray(old.items) || !old.items.length) return null;
+            return GiftPanel.normalize({
+                items: old.items.map(it => ({ icon: it.icon, text1: it.text1, text2: it.text2, badge: it.badge })),
+                layout: { columns: old.grid && old.grid.cols, iconSize: old.grid && old.grid.iconSize, gap: old.grid && old.grid.gap, padding: old.grid && old.grid.padding },
+                style: old.theme && old.theme.global ? { color1: old.theme.global.color1, color2: old.theme.global.color2, uppercase: old.theme.global.isUpper } : undefined
+            });
+        } catch (e) { return null; }
+    }
+
+    async function start() {
+        bind();
+        try {
+            const ping = await fetch('/api/app/ping', { cache: 'no-store' }).then(r => r.json());
+            if (ping && ping.relay) API = 'https://tiktok.gentok.fr';
+        } catch (e) { /* website */ }
+        try {
+            const list = await fetch(`${API}/api/gifts`).then(r => r.json());
+            gifts = (Array.isArray(list) ? list : []).map(g => ({ id: g.id, name: g.name || String(g.id), icon: g.icon || g.url || '', price: Number(g.price) || 0 }));
+        } catch (e) { toast('Catalogue des cadeaux indisponible', true); }
+
+        let saved = null;
+        if (token) { try { saved = await api('/api/gift-panel'); } catch (e) { setSaveState(`Hors ligne : ${e.message}`, 'err'); } }
+        if (!saved) { try { saved = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); } catch (e) { } }
+        if (!saved) saved = fromOldEditor();
+        panel = GiftPanel.normalize(saved || {});
+        if (!saved) {
+            // a first panel to start from
+            panel.items = ['5655', '5487', '5827', '6064'].map(id => gifts.find(g => String(g.id) === id)).filter(Boolean)
+                .map(g => ({ giftId: String(g.id), name: g.name, icon: g.icon, coins: g.price, text1: g.name, text2: '', badge: '' }));
+        }
+        syncControls(); renderItems(); draw();
+        setSaveState(token ? (saved ? 'Enregistré ✓' : '') : 'Non connecté : enregistré dans ce navigateur seulement', token ? 'ok' : 'err');
+    }
+    start();
+})();

@@ -3,197 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GENTOK - TikTok Overlay Maker</title>
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;700&family=Outfit:wght@400;700;900&family=Poppins:wght@400;700&family=Recursive:wght@300;900&family=Rubik:wght@400;900&family=Silkscreen&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <title>Gentok · Panneau cadeaux</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/gift-panel.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-    <div class="app-navbar">
-        <div class="nav-brand">
-            <i class="fas fa-magic"></i>
-            <span>GENTOK Canvas</span>
+    <header class="topbar">
+        <a class="brand" href="/" title="Retour au tableau de bord"><img src="/logo.png" alt=""><span>Panneau cadeaux</span></a>
+        <span class="save-state" id="save-state" aria-live="polite"></span>
+        <div class="top-actions">
+            <button class="btn" id="btn-import" title="Crée le panneau à partir de vos événements « cadeau » et de leurs actions"><i class="fas fa-wand-magic-sparkles"></i><span>Importer mes événements</span></button>
+            <button class="btn" id="btn-obs" title="Lien à coller dans OBS / TikTok Live Studio (source navigateur)"><i class="fas fa-link"></i><span>Copier l'URL OBS</span></button>
+            <button class="btn btn-primary" id="btn-png"><i class="fas fa-download"></i><span>Télécharger PNG</span></button>
         </div>
+    </header>
 
-        <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="layout"><i class="fas fa-th"></i> Configuration</button>
-            <button class="nav-tab" data-tab="theme"><i class="fas fa-palette"></i> Design & Fond</button>
-        </div>
+    <main class="workspace">
+        <aside class="panel" aria-label="Réglages">
+            <nav class="tabs" role="tablist">
+                <button class="tab active" data-tab="items" role="tab"><i class="fas fa-gift"></i>Cadeaux</button>
+                <button class="tab" data-tab="layout" role="tab"><i class="fas fa-table-cells"></i>Disposition</button>
+                <button class="tab" data-tab="style" role="tab"><i class="fas fa-palette"></i>Style</button>
+                <button class="tab" data-tab="bg" role="tab"><i class="fas fa-image"></i>Fond</button>
+            </nav>
 
-        <div class="nav-actions">
-            <select id="export-format" class="mini-select" style="width: 80px;">
-                <option value="png">PNG</option>
-                <option value="jpeg">JPEG</option>
-            </select>
-            <button id="download-btn" class="primary-btn"><i class="fas fa-download"></i> Télécharger</button>
-            <button id="reset-btn" class="secondary-btn"><i class="fas fa-redo-alt"></i> RAZ</button>
-        </div>
-    </div>
+            <!-- Gifts -->
+            <section class="pane active" data-pane="items">
+                <label class="field"><span>Titre</span><input type="text" id="f-title" maxlength="80" placeholder="Envoie un cadeau pour…"></label>
+                <label class="check"><input type="checkbox" id="f-showTitle"> Afficher le titre</label>
+                <div class="list-head"><span>Cadeaux <em id="count"></em></span><button class="btn btn-small" id="btn-add"><i class="fas fa-plus"></i> Ajouter</button></div>
+                <ol class="items" id="items"></ol>
+                <p class="hint">Glissez une ligne pour la déplacer. Cliquez sur une image pour changer de cadeau. 1re ligne : nom du cadeau, 2e : ce qu'il déclenche.</p>
+            </section>
 
-    <div class="main-layout">
-        <div class="controls-overlay">
-            <div class="tab-content" id="layout-tab">
-                <div class="horizontal-controls">
-                    <div class="control-group">
-                        <label>Colonnes</label>
-                        <input type="range" id="grid-columns" min="1" max="10" value="5">
-                        <span class="value-display" id="columns-val">5</span>
-                    </div>
-                    <div class="control-group">
-                        <label>Actions</label>
-                        <input type="number" id="grid-total-items" min="1" max="50" value="10">
-                    </div>
-                    <div class="control-group">
-                        <label>Gap</label>
-                        <input type="range" id="grid-gap" min="0" max="50" value="20">
-                        <span class="value-display" id="gap-val">20px</span>
-                    </div>
-                    <div class="control-group">
-                        <label>Padding</label>
-                        <input type="range" id="grid-padding" min="0" max="100" value="40">
-                        <span class="value-display" id="padding-val">40px</span>
-                    </div>
-                    <div class="control-group">
-                        <label>Taille Icônes</label>
-                        <input type="range" id="icon-size" min="40" max="150" value="80">
-                        <span class="value-display" id="icon-val">80px</span>
+            <!-- Layout -->
+            <section class="pane" data-pane="layout">
+                <div class="field"><span>Présentation</span>
+                    <div class="seg" id="f-card">
+                        <button data-v="tile">Cartes</button><button data-v="row">Lignes</button><button data-v="minimal">Sans cadre</button>
                     </div>
                 </div>
+                <label class="range"><span>Colonnes <b id="v-columns"></b></span><input type="range" id="f-columns" min="1" max="10"></label>
+                <label class="range"><span>Taille des cadeaux <b id="v-iconSize"></b></span><input type="range" id="f-iconSize" min="32" max="160"></label>
+                <label class="range"><span>Espacement <b id="v-gap"></b></span><input type="range" id="f-gap" min="0" max="60"></label>
+                <label class="range"><span>Marges <b id="v-padding"></b></span><input type="range" id="f-padding" min="0" max="120"></label>
+                <label class="range"><span>Arrondi <b id="v-radius"></b></span><input type="range" id="f-radius" min="0" max="40"></label>
+                <label class="check"><input type="checkbox" id="f-showCoins"> Afficher le prix en pièces</label>
+            </section>
+
+            <!-- Style -->
+            <section class="pane" data-pane="style">
+                <div class="field"><span>Thème</span><div class="themes" id="themes"></div></div>
+                <label class="field"><span>Police</span><select id="f-font"></select></label>
+                <div class="colors">
+                    <label><input type="color" id="f-color1"><span>Nom</span></label>
+                    <label><input type="color" id="f-color2"><span>Action</span></label>
+                    <label><input type="color" id="f-accent"><span>Accent</span></label>
+                    <label><input type="color" id="f-outlineColor"><span>Contour</span></label>
+                </div>
+                <label class="range"><span>Taille du nom <b id="v-size1"></b></span><input type="range" id="f-size1" min="9" max="40"></label>
+                <label class="range"><span>Taille de l'action <b id="v-size2"></b></span><input type="range" id="f-size2" min="9" max="48"></label>
+                <label class="range"><span>Contour du texte <b id="v-outline"></b></span><input type="range" id="f-outline" min="0" max="6" step="0.5"></label>
+                <label class="check"><input type="checkbox" id="f-uppercase"> Majuscules</label>
+            </section>
+
+            <!-- Background -->
+            <section class="pane" data-pane="bg">
+                <div class="field"><span>Fond</span>
+                    <div class="seg" id="f-bgmode">
+                        <button data-v="transparent">Aucun</button><button data-v="color">Couleur</button><button data-v="gradient">Dégradé</button><button data-v="image">Image</button>
+                    </div>
+                </div>
+                <div class="colors" id="bg-colors">
+                    <label><input type="color" id="f-bgColor"><span>Couleur 1</span></label>
+                    <label><input type="color" id="f-bgColor2"><span>Couleur 2</span></label>
+                </div>
+                <div class="field" id="bg-image-field"><span>Image</span>
+                    <div class="row-gap">
+                        <button class="btn btn-small" id="btn-bgimg"><i class="fas fa-upload"></i> Choisir une image</button>
+                        <button class="btn btn-small btn-ghost" id="btn-bgimg-del"><i class="fas fa-xmark"></i> Retirer</button>
+                        <input type="file" id="f-bgfile" accept="image/png,image/jpeg,image/webp" hidden>
+                    </div>
+                </div>
+                <label class="range" id="bg-dark-field"><span>Assombrir l'image <b id="v-darkness"></b></span><input type="range" id="f-darkness" min="0" max="0.9" step="0.05"></label>
+                <label class="range" id="bg-blur-field"><span>Flou de l'image <b id="v-blur"></b></span><input type="range" id="f-blur" min="0" max="20"></label>
+                <p class="hint">« Aucun » : fond transparent, idéal comme overlay au-dessus de votre live.</p>
+            </section>
+
+            <footer class="panel-foot">
+                <button class="btn btn-ghost btn-small" id="btn-reset"><i class="fas fa-rotate-left"></i> Recommencer</button>
+            </footer>
+        </aside>
+
+        <section class="stage" aria-label="Aperçu">
+            <div class="stage-bar">
+                <div class="seg seg-small" id="zoom"><button data-v="fit">Ajuster</button><button data-v="1">100 %</button></div>
+                <button class="btn btn-small" id="btn-test" title="Montre comment une case s'allume quand un spectateur envoie ce cadeau"><i class="fas fa-bolt"></i> Tester un cadeau</button>
             </div>
+            <div class="canvas" id="canvas"><div id="panel"></div></div>
+        </section>
+    </main>
 
-            <div class="tab-content hidden" id="theme-tab">
-                <div class="horizontal-controls">
-                    <div class="control-group">
-                        <label>Modèles</label>
-                        <div class="presets-mini">
-                            <div class="preset-dot active gamer-bg" data-theme="dark-gamer" title="Dark Gamer"></div>
-                            <div class="preset-dot agency-bg" data-theme="light-agency" title="Light Agency"></div>
-                            <div class="preset-dot glass-bg" data-theme="glass-clean" title="Glass Clean"></div>
-                            <div class="preset-dot neon-bg" data-theme="neon-vibe" title="Neon Vibe"></div>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Police</label>
-                        <select id="font-family" style="padding: 5px; font-size: 12px;">
-                            <option value="'Inter', sans-serif">Inter</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Style Texte</label>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <div class="button-group-mini">
-                                <button id="btn-bold" class="icon-toggle" title="Gras"><i class="fas fa-bold"></i></button>
-                                <button id="btn-italic" class="icon-toggle" title="Italique"><i class="fas fa-italic"></i></button>
-                                <button id="btn-underline" class="icon-toggle" title="Souligné"><i class="fas fa-underline"></i></button>
-                                <button id="btn-strike" class="icon-toggle" title="Barré"><i class="fas fa-strikethrough"></i></button>
-                                <button id="btn-upper" class="icon-toggle" title="Majuscules"><i class="fas fa-font"></i></button>
-                            </div>
-                            <div class="button-group-mini">
-                                <button id="btn-align-left" class="icon-toggle" title="Aligner à gauche"><i class="fas fa-align-left"></i></button>
-                                <button id="btn-align-center" class="icon-toggle active" title="Centrer"><i class="fas fa-align-center"></i></button>
-                                <button id="btn-align-right" class="icon-toggle" title="Aligner à droite"><i class="fas fa-align-right"></i></button>
-                            </div>
-                            <div style="display: flex; gap: 4px;">
-                                <input type="color" id="text-color-1" value="#ffffff" title="Couleur Nom">
-                                <input type="color" id="text-color-2" value="#00ffff" title="Couleur Action">
-                                <input type="color" id="outline-color" value="#000000" title="Contour">
-                            </div>
-                            <input type="range" id="outline-width" min="0" max="10" step="0.1" value="1.5" style="width: 40px;" title="Taille contour">
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Effets & Opacité</label>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <i class="fas fa-circle-half-stroke" style="font-size: 12px; color: var(--text-muted);"></i>
-                                <input type="range" id="item-opacity" min="0" max="100" value="100" style="width: 50px;" title="Opacité">
-                                <span id="opacity-val" style="font-size: 10px; min-width: 20px;">100</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Taille & Espacement</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="range" id="font-size" min="10" max="40" value="18" style="width: 60px;" title="Taille">
-                            <input type="range" id="letter-spacing" min="-5" max="20" value="0" style="width: 60px;" title="Espacement">
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Fond</label>
-                        <div style="display: flex; gap: 5px;">
-                            <button class="mini-btn" id="bg-upload-trigger" title="Upload"><i class="fas fa-upload"></i></button>
-                            <input type="file" id="bg-file-input" accept="image/*" hidden>
-                            <button id="remove-bg-btn" class="mini-btn hidden" title="Retirer"><i class="fas fa-times"></i></button>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Filtres</label>
-                        <div style="display: flex; gap: 10px;">
-                            <div title="Luminosité"><input type="range" id="bg-darkness" min="0" max="1" step="0.1" value="0.5" style="width: 60px;"></div>
-                            <div title="Flou"><input type="range" id="bg-blur" min="0" max="20" value="0" style="width: 60px;"></div>
-                        </div>
-                    </div>
-                </div>
+    <!-- gift picker -->
+    <div class="modal" id="picker" hidden>
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+            <div class="modal-head">
+                <h2 id="picker-title">Choisir un cadeau</h2>
+                <button class="icon-btn" id="picker-close" aria-label="Fermer"><i class="fas fa-xmark"></i></button>
             </div>
-        </div>
-
-        <main class="workspace">
-            <div id="capture-area" class="preview-container dark-gamer">
-                <div id="custom-bg-layer" class="bg-layer"></div>
-                <div id="bg-overlay-layer" class="bg-overlay"></div>
-                <div id="overlay-grid" class="overlay-grid"></div>
-                <div class="watermark">GENTOK Canvas - Designer</div>
+            <div class="picker-tools">
+                <input type="search" id="picker-search" placeholder="Rechercher (Rose, Lion, Univers…)" autocomplete="off">
+                <select id="picker-sort"><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option><option value="name">Nom</option></select>
             </div>
-        </main>
-    </div>
-
-    <!-- Modals -->
-    <div id="modal-container" class="modal-overlay hidden">
-        <div class="modal-content">
-            <header class="modal-header">
-                <h2 id="modal-title">Modifier l'action</h2>
-                <button id="close-modal" class="close-btn">&times;</button>
-            </header>
-            
-            <div id="modal-gift-view" class="modal-body hidden">
-                <div class="modal-controls">
-                    <div class="search-container" style="flex: 1; margin-bottom: 0;">
-                        <input type="text" id="modal-gift-search" placeholder="Rechercher un cadeau TikTok...">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <select id="modal-gift-sort" class="sort-select" style="width: auto;">
-                        <option value="name">Nom</option>
-                        <option value="price-asc">Prix ↑</option>
-                        <option value="price-desc">Prix ↓</option>
-                    </select>
-                </div>
-                <div class="gift-library modal-grid" id="modal-gift-library">
-                    <!-- Loaded via API -->
-                </div>
-            </div>
-
-            <div id="modal-text-view" class="modal-body hidden">
-                <div class="control-group">
-                    <label>Ligne 1 (Titre/Nom)</label>
-                    <input type="text" id="modal-text-1" placeholder="Ex: TP">
-                </div>
-                <div class="control-group">
-                    <label>Ligne 2 (Action)</label>
-                    <input type="text" id="modal-text-2" placeholder="Ex: AEROPORT">
-                </div>
-                <div class="control-group">
-                    <label>Badge (Optionnel)</label>
-                    <input type="text" id="modal-badge" placeholder="Ex: 200+">
-                </div>
-                <button id="save-modal-text" class="primary-btn" style="margin-top: 1rem;">Enregistrer les modifications</button>
-            </div>
+            <div class="picker-grid" id="picker-grid"></div>
+            <p class="picker-more" id="picker-more"></p>
         </div>
     </div>
 
+    <div class="toast" id="toast" role="status"></div>
+
+    <script src="/gift-panel-render.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

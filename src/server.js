@@ -301,6 +301,7 @@ app.use('/api/sign-proxy', express.raw({ type: () => true, limit: '2mb' }), asyn
     }
 });
 
+app.use('/api/gift-panel', express.json({ limit: '800kb' })); // a panel can carry a background image
 app.use(express.json());
 
 // A token is always text: an object such as {"$ne": null} would match ANY account in a MongoDB query
@@ -486,6 +487,7 @@ app.get('/overlay/battle', (req, res) => sendOverlay(res, 'overlay_battle.html')
 app.get('/overlay/likegoal', (req, res) => sendOverlay(res, 'overlay_likegoal.html'));
 app.get('/overlay/ranking', (req, res) => sendOverlay(res, 'overlay_ranking.html'));
 app.get('/overlay/social', (req, res) => sendOverlay(res, 'overlay_social.html'));
+app.get('/overlay/giftpanel', (req, res) => sendOverlay(res, 'overlay_giftpanel.html'));
 app.get('/overlay/jar', (req, res) => sendPremiumOverlay(req, res, 'overlay_jar.html'));
 // PRO widgets: real use needs Gentok Premium (the demo preview of the gallery stays open to everyone)
 async function sendPremiumOverlay(req, res, filename) {
@@ -1726,6 +1728,37 @@ app.post('/api/app/session', async (req, res) => {
     config.licenseToken = token;
     reauthRemoteClient(); // connects to the Gentok server, or identifies again with this account
     res.json({ success: true });
+});
+
+// "Panneau cadeaux" (Overlay Custom): read by the OBS overlay (token in the URL, like every overlay), saved by the editor
+function cleanGiftPanel(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const json = JSON.stringify(raw);
+    if (json.length > 700000) return null; // a background image is limited to ~450 KB
+    const p = JSON.parse(json);
+    p.items = (Array.isArray(p.items) ? p.items : []).slice(0, 60);
+    return p;
+}
+app.get('/api/gift-panel', async (req, res) => {
+    const token = getRequestToken(req);
+    if (!token) return res.status(401).json({ error: 'Token manquant' });
+    const settings = await config.getSettings(token);
+    res.set('Cache-Control', 'no-store');
+    res.json(settings.giftPanel || null);
+});
+app.post('/api/gift-panel', async (req, res) => {
+    const token = getRequestToken(req);
+    if (!token) return res.status(401).json({ error: 'Token manquant' });
+    const panel = cleanGiftPanel((req.body || {}).panel);
+    if (!panel) return res.status(400).json({ error: 'Panneau invalide ou trop lourd (image de fond trop grande ?)' });
+    try {
+        await config.loadSession(token);
+        await config.saveSettings({ token, giftPanel: panel });
+        emitEvent('gift_panel_update', panel, token); // the OBS overlay redraws at once
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // API: Version Check

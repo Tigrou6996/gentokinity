@@ -19,7 +19,7 @@ const SCENE_STATS_FIELDS = ['likesGoal', 'topGift', 'topStreak', 'topCoins', 'to
 const sceneOf = (scenes, id) => (id && Array.isArray(scenes) ? scenes.find(sc => sc && sc.id === id) : null) || null;
 const isIndependent = (scenes, id) => !!(sceneOf(scenes, id) || {}).independent;
 const SAVED_FIELDS = ['username', 'ip', 'activeSceneId', 'scenes', 'minecraft', 'obs', 'language', 'runMode', 'streamerbot',
-    'points', 'spotify', 'tts', 'lastEvents', ...SCENE_STATS_FIELDS];
+    'points', 'spotify', 'tts', 'lastEvents', 'giftPanel', ...SCENE_STATS_FIELDS];
 const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 function mergeTts(base, own) {
     return { ...base, ...own, allowedUsers: { ...(base.allowedUsers || {}), ...((own && own.allowedUsers) || {}) } };
@@ -275,6 +275,7 @@ module.exports = {
                 newSession.streamerbot = { ...newSession.streamerbot, ...sb };
             }
             if (settings.points) newSession.points = settings.points;
+            if (settings.giftPanel) newSession.giftPanel = settings.giftPanel;
             // TikTok account answering in the chat (its cookies stay on the server: see features/chatbot.js)
             if (settings.chatbot) newSession.chatbot = settings.chatbot.toObject ? settings.chatbot.toObject() : settings.chatbot;
             if (settings.spotify) {
@@ -622,6 +623,7 @@ module.exports = {
         if (data.obs) s.obs = { ...s.obs, ...data.obs };
         if (data.streamerbot) s.streamerbot = { ...s.streamerbot, ...data.streamerbot };
         if (data.points && typeof data.points === 'object') s.points = { ...(s.points || {}), ...data.points };
+        if (data.giftPanel && typeof data.giftPanel === 'object') s.giftPanel = data.giftPanel; // checked by the route
         if (typeof data.language === 'string' && /^[a-z]{2}$/.test(data.language)) s.language = data.language;
         if (['auto', 'cloud', 'pc'].includes(data.runMode)) s.runMode = data.runMode;
         if (data.spotify) {
