@@ -10,6 +10,7 @@ const PresetCodeSchema = new mongoose.Schema({
     creator: { type: String, default: '' },
     uses: { type: Number, default: 0 },
     content: {
+        username: { type: String, default: '' }, // only when the creator chose to share it
         actions: [Object],
         events: [Object],
         settings: { type: Object, default: {} },       // tts, points rules, likes goal, top coins / likes display

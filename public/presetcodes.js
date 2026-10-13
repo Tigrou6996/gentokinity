@@ -21,9 +21,46 @@
     const overlayOptions = () => { try { return JSON.parse(localStorage.getItem(GALLERY) || '{}') || {}; } catch (e) { return {}; } };
     const n = (count, one, many) => `${count} ${t(count > 1 ? many : one)}`;
     const summary = (c) => [
+        c.sounds ? n(c.sounds, 'son', 'sons') : null,
         n(c.actions, 'action', 'actions'), n(c.events, 'événement', 'événements'),
-        c.settings ? t('réglages') : null, c.overlays ? n(c.overlays, 'overlay personnalisé', 'overlays personnalisés') : null
+        c.settings ? t('réglages') : null, c.points ? t('règles de points') : null,
+        c.overlays ? n(c.overlays, 'overlay personnalisé', 'overlays personnalisés') : null
     ].filter(Boolean).join(' · ');
+
+    // The parts of a scene, as checkboxes with their count (like TikFinity's export)
+    const PARTS = [
+        { key: 'username', label: 'Nom TikTok', icon: 'fa-user' },
+        { key: 'settings', label: 'Réglages généraux (TTS, objectif de likes, tops)', icon: 'fa-sliders' },
+        { key: 'points', label: 'Règles de points et monnaie', icon: 'fa-coins' },
+        { key: 'sounds', label: 'Sons', icon: 'fa-volume-high' },
+        { key: 'actions', label: 'Actions', icon: 'fa-bolt' },
+        { key: 'events', label: 'Événements', icon: 'fa-calendar-check' },
+        { key: 'overlays', label: 'Options des overlays', icon: 'fa-display' }
+    ];
+    function partsHtml(counts, checked) {
+        return `<div class="pc-parts">${PARTS.filter(p => counts[p.key] !== undefined && counts[p.key] !== null && counts[p.key] !== false).map(p => {
+            const c = counts[p.key];
+            const extra = typeof c === 'number' ? ` <em>(${c})</em>` : (typeof c === 'string' && c ? ` <em>@${esc(c)}</em>` : '');
+            return `<label class="pc-part"><input type="checkbox" data-part="${p.key}" ${checked[p.key] ? 'checked' : ''}><i class="fas ${p.icon}"></i><span>${esc(t(p.label))}${extra}</span></label>`;
+        }).join('')}</div>`;
+    }
+    const readParts = () => {
+        const inc = {};
+        document.querySelectorAll('.pc-parts input[data-part]').forEach(i => { inc[i.dataset.part] = i.checked; });
+        return inc;
+    };
+    // what the active scene holds right now (app.js globals)
+    function sceneCounts() {
+        const acts = (typeof currentActions !== 'undefined' && currentActions) || [];
+        const evs = (typeof currentEvents !== 'undefined' && currentEvents) || [];
+        const user = (document.getElementById('header-username')?.value || '').trim().replace(/^@/, '');
+        return {
+            username: user || false, settings: true, points: true,
+            sounds: acts.filter(a => a.type === 'sound').length, actions: acts.filter(a => a.type !== 'sound').length,
+            events: evs.length, overlays: Object.keys(overlayOptions()).length
+        };
+    }
+    const CREATE_DEFAULT = { username: false, settings: true, points: true, sounds: true, actions: true, events: true, overlays: true };
 
     async function copy(code) {
         try { await navigator.clipboard.writeText(code); showToast(t('Code copié !'), 'success'); } catch (e) { showToast(code, 'info'); }
@@ -44,22 +81,22 @@
         } catch (e) { /* not logged in yet */ }
     }
 
+    const nothingChosen = (inc) => !Object.values(inc).some(Boolean);
+
     async function create() {
         const r = await Swal.fire({
             title: t('Partager ma scène'),
             html: `<input id="pc-title" class="swal2-input" maxlength="60" placeholder="${esc(t('Nom du preset (ex : Pack Rose & TNT)'))}">
                 <textarea id="pc-desc" class="swal2-textarea" maxlength="300" placeholder="${esc(t('Description (facultatif)'))}"></textarea>
-                <label class="pc-check"><input type="checkbox" id="pc-settings" checked> ${esc(t('Inclure les réglages (TTS, objectif de likes, points, tops)'))}</label>
-                <label class="pc-check"><input type="checkbox" id="pc-overlays" checked> ${esc(t('Inclure mes options des overlays'))}</label>`,
+                <div class="pc-parts-title">${esc(t('Contenu du code'))}</div>
+                ${partsHtml(sceneCounts(), CREATE_DEFAULT)}`,
             showCancelButton: true, confirmButtonText: t('Générer le code'), cancelButtonText: t('Annuler'),
             preConfirm: () => {
                 const title = document.getElementById('pc-title').value.trim();
                 if (!title) { Swal.showValidationMessage(t('Donnez un nom à votre preset')); return false; }
-                return {
-                    title, desc: document.getElementById('pc-desc').value.trim(),
-                    includeSettings: document.getElementById('pc-settings').checked,
-                    overlayOptions: document.getElementById('pc-overlays').checked ? overlayOptions() : {}
-                };
+                const include = readParts();
+                if (nothingChosen(include)) { Swal.showValidationMessage(t('Cochez au moins un élément')); return false; }
+                return { title, desc: document.getElementById('pc-desc').value.trim(), include, overlayOptions: include.overlays ? overlayOptions() : {} };
             }
         });
         if (!r.isConfirmed) return;
@@ -80,32 +117,39 @@
         if (!code) { showToast(t('Entrez un code'), 'error'); return; }
         let p;
         try { p = await api(`/api/preset-codes/${encodeURIComponent(code)}`); } catch (e) { showToast(e.message, 'error'); return; }
+        const c = p.counts || {};
+        // only the parts this code contains; the TikTok name and the points rules (shared by your scenes) are opt-in
+        const available = {
+            username: p.username || false, settings: c.settings ? true : false, points: c.points ? true : false,
+            sounds: c.sounds || false, actions: c.actions || false, events: c.events || false, overlays: c.overlays || false
+        };
         const r = await Swal.fire({
             title: esc(p.title),
-            html: `<p>${p.creator ? `${esc(t('par'))} <b>@${esc(p.creator)}</b> · ` : ''}${esc(summary(p.counts))}</p>
+            html: `<p>${p.creator ? `${esc(t('par'))} <b>@${esc(p.creator)}</b> · ` : ''}${esc(summary(c))}</p>
                 ${p.desc ? `<p class="text-dim">${esc(p.desc)}</p>` : ''}
                 <div class="pc-modes">
                     <label><input type="radio" name="pc-mode" value="new" checked> ${esc(t('Dans une nouvelle scène'))}</label>
-                    <label><input type="radio" name="pc-mode" value="replace"> ${esc(t('Remplacer la scène actuelle'))}</label>
+                    <label><input type="radio" name="pc-mode" value="replace"> ${esc(t('Remplacer dans la scène actuelle'))}</label>
                     <label><input type="radio" name="pc-mode" value="add"> ${esc(t('Ajouter à la scène actuelle'))}</label>
                 </div>
-                <label class="pc-check"><input type="checkbox" id="pc-points"> ${esc(t('Appliquer aussi ses règles de points et sa monnaie (partagées entre vos scènes)'))}</label>
-                <label class="pc-check"><input type="checkbox" id="pc-ovl" checked> ${esc(t('Appliquer ses options des overlays'))}</label>`,
+                <div class="pc-parts-title">${esc(t('Éléments à charger'))}</div>
+                ${partsHtml(available, { ...CREATE_DEFAULT, username: false, points: false })}
+                <p class="pc-note">${esc(t('Les règles de points et la monnaie sont partagées entre toutes vos scènes.'))}</p>`,
             showCancelButton: true, confirmButtonText: t('Charger'), cancelButtonText: t('Annuler'),
-            preConfirm: () => ({
-                mode: document.querySelector('input[name="pc-mode"]:checked').value,
-                applyPoints: document.getElementById('pc-points').checked,
-                overlays: document.getElementById('pc-ovl').checked
-            })
+            preConfirm: () => {
+                const include = readParts();
+                if (nothingChosen(include)) { Swal.showValidationMessage(t('Cochez au moins un élément')); return false; }
+                return { mode: document.querySelector('input[name="pc-mode"]:checked').value, include };
+            }
         });
         if (!r.isConfirmed) return;
         if (r.value.mode === 'replace') {
-            const sure = await Swal.fire({ title: t('Remplacer la scène actuelle ?'), text: t('Ses actions et événements actuels seront remplacés.'), icon: 'warning', showCancelButton: true, confirmButtonText: t('Remplacer'), cancelButtonText: t('Annuler') });
+            const sure = await Swal.fire({ title: t('Remplacer dans la scène actuelle ?'), text: t('Les éléments cochés remplacent ceux de la scène actuelle.'), icon: 'warning', showCancelButton: true, confirmButtonText: t('Remplacer'), cancelButtonText: t('Annuler') });
             if (!sure.isConfirmed) return;
         }
         try {
-            const res = await api(`/api/preset-codes/${encodeURIComponent(p.code)}/load`, 'POST', { mode: r.value.mode, applyPoints: r.value.applyPoints });
-            if (r.value.overlays && res.overlayOptions && Object.keys(res.overlayOptions).length) {
+            const res = await api(`/api/preset-codes/${encodeURIComponent(p.code)}/load`, 'POST', { mode: r.value.mode, include: r.value.include });
+            if (res.overlayOptions && Object.keys(res.overlayOptions).length) {
                 try { localStorage.setItem(GALLERY, JSON.stringify({ ...overlayOptions(), ...res.overlayOptions })); } catch (e) { }
             }
             const cfg = await fetch(`${getApiBase()}/api/config?token=${encodeURIComponent(token())}`, { cache: 'no-store' }).then(x => x.json()).catch(() => null);
@@ -116,9 +160,22 @@
     }
 
     async function update(code) {
-        const ok = await Swal.fire({ title: t('Mettre à jour ce code ?'), text: t('Son contenu est remplacé par la scène active. Le code reste le même.'), icon: 'question', showCancelButton: true, confirmButtonText: t('Mettre à jour'), cancelButtonText: t('Annuler') });
-        if (!ok.isConfirmed) return;
-        try { await api(`/api/preset-codes/${encodeURIComponent(code)}/update`, 'POST', { overlayOptions: overlayOptions() }); showToast(t('Code mis à jour'), 'success'); refresh(); } catch (e) { showToast(e.message, 'error'); }
+        const r = await Swal.fire({
+            title: t('Mettre à jour ce code ?'),
+            html: `<p>${esc(t('Son contenu est remplacé par la scène active. Le code reste le même.'))}</p>
+                <div class="pc-parts-title">${esc(t('Contenu du code'))}</div>${partsHtml(sceneCounts(), CREATE_DEFAULT)}`,
+            icon: 'question', showCancelButton: true, confirmButtonText: t('Mettre à jour'), cancelButtonText: t('Annuler'),
+            preConfirm: () => {
+                const include = readParts();
+                if (nothingChosen(include)) { Swal.showValidationMessage(t('Cochez au moins un élément')); return false; }
+                return include;
+            }
+        });
+        if (!r.isConfirmed) return;
+        try {
+            await api(`/api/preset-codes/${encodeURIComponent(code)}/update`, 'POST', { include: r.value, overlayOptions: r.value.overlays ? overlayOptions() : {} });
+            showToast(t('Code mis à jour'), 'success'); refresh();
+        } catch (e) { showToast(e.message, 'error'); }
     }
 
     async function remove(code) {

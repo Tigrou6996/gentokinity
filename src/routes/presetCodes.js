@@ -37,17 +37,34 @@ function cleanItems(list) {
     });
 }
 
-// What a preset keeps of the scene settings (never: chat bot cookies, Spotify / OBS / Minecraft logins, viewers' records)
-function snapshotSettings(session) {
+// The parts a code can hold; the streamer picks them when generating it, and again when loading it
+const PARTS = ['username', 'settings', 'points', 'sounds', 'actions', 'events', 'overlays'];
+const DEFAULT_INCLUDE = { username: false, settings: true, points: true, sounds: true, actions: true, events: true, overlays: true };
+function readInclude(raw) {
+    const inc = { ...DEFAULT_INCLUDE };
+    if (raw && typeof raw === 'object') for (const k of PARTS) if (raw[k] !== undefined) inc[k] = !!raw[k];
+    return inc;
+}
+const isSound = (a) => a && a.type === 'sound';
+
+// What a preset keeps of the scene (never: chat bot cookies, Spotify / OBS / Minecraft logins, viewers' records)
+function snapshot(session, inc, overlayOptions) {
     const likesGoal = { ...(session.likesGoal || {}) };
     delete likesGoal.count;
-    return clone({
-        tts: session.tts || null,
-        points: session.points || null,
-        likesGoal,
-        topCoins: session.topCoins || null,
-        topLikes: session.topLikes || null
-    });
+    const actions = cleanItems(session.actions).filter(a => (isSound(a) ? inc.sounds : inc.actions));
+    const kept = new Set(actions.map(a => String(a.id)));
+    // events only point to the actions kept in the code
+    const events = inc.events ? cleanItems(session.events).map(e => ({
+        ...e, actions: (Array.isArray(e.actions) ? e.actions : (e.actions ? [e.actions] : [])).filter(id => kept.has(String(id)))
+    })) : [];
+    const settings = {};
+    if (inc.settings) Object.assign(settings, clone({ tts: session.tts || null, likesGoal, topCoins: session.topCoins || null, topLikes: session.topLikes || null }));
+    if (inc.points && session.points) settings.points = clone(session.points);
+    return {
+        username: inc.username ? String(session.username || '').replace(/^@/, '').slice(0, 40) : '',
+        actions, events, settings,
+        overlayOptions: inc.overlays ? cleanOverlayOptions(overlayOptions) : {}
+    };
 }
 
 function cleanOverlayOptions(raw) {
@@ -58,13 +75,17 @@ function cleanOverlayOptions(raw) {
 
 function publicView(doc, withOwner = false) {
     const c = doc.content || {};
+    const st = c.settings || {};
     const v = {
         code: doc.code, title: doc.title, desc: doc.desc || '', creator: doc.creator || '', uses: doc.uses || 0,
         updatedAt: doc.updatedAt,
+        username: c.username || '',
         counts: {
-            actions: (c.actions || []).length,
+            sounds: (c.actions || []).filter(isSound).length,
+            actions: (c.actions || []).filter(a => !isSound(a)).length,
             events: (c.events || []).length,
-            settings: Object.keys(c.settings || {}).filter(k => c.settings[k]).length,
+            settings: ['tts', 'likesGoal', 'topCoins', 'topLikes'].filter(k => st[k]).length,
+            points: st.points ? 1 : 0,
             overlays: Object.keys(c.overlayOptions || {}).length
         }
     };
@@ -102,12 +123,7 @@ module.exports = function registerPresetCodeRoutes(app, { getRequestToken, withS
             code, ownerToken: token, title,
             desc: String(b.desc || '').slice(0, 300),
             creator: String(session.username || '').replace(/^@/, '').slice(0, 40),
-            content: {
-                actions: cleanItems(session.actions),
-                events: cleanItems(session.events),
-                settings: b.includeSettings === false ? {} : snapshotSettings(session),
-                overlayOptions: cleanOverlayOptions(b.overlayOptions)
-            }
+            content: snapshot(session, readInclude(b.include), b.overlayOptions)
         });
         res.json({ success: true, preset: publicView(doc, true) });
     }));
@@ -135,12 +151,7 @@ module.exports = function registerPresetCodeRoutes(app, { getRequestToken, withS
         await config.loadSession(token);
         const session = await config.getSessionFor(token);
         const b = req.body || {};
-        doc.content = {
-            actions: cleanItems(session.actions),
-            events: cleanItems(session.events),
-            settings: b.includeSettings === false ? {} : snapshotSettings(session),
-            overlayOptions: cleanOverlayOptions(b.overlayOptions)
-        };
+        doc.content = snapshot(session, readInclude(b.include), b.overlayOptions);
         if (b.title) doc.title = String(b.title).trim().slice(0, 60) || doc.title;
         if (b.desc !== undefined) doc.desc = String(b.desc || '').slice(0, 300);
         await doc.save();
@@ -157,7 +168,8 @@ module.exports = function registerPresetCodeRoutes(app, { getRequestToken, withS
 
     /**
      * mode: "new" (default) = new scene named after the preset; "replace" = the active scene's actions and events
-     * are replaced; "add" = added to them. applyPoints: also apply the points rules / currency (shared by the scenes).
+     * are replaced; "add" = added to them. include: the parts to load (default: all but the TikTok name and the
+     * points rules, which are shared by the scenes; the old flag applyPoints still works).
      */
     app.post('/api/preset-codes/:code/load', wrap(async (req, res) => {
         const token = tokenOf(req);
@@ -167,6 +179,15 @@ module.exports = function registerPresetCodeRoutes(app, { getRequestToken, withS
         if (!doc) throw fail(404, 'Aucun preset avec ce code');
         const b = req.body || {};
         const mode = ['replace', 'add'].includes(b.mode) ? b.mode : 'new';
+        const inc = readInclude({ username: false, points: !!b.applyPoints, ...(b.include || {}) });
+        // a part the code does not hold is never loaded: "replace" must not empty the scene's own actions / events
+        const c = doc.content || {}, st0 = c.settings || {};
+        const has = {
+            username: !!c.username, settings: ['tts', 'likesGoal', 'topCoins', 'topLikes'].some(k => st0[k]), points: !!st0.points,
+            sounds: (c.actions || []).some(isSound), actions: (c.actions || []).some(a => !isSound(a)),
+            events: (c.events || []).length > 0, overlays: Object.keys(c.overlayOptions || {}).length > 0
+        };
+        for (const k of PARTS) if (!has[k]) inc[k] = false;
 
         const result = await withSceneLock(token, async () => {
             await config.loadSession(token);
@@ -189,28 +210,33 @@ module.exports = function registerPresetCodeRoutes(app, { getRequestToken, withS
             // New ids for the actions, and the events pointing to them
             const stamp = Date.now();
             const idMap = {};
-            const actions = cleanItems(doc.content.actions).map((a, i) => {
+            const actions = cleanItems(doc.content.actions).filter(a => (isSound(a) ? inc.sounds : inc.actions)).map((a, i) => {
                 const id = `acc_${stamp}_${i}_${crypto.randomInt(1e6)}`;
                 if (a.id) idMap[a.id] = id;
                 return { ...a, id };
             });
-            const events = cleanItems(doc.content.events).map((e, i) => ({
+            const events = (inc.events ? cleanItems(doc.content.events) : []).map((e, i) => ({
                 ...e,
                 id: `evt_${stamp}_${i}_${crypto.randomInt(1e6)}`,
                 actions: (Array.isArray(e.actions) ? e.actions : (e.actions ? [e.actions] : [])).map(old => idMap[old]).filter(Boolean)
             }));
+            // "replace" only replaces what is loaded: loading just the sounds keeps the scene's events
             const keep = mode === 'add';
-            await config.saveActions([...(keep ? session.actions || [] : []), ...actions], token);
-            await config.saveEvents([...(keep ? session.events || [] : []), ...events], token);
+            const keepActions = keep ? (session.actions || []) : (session.actions || []).filter(a => (isSound(a) ? !inc.sounds : !inc.actions));
+            await config.saveActions([...keepActions, ...actions], token);
+            if (inc.events || mode === 'new') await config.saveEvents([...(keep ? session.events || [] : []), ...events], token);
 
             // Scene settings (TTS, likes goal, top display); points rules only when asked (they are shared by the scenes)
             const st = doc.content.settings || {};
             const patch = { token };
-            if (st.tts) patch.tts = st.tts;
-            if (st.likesGoal) patch.likesGoal = { ...st.likesGoal, count: (session.likesGoal || {}).count || 0 };
-            if (st.topCoins) patch.topCoins = st.topCoins;
-            if (st.topLikes) patch.topLikes = st.topLikes;
-            if (st.points && b.applyPoints) patch.points = st.points;
+            if (inc.settings) {
+                if (st.tts) patch.tts = st.tts;
+                if (st.likesGoal) patch.likesGoal = { ...st.likesGoal, count: (session.likesGoal || {}).count || 0 };
+                if (st.topCoins) patch.topCoins = st.topCoins;
+                if (st.topLikes) patch.topLikes = st.topLikes;
+            }
+            if (st.points && inc.points) patch.points = st.points;
+            if (inc.username && doc.content.username) patch.username = doc.content.username;
             if (Object.keys(patch).length > 1) await config.saveSettings(patch);
             await config.loadSession(token);
             session = await config.getSessionFor(token);
@@ -221,7 +247,7 @@ module.exports = function registerPresetCodeRoutes(app, { getRequestToken, withS
         await afterSessionChange(token);
         res.json({
             success: true, mode, ...result,
-            overlayOptions: doc.content.overlayOptions || {},
+            overlayOptions: inc.overlays ? (doc.content.overlayOptions || {}) : {},
             installed: { actions: result.actions, events: result.events }
         });
     }));
