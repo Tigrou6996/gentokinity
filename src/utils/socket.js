@@ -437,12 +437,14 @@ async function sendInitialStats(socket, token) {
             topCoinsTransparent: settings.topCoins?.transparent !== false,
             topCoinsShowTitle: settings.topCoins?.showTitle !== false,
             topCoinsRtl: settings.topCoins?.rtl === true,
+            topCoinsFont: settings.topCoins?.font || '',
             topLikesTitle: settings.topLikes?.title || 'TOP LIKES',
             topLikesLimit: settings.topLikes?.limit || 10,
             topLikesStyle: settings.topLikes?.style || 1,
             topLikesTransparent: settings.topLikes?.transparent !== false,
             topLikesShowTitle: settings.topLikes?.showTitle !== false,
-            topLikesRtl: settings.topLikes?.rtl === true
+            topLikesRtl: settings.topLikes?.rtl === true,
+            topLikesFont: settings.topLikes?.font || ''
         };
 
         // If there is an active connector for THIS token, use its live stats

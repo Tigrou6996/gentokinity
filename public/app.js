@@ -1574,13 +1574,8 @@ function applyConfigUI(config) {
             if (urlInput || iframe) {
                 const url = `/overlay/leaderboard?type=coins&limit=${config.topCoins.limit || 10}&style=${currentTopCoinsStyle}&transparent=${config.topCoins.transparent !== false}&showTitle=${config.topCoins.showTitle !== false}&rtl=${config.topCoins.rtl === true}`;
                 if (urlInput) urlInput.value = `https://tiktok.gentok.fr${url}`;
-                if (iframe) {
-                    iframe.src = url;
-                    const limit = config.topCoins.limit || 10;
-                    const height = (parseInt(limit) || 10) * 42 + 60;
-                    iframe.style.height = height + 'px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-                }
+                // the preview itself is set (once, with the token) by updateOverlayLinks below
+                if (iframe) setPreviewHeight(iframe, leaderboardPreviewHeight(config.topCoins.limit));
             }
         }
         if (config.topLikes) {
@@ -1598,13 +1593,8 @@ function applyConfigUI(config) {
             if (urlInput || iframe) {
                 const url = `/overlay/leaderboard?type=likes&limit=${config.topLikes.limit || 10}&style=${currentTopLikesStyle}&transparent=${config.topLikes.transparent !== false}&showTitle=${config.topLikes.showTitle !== false}&rtl=${config.topLikes.rtl === true}`;
                 if (urlInput) urlInput.value = `https://tiktok.gentok.fr${url}`;
-                if (iframe) {
-                    iframe.src = url;
-                    const limit = config.topLikes.limit || 10;
-                    const height = (parseInt(limit) || 10) * 42 + 60;
-                    iframe.style.height = height + 'px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-                }
+                // the preview itself is set (once, with the token) by updateOverlayLinks below
+                if (iframe) setPreviewHeight(iframe, leaderboardPreviewHeight(config.topLikes.limit));
             }
         }
         const lge = document.getElementById('likes-goal-enabled');
@@ -4931,6 +4921,20 @@ window.activateOverlay = (targetId) => {
     }, 100);
 };
 
+// Sets a preview iframe address without reloading it when nothing changed (see frames.js)
+function setPreviewSrc(iframe, url) {
+    if (window.GentokFrames) window.GentokFrames.setSrc(iframe, url);
+    else if (iframe.src !== url) iframe.src = url;
+}
+// Leaderboard previews show the first rows only: the full list (up to 50 rows) made the page huge
+function leaderboardPreviewHeight(limit) {
+    return Math.min(parseInt(limit) || 10, 6) * 42 + 64;
+}
+function setPreviewHeight(iframe, height) {
+    iframe.style.height = height + 'px';
+    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
+}
+
 function updateOverlayLinks() {
     const token = localStorage.getItem('gentok_token');
     if (!token) return;
@@ -4961,26 +4965,17 @@ function updateOverlayLinks() {
         if (card) {
             const iframe = card.querySelector('iframe');
             if (iframe) {
-                // Only update if src is different to avoid unnecessary reloads
-                const currentSrc = iframe.src;
-                const isSameUrl = currentSrc === fullUrl || currentSrc.endsWith(fullUrl);
-
-                if (!isSameUrl) {
-                    iframe.src = fullUrl;
-                }
-
-                // [NEW] Dynamic height for leaderboards
+                // Leaderboards: style, size, title and font reach the running preview through the
+                // session_stats socket event, so its address stays the same and it is not reloaded
+                let previewUrl = fullUrl;
                 if (fullUrl.includes('/overlay/leaderboard')) {
-                    const params = new URLSearchParams(url.split('?')[1]);
-                    const limit = params.get('limit') || 10;
-                    const height = (parseInt(limit) || 10) * 42 + 60;
-                    iframe.style.height = height + 'px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-                } else if (fullUrl.includes('/overlay/top-gift') || fullUrl.includes('/overlay/top-streak')) {
-                    // Force 350px for gift and streak
-                    iframe.style.height = '350px';
-                    if (iframe.parentElement) iframe.parentElement.style.height = '350px';
+                    const params = new URLSearchParams(url.split('?')[1] || '');
+                    const keep = new URLSearchParams({ type: params.get('type') || 'coins', token, lang: uiLang, preview: 'true' });
+                    if (params.get('period')) keep.set('period', params.get('period'));
+                    previewUrl = `${url.split('?')[0]}?${keep}`;
+                    setPreviewHeight(iframe, leaderboardPreviewHeight(params.get('limit')));
                 }
+                setPreviewSrc(iframe, previewUrl);
             }
         }
 
@@ -8374,10 +8369,20 @@ async function resetTopStat(type) {
     }
 }
 
-window.updateTopTitle = async (type, title) => {
+// Title / font of Top Gift, Top Streak and the leaderboards. Saved after a short pause in typing (it used
+// to save and reload the preview on every keystroke); the server pushes the change to the running overlays.
+const topTitleTimers = {};
+window.updateTopTitle = (type, title) => {
+    clearTimeout(topTitleTimers[type]);
+    topTitleTimers[type] = setTimeout(() => saveTopTitle(type, title), 500);
+};
+async function saveTopTitle(type, title) {
     const token = getToken();
     const font = document.getElementById(`${type}Font`)?.value || '';
-
+    if (type === 'topCoins' || type === 'topLikes') {
+        // saves the title along with the other leaderboard options
+        return updateLeaderboardConfig(type === 'topCoins' ? 'coins' : 'likes');
+    }
     try {
         await fetch(`${getApiBase()}/api/stats/update-title`, {
             method: 'POST',
@@ -8385,26 +8390,11 @@ window.updateTopTitle = async (type, title) => {
             body: JSON.stringify({ type, title, font, token })
         });
         showToast('✅ Configuration mise à jour !');
-
-        // Reactive UI update
-        if (type === 'topCoins' || type === 'topLikes') {
-            const shortType = type === 'topCoins' ? 'coins' : 'likes';
-            updateLeaderboardConfig(shortType);
-        } else if (type === 'topGift' || type === 'topStreak') {
-            // Refresh iframe
-            const iframe = document.querySelector(`#overlay-item-top iframe[src*="${type === 'topGift' ? 'top-gift' : 'top-streak'}"]`);
-            if (iframe) {
-                const url = new URL(iframe.src, window.location.origin);
-                url.searchParams.set('font', font);
-                url.searchParams.set('t', Date.now()); // Cache buster
-                iframe.src = url.toString();
-            }
-        }
     } catch (e) {
         console.error(e);
         showToast('Erreur mise à jour.', 'error');
     }
-};
+}
 
 
 window.updateLeaderboardConfig = async (type) => {
@@ -8429,6 +8419,7 @@ window.updateLeaderboardConfig = async (type) => {
                 transparent,
                 showTitle,
                 rtl,
+                title: document.getElementById(`${prefix}TitleInput`)?.value || undefined,
                 font: document.getElementById(`${prefix}Font`)?.value || '',
                 token
             })
@@ -8446,15 +8437,9 @@ window.updateLeaderboardConfig = async (type) => {
     const overlayUrl = `/overlay/leaderboard?type=${type}&limit=${limit}&style=${style}&transparent=${transparent}&showTitle=${showTitle}&rtl=${rtl}${font ? `&font=${font}` : ''}`;
 
     if (urlInput) urlInput.value = `${PRODUCTION_URL}${overlayUrl}`;
-    if (iframe) {
-        iframe.src = overlayUrl + '&preview=true&t=' + Date.now();
-        // Dynamic height adjustment
-        const height = (parseInt(limit) || 10) * 42 + 60;
-        iframe.style.height = height + 'px';
-        if (iframe.parentElement) iframe.parentElement.style.height = height + 'px';
-    }
+    if (iframe) setPreviewHeight(iframe, leaderboardPreviewHeight(limit));
 
-    // Standardize with token
+    // Copy links with the token; the preview keeps running and receives the new options by socket
     updateOverlayLinks();
 
     // Update Style Text
@@ -9755,12 +9740,8 @@ window.applyFontToOverlay = (type, font) => {
     if (type === 'likesGoal') {
         updateLikesPreview();
     } else if (type === 'topGift' || type === 'topStreak') {
-        const iframe = document.querySelector(`#overlay-item-top iframe[src*="${type === 'topGift' ? 'top-gift' : 'top-streak'}"]`);
-        if (iframe) {
-            const url = new URL(iframe.src, window.location.origin);
-            url.searchParams.set('font', font);
-            iframe.src = url.toString();
-        }
+        // saved with the title; the running preview gets the font by socket
+        updateTopTitle(type, document.getElementById(`${type}TitleInput`)?.value || '');
     } else if (type === 'coins' || type === 'likes') {
         updateLeaderboardConfig(type);
     }

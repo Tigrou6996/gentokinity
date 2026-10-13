@@ -180,16 +180,17 @@
     function refreshCard(card, reloadPreview) {
         const o = CATALOG.find(x => x.id === card.dataset.id);
         card.querySelector('.gal-link').value = publicUrl(o);
-        if (reloadPreview && card.dataset.visible === '1') loadPreview(card, o);
+        if (reloadPreview) loadPreview(card, o);
     }
 
     function loadPreview(card, o) {
         const frame = card.querySelector('iframe');
         const box = card.querySelector('.gal-preview');
         const src = previewUrl(o);
-        if (frame.dataset.src === src) return;
-        frame.dataset.src = src;
-        frame.src = src;
+        if (frame.dataset.want === src) return;
+        frame.dataset.want = src;
+        // frames.js loads it once it is on screen, pauses it a while after it left, and fades it in
+        if (window.GentokFrames) window.GentokFrames.setSrc(frame, src); else frame.src = src;
         if (o.scale) {
             // full-screen overlays (1920x1080 sources) are drawn at 1280x720 and scaled down into the card
             const fit = () => {
@@ -201,7 +202,6 @@
         }
     }
 
-    let observer = null;
     function render() {
         const root = document.getElementById('gallery-grid');
         if (!root || root.dataset.ready) return;
@@ -210,20 +210,10 @@
         document.getElementById('gallery-filters').innerHTML = CATEGORIES.map(([k, l], i) =>
             `<button class="gal-chip${i === 0 ? ' active' : ''}" data-cat="${k}">${esc(t(l))} <span>${k === 'all' ? CATALOG.length : CATALOG.filter(o => o.cat === k).length}</span></button>`).join('');
 
-        // Previews only run while visible (each one is a live page)
-        observer = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
-            for (const e of entries) {
-                const card = e.target;
-                const o = CATALOG.find(x => x.id === card.dataset.id);
-                if (e.isIntersecting) { card.dataset.visible = '1'; loadPreview(card, o); } else {
-                    card.dataset.visible = '0';
-                    const f = card.querySelector('iframe'); f.removeAttribute('src'); f.dataset.src = '';
-                }
-            }
-        }, { rootMargin: '150px' }) : null;
+        // Previews only run while visible (each one is a live page): handled by frames.js
         root.querySelectorAll('.gal-card').forEach(card => {
             refreshCard(card, false);
-            if (observer) observer.observe(card); else { card.dataset.visible = '1'; loadPreview(card, CATALOG.find(x => x.id === card.dataset.id)); }
+            loadPreview(card, CATALOG.find(x => x.id === card.dataset.id));
         });
 
         root.addEventListener('click', onClick);

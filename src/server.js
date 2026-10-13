@@ -2504,6 +2504,7 @@ app.post('/api/stats/update-title', async (req, res) => {
                     connector.stats.topCoinsStyle = targetStat.style;
                     connector.stats.topCoinsTransparent = targetStat.transparent;
                     connector.stats.topCoinsShowTitle = targetStat.showTitle;
+                    connector.stats.topCoinsFont = targetStat.font || '';
                     if (req.body.rtl !== undefined) {
                         connector.stats.topCoinsRtl = targetStat.rtl;
                     }
@@ -2537,6 +2538,7 @@ app.post('/api/stats/update-title', async (req, res) => {
                     connector.stats.topLikesStyle = targetStat.style;
                     connector.stats.topLikesTransparent = targetStat.transparent;
                     connector.stats.topLikesShowTitle = targetStat.showTitle;
+                    connector.stats.topLikesFont = targetStat.font || '';
                     if (req.body.rtl !== undefined) {
                         connector.stats.topLikesRtl = targetStat.rtl;
                     }
@@ -2565,6 +2567,7 @@ app.post('/api/stats/update-title', async (req, res) => {
             topCoinsTransparent: settings.topCoins?.transparent,
             topCoinsShowTitle: settings.topCoins?.showTitle,
             topCoinsRtl: settings.topCoins?.rtl,
+            topCoinsFont: settings.topCoins?.font || '',
 
             // Likes flatten
             topLikesTitle: settings.topLikes?.title,
@@ -2572,7 +2575,8 @@ app.post('/api/stats/update-title', async (req, res) => {
             topLikesLimit: settings.topLikes?.limit,
             topLikesTransparent: settings.topLikes?.transparent,
             topLikesShowTitle: settings.topLikes?.showTitle,
-            topLikesRtl: settings.topLikes?.rtl
+            topLikesRtl: settings.topLikes?.rtl,
+            topLikesFont: settings.topLikes?.font || ''
         };
         emitEvent('session_stats', statsToSend, token);
 
