@@ -2702,7 +2702,14 @@ async function updateSpotifyOverlay() {
     }
 }
 
-setInterval(updateSpotifyOverlay, 2000);
+// One pass at a time: with a slow Spotify API (or many streamers) a new pass used to start every 2 s while
+// the previous one was still running, and two passes could advance the request queue twice
+let spotifyPassRunning = false;
+setInterval(() => {
+    if (spotifyPassRunning) return;
+    spotifyPassRunning = true;
+    updateSpotifyOverlay().catch(err => logger.warn(`[SPOTIFY] ${err.message}`)).finally(() => { spotifyPassRunning = false; });
+}, 2000);
 
 
 
