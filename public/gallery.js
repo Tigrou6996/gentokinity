@@ -259,7 +259,11 @@
         options[id][el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
         saveOptions();
         clearTimeout(inputTimer);
-        inputTimer = setTimeout(() => refreshCard(card, true), e.type === 'input' && el.type !== 'checkbox' && el.tagName !== 'SELECT' ? 500 : 0);
+        // a colour picker fires 'input' all the time while it is dragged: the link follows, the preview reloads
+        // once the colour is chosen ('change'); text and numbers wait for a pause in typing
+        if (el.type === 'color' && e.type === 'input') { refreshCard(card, false); return; }
+        const typing = e.type === 'input' && el.type !== 'checkbox' && el.tagName !== 'SELECT';
+        inputTimer = setTimeout(() => refreshCard(card, true), typing ? 900 : 0);
     }
 
     async function onClick(e) {
