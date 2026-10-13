@@ -64,7 +64,7 @@ class ActionManager {
     /**
      * Optional per-action cooldown (seconds): returns false if the action ran too recently.
      */
-    passesCooldown(token, action, context = {}) {
+    passesCooldown(token, action, context = {}, peekOnly = false) {
         const now = Date.now();
         const globalS = Number(action.cooldown) || 0;
         const userS = Number(action.userCooldown) || 0;
@@ -74,6 +74,7 @@ class ActionManager {
 
         if (globalS > 0 && now - (this.lastRunAt.get(globalKey) || 0) < globalS * 1000) return false;
         if (userS > 0 && viewer && now - (this.lastRunAt.get(userKey) || 0) < userS * 1000) return false;
+        if (peekOnly) return true;
 
         if (globalS > 0) this.lastRunAt.set(globalKey, now);
         if (userS > 0 && viewer) this.lastRunAt.set(userKey, now);
@@ -120,7 +121,8 @@ class ActionManager {
             const totalAmount = unitPrice * repeatCount;
 
             // Only the "gift:<name>" call records the donation (gift_min is called with the same gifts)
-            if (unitPrice > 0 && context.repeatEnd && triggerCode.startsWith('gift:')) {
+            // (simulator gifts don't count: a test gift used to hold a "top donateur" slot for every later live)
+            if (unitPrice > 0 && context.repeatEnd && triggerCode.startsWith('gift:') && !connector.isSimulation) {
                 if (!this.donors.has(token)) this.donors.set(token, new Map());
                 const tokenDonors = this.donors.get(token);
 
@@ -154,6 +156,10 @@ class ActionManager {
             // Points shop (Premium): the viewer pays the event with his points
             const cost = Number(e.pointsCost) || 0;
             if (cost > 0 && plan.pointsStore && context.uniqueId && !connector.isSimulation) {
+                // nothing to pay if every action of the event is still in cooldown (it would not run)
+                const ids = Array.isArray(e.actions) ? e.actions : [e.actions];
+                const defs = ids.map(id => actionDefinitions.find(a => a.id === id)).filter(Boolean);
+                if (defs.length && !defs.some(d => this.passesCooldown(token, d, context, true))) continue;
                 const points = require('../features/points');
                 const paid = await points.spend(token, context, cost * times, 'spend', e.command || e.triggerType);
                 if (!paid) {
@@ -284,6 +290,8 @@ class ActionManager {
             // running alongside the next one
             this.actionQueues.get(token).items = [];
             this.actionQueues.set(token, { items: [], isProcessing: false });
+            // "top donateur (session)" starts again at the next live
+            this.donors.delete(token);
             logger.info(`🛑 [${token.substring(0, 8)}] File d'attente d'actions vidée.`);
         }
     }

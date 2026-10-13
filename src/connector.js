@@ -44,6 +44,13 @@ const { registerEvents } = require('./handlers/eventManager');
 const { emitStatus, emitEvent } = require('./utils/socket');
 const actionManager = require('./actions/actionManager');
 
+// Display settings of the Top Gift / Top Streak overlays stored with the record (title, font)
+function pickDisplay(prev) {
+    const o = {};
+    if (prev) ['customTitle', 'font', 'title', 'style'].forEach(k => { if (prev[k] !== undefined) o[k] = prev[k]; });
+    return o;
+}
+
 class TikTokConnector {
     constructor(username, token) {
         this.username = username;
@@ -154,8 +161,9 @@ class TikTokConnector {
             giftsBreakdown: {},
             giftsCoinsBreakdown: {},
             giftsIcons: {},
-            topGift: previousTopGift || { ...defaultTopStat },
-            topStreak: previousTopStreak || { ...defaultTopStat },
+            // reset at live start, but the overlay's title / font stay
+            topGift: previousTopGift || { ...defaultTopStat, ...pickDisplay(settings.topGift) },
+            topStreak: previousTopStreak || { ...defaultTopStat, ...pickDisplay(settings.topStreak) },
             topCoins: previousTopCoins,
             topLikes: previousTopLikes,
             // [NEW] Config for frontend

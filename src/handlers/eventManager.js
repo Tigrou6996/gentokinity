@@ -448,12 +448,18 @@ function handleNewGifts(connector, data, count) {
         .sort((a, b) => b.coins - a.coins)
         .slice(0, limitCoins);
 
-    if (!connector.isSimulation) debounceSave(connector.token, 'topCoins', 3000, () => {
-        config.saveSettings({ token: connector.token, topCoins: connector.stats.topCoins });
-    });
+    // (the top list is not saved in settings.topCoins: that field holds the overlay's settings - title, style,
+    // limit - and the list is reset at every live anyway)
 
+    // a new record keeps the overlay's own settings (custom title, font): they were lost at each new record
+    const keepDisplay = (prev) => {
+        const o = {};
+        if (prev) ['customTitle', 'font', 'title', 'style'].forEach(k => { if (prev[k] !== undefined) o[k] = prev[k]; });
+        return o;
+    };
     if (unitPrice > (connector.stats.topGift?.coins || 0)) {
         connector.stats.topGift = {
+            ...keepDisplay(connector.stats.topGift),
             userId: data.userId,
             uniqueId: data.uniqueId,
             nickname: data.nickname,
@@ -469,6 +475,7 @@ function handleNewGifts(connector, data, count) {
     const comboCount = parseInt(data.repeatCount, 10) || count;
     if (comboCount > (connector.stats.topStreak?.count || 0)) {
         connector.stats.topStreak = {
+            ...keepDisplay(connector.stats.topStreak),
             userId: data.userId,
             uniqueId: data.uniqueId,
             nickname: data.nickname,
@@ -814,12 +821,6 @@ function registerEvents(tiktokConnection, connector) {
             .sort((a, b) => b.count - a.count)
             .slice(0, limitLikes);
 
-        if (!connector.isSimulation) debounceSave(connector.token, 'topLikes', 5000, () => {
-            config.saveSettings({
-                token: connector.token,
-                topLikes: connector.stats.topLikes
-            });
-        });
 
         broadcastStats(connector);
 

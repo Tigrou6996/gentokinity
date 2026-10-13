@@ -898,7 +898,7 @@ function setupSocketListeners() {
             const btn = modal.querySelector('#btn-take-over'); // Use specific ID or querySelector
 
             if (title) title.textContent = 'Session terminée';
-            if (p) p.innerHTML = data.message || 'Session active ailleurs.';
+            if (p) p.textContent = (data && data.message) || 'Session active ailleurs.';
             // Change button behavior since we are kicked out
             if (btn) {
                 btn.textContent = 'Recharger la page';
@@ -1581,7 +1581,7 @@ function applyConfigUI(config) {
         const lge = document.getElementById('likes-goal-enabled');
         if (lge && config.likesGoal) {
             lge.checked = config.likesGoal.enabled || false;
-            document.getElementById('likes-goal-amount').value = config.likesGoal.goal || 10000;
+            document.getElementById('likes-goal-amount').value = config.likesGoal.goalStep || config.likesGoal.initialGoal || config.likesGoal.goal || 10000; // the configured step, not the target reached during a live
             document.getElementById('likes-goal-title').value = config.likesGoal.title || '';
 
             // Restore Font
@@ -3667,6 +3667,7 @@ async function saveNewAction(e) {
         if (alt) prefix += '!';
         if (shift) prefix += '+';
 
+        if (!key) { showToast('Choisissez une touche à appuyer.', 'error'); return; }
         action.key = prefix + key;
         action.duration = parseInt(document.querySelector('#f-duration').value) || 100;
     }
@@ -3719,7 +3720,9 @@ async function saveNewAction(e) {
     if (action.type === 'sound') {
         action.soundName = document.querySelector('#f-sound-name').value;
         action.soundUrl = document.querySelector('#f-sound-url').value;
-        action.volume = document.querySelector('#f-sound-volume').value;
+        if (!action.soundUrl) { showToast('Choisissez un son dans la bibliothèque.', 'error'); return; }
+        // a number (a text "50" was ignored by the player until the server restarted)
+        action.volume = Math.min(Math.max(parseInt(document.querySelector('#f-sound-volume').value, 10) || 0, 0), 100);
     }
 
     if (editId) {
@@ -3758,9 +3761,11 @@ async function saveNewEvent(e) {
     const editIdInput = document.querySelector('#event-edit-id');
     const editId = editIdInput ? editIdInput.value : null;
 
+    // editing keeps the event's on / off state (it used to be switched back on silently)
+    const existingEvent = editId ? (currentEvents || []).find(ev => ev.id === editId) : null;
     const event = {
         id: editId || 'evt_' + Date.now(),
-        active: true,
+        active: existingEvent ? existingEvent.active !== false : true,
         who: document.querySelector('#event-who').value,
         triggerType: document.querySelector('#event-trigger-type').value,
         actions: Array.from(document.querySelectorAll('#event-action-list input[type="checkbox"]:checked')).map(chk => chk.value)
@@ -3843,7 +3848,7 @@ async function saveNewEvent(e) {
             return evt.minLevel === event.minLevel;
         }
 
-        if (event.triggerType === 'follow' || event.triggerType === 'share' || event.triggerType === 'join' || event.triggerType === 'subscribe') {
+        if (event.triggerType === 'follow' || event.triggerType === 'share' || event.triggerType === 'member' || event.triggerType === 'subscribe') {
             return true;
         }
 
@@ -6643,7 +6648,7 @@ document.querySelector('#form-quick-sound').onsubmit = async (e) => {
     const triggerType = document.querySelector('#qs-trigger-type').value;
     const soundName = document.querySelector('#qs-sound-name').value;
     const soundUrl = document.querySelector('#qs-sound-url').value;
-    const volume = document.querySelector('#qs-volume').value;
+    const volume = Math.min(Math.max(parseInt(document.querySelector('#qs-volume').value, 10) || 0, 0), 100);
 
     // Validate gift selection if trigger is gift
     if (triggerType === 'gift') {
@@ -9309,9 +9314,10 @@ async function loadHistoryList() {
 window.showRankingOverlayUrls = () => {
     const token = getToken();
     const urls = [
-        { name: 'Légendes (Grille)', url: `https://tiktok.gentok.fr/overlay/legends?token=${token}&period=${rankingPeriod}` },
-        { name: 'Top Pièces (Liste)', url: `https://tiktok.gentok.fr/overlay/top-coins?token=${token}&period=${rankingPeriod}` },
-        { name: 'Top Likes (Liste)', url: `https://tiktok.gentok.fr/overlay/top-likes?token=${token}&period=${rankingPeriod}` }
+        // (the old links pointed to /overlay/legends, which doesn't exist, and to the session's #1 only)
+        { name: 'Légendes (cadeau affiché)', url: `https://tiktok.gentok.fr/overlay/gift_legend.html?token=${token}&period=${rankingPeriod}` },
+        { name: 'Top Pièces (Liste)', url: `https://tiktok.gentok.fr/overlay/leaderboard?type=coins&token=${token}&period=${rankingPeriod}` },
+        { name: 'Top Likes (Liste)', url: `https://tiktok.gentok.fr/overlay/leaderboard?type=likes&token=${token}&period=${rankingPeriod}` }
     ];
 
     let html = '<div style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">';

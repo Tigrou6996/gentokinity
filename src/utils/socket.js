@@ -86,9 +86,13 @@ function initSocket(server) {
                 // The open desktop app is not a duplicate: the header badge shows it and Cloud mode uses both.
                 const others = clientsByToken[token].dashboard.filter(id => id !== socket.id && io.sockets.sockets.get(id));
                 clientsByToken[token].dashboard = others.concat(socket.id);
-                socket.join(`room:${token}`);
-                if (others.length > 0) socket.emit('session_duplicate', { message: 'Une session est déjà ouverte dans un autre onglet.' });
-                else socket.emit('session_active');
+                if (others.length > 0) {
+                    // not in the live room until "Prendre la main": this tab plays nothing twice meanwhile
+                    socket.emit('session_duplicate', { message: 'Une session est déjà ouverte dans un autre onglet.' });
+                } else {
+                    socket.join(`room:${token}`);
+                    socket.emit('session_active');
+                }
             }
 
             // [NEW] Send current session stats (live or persistent) immediately on identification
@@ -117,6 +121,7 @@ function initSocket(server) {
                 }
             });
             clientsByToken[token].dashboard = [socket.id];
+            socket.join(`room:${token}`);
 
             // 2. [INVERSE] Kick App if it was master
             if (clientsByToken[token].app.length > 0) {
@@ -374,6 +379,9 @@ function initSocket(server) {
 
                 // If it was the last app client, notify dashboards
                 if (identifiedType === 'app' && prevAppCount > 0 && clientsByToken[identifiedToken].app.length === 0) {
+                    // the copy of the app's live data is over: overlays fall back on the saved settings
+                    // (an old goal / old stats were served forever, even during a later Cloud live)
+                    delete socketCache[identifiedToken];
                     delete appInfoByToken[identifiedToken];
                     io.to(`room:${identifiedToken}`).emit('app_status', 'offline');
                     io.to(`room:${identifiedToken}`).emit('app_info', { connected: false });
@@ -437,18 +445,16 @@ async function sendInitialStats(socket, token) {
             }
         }
 
-        socket.emit('session_stats', stats);
-        socket.emit('initialLastEvents', lastEvents);
-
-        // [NEW] Use cache for likes goal too if available
+        // Likes goal first, and also when it is disabled: an overlay that received the stats without any goal
+        // used to show a default "x / 10000" bar for a goal the streamer had turned off
         let finalLikesGoal = settings.likesGoal;
         if (socketCache[token] && socketCache[token].likesGoal) {
             finalLikesGoal = socketCache[token].likesGoal;
         }
+        if (finalLikesGoal) socket.emit('likes_goal_update', finalLikesGoal);
 
-        if (finalLikesGoal && finalLikesGoal.enabled) {
-            socket.emit('likes_goal_update', finalLikesGoal);
-        }
+        socket.emit('session_stats', stats);
+        socket.emit('initialLastEvents', lastEvents);
     } catch (e) {
         console.error('Error sending initial stats:', e);
     }

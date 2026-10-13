@@ -119,11 +119,13 @@
             }
         });
 
-        // Also handle initial state
+        // Initial state: the last gift is shown once when the overlay opens. The server sends this list again on
+        // every dashboard save and reconnection, which made an old gift pop up again on stream.
+        let initialShown = false;
         socket.on('initialLastEvents', (events) => {
-            if (events && events.gift) {
-                addGift(events.gift);
-            }
+            if (initialShown) return;
+            initialShown = true;
+            if (events && events.gift) addGift(events.gift);
         });
 
         function addGift(data) {
