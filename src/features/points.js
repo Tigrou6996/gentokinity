@@ -34,6 +34,11 @@ const buffers = new Map();       // token -> Map(uniqueId -> pending)
 const userCountCache = new Map(); // token -> { count, at }
 let flushTimer = null;
 
+// Viewers' points are kept per account, or per account + scene for an independent scene (see config.pointsScope).
+// A scope key is "<token>" or "<token>#scene:<sceneId>"; settings, overlays and the live connector use the token.
+const scopeOf = (token) => require('../config').pointsScope(token);
+const tokenOf = (key) => String(key || '').split('#scene:')[0];
+
 function getSettings(settings) {
     return { ...DEFAULT_SETTINGS, ...((settings && settings.points) || {}) };
 }
@@ -60,6 +65,7 @@ function round2(n) {
  */
 function award(token, user, amount, reason, stats = {}) {
     if (!token || !user || !user.uniqueId) return;
+    token = scopeOf(token);
     if (!buffers.has(token)) buffers.set(token, new Map());
     const tokenBuf = buffers.get(token);
     const key = String(user.uniqueId);
@@ -84,6 +90,7 @@ function award(token, user, amount, reason, stats = {}) {
 }
 
 async function countUsers(token) {
+    token = scopeOf(token);
     const cached = userCountCache.get(token);
     if (cached && Date.now() - cached.at < 60000) return cached.count;
     const count = await ViewerPoints.countDocuments({ token });
@@ -91,14 +98,21 @@ async function countUsers(token) {
     return count;
 }
 
+// Writes the pending points of an account (all its scopes) or of one scope key
 async function flushToken(token) {
+    const keys = String(token).includes('#scene:') ? [token]
+        : Array.from(buffers.keys()).filter(k => k === token || k.startsWith(`${token}#scene:`));
+    for (const key of keys) await flushKey(key);
+}
+
+async function flushKey(token) {
     const tokenBuf = buffers.get(token);
     if (!tokenBuf || tokenBuf.size === 0) return;
     buffers.delete(token);
 
     try {
         const config = require('../config');
-        const settings = await config.getSettings(token);
+        const settings = await config.getSettings(tokenOf(token));
         const plan = getPlan(settings);
         // Free accounts keep up to maxPointsUsers viewers: beyond that only existing viewers progress
         const allowNew = (await countUsers(token)) < plan.maxPointsUsers;
@@ -151,7 +165,7 @@ async function announceLevelUps(token, transactions, factor) {
         { uniqueId: 1, nickname: 1, profilePictureUrl: 1, points: 1, levelPoints: 1 }).lean();
     const { emitEvent } = require('../utils/socket');
     // "Passage de niveau" events of the dashboard run on the live connector, when one is active
-    const connector = getConnector(token);
+    const connector = getConnector(tokenOf(token));
     let sent = 0;
     for (const d of docs) {
         const level = levelFromPoints(d.levelPoints, factor);
@@ -159,7 +173,7 @@ async function announceLevelUps(token, transactions, factor) {
         emitEvent('points_levelup', {
             uniqueId: d.uniqueId, nickname: d.nickname || d.uniqueId, profilePictureUrl: d.profilePictureUrl,
             level, points: Math.floor(d.points)
-        }, token);
+        }, tokenOf(token));
         if (connector && !connector.isStopping) {
             const actionManager = require('../actions/actionManager');
             actionManager.executeAction('level_up', {
@@ -171,11 +185,12 @@ async function announceLevelUps(token, transactions, factor) {
 }
 
 async function flushAll() {
-    for (const token of Array.from(buffers.keys())) await flushToken(token);
+    for (const key of Array.from(buffers.keys())) await flushKey(key);
 }
 
 /** Balance + level of one viewer (pending points included) */
 async function getViewer(token, uniqueId, settings) {
+    token = scopeOf(token);
     await flushToken(token);
     const s = getSettings(settings);
     const doc = await ViewerPoints.findOne({ token, uniqueId }).lean();
@@ -205,6 +220,7 @@ function decorate(doc, s, rank) {
 }
 
 async function getTop(token, limit = 10, settings, sortField = 'points') {
+    token = scopeOf(token);
     await flushToken(token);
     const s = getSettings(settings);
     const field = sortField === 'levelPoints' ? 'levelPoints' : 'points';
@@ -218,6 +234,7 @@ async function getTop(token, limit = 10, settings, sortField = 'points') {
  */
 async function spend(token, user, cost, reason = 'spend', details = '') {
     if (!cost || cost <= 0) return true;
+    token = scopeOf(token);
     await flushToken(token);
     const res = await ViewerPoints.findOneAndUpdate(
         { token, uniqueId: user.uniqueId, points: { $gte: cost } },
@@ -231,6 +248,7 @@ async function spend(token, user, cost, reason = 'spend', details = '') {
 
 /** Manual change from the dashboard (positive or negative) */
 async function adjust(token, uniqueId, delta, nickname) {
+    token = scopeOf(token);
     await flushToken(token);
     const update = { $inc: { points: delta }, $set: { lastActivity: new Date() }, $setOnInsert: { firstActivity: new Date(), nickname: nickname || uniqueId } };
     if (delta > 0) update.$inc.levelPoints = delta;
@@ -242,6 +260,7 @@ async function adjust(token, uniqueId, delta, nickname) {
 }
 
 async function reset(token) {
+    token = scopeOf(token);
     buffers.delete(token);
     userCountCache.delete(token);
     const r = await ViewerPoints.deleteMany({ token });
@@ -250,6 +269,7 @@ async function reset(token) {
 }
 
 module.exports = {
+    scopeOf, tokenOf,
     DEFAULT_SETTINGS, getSettings, award, flushToken, flushAll, getViewer, getTop, spend, adjust, reset,
     levelFromPoints, pointsForLevel, decorate, countUsers, setConnectorLookup
 };

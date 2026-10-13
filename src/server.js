@@ -1821,6 +1821,33 @@ app.post('/api/scenes/switch', async (req, res) => {
     }
 });
 
+// API: a scene keeps its own points / levels / gift history (independent) or uses the ones shared by all the scenes
+app.post('/api/scenes/independent', async (req, res) => {
+    const token = getRequestToken(req);
+    const { sceneId, independent } = req.body || {};
+    if (!token) return res.status(401).json({ error: 'Token manquant' });
+    if (!sceneId || typeof sceneId !== 'string') return res.status(400).json({ error: 'sceneId manquant' });
+    const previous = sceneSwitchQueue.get(token) || Promise.resolve();
+    let release;
+    const current = new Promise(r => { release = r; });
+    sceneSwitchQueue.set(token, previous.then(() => current));
+    await previous;
+    try {
+        // the points earned so far are written in the scope they were earned in
+        await require('./features/points').flushToken(token);
+        const value = await config.setSceneIndependent(token, sceneId, !!independent);
+        const { emitEvent } = require('./utils/socket');
+        emitEvent('sync_config', await getFullConfig(token), token);
+        emitEvent('remote_reload', { sceneId }, token);
+        notifyAppSessionChanged(token);
+        res.json({ success: true, sceneId, independent: value });
+    } catch (err) {
+        res.status(err.message === 'Scène introuvable' ? 404 : 500).json({ error: err.message });
+    } finally {
+        release();
+    }
+});
+
 // API: Copy the active scene into another one (actions, events with their links, TTS and points settings)
 app.post('/api/scenes/duplicate', async (req, res) => {
     const token = getRequestToken(req);

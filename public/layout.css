@@ -117,3 +117,11 @@ body.nav-railed #dashboard-container .nav-links a .beta-tag { flex-shrink: 0; fo
 /* the chosen option shown in the box: the badge keeps its size instead of stretching across */
 .custom-select-trigger span .premium-lock, .custom-select-trigger span span { flex: 0 0 auto; margin-right: 0; }
 .modal .custom-options { max-height: 320px; }
+
+/* Points / gift history shared between scenes or kept by the scene (Utilisateurs & Points, Classement) */
+.scene-sync { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 8px; }
+.scene-sync:empty { display: none; }
+.scene-sync-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 600; color: #34d399; background: rgba(52, 211, 153, .12); border: 1px solid rgba(52, 211, 153, .3); }
+.scene-sync-badge.own { color: #fbbf24; background: rgba(251, 191, 36, .12); border-color: rgba(251, 191, 36, .3); }
+.scene-sync-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--text-dim); cursor: pointer; margin: 0; }
+.scene-sync-toggle input { width: 15px; height: 15px; accent-color: var(--primary); }

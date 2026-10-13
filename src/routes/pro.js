@@ -57,18 +57,20 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
     // ---------------- Points ----------------
     app.get('/api/points/settings', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)
         res.json(points.getSettings(await config.getSettings(token)));
     }));
 
     app.get('/api/points/users', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)
         await points.flushToken(token);
         const s = points.getSettings(await config.getSettings(token));
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 25, 1), 100);
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const sortField = SORT_FIELDS[req.query.sort] || 'points';
         const order = req.query.order === 'asc' ? 1 : -1;
-        const filter = { token };
+        const filter = { token: points.scopeOf(token) };
         if (req.query.search) {
             const re = new RegExp(escapeRegex(String(req.query.search).replace(/^@/, '').slice(0, 50)), 'i');
             filter.$or = [{ uniqueId: re }, { nickname: re }];
@@ -91,6 +93,7 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
     // Spreadsheet export (Excel / Google Sheets). Cells starting with = + - @ are prefixed so they are never run as formulas.
     app.get('/api/points/export.csv', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)
         await points.flushToken(token);
         const s = points.getSettings(await config.getSettings(token));
         const cell = (v) => {
@@ -102,7 +105,7 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename="gentok-points.csv"');
         res.write('\uFEFF' + ['uniqueId', 'nickname', 'points', 'levelPoints', 'level', 'coins', 'gifts', 'likes', 'chats', 'shares', 'follows', 'subs', 'watchMinutes', 'firstActivity', 'lastActivity'].join(';') + '\n');
-        const cursor = ViewerPoints.find({ token }).sort({ levelPoints: -1 }).lean().cursor();
+        const cursor = ViewerPoints.find({ token: points.scopeOf(token) }).sort({ levelPoints: -1 }).lean().cursor();
         for await (const d of cursor) {
             const st = d.stats || {};
             res.write([d.uniqueId, d.nickname, Math.floor(d.points || 0), Math.floor(d.levelPoints || 0), points.levelFromPoints(d.levelPoints || 0, s.levelFactor),
@@ -114,10 +117,11 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
 
     app.get('/api/points/transactions', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)
         await points.flushToken(token);
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-        const filter = { token };
+        const filter = { token: points.scopeOf(token) };
         if (req.query.search) filter.uniqueId = new RegExp(escapeRegex(String(req.query.search).replace(/^@/, '').slice(0, 50)), 'i');
         const [total, items] = await Promise.all([
             PointTransaction.countDocuments(filter),
@@ -129,6 +133,7 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
     // Public for overlays (token in the URL, like every overlay)
     app.get('/api/points/top', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
         const sort = req.query.sort === 'level' ? 'levelPoints' : 'points';
         res.json(await points.getTop(token, limit, await config.getSettings(token), sort));
@@ -136,6 +141,7 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
 
     app.post('/api/points/adjust', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)
         const uniqueId = String(req.body.uniqueId || '').replace(/^@/, '').trim();
         const delta = Number(req.body.delta);
         if (!uniqueId || !Number.isFinite(delta) || delta === 0) return res.status(400).json({ error: 'Paramètres invalides' });
@@ -145,6 +151,7 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
 
     app.post('/api/points/reset', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)
         const deleted = await points.reset(token);
         res.json({ success: true, deleted });
     }));

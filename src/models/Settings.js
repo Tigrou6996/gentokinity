@@ -10,6 +10,7 @@ const SettingsSchema = new mongoose.Schema({
         id: String,
         title: String,
         isPreset: { type: Boolean, default: false },
+        independent: { type: Boolean, default: false }, // own points / levels / gift history instead of the shared ones
         likesGoal: { type: Object, default: null }, // [NEW] Per-scene Likes Goal
         topGift: { type: Object, default: null }, // [NEW] Per-scene Top Gift
         topStreak: { type: Object, default: null }, // [NEW] Per-scene Top Streak
@@ -18,7 +19,7 @@ const SettingsSchema = new mongoose.Schema({
         autoResetTopStats: { type: Boolean, default: false }, // [NEW] Per-scene Auto Reset
         autoResetLastX: { type: Boolean, default: false }, // [NEW] Per-scene Auto Reset
         tts: { type: Object, default: null },    // per-scene TTS settings (voice, what is read...)
-        points: { type: Object, default: null }  // per-scene points rules (the viewers' points stay shared)
+        points: { type: Object, default: null }  // points rules of an independent scene
     }], // [NEW] Persisted scenes list
 
     // [GLOBAL FALLBACKS] Root-level settings when no scene is active

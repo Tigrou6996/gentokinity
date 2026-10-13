@@ -7,11 +7,17 @@ const { isPremiumActive } = require('./features/plans');
 let buildEnv = {};
 try { buildEnv = require('./build-env.json'); } catch (e) { }
 
-// Settings that each scene keeps for itself (on top of its actions / events and its goals / top stats).
+// Settings that each scene keeps for itself (on top of its actions / events and its likes goal).
 // A scene without its own copy yet inherits the settings in use when it is first opened.
-const SCENE_OWN_SETTINGS = ['tts', 'points'];
+const SCENE_OWN_SETTINGS = ['tts'];
+// Points rules, viewers' points / levels and gift history (top gift, top streak, top coins / likes) are the same
+// in every scene, stored at the root of the document. A scene marked "independent" keeps its own copy of these
+// in its slot (and its own viewers' balances, see features/points.js).
+const SHARED_FIELDS = ['topGift', 'topStreak', 'topCoins', 'topLikes', 'autoResetTopStats', 'autoResetLastX', 'points'];
 // Per-scene values (stats / goals) and every field saveSettings may write
 const SCENE_STATS_FIELDS = ['likesGoal', 'topGift', 'topStreak', 'topCoins', 'topLikes', 'autoResetTopStats', 'autoResetLastX'];
+const sceneOf = (scenes, id) => (id && Array.isArray(scenes) ? scenes.find(sc => sc && sc.id === id) : null) || null;
+const isIndependent = (scenes, id) => !!(sceneOf(scenes, id) || {}).independent;
 const SAVED_FIELDS = ['username', 'ip', 'activeSceneId', 'scenes', 'minecraft', 'obs', 'language', 'runMode', 'streamerbot',
     'points', 'spotify', 'tts', 'lastEvents', ...SCENE_STATS_FIELDS];
 const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
@@ -264,24 +270,25 @@ module.exports = {
             if (settings.topStreak) newSession.topStreak = { ...newSession.topStreak, ...settings.topStreak };
             if (settings.topCoins) newSession.topCoins = { ...newSession.topCoins, ...settings.topCoins };
             if (settings.topLikes) newSession.topLikes = { ...newSession.topLikes, ...settings.topLikes };
+            if (settings.autoResetTopStats !== undefined) newSession.autoResetTopStats = !!settings.autoResetTopStats;
+            if (settings.autoResetLastX !== undefined) newSession.autoResetLastX = !!settings.autoResetLastX;
 
-            // [FIX] Scene Isolation: If a scene is active, it owns its stats (likesGoal, top stats).
-            // We ignore root settings for these fields to avoid data "leaking" between scenes.
+            // The active scene's own values: its likes goal and TTS always, the shared values (points rules,
+            // gift history) only when the scene is independent
             if (activeSceneId) {
                 const activeScene = (settings.scenes || []).find(sc => sc.id === activeSceneId);
                 if (activeScene) {
-                    const defaults = getSessionDefaults();
-                    // Merge scene-specific overrides onto the already loaded root settings
                     if (activeScene.likesGoal) newSession.likesGoal = { ...newSession.likesGoal, ...activeScene.likesGoal };
-                    if (activeScene.topGift) newSession.topGift = { ...newSession.topGift, ...activeScene.topGift };
-                    if (activeScene.topStreak) newSession.topStreak = { ...newSession.topStreak, ...activeScene.topStreak };
-                    if (activeScene.topCoins) newSession.topCoins = { ...newSession.topCoins, ...activeScene.topCoins };
-                    if (activeScene.topLikes) newSession.topLikes = { ...newSession.topLikes, ...activeScene.topLikes };
-
-                    if (activeScene.autoResetTopStats !== undefined) newSession.autoResetTopStats = activeScene.autoResetTopStats;
-                    if (activeScene.autoResetLastX !== undefined) newSession.autoResetLastX = activeScene.autoResetLastX;
                     if (activeScene.tts) newSession.tts = mergeTts(newSession.tts, activeScene.tts);
-                    if (activeScene.points) newSession.points = { ...(newSession.points || {}), ...activeScene.points };
+                    if (activeScene.independent) {
+                        if (activeScene.topGift) newSession.topGift = { ...newSession.topGift, ...activeScene.topGift };
+                        if (activeScene.topStreak) newSession.topStreak = { ...newSession.topStreak, ...activeScene.topStreak };
+                        if (activeScene.topCoins) newSession.topCoins = { ...newSession.topCoins, ...activeScene.topCoins };
+                        if (activeScene.topLikes) newSession.topLikes = { ...newSession.topLikes, ...activeScene.topLikes };
+                        if (activeScene.autoResetTopStats !== undefined) newSession.autoResetTopStats = activeScene.autoResetTopStats;
+                        if (activeScene.autoResetLastX !== undefined) newSession.autoResetLastX = activeScene.autoResetLastX;
+                        if (activeScene.points) newSession.points = { ...(newSession.points || {}), ...activeScene.points };
+                    }
                 }
             }
             // Global events remain global
@@ -361,18 +368,19 @@ module.exports = {
             if (result.activeSceneId && result.scenes) {
                 const activeScene = result.scenes.find(sc => sc.id === result.activeSceneId);
                 if (activeScene) {
-                    // result already contains root-level settings from the spread above.
-                    // We only overlay scene-specific overrides if they exist.
+                    // result already contains root-level (shared) settings from the spread above.
+                    // The scene's own values are laid over them (shared ones only for an independent scene).
                     if (activeScene.likesGoal) result.likesGoal = { ...result.likesGoal, ...activeScene.likesGoal };
-                    if (activeScene.topGift) result.topGift = { ...result.topGift, ...activeScene.topGift };
-                    if (activeScene.topStreak) result.topStreak = { ...result.topStreak, ...activeScene.topStreak };
-                    if (activeScene.topCoins) result.topCoins = { ...result.topCoins, ...activeScene.topCoins };
-                    if (activeScene.topLikes) result.topLikes = { ...result.topLikes, ...activeScene.topLikes };
-
-                    if (activeScene.autoResetTopStats !== undefined) result.autoResetTopStats = activeScene.autoResetTopStats;
-                    if (activeScene.autoResetLastX !== undefined) result.autoResetLastX = activeScene.autoResetLastX;
                     if (activeScene.tts) result.tts = mergeTts(result.tts, activeScene.tts);
-                    if (activeScene.points) result.points = { ...(result.points || {}), ...activeScene.points };
+                    if (activeScene.independent) {
+                        if (activeScene.topGift) result.topGift = { ...result.topGift, ...activeScene.topGift };
+                        if (activeScene.topStreak) result.topStreak = { ...result.topStreak, ...activeScene.topStreak };
+                        if (activeScene.topCoins) result.topCoins = { ...result.topCoins, ...activeScene.topCoins };
+                        if (activeScene.topLikes) result.topLikes = { ...result.topLikes, ...activeScene.topLikes };
+                        if (activeScene.autoResetTopStats !== undefined) result.autoResetTopStats = activeScene.autoResetTopStats;
+                        if (activeScene.autoResetLastX !== undefined) result.autoResetLastX = activeScene.autoResetLastX;
+                        if (activeScene.points) result.points = { ...(result.points || {}), ...activeScene.points };
+                    }
                 }
             }
         }
@@ -419,6 +427,43 @@ module.exports = {
         return (token && _sessions.get(token)) || getSessionDefaults();
     },
 
+    SHARED_FIELDS,
+    isSceneIndependent(token, sceneId) {
+        const s = token && _sessions.get(token);
+        return !!s && isIndependent(s.scenes, sceneId === undefined ? s.activeSceneId : sceneId);
+    },
+
+    // Key of the viewers' points: the account, or the account + scene when the active scene is independent
+    pointsScope(token) {
+        if (!token || String(token).includes('#scene:')) return token;
+        const s = _sessions.get(token);
+        return s && s.activeSceneId && isIndependent(s.scenes, s.activeSceneId) ? `${token}#scene:${s.activeSceneId}` : token;
+    },
+
+    /**
+     * Makes a scene keep its own points rules, viewers' points / levels and gift history (independent = true),
+     * or use the ones shared by all the scenes again (false). A scene that becomes independent starts from a
+     * copy of the shared gift history and points rules; its viewers' balances start at zero.
+     */
+    async setSceneIndependent(token, sceneId, independent) {
+        if (!token || !sceneId) throw new Error('Scène manquante');
+        const doc = await Settings.findOne({ token }).select(['scenes', ...SHARED_FIELDS].join(' ')).lean();
+        const idx = doc && Array.isArray(doc.scenes) ? doc.scenes.findIndex(sc => sc.id === sceneId) : -1;
+        if (idx === -1) throw new Error('Scène introuvable');
+        const set = { [`scenes.${idx}.independent`]: !!independent };
+        if (independent && !doc.scenes[idx].independent) {
+            const defaults = getSessionDefaults();
+            for (const k of SHARED_FIELDS) {
+                const v = doc[k] !== undefined && doc[k] !== null ? doc[k] : (k === 'points' ? {} : defaults[k]);
+                set[`scenes.${idx}.${k}`] = clone(v);
+            }
+        }
+        await Settings.updateOne({ token, [`scenes.${idx}.id`]: sceneId }, { $set: set });
+        delete _settingsCache[token];
+        await this.loadSession(token);
+        return !!independent;
+    },
+
     async getSessionFor(token) {
         if (!token) return getSession();
         if (!_sessions.has(token)) await this.loadSession(token);
@@ -445,30 +490,30 @@ module.exports = {
         const s = _sessions.get(t);
         const previousSceneId = s.activeSceneId;
         const isSwitching = data.activeSceneId !== undefined && data.activeSceneId !== previousSceneId;
+        const wasIndependent = isIndependent(s.scenes, previousSceneId);
 
         // [FIX] If switching scenes, save current state to the OLD scene before clearing session stats
         if (isSwitching && previousSceneId) {
             const prevIndex = s.scenes.findIndex(sc => sc.id === previousSceneId);
             if (prevIndex !== -1) {
-                s.scenes[prevIndex].likesGoal = JSON.parse(JSON.stringify(s.likesGoal));
-                s.scenes[prevIndex].topGift = JSON.parse(JSON.stringify(s.topGift));
-                s.scenes[prevIndex].topStreak = JSON.parse(JSON.stringify(s.topStreak));
-                s.scenes[prevIndex].topCoins = JSON.parse(JSON.stringify(s.topCoins));
-                s.scenes[prevIndex].topLikes = JSON.parse(JSON.stringify(s.topLikes));
-                s.scenes[prevIndex].autoResetTopStats = s.autoResetTopStats;
-                s.scenes[prevIndex].autoResetLastX = s.autoResetLastX;
+                s.scenes[prevIndex].likesGoal = clone(s.likesGoal);
                 for (const k of SCENE_OWN_SETTINGS) s.scenes[prevIndex][k] = clone(s[k]);
+                // an independent scene keeps its gift history / points rules; the shared ones are already at the root
+                if (wasIndependent) for (const k of SHARED_FIELDS) s.scenes[prevIndex][k] = clone(s[k]);
             }
 
-            // Reset current session stats to defaults (they will be overwritten by loadSession if the new scene has its own)
+            // The likes goal is the scene's own: back to the defaults (loadSession then reads the new scene's)
             const defaults = getSessionDefaults();
-            s.likesGoal = JSON.parse(JSON.stringify(defaults.likesGoal));
-            s.topGift = JSON.parse(JSON.stringify(defaults.topGift));
-            s.topStreak = JSON.parse(JSON.stringify(defaults.topStreak));
-            s.topCoins = JSON.parse(JSON.stringify(defaults.topCoins));
-            s.topLikes = JSON.parse(JSON.stringify(defaults.topLikes));
-            s.autoResetTopStats = defaults.autoResetTopStats;
-            s.autoResetLastX = defaults.autoResetLastX;
+            s.likesGoal = clone(defaults.likesGoal);
+            // Leaving an independent scene: the shared values come back
+            if (wasIndependent) {
+                const root = await Settings.findOne({ token: t }).select(SHARED_FIELDS.join(' ')).lean() || {};
+                for (const k of SHARED_FIELDS) {
+                    if (k === 'points') s.points = root.points || {};
+                    else if (typeof defaults[k] === 'object' && defaults[k] !== null) s[k] = { ...clone(defaults[k]), ...(root[k] || {}) };
+                    else s[k] = root[k] !== undefined ? root[k] : defaults[k];
+                }
+            }
         }
 
         if (data.username) s.username = data.username;
@@ -509,28 +554,30 @@ module.exports = {
         if (data.lastEvents !== undefined) s.lastEvents = data.lastEvents;
         if (data.likesGoal) s.likesGoal = { ...s.likesGoal, ...data.likesGoal };
 
+        // The fields kept by the active scene itself: its likes goal and TTS, plus the shared ones if it is independent
+        const activeIndependent = isIndependent(s.scenes, s.activeSceneId);
+        const ownKeys = new Set(['likesGoal', ...SCENE_OWN_SETTINGS, ...(activeIndependent ? SHARED_FIELDS : [])]);
+
         // [PERSISTENCE] If we are NOT switching and have an active scene, update its specific slot too
         if (!isSwitching && s.activeSceneId) {
             const activeIndex = s.scenes.findIndex(sc => sc.id === s.activeSceneId);
             if (activeIndex !== -1) {
-                if (data.likesGoal) s.scenes[activeIndex].likesGoal = s.likesGoal;
-                if (data.topGift !== undefined) s.scenes[activeIndex].topGift = s.topGift;
-                if (data.topStreak !== undefined) s.scenes[activeIndex].topStreak = s.topStreak;
-                if (data.topCoins !== undefined) s.scenes[activeIndex].topCoins = s.topCoins;
-                if (data.topLikes !== undefined) s.scenes[activeIndex].topLikes = s.topLikes;
-                if (data.autoResetTopStats !== undefined) s.scenes[activeIndex].autoResetTopStats = s.autoResetTopStats;
-                if (data.autoResetLastX !== undefined) s.scenes[activeIndex].autoResetLastX = s.autoResetLastX;
-                for (const k of SCENE_OWN_SETTINGS) if (data[k]) s.scenes[activeIndex][k] = clone(s[k]);
+                for (const k of ownKeys) if (data[k] !== undefined && data[k] !== null) s.scenes[activeIndex][k] = clone(s[k]);
             }
         }
 
-        // Opening a scene: it uses its own TTS / points settings, or keeps a copy of the current ones
+        // Opening a scene: it uses its own TTS, or keeps a copy of the current one. An independent scene also uses
+        // its own points rules / gift history (a copy of the shared ones the first time).
         if (isSwitching && s.activeSceneId) {
             const idx = s.scenes.findIndex(sc => sc.id === s.activeSceneId);
             if (idx !== -1) {
                 const scene = s.scenes[idx];
                 if (scene.tts) s.tts = mergeTts(s.tts, clone(scene.tts)); else scene.tts = clone(s.tts);
-                if (scene.points) s.points = { ...(s.points || {}), ...clone(scene.points) }; else scene.points = clone(s.points || {});
+                if (scene.independent) {
+                    for (const k of SHARED_FIELDS) {
+                        if (scene[k] === undefined || scene[k] === null) scene[k] = clone(k === 'points' ? (s.points || {}) : s[k]);
+                    }
+                }
             }
         }
 
@@ -538,10 +585,16 @@ module.exports = {
         // desktop app saving its live stats every few seconds) undo what was changed meanwhile on the website.
         const touched = new Set(Object.keys(data).filter(k => data[k] !== undefined && SAVED_FIELDS.includes(k)));
         if (isSwitching) {
-            ['activeSceneId', 'scenes', 'tts', 'points', ...SCENE_STATS_FIELDS].forEach(k => touched.add(k));
+            ['activeSceneId', 'scenes', 'tts', 'likesGoal'].forEach(k => touched.add(k));
+            // the shared values are written back only when they are the ones in memory
+            if (!activeIndependent) SHARED_FIELDS.forEach(k => touched.add(k));
         }
         const $set = {};
-        touched.forEach(k => { $set[k] = k === 'runMode' ? (s.runMode || 'auto') : s[k]; });
+        touched.forEach(k => {
+            // in an independent scene, its gift history / points rules never overwrite the shared ones
+            if (activeIndependent && SHARED_FIELDS.includes(k)) return;
+            $set[k] = k === 'runMode' ? (s.runMode || 'auto') : s[k];
+        });
 
         // Premium is only written when explicitly given: the Stripe webhook / expiry job (other process)
         // own it, and a stale in-memory value must never overwrite a payment made meanwhile.
@@ -551,7 +604,7 @@ module.exports = {
 
         // The active scene's own copy of the values changed here, written in its slot only (not the whole list)
         if (!touched.has('scenes') && !isSwitching && s.activeSceneId) {
-            const slotKeys = [...SCENE_STATS_FIELDS, ...SCENE_OWN_SETTINGS].filter(k => touched.has(k));
+            const slotKeys = Array.from(ownKeys).filter(k => touched.has(k));
             if (slotKeys.length) {
                 const doc = await Settings.findOne({ token: t }).select('scenes.id').lean();
                 const idx = doc && Array.isArray(doc.scenes) ? doc.scenes.findIndex(sc => sc.id === s.activeSceneId) : -1;

@@ -4601,6 +4601,48 @@ window.closeModal = (id) => {
 
 
 // Navigation Logic
+// Points, levels and gift history: shared by all the scenes, unless the active scene is marked independent
+function renderSceneSync(activeScene) {
+    document.querySelectorAll('.scene-sync').forEach(el => {
+        if (!activeScene) { el.innerHTML = ''; return; }
+        const own = !!activeScene.independent;
+        el.innerHTML = `
+            <span class="scene-sync-badge ${own ? 'own' : ''}"><i class="fas ${own ? 'fa-lock' : 'fa-link'}"></i> ${own
+                ? escapeHtml(`Propres à la scène « ${activeScene.title || 'Scène sans nom'} »`)
+                : 'Partagés entre toutes vos scènes'}</span>
+            <label class="scene-sync-toggle" title="Points, niveaux et historique des cadeaux séparés pour cette scène">
+                <input type="checkbox" ${own ? 'checked' : ''}> Scène indépendante
+            </label>`;
+        el.querySelector('input').addEventListener('change', (e) => setSceneIndependent(activeScene.id, e.target.checked, e.target));
+    });
+}
+
+async function setSceneIndependent(sceneId, independent, input) {
+    if (independent) {
+        const ok = await Swal.fire({
+            title: 'Rendre cette scène indépendante ?',
+            html: 'Elle gardera <b>ses propres</b> points, niveaux, règles de gain et historique des cadeaux (top cadeau, top série, top pièces / likes).<br><br>Elle part d\'une copie des réglages et de l\'historique actuels ; les points des spectateurs y repartent de zéro. Les autres scènes restent synchronisées entre elles.',
+            icon: 'question', showCancelButton: true, confirmButtonText: 'Oui, indépendante', cancelButtonText: 'Annuler'
+        });
+        if (!ok.isConfirmed) { if (input) input.checked = false; return; }
+    }
+    try {
+        const r = await fetch(`${getApiBase()}/api/scenes/independent`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('gentok_token'), sceneId, independent })
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+        showToast(independent ? 'Scène indépendante : points et historique propres à cette scène.' : 'Scène synchronisée : points et historique partagés entre toutes vos scènes.', 'success');
+        // the server also sends sync_config; reading it here keeps this tab right even if the socket is slow
+        const cfg = await fetch(`${getApiBase()}/api/config?token=${encodeURIComponent(localStorage.getItem('gentok_token') || '')}`, { cache: 'no-store' }).then(x => x.json()).catch(() => null);
+        if (cfg) applyConfigUI(cfg);
+        if (window.GentokPro && typeof window.GentokPro.onSection === 'function') window.GentokPro.onSection('points');
+    } catch (err) {
+        if (input) input.checked = !independent;
+        showToast(`Impossible : ${err.message}`, 'error');
+    }
+}
+
 window.showSection = (sectionId) => {
     // Check if section is locked (Premium only)
     const navItem = document.querySelector(`.nav-links a[href="#${sectionId}"]`)?.parentElement;
@@ -6361,6 +6403,8 @@ window.updateSceneUI = () => {
             ? `<i class="fas fa-layer-group"></i> ${escapeHtml(what)} de la scène « ${escapeHtml(activeScene.title)} »`
             : `<i class="fas fa-layer-group"></i> ${escapeHtml(what)} par défaut (aucune scène active)`;
     });
+
+    renderSceneSync(activeScene);
 
     // [NEW] Dynamically hide/show sidebar items based on active scene
     const sceneRequiredItems = document.querySelectorAll('.scene-required');
