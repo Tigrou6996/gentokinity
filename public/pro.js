@@ -768,21 +768,66 @@
 
     // ------------------------------------------------------------------ chat bot (TikTok account answering !score / !top)
     const Chatbot = {
+        state: null,
+        method() {
+            const r = document.querySelector('input[name="chatbot-method"]:checked');
+            return r ? r.value : 'app';
+        },
+        inApp: () => !!(window.electronAPI && window.electronAPI.chatbotLogin),
+        async appStatus() {
+            const box = document.getElementById('chatbot-app-status');
+            if (!box) return;
+            const login = document.getElementById('chatbot-app-login');
+            const logout = document.getElementById('chatbot-app-logout');
+            if (!this.inApp()) {
+                const appOn = this.state && this.state.appConnected;
+                box.innerHTML = appOn
+                    ? `<span class="ok"><i class="fas fa-desktop"></i> ${esc(t("Application Gentok ouverte : c'est elle qui enverra les messages."))}</span><span class="warn">${esc(t("Connectez le compte bot depuis l'application (même page)."))}</span>`
+                    : `<span class="warn"><i class="fas fa-triangle-exclamation"></i> ${esc(t("Ouvrez l'application Gentok sur votre PC pour connecter le compte bot ; elle doit rester ouverte pendant le live."))}</span>`;
+                login.hidden = true; logout.hidden = true;
+                return;
+            }
+            let logged = false;
+            try { logged = await window.electronAPI.chatbotStatus(); } catch (e) { }
+            box.innerHTML = logged
+                ? `<span class="ok"><i class="fas fa-circle-check"></i> ${esc(t('Compte bot connecté dans cette application'))}</span>`
+                : `<span class="off"><i class="fas fa-circle-xmark"></i> ${esc(t('Aucun compte bot connecté dans cette application'))}</span>`;
+            login.hidden = false; logout.hidden = !logged;
+            login.innerHTML = `<i class="fab fa-tiktok"></i> ${esc(t(logged ? 'Changer de compte bot' : 'Connecter le compte bot'))}`;
+        },
+        showMethod() {
+            const m = this.method();
+            document.getElementById('chatbot-app').hidden = m !== 'app';
+            document.getElementById('chatbot-euler').hidden = m !== 'euler';
+            document.getElementById('chatbot-euler-disconnect').hidden = m !== 'euler';
+            document.querySelectorAll('.chatbot-method').forEach(l => l.classList.toggle('on', l.querySelector('input').checked));
+            this.appStatus();
+        },
         render(c) {
             const st = document.getElementById('chatbot-status');
             if (!st) return;
+            this.state = c;
             const parts = [];
-            parts.push(c.connected ? `<span class="ok"><i class="fas fa-circle-check"></i> ${esc(t('Compte bot connecté'))} (sessionid ${esc(c.sessionHint)})</span>`
-                : `<span class="off"><i class="fas fa-circle-xmark"></i> ${esc(t('Aucun compte bot'))}</span>`);
             parts.push(c.enabled ? `<span class="ok">${esc(t('Réponses activées'))}</span>` : `<span class="off">${esc(t('Réponses désactivées'))}</span>`);
-            if (!c.signKey) parts.push(`<span class="warn"><i class="fas fa-triangle-exclamation"></i> ${esc(t("Clé Euler Stream absente sur ce serveur : TikTok refusera les messages."))}</span>`);
+            if (c.method === 'euler') {
+                parts.push(c.connected ? `<span class="ok"><i class="fas fa-circle-check"></i> ${esc(t('Compte bot connecté'))} (sessionid ${esc(c.sessionHint)})</span>`
+                    : `<span class="off"><i class="fas fa-circle-xmark"></i> ${esc(t('Aucun compte bot'))}</span>`);
+                if (!c.signKey) parts.push(`<span class="warn"><i class="fas fa-triangle-exclamation"></i> ${esc(t("Clé Euler Stream absente sur ce serveur : TikTok refusera les messages."))}</span>`);
+            }
             st.innerHTML = parts.join('');
+            const radio = document.querySelector(`input[name="chatbot-method"][value="${c.method === 'euler' ? 'euler' : 'app'}"]`);
+            if (radio) radio.checked = true;
             document.getElementById('chatbot-enabled').checked = !!c.enabled;
             document.getElementById('chatbot-scoreTemplate').value = c.scoreTemplate || '';
             document.getElementById('chatbot-topTemplate').value = c.topTemplate || '';
             document.getElementById('chatbot-minInterval').value = c.minInterval || 4;
             document.getElementById('chatbot-sessionId').value = '';
             document.getElementById('chatbot-ttTargetIdc').value = '';
+            if (!this.bound) {
+                this.bound = true;
+                document.querySelectorAll('input[name="chatbot-method"]').forEach(r => r.addEventListener('change', () => this.showMethod()));
+            }
+            this.showMethod();
         },
         async load() {
             try { this.render(await api('/api/chatbot')); } catch (e) { }
@@ -791,6 +836,7 @@
             try {
                 const body = {
                     enabled: document.getElementById('chatbot-enabled').checked,
+                    method: this.method(),
                     sessionId: document.getElementById('chatbot-sessionId').value.trim(),
                     ttTargetIdc: document.getElementById('chatbot-ttTargetIdc').value.trim(),
                     scoreTemplate: document.getElementById('chatbot-scoreTemplate').value,
@@ -801,6 +847,19 @@
                 this.render(await api('/api/chatbot', { method: 'POST', body }));
                 showToast(t('Compte bot enregistré'), 'success');
             } catch (e) { showToast(e.message, 'error'); }
+        },
+        async appLogin() {
+            if (!this.inApp()) return;
+            showToast(t('Connectez-vous au compte bot dans la fenêtre TikTok qui s\'ouvre.'), 'info');
+            const ok = await window.electronAPI.chatbotLogin();
+            showToast(ok ? t('Compte bot connecté') : t('Compte bot non connecté'), ok ? 'success' : 'error');
+            this.appStatus();
+        },
+        async appLogout() {
+            if (!this.inApp()) return;
+            await window.electronAPI.chatbotLogout();
+            showToast(t('Compte bot déconnecté'), 'success');
+            this.appStatus();
         },
         async test() {
             try {

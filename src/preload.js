@@ -37,5 +37,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onMinecraftStatus: (callback) => ipcRenderer.on('mc-status', (_event, status) => callback(status)),
 
     // [NEW] Discord RPC
-    updateRPC: (data) => ipcRenderer.invoke('update-rpc', data)
+    updateRPC: (data) => ipcRenderer.invoke('update-rpc', data),
+    // Chat bot account logged in inside the app (no Euler Stream key needed)
+    chatbotLogin: () => ipcRenderer.invoke('chatbot-login'),
+    chatbotLogout: () => ipcRenderer.invoke('chatbot-logout'),
+    chatbotStatus: () => ipcRenderer.invoke('chatbot-status'),
+    chatbotTest: (username, text) => ipcRenderer.invoke('chatbot-test', username, text)
 });

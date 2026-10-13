@@ -2135,6 +2135,22 @@
   "Ajouter au solde": "Add to balance",
   "Import…": "Importing…",
   "spectateurs importés": "viewers imported",
-  "Lignes invalides (500 max par envoi)": "Invalid rows (500 max per request)"
+  "Lignes invalides (500 max par envoi)": "Invalid rows (500 max per request)",
+  "Application Gentok": "Gentok app",
+  "Application Gentok ouverte : c'est elle qui enverra les messages.": "Gentok app open: it will send the messages.",
+  "Aucun compte bot connecté dans cette application": "No bot account logged in this app",
+  "Compte bot connecté dans cette application": "Bot account logged in this app",
+  "Compte bot déconnecté": "Bot account logged out",
+  "Connecter le compte bot": "Log in the bot account",
+  "Changer de compte bot": "Change bot account",
+  "Connectez le compte bot depuis l'application (même page).": "Log the bot account in from the app (same page).",
+  "Connectez-vous au compte bot dans la fenêtre TikTok qui s'ouvre.": "Log in to the bot account in the TikTok window that opens.",
+  "Euler Stream": "Euler Stream",
+  "Gentok · Compte bot TikTok": "Gentok · TikTok bot account",
+  "Le compte bot est connecté une fois dans l'application Gentok sur votre PC, qui écrit les messages dans le chat du live. Aucune clé, aucun cookie à copier. L'application doit être ouverte pendant le live.": "The bot account is logged in once in the Gentok app on your PC, which writes the messages in the live chat. No key, no cookie to copy. The app must be open during the live.",
+  "Le serveur envoie les messages avec les cookies du compte bot et une clé Euler Stream autorisée à écrire dans le chat. Fonctionne sans l'application.": "The server sends the messages with the bot account's cookies and a Euler Stream key allowed to write in the chat. Works without the app.",
+  "Ouvrez l'application Gentok sur votre PC pour connecter le compte bot ; elle doit rester ouverte pendant le live.": "Open the Gentok app on your PC to log in the bot account; it must stay open during the live.",
+  "Supprimer les cookies": "Delete the cookies",
+  "recommandé · gratuit": "recommended · free"
  }
 }

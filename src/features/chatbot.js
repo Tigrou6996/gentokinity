@@ -7,13 +7,20 @@
  * (its chat endpoint needs a key that allows it). Messages are rate-limited: TikTok mutes or restricts
  * accounts that post too fast.
  *
- * Settings (Settings.chatbot): { enabled, sessionId, ttTargetIdc, scoreTemplate, topTemplate, minInterval }
+ * Two ways to post (Settings.chatbot.method):
+ *  - 'app' (default): the Gentok desktop app types the message in the live chat, in a hidden TikTok window
+ *    logged in with the bot account (utils/tiktokWebChat.js). No Euler Stream key, no cookie to copy; the app
+ *    must be open on the streamer's PC.
+ *  - 'euler': the server posts with the bot account's cookies and the Euler Stream signing service.
+ *
+ * Settings (Settings.chatbot): { enabled, method, sessionId, ttTargetIdc, scoreTemplate, topTemplate, minInterval }
  */
 const config = require('../config');
 const logger = require('../utils/logger');
 
 const DEFAULTS = {
     enabled: false,
+    method: 'app',
     scoreTemplate: '@{nickname} tu as {points} {emoji} {currency} — niveau {level} ({xp} XP){rank}',
     topTemplate: '🏆 Top {currency} : {top}',
     minInterval: 4 // seconds between two bot messages
@@ -26,11 +33,15 @@ const bots = new Map(); // token -> { key, connection, queue: [], busy, lastAt }
 function getSettings(settings) {
     const c = { ...DEFAULTS, ...((settings && settings.chatbot) || {}) };
     c.minInterval = Math.min(Math.max(Number(c.minInterval) || DEFAULTS.minInterval, 2), 60);
+    // accounts set up before the app method existed keep Euler Stream
+    if (!settings || !settings.chatbot || !settings.chatbot.method) c.method = (c.sessionId && c.ttTargetIdc) ? 'euler' : 'app';
+    if (c.method !== 'euler') c.method = 'app';
     return c;
 }
 
 function isReady(c) {
-    return !!(c.enabled && c.sessionId && c.ttTargetIdc);
+    if (!c.enabled) return false;
+    return c.method === 'app' ? true : !!(c.sessionId && c.ttTargetIdc);
 }
 
 /** Public view of the settings (the session cookie never leaves the server) */
@@ -38,6 +49,8 @@ function publicSettings(settings) {
     const c = getSettings(settings);
     return {
         enabled: !!c.enabled,
+        method: c.method,
+        appConnected: false,
         connected: !!(c.sessionId && c.ttTargetIdc),
         sessionHint: c.sessionId ? `••••${String(c.sessionId).slice(-4)}` : '',
         scoreTemplate: c.scoreTemplate,
@@ -92,14 +105,54 @@ async function drain(token, bot, roomIdOf) {
     }
 }
 
+// 'app' method: the desktop app types the message (this process when it is the app, else the connected app)
+const appQueues = new Map(); // token -> { queue: [], busy, lastAt }
+function appSend(token, username, text) {
+    if (config.isAppMode) return require('../utils/tiktokWebChat').send(username, text);
+    const { isAppConnected, emitToDesktopApp } = require('../utils/socket');
+    if (!isAppConnected(token)) return Promise.reject(new Error('ouvrez l\'application Gentok sur votre PC (elle envoie les messages du bot)'));
+    emitToDesktopApp(token, 'chatbot_send', { username, text });
+    return Promise.resolve(true);
+}
+async function drainApp(token, q, usernameOf, roomIdOf) {
+    if (q.busy) return;
+    q.busy = true;
+    try {
+        while (q.queue.length) {
+            const { text, minInterval } = q.queue.shift();
+            const wait = q.lastAt + minInterval * 1000 - Date.now();
+            if (wait > 0) await new Promise(r => setTimeout(r, wait));
+            if (!roomIdOf()) break; // live stopped meanwhile
+            try {
+                await appSend(token, usernameOf(), text);
+            } catch (err) {
+                logger.warn(`⚠️ [${token.substring(0, 8)}] Bot chat : message non envoyé (${err.message}).`);
+                q.queue.length = 0;
+            }
+            q.lastAt = Date.now();
+        }
+    } finally {
+        q.busy = false;
+    }
+}
+
 /** Queues a message in the live chat (dropped when the bot is off, not set up, or already has messages waiting) */
 async function say(connector, settings, text) {
     try {
         if (!connector || connector.isSimulation || !text) return false;
         const c = getSettings(settings);
         if (!isReady(c)) return false;
-        const roomIdOf = () => (connector.connection && !connector.isStopping ? connector.connection.roomId : null);
+        const roomIdOf = () => (connector.connection && !connector.isStopping ? (connector.connection.roomId || connector.roomId || 'live') : null);
         if (!roomIdOf()) return false;
+        if (c.method === 'app') {
+            if (!appQueues.has(connector.token)) appQueues.set(connector.token, { queue: [], busy: false, lastAt: 0 });
+            const q = appQueues.get(connector.token);
+            if (q.queue.length >= MAX_QUEUE) return false;
+            q.queue.push({ text, minInterval: c.minInterval });
+            const usernameOf = () => (config.peekSession(connector.token).username || connector.username || '').replace(/^@/, '');
+            drainApp(connector.token, q, usernameOf, roomIdOf);
+            return true;
+        }
         const bot = await botFor(connector.token, c);
         if (bot.queue.length >= MAX_QUEUE) return false;
         bot.queue.push({ text, minInterval: c.minInterval });
@@ -139,6 +192,7 @@ function replyTop(connector, settings, pointsSettings, top, requestedBy) {
 
 function forget(token) {
     bots.delete(token);
+    appQueues.delete(token);
 }
 
 module.exports = { DEFAULTS, getSettings, publicSettings, say, replyScore, replyTop, forget, fill };

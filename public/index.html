@@ -2380,10 +2380,21 @@
                     <p class="pro-intro">Quand un spectateur tape <b>!score</b> ou <b>!top</b>, ce compte répond dans le chat du live, ex. « @lea tu as 1 250 🪙 points — niveau 7 ». Utilisez de préférence un <b>second compte</b> TikTok : un compte qui écrit trop vite peut être limité par TikTok.</p>
                     <div class="chatbot-card" id="chatbot-card">
                         <div class="chatbot-status" id="chatbot-status">Chargement…</div>
+                        <div class="chatbot-methods" role="radiogroup">
+                            <label class="chatbot-method"><input type="radio" name="chatbot-method" value="app"> <span><b>Application Gentok</b> <em class="cb-reco">recommandé · gratuit</em><small>Le compte bot est connecté une fois dans l'application Gentok sur votre PC, qui écrit les messages dans le chat du live. Aucune clé, aucun cookie à copier. L'application doit être ouverte pendant le live.</small></span></label>
+                            <label class="chatbot-method"><input type="radio" name="chatbot-method" value="euler"> <span><b>Euler Stream</b><small>Le serveur envoie les messages avec les cookies du compte bot et une clé Euler Stream autorisée à écrire dans le chat. Fonctionne sans l'application.</small></span></label>
+                        </div>
+                        <div id="chatbot-app" class="chatbot-app">
+                            <div id="chatbot-app-status" class="chatbot-status"></div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn-primary btn" id="chatbot-app-login" onclick="GentokPro.chatbot.appLogin()"><i class="fab fa-tiktok"></i> Connecter le compte bot</button>
+                                <button class="btn-secondary btn" id="chatbot-app-logout" onclick="GentokPro.chatbot.appLogout()"><i class="fas fa-right-from-bracket"></i> Déconnecter</button>
+                            </div>
+                        </div>
+                        <div id="chatbot-euler">
                         <div class="pro-form-grid">
                             <div class="pro-field"><label>Cookie <code>sessionid</code> du compte bot</label><input class="form-control" type="password" autocomplete="off" id="chatbot-sessionId" placeholder="Laisser vide pour garder l'actuel"></div>
                             <div class="pro-field"><label>Cookie <code>tt-target-idc</code></label><input class="form-control" type="text" autocomplete="off" id="chatbot-ttTargetIdc" placeholder="ex : useast2a"></div>
-                            <div class="pro-field"><label>Délai entre 2 messages (s)</label><input class="form-control" type="number" min="2" max="60" id="chatbot-minInterval"></div>
                         </div>
                         <details class="chatbot-help"><summary>Où trouver ces cookies ?</summary>
                             <ol>
@@ -2393,13 +2404,15 @@
                             </ol>
                             Ces cookies donnent accès au compte : ils restent sur le serveur Gentok et ne sont jamais réaffichés. Se déconnecter de TikTok dans ce navigateur les invalide.
                         </details>
+                        </div>
+                        <div class="pro-field" style="max-width:240px"><label>Délai entre 2 messages (s)</label><input class="form-control" type="number" min="2" max="60" id="chatbot-minInterval"></div>
                         <div class="pro-field"><label>Réponse à !score</label><input class="form-control" type="text" maxlength="200" id="chatbot-scoreTemplate"><small>{nickname} {points} {currency} {emoji} {level} {xp} {rank}</small></div>
                         <div class="pro-field"><label>Réponse à !top</label><input class="form-control" type="text" maxlength="200" id="chatbot-topTemplate"><small>{top} {currency} {emoji} {nickname}</small></div>
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <label class="d-flex align-items-center gap-2 me-2 mb-0"><input type="checkbox" id="chatbot-enabled"> Répondre dans le chat</label>
                             <button class="btn-primary btn" onclick="GentokPro.chatbot.save()"><i class="fas fa-save"></i> Enregistrer</button>
                             <button class="btn-secondary btn" onclick="GentokPro.chatbot.test()"><i class="fas fa-paper-plane"></i> Message de test</button>
-                            <button class="btn-secondary btn" onclick="GentokPro.chatbot.disconnect()"><i class="fas fa-right-from-bracket"></i> Déconnecter le compte</button>
+                            <button class="btn-secondary btn" id="chatbot-euler-disconnect" onclick="GentokPro.chatbot.disconnect()"><i class="fas fa-right-from-bracket"></i> Supprimer les cookies</button>
                         </div>
                     </div>
 

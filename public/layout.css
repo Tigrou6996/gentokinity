@@ -133,6 +133,15 @@ body.nav-railed #dashboard-container .nav-links a .beta-tag { flex-shrink: 0; fo
 .chatbot-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: .8rem; font-size: .8rem; font-weight: 600; }
 .chatbot-status span { padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .05); }
 .chatbot-status .ok { color: #34d399; } .chatbot-status .off { color: var(--text-dim); } .chatbot-status .warn { color: #fbbf24; }
+.chatbot-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .6rem; margin-bottom: .9rem; }
+.chatbot-method { display: flex; gap: .65rem; align-items: flex-start; padding: .75rem .85rem; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; margin: 0; }
+.chatbot-method.on { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.chatbot-method input { margin-top: .2rem; accent-color: var(--primary); }
+.chatbot-method b { font-size: .9rem; }
+.chatbot-method small { display: block; margin-top: .25rem; color: var(--text-dim); font-size: .78rem; line-height: 1.45; }
+.chatbot-method .cb-reco { font-style: normal; font-size: .7rem; font-weight: 700; margin-left: .35rem; padding: 1px 7px; border-radius: 99px; background: rgba(52, 211, 153, .14); color: #34d399; }
+.chatbot-app { margin-bottom: .9rem; }
+.chatbot-app[hidden], #chatbot-euler[hidden], .chatbot-card [hidden] { display: none !important; }
 .chatbot-help { font-size: .8rem; color: var(--text-dim); margin: .2rem 0 .8rem; }
 .chatbot-help summary { cursor: pointer; color: var(--text); }
 .chatbot-help ol { margin: .4rem 0 .4rem 1.1rem; padding: 0; }

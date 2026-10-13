@@ -2136,6 +2136,22 @@
   "Ajouter au solde": "Aggiungi al saldo",
   "Import…": "Importazione…",
   "spectateurs importés": "spettatori importati",
-  "Lignes invalides (500 max par envoi)": "Righe non valide (max 500 per invio)"
+  "Lignes invalides (500 max par envoi)": "Righe non valide (max 500 per invio)",
+  "Application Gentok": "App Gentok",
+  "Application Gentok ouverte : c'est elle qui enverra les messages.": "App Gentok aperta: invierà lei i messaggi.",
+  "Aucun compte bot connecté dans cette application": "Nessun account bot collegato in questa app",
+  "Compte bot connecté dans cette application": "Account bot collegato in questa app",
+  "Compte bot déconnecté": "Account bot scollegato",
+  "Connecter le compte bot": "Collega l'account bot",
+  "Changer de compte bot": "Cambia account bot",
+  "Connectez le compte bot depuis l'application (même page).": "Collega l'account bot dall'app (stessa pagina).",
+  "Connectez-vous au compte bot dans la fenêtre TikTok qui s'ouvre.": "Accedi all'account bot nella finestra TikTok che si apre.",
+  "Euler Stream": "Euler Stream",
+  "Gentok · Compte bot TikTok": "Gentok · Account bot TikTok",
+  "Le compte bot est connecté une fois dans l'application Gentok sur votre PC, qui écrit les messages dans le chat du live. Aucune clé, aucun cookie à copier. L'application doit être ouverte pendant le live.": "L'account bot si collega una volta nell'app Gentok sul tuo PC, che scrive i messaggi nella chat della live. Nessuna chiave, nessun cookie da copiare. L'app deve restare aperta durante la live.",
+  "Le serveur envoie les messages avec les cookies du compte bot et une clé Euler Stream autorisée à écrire dans le chat. Fonctionne sans l'application.": "Il server invia i messaggi con i cookie dell'account bot e una chiave Euler Stream autorizzata a scrivere in chat. Funziona senza l'app.",
+  "Ouvrez l'application Gentok sur votre PC pour connecter le compte bot ; elle doit rester ouverte pendant le live.": "Apri l'app Gentok sul tuo PC per collegare l'account bot; deve restare aperta durante la live.",
+  "Supprimer les cookies": "Elimina i cookie",
+  "recommandé · gratuit": "consigliato · gratis"
  }
 }

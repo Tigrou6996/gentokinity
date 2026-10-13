@@ -2136,6 +2136,22 @@
   "Ajouter au solde": "Sumar al saldo",
   "Import…": "Importando…",
   "spectateurs importés": "espectadores importados",
-  "Lignes invalides (500 max par envoi)": "Filas no válidas (máx. 500 por envío)"
+  "Lignes invalides (500 max par envoi)": "Filas no válidas (máx. 500 por envío)",
+  "Application Gentok": "Aplicación Gentok",
+  "Application Gentok ouverte : c'est elle qui enverra les messages.": "Aplicación Gentok abierta: enviará los mensajes.",
+  "Aucun compte bot connecté dans cette application": "Ninguna cuenta bot conectada en esta aplicación",
+  "Compte bot connecté dans cette application": "Cuenta bot conectada en esta aplicación",
+  "Compte bot déconnecté": "Cuenta bot desconectada",
+  "Connecter le compte bot": "Conectar la cuenta bot",
+  "Changer de compte bot": "Cambiar de cuenta bot",
+  "Connectez le compte bot depuis l'application (même page).": "Conecta la cuenta bot desde la aplicación (misma página).",
+  "Connectez-vous au compte bot dans la fenêtre TikTok qui s'ouvre.": "Inicia sesión en la cuenta bot en la ventana de TikTok que se abre.",
+  "Euler Stream": "Euler Stream",
+  "Gentok · Compte bot TikTok": "Gentok · Cuenta bot de TikTok",
+  "Le compte bot est connecté une fois dans l'application Gentok sur votre PC, qui écrit les messages dans le chat du live. Aucune clé, aucun cookie à copier. L'application doit être ouverte pendant le live.": "La cuenta bot se conecta una vez en la aplicación Gentok de tu PC, que escribe los mensajes en el chat del directo. Sin clave ni cookies que copiar. La aplicación debe estar abierta durante el directo.",
+  "Le serveur envoie les messages avec les cookies du compte bot et une clé Euler Stream autorisée à écrire dans le chat. Fonctionne sans l'application.": "El servidor envía los mensajes con las cookies de la cuenta bot y una clave de Euler Stream autorizada a escribir en el chat. Funciona sin la aplicación.",
+  "Ouvrez l'application Gentok sur votre PC pour connecter le compte bot ; elle doit rester ouverte pendant le live.": "Abre la aplicación Gentok en tu PC para conectar la cuenta bot; debe seguir abierta durante el directo.",
+  "Supprimer les cookies": "Eliminar las cookies",
+  "recommandé · gratuit": "recomendado · gratis"
  }
 }

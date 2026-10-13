@@ -72,6 +72,12 @@ function initRemoteClient() {
         }, 400);
     });
 
+    // Chat bot (method "application"): the server asks the app to post a message in the live chat
+    socket.on('chatbot_send', (data) => {
+        if (!data || !data.text) return;
+        require('./tiktokWebChat').send(data.username, data.text).catch(() => { /* logged by tiktokWebChat */ });
+    });
+
     socket.on('remote_keyboard', (data) => {
         logger.info(`📥 Remote Key received from VPS: ${data.key} (dur: ${data.duration || 100}ms)`);
         // FORCE EXECUTION: Even if local detection (isAppMode) is shaky,

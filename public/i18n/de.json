@@ -2136,6 +2136,22 @@
   "Ajouter au solde": "Zum Kontostand addieren",
   "Import…": "Import…",
   "spectateurs importés": "Zuschauer importiert",
-  "Lignes invalides (500 max par envoi)": "Ungültige Zeilen (max. 500 pro Anfrage)"
+  "Lignes invalides (500 max par envoi)": "Ungültige Zeilen (max. 500 pro Anfrage)",
+  "Application Gentok": "Gentok-App",
+  "Application Gentok ouverte : c'est elle qui enverra les messages.": "Gentok-App geöffnet: sie sendet die Nachrichten.",
+  "Aucun compte bot connecté dans cette application": "Kein Bot-Konto in dieser App angemeldet",
+  "Compte bot connecté dans cette application": "Bot-Konto in dieser App angemeldet",
+  "Compte bot déconnecté": "Bot-Konto abgemeldet",
+  "Connecter le compte bot": "Bot-Konto anmelden",
+  "Changer de compte bot": "Bot-Konto wechseln",
+  "Connectez le compte bot depuis l'application (même page).": "Melde das Bot-Konto in der App an (gleiche Seite).",
+  "Connectez-vous au compte bot dans la fenêtre TikTok qui s'ouvre.": "Melde dich im sich öffnenden TikTok-Fenster mit dem Bot-Konto an.",
+  "Euler Stream": "Euler Stream",
+  "Gentok · Compte bot TikTok": "Gentok · TikTok-Bot-Konto",
+  "Le compte bot est connecté une fois dans l'application Gentok sur votre PC, qui écrit les messages dans le chat du live. Aucune clé, aucun cookie à copier. L'application doit être ouverte pendant le live.": "Das Bot-Konto wird einmal in der Gentok-App auf deinem PC angemeldet, die die Nachrichten in den Live-Chat schreibt. Kein Schlüssel, keine Cookies zum Kopieren. Die App muss während des Lives geöffnet sein.",
+  "Le serveur envoie les messages avec les cookies du compte bot et une clé Euler Stream autorisée à écrire dans le chat. Fonctionne sans l'application.": "Der Server sendet die Nachrichten mit den Cookies des Bot-Kontos und einem Euler-Stream-Schlüssel mit Schreibrecht im Chat. Funktioniert ohne die App.",
+  "Ouvrez l'application Gentok sur votre PC pour connecter le compte bot ; elle doit rester ouverte pendant le live.": "Öffne die Gentok-App auf deinem PC, um das Bot-Konto anzumelden; sie muss während des Lives offen bleiben.",
+  "Supprimer les cookies": "Cookies löschen",
+  "recommandé · gratuit": "empfohlen · kostenlos"
  }
 }

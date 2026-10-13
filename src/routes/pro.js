@@ -282,7 +282,9 @@ module.exports = function registerProRoutes(app, { getRequestToken, getConnector
     const Settings = require('../models/Settings');
     app.get('/api/chatbot', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
-        res.json(chatbot.publicSettings(await config.getSettings(token)));
+        const pub = chatbot.publicSettings(await config.getSettings(token));
+        pub.appConnected = config.isAppMode || require('../utils/socket').isAppConnected(token);
+        res.json(pub);
     }));
 
     app.post('/api/chatbot', wrap(async (req, res) => {
@@ -291,6 +293,7 @@ module.exports = function registerProRoutes(app, { getRequestToken, getConnector
         const current = chatbot.getSettings(await config.getSettings(token));
         const next = {
             enabled: !!b.enabled,
+            method: b.method === 'euler' ? 'euler' : (b.method === 'app' ? 'app' : current.method),
             sessionId: current.sessionId || '',
             ttTargetIdc: current.ttTargetIdc || '',
             scoreTemplate: String(b.scoreTemplate || chatbot.DEFAULTS.scoreTemplate).slice(0, 200),
@@ -304,7 +307,7 @@ module.exports = function registerProRoutes(app, { getRequestToken, getConnector
         if (b.disconnect) { next.sessionId = ''; next.ttTargetIdc = ''; next.enabled = false; }
         if (next.sessionId && !/^[\w-]{8,}$/.test(next.sessionId)) return res.status(400).json({ error: 'Cookie sessionid invalide' });
         if (next.ttTargetIdc && !/^[\w-]{2,}$/.test(next.ttTargetIdc)) return res.status(400).json({ error: 'Cookie tt-target-idc invalide' });
-        if (next.enabled && !(next.sessionId && next.ttTargetIdc)) return res.status(400).json({ error: 'Ajoutez d\'abord les cookies du compte bot' });
+        if (next.enabled && next.method === 'euler' && !(next.sessionId && next.ttTargetIdc)) return res.status(400).json({ error: 'Ajoutez d\'abord les cookies du compte bot' });
         await Settings.updateOne({ token }, { $set: { chatbot: next } }, { upsert: true });
         await config.invalidate(token);
         chatbot.forget(token);
@@ -316,7 +319,7 @@ module.exports = function registerProRoutes(app, { getRequestToken, getConnector
         const token = requireToken(req, res); if (!token) return;
         const settings = await config.getSettings(token);
         const c = chatbot.getSettings(settings);
-        if (!(c.sessionId && c.ttTargetIdc)) return res.status(400).json({ error: 'Compte bot non connecté' });
+        if (c.method === 'euler' && !(c.sessionId && c.ttTargetIdc)) return res.status(400).json({ error: 'Compte bot non connecté' });
         const connector = getConnectorFor(token);
         if (!connector || !connector.connection) return res.status(409).json({ error: 'Lancez le live d\'abord : le message est envoyé dans votre live en cours.' });
         const ok = await chatbot.say(connector, { ...settings, chatbot: { ...c, enabled: true } }, String((req.body || {}).text || '👋 Gentok est connecté !').slice(0, 150));

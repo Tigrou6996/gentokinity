@@ -194,6 +194,14 @@ function setupAutoUpdater() {
         return true;
     });
 
+    // Chat bot without Euler Stream: the bot TikTok account is logged in inside the app (utils/tiktokWebChat.js)
+    ipcMain.handle('chatbot-login', () => require('./utils/tiktokWebChat').login());
+    ipcMain.handle('chatbot-logout', async () => { await require('./utils/tiktokWebChat').logout(); return false; });
+    ipcMain.handle('chatbot-status', () => require('./utils/tiktokWebChat').isLoggedIn());
+    ipcMain.handle('chatbot-test', async (event, username, text) => {
+        try { await require('./utils/tiktokWebChat').send(username, text || '👋 Gentok est connecté !'); return { ok: true }; }
+        catch (e) { return { ok: false, error: e.message }; }
+    });
     ipcMain.handle('get-update-state', () => updateState);
     ipcMain.handle('check-for-updates', () => checkForUpdates());
 

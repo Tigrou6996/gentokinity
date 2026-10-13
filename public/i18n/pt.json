@@ -2136,6 +2136,22 @@
   "Ajouter au solde": "Somar ao saldo",
   "Import…": "Importando…",
   "spectateurs importés": "espectadores importados",
-  "Lignes invalides (500 max par envoi)": "Linhas inválidas (máx. 500 por envio)"
+  "Lignes invalides (500 max par envoi)": "Linhas inválidas (máx. 500 por envio)",
+  "Application Gentok": "Aplicativo Gentok",
+  "Application Gentok ouverte : c'est elle qui enverra les messages.": "Aplicativo Gentok aberto: ele enviará as mensagens.",
+  "Aucun compte bot connecté dans cette application": "Nenhuma conta bot conectada neste aplicativo",
+  "Compte bot connecté dans cette application": "Conta bot conectada neste aplicativo",
+  "Compte bot déconnecté": "Conta bot desconectada",
+  "Connecter le compte bot": "Conectar a conta bot",
+  "Changer de compte bot": "Trocar de conta bot",
+  "Connectez le compte bot depuis l'application (même page).": "Conecte a conta bot pelo aplicativo (mesma página).",
+  "Connectez-vous au compte bot dans la fenêtre TikTok qui s'ouvre.": "Entre na conta bot na janela do TikTok que se abre.",
+  "Euler Stream": "Euler Stream",
+  "Gentok · Compte bot TikTok": "Gentok · Conta bot do TikTok",
+  "Le compte bot est connecté une fois dans l'application Gentok sur votre PC, qui écrit les messages dans le chat du live. Aucune clé, aucun cookie à copier. L'application doit être ouverte pendant le live.": "A conta bot é conectada uma vez no aplicativo Gentok do seu PC, que escreve as mensagens no chat da live. Sem chave, sem cookies para copiar. O aplicativo deve ficar aberto durante a live.",
+  "Le serveur envoie les messages avec les cookies du compte bot et une clé Euler Stream autorisée à écrire dans le chat. Fonctionne sans l'application.": "O servidor envia as mensagens com os cookies da conta bot e uma chave do Euler Stream autorizada a escrever no chat. Funciona sem o aplicativo.",
+  "Ouvrez l'application Gentok sur votre PC pour connecter le compte bot ; elle doit rester ouverte pendant le live.": "Abra o aplicativo Gentok no seu PC para conectar a conta bot; ele deve ficar aberto durante a live.",
+  "Supprimer les cookies": "Excluir os cookies",
+  "recommandé · gratuit": "recomendado · grátis"
  }
 }
