@@ -1064,6 +1064,27 @@
                     </div>
                 </div>
 
+                <!-- Full presets shared with a code (public/presetcodes.js) -->
+                <div class="pcode-card">
+                    <div class="pcode-col">
+                        <h3><i class="fas fa-share-nodes"></i> Partager ma scène</h3>
+                        <p class="text-dim">Crée un code avec tout ce que contient la scène active : actions, événements, réglages TTS, objectif de likes, règles de points et options des overlays.</p>
+                        <button class="btn-primary" onclick="GentokPresetCodes.create()"><i class="fas fa-wand-magic-sparkles"></i> Générer un code</button>
+                    </div>
+                    <div class="pcode-col">
+                        <h3><i class="fas fa-download"></i> Charger avec un code</h3>
+                        <p class="text-dim">Collez le code reçu (ex : GTK-7F3K-92QD) pour récupérer la scène complète.</p>
+                        <div class="pcode-load">
+                            <input type="text" id="pcode-input" placeholder="GTK-XXXX-XXXX" maxlength="20" autocomplete="off" spellcheck="false">
+                            <button class="btn-primary" onclick="GentokPresetCodes.preview()"><i class="fas fa-magnifying-glass"></i> Charger</button>
+                        </div>
+                    </div>
+                    <div class="pcode-mine">
+                        <h4>Mes codes</h4>
+                        <div id="pcode-list" class="pcode-list"><span class="text-dim">Aucun code pour le moment.</span></div>
+                    </div>
+                </div>
+
                 <div class="tabs" style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 15px;">
 
 
@@ -4060,6 +4081,7 @@
     <script src="appstatus.js"></script>
     <script src="donors.js"></script>
     <script src="runmode.js"></script>
+    <script src="presetcodes.js"></script>
 
     <!-- MODAL MINECRAFT OPTIONS -->
     <div id="modal-mc-options" class="modal-overlay hidden" style="z-index: 11000;">

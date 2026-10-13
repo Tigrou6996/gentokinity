@@ -464,6 +464,25 @@ function getRequestToken(req) {
 
 // Plans, viewer points, team battles, simulator, Streamer.bot
 require('./routes/pro')(app, { getRequestToken, getConnectorFor: (token) => activeConnectors.get(token) });
+// Full presets shared with a code (GTK-XXXX-XXXX)
+require('./routes/presetCodes')(app, {
+    getRequestToken,
+    // runs after the scene switches already queued for this account, and blocks new ones meanwhile
+    withSceneLock: async (token, fn) => {
+        const previous = sceneSwitchQueue.get(token) || Promise.resolve();
+        let release;
+        const current = new Promise(r => { release = r; });
+        sceneSwitchQueue.set(token, previous.then(() => current));
+        await previous;
+        try { return await fn(); } finally { release(); }
+    },
+    afterSessionChange: async (token) => {
+        const { emitEvent } = require('./utils/socket');
+        emitEvent('sync_config', await getFullConfig(token), token);
+        emitEvent('remote_reload', {}, token);
+        notifyAppSessionChanged(token);
+    }
+});
 
 // =======================
 // LOGIN API (Email/Password)
