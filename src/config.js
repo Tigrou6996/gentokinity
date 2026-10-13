@@ -246,6 +246,8 @@ module.exports = {
                 newSession.streamerbot = { ...newSession.streamerbot, ...sb };
             }
             if (settings.points) newSession.points = settings.points;
+            // TikTok account answering in the chat (its cookies stay on the server: see features/chatbot.js)
+            if (settings.chatbot) newSession.chatbot = settings.chatbot.toObject ? settings.chatbot.toObject() : settings.chatbot;
             if (settings.spotify) {
                 const spotifySettings = settings.spotify.toObject ? settings.spotify.toObject() : settings.spotify;
                 const defaults = getSessionDefaults().spotify;

@@ -20,7 +20,7 @@ const SORT_FIELDS = {
 
 const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-module.exports = function registerProRoutes(app, { getRequestToken }) {
+module.exports = function registerProRoutes(app, { getRequestToken, getConnectorFor = () => null }) {
     const requireToken = (req, res) => {
         const token = getRequestToken(req);
         if (!token) res.status(401).json({ error: 'Token manquant' });
@@ -265,6 +265,52 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
             winnerIndex: crypto.randomInt(segments.length), spinMs: 6000, nickname: 'Gentok Test', profilePictureUrl: ''
         }, token);
         res.json({ success: true });
+    }));
+
+    // ---------------- Chat bot (TikTok account answering !score / !top) ----------------
+    const chatbot = require('../features/chatbot');
+    const Settings = require('../models/Settings');
+    app.get('/api/chatbot', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        res.json(chatbot.publicSettings(await config.getSettings(token)));
+    }));
+
+    app.post('/api/chatbot', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        const b = req.body || {};
+        const current = chatbot.getSettings(await config.getSettings(token));
+        const next = {
+            enabled: !!b.enabled,
+            sessionId: current.sessionId || '',
+            ttTargetIdc: current.ttTargetIdc || '',
+            scoreTemplate: String(b.scoreTemplate || chatbot.DEFAULTS.scoreTemplate).slice(0, 200),
+            topTemplate: String(b.topTemplate || chatbot.DEFAULTS.topTemplate).slice(0, 200),
+            minInterval: Math.min(Math.max(Number(b.minInterval) || chatbot.DEFAULTS.minInterval, 2), 60)
+        };
+        // Session cookies of the bot account: only replaced when given, removed with "disconnect"
+        const clean = (v) => String(v || '').trim().replace(/^(sessionid|tt-target-idc)=/i, '').replace(/;.*$/, '');
+        if (b.sessionId) next.sessionId = clean(b.sessionId).slice(0, 200);
+        if (b.ttTargetIdc) next.ttTargetIdc = clean(b.ttTargetIdc).slice(0, 60);
+        if (b.disconnect) { next.sessionId = ''; next.ttTargetIdc = ''; next.enabled = false; }
+        if (next.sessionId && !/^[\w-]{8,}$/.test(next.sessionId)) return res.status(400).json({ error: 'Cookie sessionid invalide' });
+        if (next.ttTargetIdc && !/^[\w-]{2,}$/.test(next.ttTargetIdc)) return res.status(400).json({ error: 'Cookie tt-target-idc invalide' });
+        if (next.enabled && !(next.sessionId && next.ttTargetIdc)) return res.status(400).json({ error: 'Ajoutez d\'abord les cookies du compte bot' });
+        await Settings.updateOne({ token }, { $set: { chatbot: next } }, { upsert: true });
+        await config.invalidate(token);
+        chatbot.forget(token);
+        res.json(chatbot.publicSettings({ chatbot: next }));
+    }));
+
+    // Sends a test message in the running live
+    app.post('/api/chatbot/test', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        const settings = await config.getSettings(token);
+        const c = chatbot.getSettings(settings);
+        if (!(c.sessionId && c.ttTargetIdc)) return res.status(400).json({ error: 'Compte bot non connecté' });
+        const connector = getConnectorFor(token);
+        if (!connector || !connector.connection) return res.status(409).json({ error: 'Lancez le live d\'abord : le message est envoyé dans votre live en cours.' });
+        const ok = await chatbot.say(connector, { ...settings, chatbot: { ...c, enabled: true } }, String((req.body || {}).text || '👋 Gentok est connecté !').slice(0, 150));
+        res.json({ success: ok });
     }));
 
     // ---------------- Streamer.bot ----------------

@@ -10,6 +10,7 @@ const coinmatch = require('./coinmatch');
 const giveaway = require('./giveaway');
 const pointsdrop = require('./pointsdrop');
 const donors = require('./donors');
+const chatbot = require('./chatbot');
 
 const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
@@ -51,7 +52,7 @@ function markActive(connector, data) {
                 const now = Date.now();
                 for (const [key, v] of connector.activeViewers) {
                     if (now - v.at > ACTIVE_WINDOW_MS) { connector.activeViewers.delete(key); continue; }
-                    if (s.enabled) points.award(connector.token, v.user, s.perActiveMinute, 'watch', { watchMinutes: 1 });
+                    if (s.enabled) points.award(connector.token, v.user, s.perActiveMinute, 'watch', { watchMinutes: 1 }, points.xpOf(s, 'perActiveMinute', 1, s.perActiveMinute));
                 }
             } catch (e) { /* ignore */ }
         }, 60 * 1000);
@@ -78,11 +79,14 @@ async function handleCommands(connector, data, s) {
         const viewer = await points.getViewer(connector.token, data.uniqueId, settings);
         const payload = viewer || { ...userOf(data), points: 0, levelPoints: 0, level: 0, rank: null, progress: 0, nextLevelPoints: points.pointsForLevel(1, s.levelFactor) };
         if (!payload.profilePictureUrl) payload.profilePictureUrl = data.profilePictureUrl;
+        payload.currency = { name: s.currencyName, emoji: s.currencyEmoji };
         emit(connector, 'points_score', payload);
-        emit(connector, 'log', { level: 'info', message: `🏅 ${payload.nickname} : ${payload.points} points (niveau ${payload.level}${payload.rank ? `, #${payload.rank}` : ''})` });
+        emit(connector, 'log', { level: 'info', message: `🏅 ${payload.nickname} : ${points.formatAmount(s, payload.points)} (niveau ${payload.level}, ${Math.floor(payload.levelPoints || 0)} XP${payload.rank ? `, #${payload.rank}` : ''})` });
+        chatbot.replyScore(connector, settings, s, payload);
     } else {
         const top = await points.getTop(connector.token, 5, settings);
-        emit(connector, 'points_top', { requestedBy: userOf(data), top });
+        emit(connector, 'points_top', { requestedBy: userOf(data), top, currency: { name: s.currencyName, emoji: s.currencyEmoji } });
+        chatbot.replyTop(connector, settings, s, top, userOf(data));
     }
 }
 
@@ -100,7 +104,7 @@ async function onChat(connector, data) {
             const last = connector.chatPointsAt.get(data.uniqueId) || 0;
             const earn = Date.now() - last >= (Number(s.chatCooldown) || 0) * 1000;
             if (earn) connector.chatPointsAt.set(data.uniqueId, Date.now());
-            points.award(connector.token, userOf(data), earn ? s.perChat : 0, 'chat', { chats: 1 });
+            points.award(connector.token, userOf(data), earn ? s.perChat : 0, 'chat', { chats: 1 }, earn ? points.xpOf(s, 'perChat', 1, s.perChat) : 0);
         }
         if (s.enabled) await handleCommands(connector, data, s);
     } catch (e) {
@@ -117,7 +121,7 @@ async function onGifts(connector, data, count, coins) {
         giveaway.onGift(connector.token, userOf(data), coins);
         if (!canPersist(connector)) return;
         const s = points.getSettings(await config.getSettings(connector.token));
-        if (s.enabled) points.award(connector.token, userOf(data), coins * s.perCoin, 'gift', { coins, gifts: count });
+        if (s.enabled) points.award(connector.token, userOf(data), coins * s.perCoin, 'gift', { coins, gifts: count }, points.xpOf(s, 'perCoin', coins, coins * s.perCoin));
     } catch (e) {
         logger.warn(`[LIVE] onGifts: ${e.message}`);
     }
@@ -129,7 +133,7 @@ async function onLike(connector, data, likeCount) {
         battle.onLike(connector.token, userOf(data), likeCount);
         if (!canPersist(connector)) return;
         const s = points.getSettings(await config.getSettings(connector.token));
-        if (s.enabled) points.award(connector.token, userOf(data), likeCount * s.perLike, 'like', { likes: likeCount });
+        if (s.enabled) points.award(connector.token, userOf(data), likeCount * s.perLike, 'like', { likes: likeCount }, points.xpOf(s, 'perLike', likeCount, likeCount * s.perLike));
     } catch (e) {
         logger.warn(`[LIVE] onLike: ${e.message}`);
     }
@@ -142,9 +146,9 @@ async function onSocial(connector, type, data) {
         if (!canPersist(connector) || type === 'member') return;
         const s = points.getSettings(await config.getSettings(connector.token));
         if (!s.enabled) return;
-        if (type === 'follow') points.award(connector.token, userOf(data), s.perFollow, 'follow', { follows: 1 });
-        else if (type === 'share') points.award(connector.token, userOf(data), s.perShare, 'share', { shares: 1 });
-        else if (type === 'subscribe') points.award(connector.token, userOf(data), s.perSub, 'sub', { subs: 1 });
+        if (type === 'follow') points.award(connector.token, userOf(data), s.perFollow, 'follow', { follows: 1 }, points.xpOf(s, 'perFollow', 1, s.perFollow));
+        else if (type === 'share') points.award(connector.token, userOf(data), s.perShare, 'share', { shares: 1 }, points.xpOf(s, 'perShare', 1, s.perShare));
+        else if (type === 'subscribe') points.award(connector.token, userOf(data), s.perSub, 'sub', { subs: 1 }, points.xpOf(s, 'perSub', 1, s.perSub));
     } catch (e) {
         logger.warn(`[LIVE] onSocial: ${e.message}`);
     }

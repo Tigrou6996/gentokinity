@@ -2270,8 +2270,8 @@
                                 <tr>
                                     <th class="sortable" data-sort="nickname">Utilisateur</th>
                                     <th class="sortable" data-sort="level">Niveau</th>
-                                    <th class="sortable" data-sort="points">Points disponibles</th>
-                                    <th class="sortable" data-sort="levelPoints">Points comptés pour le niveau</th>
+                                    <th class="sortable" data-sort="points" id="pts-col-points">Points disponibles</th>
+                                    <th class="sortable" data-sort="levelPoints" title="Expérience : fait monter le niveau, ne baisse jamais">XP</th>
                                     <th class="sortable" data-sort="coins">Pièces</th>
                                     <th class="sortable" data-sort="likes">Likes</th>
                                     <th class="sortable" data-sort="firstActivity">Première activité</th>
@@ -2313,12 +2313,60 @@
                         <div class="pro-field"><label>Points par message</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perChat"></div>
                         <div class="pro-field"><label>Délai entre 2 messages comptés (s)</label><input class="form-control" type="number" step="1" min="0" id="pts-chatCooldown"></div>
                         <div class="pro-field"><label>Points par minute de présence</label><input class="form-control" type="number" step="0.1" min="0" id="pts-perActiveMinute"><small>Spectateurs actifs dans les 5 dernières minutes</small></div>
-                        <div class="pro-field"><label>Difficulté des niveaux</label><input class="form-control" type="number" step="1" min="1" id="pts-levelFactor"><small>Niveau N = N² × cette valeur</small></div>
+                        <div class="pro-field"><label>Nom de la monnaie</label><input class="form-control" type="text" maxlength="24" id="pts-currencyName" placeholder="points"><small>ex : cookies, pièces, étoiles…</small></div>
+                        <div class="pro-field"><label>Emoji de la monnaie</label><input class="form-control" type="text" maxlength="8" id="pts-currencyEmoji" placeholder="🪙"></div>
                         <div class="pro-field"><label>Commande score</label><input class="form-control" type="text" id="pts-scoreCommand" placeholder="!score"></div>
                         <div class="pro-field"><label>Commande classement</label><input class="form-control" type="text" id="pts-topCommand" placeholder="!top"></div>
                         <div class="pro-field"><label>Délai entre 2 commandes (s)</label><input class="form-control" type="number" step="1" min="0" id="pts-commandCooldown"></div>
                     </div>
+
+                    <div class="pro-section-title"><i class="fas fa-star"></i> Niveaux (XP)</div>
+                    <p class="pro-intro">L'XP fait monter le niveau et ne baisse jamais, même quand le spectateur dépense sa monnaie.</p>
+                    <div class="pro-form-grid">
+                        <div class="pro-field"><label>Gain d'XP</label><select class="form-select" id="pts-xpMode" onchange="GentokPro.points.toggleXp()">
+                            <option value="same">Identique à la monnaie gagnée</option>
+                            <option value="custom">Barème d'XP personnalisé</option></select></div>
+                        <div class="pro-field"><label>Difficulté des niveaux</label><input class="form-control" type="number" step="1" min="1" id="pts-levelFactor"><small>Niveau N = N² × cette valeur en XP</small></div>
+                        <div class="pro-field"><label>Aperçu</label><div class="pts-level-preview" id="pts-level-preview"></div></div>
+                    </div>
+                    <div class="pro-form-grid" id="pts-xp-custom" hidden>
+                        <div class="pro-field"><label>XP par pièce offerte</label><input class="form-control" type="number" step="0.1" min="0" id="pts-xpPerCoin"></div>
+                        <div class="pro-field"><label>XP par like</label><input class="form-control" type="number" step="0.01" min="0" id="pts-xpPerLike"></div>
+                        <div class="pro-field"><label>XP par follow</label><input class="form-control" type="number" step="1" min="0" id="pts-xpPerFollow"></div>
+                        <div class="pro-field"><label>XP par partage</label><input class="form-control" type="number" step="1" min="0" id="pts-xpPerShare"></div>
+                        <div class="pro-field"><label>XP par abonnement</label><input class="form-control" type="number" step="1" min="0" id="pts-xpPerSub"></div>
+                        <div class="pro-field"><label>XP par message</label><input class="form-control" type="number" step="0.1" min="0" id="pts-xpPerChat"></div>
+                        <div class="pro-field"><label>XP par minute de présence</label><input class="form-control" type="number" step="0.1" min="0" id="pts-xpPerActiveMinute"></div>
+                    </div>
                     <div style="margin-top: 1rem;"><button class="btn-primary btn" onclick="GentokPro.points.saveSettings()"><i class="fas fa-save"></i> Enregistrer</button></div>
+
+                    <!-- TikTok account answering !score / !top in the live chat (src/features/chatbot.js) -->
+                    <div class="pro-section-title"><i class="fab fa-tiktok"></i> Compte TikTok bot (réponses dans le chat)</div>
+                    <p class="pro-intro">Quand un spectateur tape <b>!score</b> ou <b>!top</b>, ce compte répond dans le chat du live, ex. « @lea tu as 1 250 🪙 points — niveau 7 ». Utilisez de préférence un <b>second compte</b> TikTok : un compte qui écrit trop vite peut être limité par TikTok.</p>
+                    <div class="chatbot-card" id="chatbot-card">
+                        <div class="chatbot-status" id="chatbot-status">Chargement…</div>
+                        <div class="pro-form-grid">
+                            <div class="pro-field"><label>Cookie <code>sessionid</code> du compte bot</label><input class="form-control" type="password" autocomplete="off" id="chatbot-sessionId" placeholder="Laisser vide pour garder l'actuel"></div>
+                            <div class="pro-field"><label>Cookie <code>tt-target-idc</code></label><input class="form-control" type="text" autocomplete="off" id="chatbot-ttTargetIdc" placeholder="ex : useast2a"></div>
+                            <div class="pro-field"><label>Délai entre 2 messages (s)</label><input class="form-control" type="number" min="2" max="60" id="chatbot-minInterval"></div>
+                        </div>
+                        <details class="chatbot-help"><summary>Où trouver ces cookies ?</summary>
+                            <ol>
+                                <li>Connectez-vous au compte bot sur <b>tiktok.com</b> dans votre navigateur (PC).</li>
+                                <li>Appuyez sur <b>F12</b> › onglet <b>Application</b> (Chrome/Edge) ou <b>Stockage</b> (Firefox) › <b>Cookies</b> › https://www.tiktok.com.</li>
+                                <li>Copiez la valeur de <code>sessionid</code> et celle de <code>tt-target-idc</code>.</li>
+                            </ol>
+                            Ces cookies donnent accès au compte : ils restent sur le serveur Gentok et ne sont jamais réaffichés. Se déconnecter de TikTok dans ce navigateur les invalide.
+                        </details>
+                        <div class="pro-field"><label>Réponse à !score</label><input class="form-control" type="text" maxlength="200" id="chatbot-scoreTemplate"><small>{nickname} {points} {currency} {emoji} {level} {xp} {rank}</small></div>
+                        <div class="pro-field"><label>Réponse à !top</label><input class="form-control" type="text" maxlength="200" id="chatbot-topTemplate"><small>{top} {currency} {emoji} {nickname}</small></div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <label class="d-flex align-items-center gap-2 me-2 mb-0"><input type="checkbox" id="chatbot-enabled"> Répondre dans le chat</label>
+                            <button class="btn-primary btn" onclick="GentokPro.chatbot.save()"><i class="fas fa-save"></i> Enregistrer</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.chatbot.test()"><i class="fas fa-paper-plane"></i> Message de test</button>
+                            <button class="btn-secondary btn" onclick="GentokPro.chatbot.disconnect()"><i class="fas fa-right-from-bracket"></i> Déconnecter le compte</button>
+                        </div>
+                    </div>
 
                     <div class="pro-section-title"><i class="fas fa-user-edit"></i> Ajouter / retirer des points</div>
                     <div class="pro-toolbar">

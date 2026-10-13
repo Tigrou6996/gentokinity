@@ -463,7 +463,7 @@ function getRequestToken(req) {
 }
 
 // Plans, viewer points, team battles, simulator, Streamer.bot
-require('./routes/pro')(app, { getRequestToken });
+require('./routes/pro')(app, { getRequestToken, getConnectorFor: (token) => activeConnectors.get(token) });
 
 // =======================
 // LOGIN API (Email/Password)

@@ -5,8 +5,9 @@
  * time spent being active in the live. Points are buffered in memory and written to MongoDB
  * every few seconds in one bulk operation (a busy live sends hundreds of events per second).
  *
- * Level = floor(sqrt(levelPoints / levelFactor)), levelPoints never decreases (spending
- * points in the shop does not lower the level).
+ * XP (stored as levelPoints) decides the level: level = floor(sqrt(XP / levelFactor)). XP never
+ * decreases (spending points in the shop does not lower the level). By default the XP earned equals the
+ * points earned; the streamer can give XP its own rates (xpMode "custom").
  */
 const ViewerPoints = require('../models/ViewerPoints');
 const PointTransaction = require('../models/PointTransaction');
@@ -24,6 +25,13 @@ const DEFAULT_SETTINGS = {
     chatCooldown: 30,     // ...at most once every X seconds per viewer
     perActiveMinute: 1,   // per minute for viewers active in the last 5 minutes
     levelFactor: 50,
+    // Currency of the points (shown in the chat replies, overlays and dashboard): "cookies", "pièces"...
+    currencyName: 'points',
+    currencyEmoji: '🪙',
+    // XP (levels): "same" = the XP earned equals the points earned; "custom" = own XP rates below.
+    // XP never decreases (spending points in the shop keeps the level).
+    xpMode: 'same',
+    xpPerCoin: 10, xpPerLike: 0.2, xpPerFollow: 50, xpPerShare: 20, xpPerSub: 300, xpPerChat: 2, xpPerActiveMinute: 1,
     scoreCommand: '!score',
     topCommand: '!top',
     commandCooldown: 15
@@ -40,7 +48,23 @@ const scopeOf = (token) => require('../config').pointsScope(token);
 const tokenOf = (key) => String(key || '').split('#scene:')[0];
 
 function getSettings(settings) {
-    return { ...DEFAULT_SETTINGS, ...((settings && settings.points) || {}) };
+    const s = { ...DEFAULT_SETTINGS, ...((settings && settings.points) || {}) };
+    s.currencyName = String(s.currencyName || '').trim().slice(0, 24) || DEFAULT_SETTINGS.currencyName;
+    s.currencyEmoji = String(s.currencyEmoji || '').trim().slice(0, 8);
+    return s;
+}
+
+/** "120 🍪 cookies" with the streamer's currency */
+function formatAmount(s, n) {
+    const v = Math.floor(Number(n) || 0).toLocaleString('fr-FR');
+    return `${v} ${s.currencyEmoji ? s.currencyEmoji + ' ' : ''}${s.currencyName}`;
+}
+
+/** XP earned for `units` of something (coins, likes, 1 follow...) worth `amount` points */
+function xpOf(s, rateKey, units, amount) {
+    if (!s || s.xpMode !== 'custom') return amount;
+    const rate = Number(s['xp' + rateKey.charAt(0).toUpperCase() + rateKey.slice(1)]);
+    return Number.isFinite(rate) && rate > 0 ? units * rate : 0;
 }
 
 function levelFromPoints(levelPoints, factor = DEFAULT_SETTINGS.levelFactor) {
@@ -62,8 +86,9 @@ function round2(n) {
  * @param {number} amount points to add (can be decimal)
  * @param {string} reason gift | like | follow | share | chat | sub | watch
  * @param {object} stats counters to increment, e.g. { likes: 15 }
+ * @param {number} [xp] XP earned (defaults to the points)
  */
-function award(token, user, amount, reason, stats = {}) {
+function award(token, user, amount, reason, stats = {}, xp = amount) {
     if (!token || !user || !user.uniqueId) return;
     token = scopeOf(token);
     if (!buffers.has(token)) buffers.set(token, new Map());
@@ -71,7 +96,7 @@ function award(token, user, amount, reason, stats = {}) {
     const key = String(user.uniqueId);
     let p = tokenBuf.get(key);
     if (!p) {
-        p = { user: {}, points: 0, stats: {}, reasons: {} };
+        p = { user: {}, points: 0, xp: 0, stats: {}, reasons: {} };
         tokenBuf.set(key, p);
     }
     p.user = {
@@ -84,6 +109,7 @@ function award(token, user, amount, reason, stats = {}) {
         p.points += amount;
         p.reasons[reason] = (p.reasons[reason] || 0) + amount;
     }
+    if (xp > 0) p.xp += xp;
     for (const [k, v] of Object.entries(stats)) p.stats[k] = (p.stats[k] || 0) + v;
 
     if (!flushTimer) flushTimer = setTimeout(() => { flushTimer = null; flushAll(); }, FLUSH_MS);
@@ -119,13 +145,16 @@ async function flushKey(token) {
 
         const ops = [];
         const transactions = [];
+        const xpGains = [];
         const now = new Date();
         for (const [uniqueId, p] of tokenBuf) {
             const inc = {};
             const points = round2(p.points);
-            if (points > 0) {
-                inc.points = points;
-                inc.levelPoints = points;
+            const xp = round2(p.xp);
+            if (points > 0) inc.points = points;
+            if (xp > 0) {
+                inc.levelPoints = xp;
+                xpGains.push({ uniqueId, delta: xp });
             }
             for (const [k, v] of Object.entries(p.stats)) inc[`stats.${k}`] = v;
             const set = { lastActivity: now };
@@ -146,7 +175,7 @@ async function flushKey(token) {
         if (ops.length) await ViewerPoints.bulkWrite(ops, { ordered: false });
         if (transactions.length) await PointTransaction.insertMany(transactions, { ordered: false });
         userCountCache.delete(token);
-        if (transactions.length) await announceLevelUps(token, transactions, getSettings(settings).levelFactor);
+        if (xpGains.length) await announceLevelUps(token, xpGains, getSettings(settings).levelFactor);
     } catch (err) {
         logger.error(`[POINTS] Sauvegarde impossible : ${err.message}`);
     }
@@ -209,6 +238,7 @@ function decorate(doc, s, rank) {
         profilePictureUrl: doc.profilePictureUrl || '',
         points: round2(doc.points || 0),
         levelPoints: round2(doc.levelPoints || 0),
+        xp: round2(doc.levelPoints || 0),
         level,
         nextLevelPoints: next,
         progress: next > current ? Math.min(1, ((doc.levelPoints || 0) - current) / (next - current)) : 0,
@@ -269,7 +299,7 @@ async function reset(token) {
 }
 
 module.exports = {
-    scopeOf, tokenOf,
+    scopeOf, tokenOf, xpOf, formatAmount,
     DEFAULT_SETTINGS, getSettings, award, flushToken, flushAll, getViewer, getTop, spend, adjust, reset,
     levelFromPoints, pointsForLevel, decorate, countUsers, setConnectorLookup
 };

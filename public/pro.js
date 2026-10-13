@@ -41,6 +41,7 @@
         async load() {
             const tbody = document.getElementById('points-tbody');
             if (!tbody) return;
+            api('/api/points/settings').then(c => this.applyCurrency(c)).catch(() => { });
             try {
                 const s = this.state;
                 const data = await api('/api/points/users', { query: { page: s.page, sort: s.sort, order: s.order, search: s.search, limit: 25 } });
@@ -99,7 +100,22 @@
             }
         },
 
-        FIELDS: ['perCoin', 'perLike', 'perFollow', 'perShare', 'perSub', 'perChat', 'chatCooldown', 'perActiveMinute', 'levelFactor', 'commandCooldown'],
+        FIELDS: ['perCoin', 'perLike', 'perFollow', 'perShare', 'perSub', 'perChat', 'chatCooldown', 'perActiveMinute', 'levelFactor', 'commandCooldown',
+            'xpPerCoin', 'xpPerLike', 'xpPerFollow', 'xpPerShare', 'xpPerSub', 'xpPerChat', 'xpPerActiveMinute'],
+
+        toggleXp() {
+            const custom = document.getElementById('pts-xpMode').value === 'custom';
+            document.getElementById('pts-xp-custom').hidden = !custom;
+            const f = Math.max(1, parseFloat(document.getElementById('pts-levelFactor').value) || 50);
+            document.getElementById('pts-level-preview').textContent = [1, 5, 10, 20, 50].map(n => `Nv ${n} : ${fmt(n * n * f)} XP`).join(' · ');
+        },
+
+        // Column title and messages use the streamer's currency
+        applyCurrency(s) {
+            this.currency = s;
+            const col = document.getElementById('pts-col-points');
+            if (col) col.textContent = `${s.currencyEmoji ? s.currencyEmoji + ' ' : ''}${s.currencyName || 'points'}`;
+        },
 
         async loadSettings() {
             try {
@@ -109,6 +125,12 @@
                 document.getElementById('pts-scoreCommand').value = s.scoreCommand || '!score';
                 document.getElementById('pts-topCommand').value = s.topCommand || '!top';
                 document.getElementById('points-score-cmd').textContent = s.scoreCommand || '!score';
+                document.getElementById('pts-currencyName').value = s.currencyName || 'points';
+                document.getElementById('pts-currencyEmoji').value = s.currencyEmoji || '';
+                document.getElementById('pts-xpMode').value = s.xpMode === 'custom' ? 'custom' : 'same';
+                this.toggleXp();
+                this.applyCurrency(s);
+                Chatbot.load();
             } catch (e) { showToast(e.message, 'error'); }
         },
 
@@ -118,6 +140,9 @@
             const cmd = (v, def) => { v = (v || '').trim().toLowerCase().split(/\s+/)[0] || def; return v.startsWith('!') ? v : '!' + v; };
             pts.scoreCommand = cmd(document.getElementById('pts-scoreCommand').value, '!score');
             pts.topCommand = cmd(document.getElementById('pts-topCommand').value, '!top');
+            pts.currencyName = document.getElementById('pts-currencyName').value.trim().slice(0, 24) || 'points';
+            pts.currencyEmoji = document.getElementById('pts-currencyEmoji').value.trim().slice(0, 8);
+            pts.xpMode = document.getElementById('pts-xpMode').value === 'custom' ? 'custom' : 'same';
             try {
                 await api('/api/settings', { method: 'POST', body: { points: pts } });
                 showToast(t('Paramètres sauvegardés !'), 'success');
@@ -128,7 +153,8 @@
         async adjust(uniqueId, delta) {
             try {
                 const r = await api('/api/points/adjust', { method: 'POST', body: { uniqueId, delta } });
-                showToast(`@${uniqueId} : ${fmt(r.points)} points`, 'success');
+                const c = this.currency || {};
+                showToast(`@${uniqueId} : ${fmt(r.points)} ${c.currencyEmoji || ''} ${c.currencyName || 'points'}`, 'success');
                 this.load();
             } catch (e) { showToast(e.message, 'error'); }
         },
@@ -648,5 +674,53 @@
         setupOverlayStyleBar();
     });
 
-    window.GentokPro = { onSection, points: Points, plan: Plan, battle: Battle, sim: Sim, giveaway: Giveaway, drop: Drop, api };
+    // ------------------------------------------------------------------ chat bot (TikTok account answering !score / !top)
+    const Chatbot = {
+        render(c) {
+            const st = document.getElementById('chatbot-status');
+            if (!st) return;
+            const parts = [];
+            parts.push(c.connected ? `<span class="ok"><i class="fas fa-circle-check"></i> ${esc(t('Compte bot connecté'))} (sessionid ${esc(c.sessionHint)})</span>`
+                : `<span class="off"><i class="fas fa-circle-xmark"></i> ${esc(t('Aucun compte bot'))}</span>`);
+            parts.push(c.enabled ? `<span class="ok">${esc(t('Réponses activées'))}</span>` : `<span class="off">${esc(t('Réponses désactivées'))}</span>`);
+            if (!c.signKey) parts.push(`<span class="warn"><i class="fas fa-triangle-exclamation"></i> ${esc(t("Clé Euler Stream absente sur ce serveur : TikTok refusera les messages."))}</span>`);
+            st.innerHTML = parts.join('');
+            document.getElementById('chatbot-enabled').checked = !!c.enabled;
+            document.getElementById('chatbot-scoreTemplate').value = c.scoreTemplate || '';
+            document.getElementById('chatbot-topTemplate').value = c.topTemplate || '';
+            document.getElementById('chatbot-minInterval').value = c.minInterval || 4;
+            document.getElementById('chatbot-sessionId').value = '';
+            document.getElementById('chatbot-ttTargetIdc').value = '';
+        },
+        async load() {
+            try { this.render(await api('/api/chatbot')); } catch (e) { }
+        },
+        async save(extra = {}) {
+            try {
+                const body = {
+                    enabled: document.getElementById('chatbot-enabled').checked,
+                    sessionId: document.getElementById('chatbot-sessionId').value.trim(),
+                    ttTargetIdc: document.getElementById('chatbot-ttTargetIdc').value.trim(),
+                    scoreTemplate: document.getElementById('chatbot-scoreTemplate').value,
+                    topTemplate: document.getElementById('chatbot-topTemplate').value,
+                    minInterval: parseInt(document.getElementById('chatbot-minInterval').value, 10) || 4,
+                    ...extra
+                };
+                this.render(await api('/api/chatbot', { method: 'POST', body }));
+                showToast(t('Compte bot enregistré'), 'success');
+            } catch (e) { showToast(e.message, 'error'); }
+        },
+        async test() {
+            try {
+                const r = await api('/api/chatbot/test', { method: 'POST', body: {} });
+                showToast(r.success ? t('Message envoyé dans votre live') : t("Message non envoyé (voir Console / Logs)"), r.success ? 'success' : 'error');
+            } catch (e) { showToast(e.message, 'error'); }
+        },
+        async disconnect() {
+            const ok = await Swal.fire({ title: t('Déconnecter le compte bot ?'), text: t('Ses cookies sont supprimés de Gentok.'), icon: 'warning', showCancelButton: true, confirmButtonText: t('Déconnecter'), cancelButtonText: t('Annuler') });
+            if (ok.isConfirmed) this.save({ disconnect: true });
+        }
+    };
+
+    window.GentokPro = { onSection, chatbot: Chatbot, points: Points, plan: Plan, battle: Battle, sim: Sim, giveaway: Giveaway, drop: Drop, api };
 })();

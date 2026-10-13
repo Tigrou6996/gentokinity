@@ -125,3 +125,14 @@ body.nav-railed #dashboard-container .nav-links a .beta-tag { flex-shrink: 0; fo
 .scene-sync-badge.own { color: #fbbf24; background: rgba(251, 191, 36, .12); border-color: rgba(251, 191, 36, .3); }
 .scene-sync-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--text-dim); cursor: pointer; margin: 0; }
 .scene-sync-toggle input { width: 15px; height: 15px; accent-color: var(--primary); }
+
+/* Points settings: XP preview and chat bot account */
+.pts-level-preview { font-size: .8rem; color: var(--text-dim); line-height: 1.5; padding-top: 6px; }
+.chatbot-card { border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; background: rgba(255, 255, 255, .02); }
+.chatbot-card .pro-field { margin-bottom: .6rem; }
+.chatbot-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: .8rem; font-size: .8rem; font-weight: 600; }
+.chatbot-status span { padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .05); }
+.chatbot-status .ok { color: #34d399; } .chatbot-status .off { color: var(--text-dim); } .chatbot-status .warn { color: #fbbf24; }
+.chatbot-help { font-size: .8rem; color: var(--text-dim); margin: .2rem 0 .8rem; }
+.chatbot-help summary { cursor: pointer; color: var(--text); }
+.chatbot-help ol { margin: .4rem 0 .4rem 1.1rem; padding: 0; }
