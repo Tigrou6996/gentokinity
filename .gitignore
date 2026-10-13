@@ -12,3 +12,8 @@ lbs-video/*_seg*.mp4
 lbs-video/*_silent.mp4
 lbs-video/render3.log
 lbs-video/audio/*.raw
+next-archimede-video/*_seg*.mp4
+next-archimede-video/*_silent.mp4
+next-archimede-video/*.pcm
+next-archimede-video/render.log
+next-archimede-video/sheet*.png
