@@ -224,3 +224,76 @@ body.ui-clean { background: var(--bg-dark); color: var(--text); -webkit-font-smo
     .ui-clean .stat-value, .ui-clean #stat-views, .ui-clean #stat-gifts, .ui-clean #stat-likes, .ui-clean #stat-follows, .ui-clean #stat-shares, .ui-clean #stat-diamonds { font-size: 1.5rem !important; }
     .ui-clean .stat-header { margin-bottom: .35rem; }
 }
+
+/* ---------- Colour: one hue per area, used on icons, chips and thin accents (numbers and text stay neutral) ---------- */
+.ui-clean {
+    --c-pink: #ff4d79; --c-cyan: #22d3ee; --c-violet: #a78bfa; --c-amber: #fbbf24; --c-green: #34d399;
+    --c-blue: #60a5fa; --c-orange: #fb923c; --c-teal: #2dd4bf; --c-red: #f87171; --c-lime: #a3e635; --c-slate: #94a3b8;
+}
+/* a faint pink / cyan light at the top of the page (static: costs nothing) */
+body.ui-clean {
+    background:
+        radial-gradient(900px 420px at 88% -12%, rgba(254, 44, 85, .10), transparent 62%),
+        radial-gradient(760px 380px at 30% -14%, rgba(37, 244, 238, .06), transparent 60%),
+        var(--bg-dark);
+    background-attachment: fixed;
+}
+.ui-clean .main-content, .ui-clean #dashboard-container .content { background: transparent; }
+
+/* menu: each entry keeps its own colour */
+.ui-clean .nav-item-content i { opacity: .9; }
+.ui-clean .nav-item-content i.fa-home { color: var(--c-pink); }
+.ui-clean .nav-item-content i.fa-cubes { color: var(--c-violet); }
+.ui-clean .nav-item-content i.fa-chart-line { color: var(--c-cyan); }
+.ui-clean .nav-item-content i.fa-trophy { color: var(--c-amber); }
+.ui-clean .nav-item-content i.fa-medal { color: var(--c-orange); }
+.ui-clean .nav-item-content i.fa-cog { color: var(--c-slate); }
+.ui-clean .nav-item-content i.fa-bolt { color: var(--c-amber); }
+.ui-clean .nav-item-content i.fa-calendar-check { color: var(--c-green); }
+.ui-clean .nav-item-content i.fa-music { color: var(--c-violet); }
+.ui-clean .nav-item-content i.fa-comment-dots { color: var(--c-teal); }
+.ui-clean .nav-item-content i.fa-images { color: var(--c-pink); }
+.ui-clean .nav-item-content i.fa-bullseye { color: var(--c-red); }
+.ui-clean .nav-item-content i.fa-gift { color: var(--c-orange); }
+.ui-clean .nav-item-content i.fa-list { color: var(--c-blue); }
+.ui-clean .nav-item-content i.fa-magic { color: var(--c-violet); }
+.ui-clean .nav-item-content i.fa-fist-raised { color: var(--c-red); }
+.ui-clean .nav-item-content i.fa-sack-dollar { color: var(--c-green); }
+.ui-clean .nav-item-content i.fa-globe { color: var(--c-cyan); }
+.ui-clean .nav-item-content i.fa-flask { color: var(--c-lime); }
+.ui-clean .nav-item-content i.fa-terminal { color: var(--c-slate); }
+.ui-clean .nav-item-content i.fa-shield-alt { color: var(--c-red); }
+.ui-clean .nav-links li.active a .nav-item-content i { filter: brightness(1.15); }
+.ui-clean .nav-links li.active a { background: linear-gradient(90deg, rgba(var(--primary-rgb), .14), rgba(255, 255, 255, .03) 70%); }
+.ui-clean .nav-category { color: #7d869a; }
+
+/* dashboard tiles: a coloured chip and a thin coloured line on top */
+.ui-clean .stat-card { --tile: var(--c-pink); position: relative; overflow: hidden; }
+.ui-clean .stat-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 2px; background: linear-gradient(90deg, var(--tile), transparent 85%); opacity: .9; }
+.ui-clean .stat-card::after { content: ''; position: absolute; width: 160px; height: 160px; right: -60px; top: -70px; border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--tile) 16%, transparent), transparent 70%); pointer-events: none; }
+.ui-clean .stat-card:has(#stat-views) { --tile: var(--c-pink); }
+.ui-clean .stat-card:has(#stat-cumulative-views) { --tile: var(--c-orange); }
+.ui-clean .stat-card:has(#stat-diamonds) { --tile: var(--c-cyan); }
+.ui-clean .stat-card:has(#stat-gifts) { --tile: var(--c-violet); }
+.ui-clean .stat-card:has(#stat-likes) { --tile: var(--c-red); }
+.ui-clean .stat-card:has(#stat-follows) { --tile: var(--c-green); }
+.ui-clean .stat-card:has(#stat-shares) { --tile: var(--c-blue); }
+.ui-clean .stat-icon-wrapper {
+    width: 32px !important; height: 32px !important; border-radius: 9px !important; opacity: 1;
+    color: var(--tile) !important; background: color-mix(in srgb, var(--tile) 15%, transparent) !important;
+}
+.ui-clean .stat-icon-wrapper i { color: var(--tile) !important; }
+
+/* card titles: the icon sits in a small tinted chip */
+.ui-clean .card-header h2 > i:first-child, .ui-clean section.card > h2 > i:first-child, .ui-clean .settings-group-premium h3 > i:first-child {
+    display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-right: .55rem !important;
+    border-radius: 9px; font-size: .9rem; background: rgba(var(--primary-rgb), .14);
+}
+.ui-clean .card { position: relative; }
+.ui-clean section.card:not(.stat-card)::before { content: ''; position: absolute; left: 18px; right: 18px; top: -1px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(var(--primary-rgb), .55), rgba(37, 244, 238, .35), transparent); }
+
+/* primary buttons: a little warmth */
+.ui-clean .btn-primary { background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, #ff8a3d)); border-color: transparent; }
+.ui-clean .badge, .ui-clean .beta-tag { border-color: rgba(var(--primary-rgb), .35) !important; color: #ff8fab !important; }
