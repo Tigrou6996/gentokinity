@@ -490,6 +490,9 @@ class TikTokConnector {
             } catch (e) { }
         }
 
+        // Gifts / likes still waiting for the 2 s leaderboard save (the app can quit right after)
+        try { await require('./handlers/eventManager').flushLeaderboardBuffer(); } catch (e) { }
+
         // Save stats before clearing (even if we were between two reconnection attempts)
         if (this.startTime) {
             try {

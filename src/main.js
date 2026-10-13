@@ -280,8 +280,8 @@ function createWindow() {
     // Helper: Download a file
     async function downloadFile(url, dest, event, label) {
         event.sender.send('mc-log', `Téléchargement de ${label}...`);
+        const response = await axios({ url, method: 'GET', responseType: 'stream', timeout: 30000 });
         const writer = fs.createWriteStream(dest);
-        const response = await axios({ url, method: 'GET', responseType: 'stream' });
 
         let lastLogged = 0;
         let downloaded = 0;
@@ -296,9 +296,20 @@ function createWindow() {
                     lastLogged = percent;
                 }
             });
+            // a cut connection used to leave the setup waiting forever, with a half-written file
+            const fail = (err) => {
+                writer.destroy();
+                fs.unlink(dest, () => { });
+                reject(new Error(`Téléchargement de ${label} interrompu : ${err.message}`));
+            };
+            response.data.on('error', fail);
+            response.data.on('aborted', () => fail(new Error('connexion coupée')));
             response.data.pipe(writer);
-            writer.on('finish', resolve);
-            writer.on('error', reject);
+            writer.on('finish', () => {
+                if (total > 0 && downloaded < total) return fail(new Error(`fichier incomplet (${downloaded}/${total} octets)`));
+                resolve();
+            });
+            writer.on('error', fail);
         });
     }
 
@@ -362,9 +373,15 @@ function createWindow() {
             } catch (tarError) {
                 logger.warn(`Tar extraction failed: ${tarError.message}`);
                 event.sender.send('mc-log', '⚠️ Tentative via PowerShell...');
-                await execAsync(`powershell -Command "Expand-Archive -Path '${rarDest}' -DestinationPath '${MC_DIR}' -Force"`).catch(() => { });
+                await execAsync(`powershell -Command "Expand-Archive -Path '${rarDest}' -DestinationPath '${MC_DIR}' -Force"`).catch((err) => {
+                    logger.warn(`PowerShell extraction failed: ${err.message}`);
+                });
             }
             if (fs.existsSync(rarDest)) fs.unlinkSync(rarDest);
+            // The pack brings the plugins (Gentok + ServerTap): without them the box cannot receive the live actions
+            if (!fs.existsSync(path.join(MC_DIR, 'plugins'))) {
+                throw new Error("Le pack GentokBoxTNT n'a pas pu être extrait (dossier plugins absent). Vérifiez l'antivirus et l'espace disque, puis réessayez.");
+            }
 
             // 3. Download LATEST Paper Spigot
             event.sender.send('mc-log', 'Mise à jour vers la dernière version de Paper...');
@@ -393,6 +410,28 @@ function createWindow() {
     });
 
     let mcProcess = null;
+
+    // Resolves when this process has exited (or right away if it already has); kills it after `ms`
+    function waitForExit(proc, ms) {
+        return new Promise((resolve) => {
+            if (!proc || proc.exitCode !== null || proc.signalCode !== null) return resolve();
+            const timer = setTimeout(() => {
+                logger.warn('⚠️ Server shutdown taking too long, killing process...');
+                try { proc.kill(); } catch (e) { }
+            }, ms);
+            proc.once('close', () => { clearTimeout(timer); resolve(); });
+        });
+    }
+
+    async function stopMinecraft(ms = 15000) {
+        const proc = mcProcess;
+        if (!proc) return;
+        logger.info('🛑 Stopping Minecraft Server...');
+        try { proc.stdin.write('stop\n'); } catch (e) { try { proc.kill(); } catch (err) { } }
+        await waitForExit(proc, ms);
+        if (mcProcess === proc) mcProcess = null;
+    }
+    stopMinecraftOnQuit = () => stopMinecraft(8000);
 
     async function launchMinecraftServer(event, token) {
         if (mcProcess) return { success: false, message: 'Déjà en cours' };
@@ -427,31 +466,37 @@ function createWindow() {
 
         event.sender.send('mc-log', `Utilisation de: ${javaPath}`);
 
-        mcProcess = spawn(javaPath, ['-Xmx2G', '-jar', 'server.jar', '--nogui'], { cwd: MC_DIR });
+        // Handlers only clear `mcProcess` if it is still this process: after a restart, the old one's
+        // "close" arrived once the new one was running and made the app lose track of it
+        const proc = spawn(javaPath, ['-Xmx2G', '-jar', 'server.jar', '--nogui'], { cwd: MC_DIR });
+        mcProcess = proc;
+        const send = (channel, data) => { if (!event.sender.isDestroyed()) event.sender.send(channel, data); };
 
-        mcProcess.on('error', (err) => {
+        proc.on('error', (err) => {
             // e.g. Java not installed: without this handler the whole app crashes
             logger.error(`🚨 Minecraft process error: ${err.message}`);
-            event.sender.send('mc-log', `❌ Impossible de lancer Java : ${err.message}`);
-            mcProcess = null;
+            send('mc-log', `❌ Impossible de lancer Java : ${err.message}`);
+            if (mcProcess === proc) mcProcess = null;
         });
+        proc.stdin.on('error', (err) => logger.warn(`Minecraft stdin: ${err.message}`));
 
-        mcProcess.stdout.on('data', (data) => {
+        proc.stdout.on('data', (data) => {
             const line = data.toString().trim();
-            if (line) event.sender.send('mc-log', line);
+            if (line) send('mc-log', line);
             if (line.includes('Done')) {
-                event.sender.send('mc-status', { paper: 'online', servertap: 'connected' });
+                send('mc-status', { paper: 'online', servertap: 'connected' });
             }
         });
 
-        mcProcess.stderr.on('data', (data) => {
-            event.sender.send('mc-log', `[ERR] ${data.toString()}`);
+        proc.stderr.on('data', (data) => {
+            send('mc-log', `[ERR] ${data.toString()}`);
         });
 
-        mcProcess.on('close', (code) => {
+        proc.on('close', (code) => {
+            if (mcProcess !== proc) return; // an older process (restart): the new one keeps running
             mcProcess = null;
-            event.sender.send('mc-log', `Le serveur s'est arrêté (Code: ${code})`);
-            event.sender.send('mc-status', { paper: 'offline', servertap: 'disconnected' });
+            send('mc-log', `Le serveur s'est arrêté (Code: ${code})`);
+            send('mc-status', { paper: 'offline', servertap: 'disconnected' });
         });
 
         return { success: true };
@@ -471,60 +516,25 @@ function createWindow() {
 
     ipcMain.handle('send-minecraft-command', async (event, command) => {
         if (!mcProcess) return { success: false, message: 'Le serveur n\'est pas lancé' };
-        // One command per call: a line break would let a single call run several commands
-        mcProcess.stdin.write(String(command).replace(/[\r\n]+/g, ' ') + '\n');
+        // One command per call: a line break would let a single call run several commands.
+        // The server console takes commands without the "/" typed in the game chat.
+        const line = String(command).replace(/[\r\n]+/g, ' ').trim().replace(/^\/+/, '');
+        if (!line) return { success: false, message: 'Commande vide' };
+        mcProcess.stdin.write(line + '\n');
         return { success: true };
     });
 
     ipcMain.handle('stop-minecraft-server', async () => {
-        if (!mcProcess) return { success: true };
-
-        logger.info('🛑 Stopping Minecraft Server...');
-        mcProcess.stdin.write('stop\n');
-
-        // Timeout to force kill if it doesn't stop
-        const killTimeout = setTimeout(() => {
-            if (mcProcess) {
-                logger.warn('⚠️ Server shutdown taking too long, killing process...');
-                mcProcess.kill();
-                mcProcess = null;
-            }
-        }, 15000);
-
-        return new Promise((resolve) => {
-            const checkInterval = setInterval(() => {
-                if (!mcProcess) {
-                    clearTimeout(killTimeout);
-                    clearInterval(checkInterval);
-                    resolve({ success: true });
-                }
-            }, 500);
-        });
+        await stopMinecraft(15000);
+        return { success: true };
     });
 
     ipcMain.handle('restart-minecraft-server', async (event, token) => {
         if (mcProcess) {
             event.sender.send('mc-log', '🔄 Redémarrage demandé...');
-            // Use the same stop logic
-            mcProcess.stdin.write('stop\n');
-            await new Promise((resolve) => {
-                const timeout = setTimeout(() => {
-                    if (mcProcess) {
-                        mcProcess.kill();
-                        mcProcess = null;
-                        resolve();
-                    }
-                }, 10000);
-                const check = setInterval(() => {
-                    if (!mcProcess) {
-                        clearTimeout(timeout);
-                        clearInterval(check);
-                        resolve();
-                    }
-                }, 500);
-            });
+            // waits for the old process to really exit: the world files are still in use until then
+            await stopMinecraft(10000);
         }
-        // Now it's stopped (or wasn't running), let's start it
         return await launchMinecraftServer(event, token);
     });
 
@@ -574,12 +584,16 @@ app.on('ready', async () => {
 
 // Closing the app during a live: stop the connection first so the live is saved in the history
 let quitting = false;
+// Set when the Minecraft handlers are registered (see the Minecraft section)
+let stopMinecraftOnQuit = async () => { };
+
 app.on('before-quit', (e) => {
     if (quitting) return;
     quitting = true;
     e.preventDefault();
-    const timeout = new Promise(r => setTimeout(r, 5000));
-    Promise.race([stopAllConnectors(), timeout]).catch(() => { }).finally(() => app.quit());
+    // The live is saved and the Minecraft server stopped cleanly (it kept running, with the world open, after Gentok closed)
+    const timeout = new Promise(r => setTimeout(r, 9000));
+    Promise.race([Promise.all([stopAllConnectors(), stopMinecraftOnQuit()]), timeout]).catch(() => { }).finally(() => app.quit());
 });
 
 app.on('window-all-closed', function () {

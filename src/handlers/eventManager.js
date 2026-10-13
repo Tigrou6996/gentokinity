@@ -130,16 +130,33 @@ function safeWriteJson(filePath, data) {
     }
 }
 
+const leaderboardRetry = new Map(); // token -> users whose database write failed (local files already written)
+function mergeLeaderboardUsers(into, users) {
+    for (const [uniqueId, d] of Object.entries(users || {})) {
+        const cur = into[uniqueId] || (into[uniqueId] = { coins: 0, likes: 0, user: d.user, gifts: {} });
+        cur.coins += d.coins || 0;
+        cur.likes += d.likes || 0;
+        cur.user = d.user || cur.user;
+        for (const [giftId, count] of Object.entries(d.gifts || {})) cur.gifts[giftId] = (cur.gifts[giftId] || 0) + count;
+    }
+    return into;
+}
+
 async function flushLeaderboardBuffer() {
-    if (leaderboardBuffer.size === 0) return;
+    if (leaderboardBuffer.size === 0 && leaderboardRetry.size === 0) return;
 
     // Snapshot buffer to process
     const bufferSnapshot = new Map(leaderboardBuffer);
     leaderboardBuffer.clear();
+    const retrySnapshot = new Map(leaderboardRetry);
+    leaderboardRetry.clear();
+    for (const token of retrySnapshot.keys()) if (!bufferSnapshot.has(token)) bufferSnapshot.set(token, {});
     const isApp = config.isAppMode;
 
-    for (const [token, users] of bufferSnapshot.entries()) {
-        if (isApp) {
+    for (const [token, fresh] of bufferSnapshot.entries()) {
+        // the local files get the new counts only; the database also gets the counts of a failed write
+        const users = mergeLeaderboardUsers(mergeLeaderboardUsers({}, fresh), retrySnapshot.get(token));
+        if (isApp && Object.keys(fresh).length) {
             // [APP MODE] Save to Split Local JSON Files (Legacy Format)
             const dir = getLocalDataDir();
 
@@ -156,7 +173,7 @@ async function flushLeaderboardBuffer() {
             files.like.data = safeReadJson(files.like.path);
             files.likeWeek.data = safeReadJson(files.likeWeek.path);
 
-            for (const [uniqueId, data] of Object.entries(users)) {
+            for (const [uniqueId, data] of Object.entries(fresh)) {
 
                 // Helper to update a user entry in a specific file dataset
                 const updates = [
@@ -276,13 +293,30 @@ async function flushLeaderboardBuffer() {
                 const p2 = Session.updateOne({ token }, sessionUpdate, { upsert: true });
 
                 await Promise.all([p1, p2]);
+                leaderboardRetries = 0;
             } catch (err) {
                 console.error(`[LEADERBOARD] Bulk update failed for ${token}:`, err.message);
+                // Kept for the next flush (they used to be lost); only the database write is retried
+                requeueLeaderboard(token, users);
+                continue;
             }
         }
 
         // [ALWAYS] Emit sync event
         emitEvent('leaderboard_sync', { timestamp: Date.now() }, token);
+    }
+}
+
+let leaderboardRetries = 0;
+function requeueLeaderboard(token, users) {
+    if (++leaderboardRetries > 20) { // database down for good: stop retrying instead of growing forever
+        console.error(`[LEADERBOARD] Abandon après 20 essais pour ${token}`);
+        leaderboardRetries = 0;
+        return;
+    }
+    leaderboardRetry.set(token, mergeLeaderboardUsers(leaderboardRetry.get(token) || {}, users));
+    if (!leaderboardSaveTimeout) {
+        leaderboardSaveTimeout = setTimeout(() => { leaderboardSaveTimeout = null; flushLeaderboardBuffer(); }, 10000);
     }
 }
 
@@ -979,4 +1013,4 @@ function registerEvents(tiktokConnection, connector) {
     });
 }
 
-module.exports = { registerEvents };
+module.exports = { registerEvents, flushLeaderboardBuffer };
