@@ -19,9 +19,10 @@
     }
 
     const overlayOptions = () => { try { return JSON.parse(localStorage.getItem(GALLERY) || '{}') || {}; } catch (e) { return {}; } };
+    const n = (count, one, many) => `${count} ${t(count > 1 ? many : one)}`;
     const summary = (c) => [
-        `${c.actions} ${t('actions')}`, `${c.events} ${t('événements')}`,
-        c.settings ? t('réglages') : null, c.overlays ? `${c.overlays} ${t('overlays personnalisés')}` : null
+        n(c.actions, 'action', 'actions'), n(c.events, 'événement', 'événements'),
+        c.settings ? t('réglages') : null, c.overlays ? n(c.overlays, 'overlay personnalisé', 'overlays personnalisés') : null
     ].filter(Boolean).join(' · ');
 
     async function copy(code) {
@@ -35,7 +36,7 @@
             const list = await api('/api/preset-codes/mine');
             box.innerHTML = list.length ? list.map(p => `
                 <div class="pcode-item">
-                    <div class="pcode-meta"><b>${esc(p.title)}</b><small>${esc(summary(p.counts))} · ${esc(p.uses)} ${esc(t('chargements'))}</small></div>
+                    <div class="pcode-meta"><b>${esc(p.title)}</b><small>${esc(summary(p.counts))} · ${esc(n(p.uses, 'chargement', 'chargements'))}</small></div>
                     <code class="pcode-code" title="${esc(t('Copier'))}" data-copy="${esc(p.code)}">${esc(p.code)}</code>
                     <button class="btn-secondary btn-sm" data-update="${esc(p.code)}" title="${esc(t('Remplacer par la scène active'))}"><i class="fas fa-rotate"></i></button>
                     <button class="btn-secondary btn-sm" data-delete="${esc(p.code)}" title="${esc(t('Supprimer'))}"><i class="fas fa-trash"></i></button>
@@ -110,7 +111,7 @@
             const cfg = await fetch(`${getApiBase()}/api/config?token=${encodeURIComponent(token())}`, { cache: 'no-store' }).then(x => x.json()).catch(() => null);
             if (cfg && typeof applyConfigUI === 'function') applyConfigUI(cfg);
             if (input) input.value = '';
-            showToast(`${t('Preset chargé')} : ${res.installed.actions} ${t('actions')}, ${res.installed.events} ${t('événements')}`, 'success');
+            showToast(`${t('Preset chargé')} : ${n(res.installed.actions, 'action', 'actions')}, ${n(res.installed.events, 'événement', 'événements')}`, 'success');
         } catch (e) { showToast(e.message, 'error'); }
     }
 

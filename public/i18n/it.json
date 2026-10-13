@@ -1923,6 +1923,10 @@
   "💬 Chat": "💬 Chat",
   "📱 App Mode (Electron) detected.": "📱 Modalità app (Electron) rilevata.",
   "📱 App Mode (Web Forced) detected.": "📱 Modalità app (web forzata) rilevata.",
-  "😀 Emote": "😀 Emote"
+  "😀 Emote": "😀 Emote",
+  "action": "azione",
+  "événement": "evento",
+  "overlay personnalisé": "overlay personalizzato",
+  "chargement": "caricamento"
  }
 }
