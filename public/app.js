@@ -50,6 +50,16 @@ function savePfp(uniqueId, url) {
 function getPfp(uniqueId, fallback) {
     return pfpCache[uniqueId?.toLowerCase()] || fallback;
 }
+// Avatar shown when a viewer has no picture or TikTok's link expired (they expire after a few days):
+// the first letter of the name on a color picked from the name, instead of the Gentok logo
+window.gentokInitialAvatar = (name) => {
+    const n = String(name || '?').replace(/^@/, '');
+    const letter = (Array.from(n)[0] || '?').toUpperCase().replace(/[<>&"']/g, '?');
+    let h = 0;
+    for (const c of n) h = (h * 31 + c.codePointAt(0)) % 360;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="hsl(${h},55%,42%)"/><text x="32" y="42" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">${letter}</text></svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+};
 
 const showToast = (message, type = 'success') => {
     const Toast = Swal.mixin({
@@ -4604,6 +4614,10 @@ window.showSection = (sectionId) => {
     sections.forEach(s => {
         const el = document.getElementById(`${s}-section`);
         if (el) el.style.display = 'none';
+    });
+    // pages added later (donors, ...) are hidden too, whatever their id
+    document.querySelectorAll('#dashboard-container section[id$="-section"]').forEach(el => {
+        if (el.id !== `${sectionId}-section`) el.style.display = 'none';
     });
 
     // Show target
@@ -9232,7 +9246,7 @@ async function viewHistoryDetail(id) {
         const history = await res.json();
         if (history.error) throw new Error(history.error);
 
-        const avatar = (u, size = 34) => `<img class="hz-avatar" style="width:${size}px;height:${size}px" src="${escapeHtml(u.profilePictureUrl || '/logo.png')}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.src='/logo.png'">`;
+        const avatar = (u, size = 34) => `<img class="hz-avatar" style="width:${size}px;height:${size}px" src="${escapeHtml(u.profilePictureUrl || gentokInitialAvatar(u.nickname || u.uniqueId))}" data-n="${escapeHtml(u.nickname || u.uniqueId || '')}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)">`;
         const name = (u) => escapeHtml(u.nickname || u.uniqueId || '?');
         const podium = (list, unit) => {
             if (!list || !list.length) return '<div class="hz-empty">Aucune donnée cette semaine</div>';
@@ -9417,14 +9431,14 @@ function displayLegendsGrid() {
 
         const topUsersHtml = gift.topUsers && gift.topUsers.length > 0 ? gift.topUsers.map((user, idx) => {
             savePfp(user.uniqueId, user.profilePictureUrl);
-            const pfp = getPfp(user.uniqueId, user.profilePictureUrl || '/logo.png');
+            const pfp = getPfp(user.uniqueId, user.profilePictureUrl || gentokInitialAvatar(user.nickname || user.uniqueId));
             let rankColor = idx === 0 ? '#ffd700' : (idx === 1 ? '#c0c0c0' : (idx === 2 ? '#cd7f32' : 'var(--text-dim)'));
 
             return `
             <div style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
                 <div style="font-weight: 800; color: ${rankColor}; font-size: 0.8rem; width: 25px;">#${idx + 1}</div>
                 <div style="position: relative; flex-shrink: 0;">
-                    <img src="${escapeHtml(pfp)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.src='/logo.png'" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${idx < 3 ? rankColor : 'rgba(255,255,255,0.1)'};">
+                    <img src="${escapeHtml(pfp)}" data-n="${escapeHtml(user.nickname || user.uniqueId || '')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid ${idx < 3 ? rankColor : 'rgba(255,255,255,0.1)'};">
                 </div>
                 <div style="flex-grow: 1; min-width: 0;">
                     <div style="font-size: 0.75rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9;">${escapeHtml(user.uniqueId)}</div>
@@ -9499,7 +9513,7 @@ async function renderRankingTable() {
                 <td style="text-align: center; font-weight: 800; color: ${rankColor}; font-size: 1.1rem;">#${index + 1}</td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 12px; padding: 5px 0;">
-                        <img src="${getPfp(entry.uniqueId, entry.profilePictureUrl)}" onerror="this.src='/logo.png'" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid ${index < 3 ? rankColor : 'var(--border)'}; object-fit: cover;">
+                        <img src="${escapeHtml(getPfp(entry.uniqueId, entry.profilePictureUrl) || gentokInitialAvatar(entry.nickname || entry.uniqueId))}" data-n="${escapeHtml(entry.nickname || entry.uniqueId || '')}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid ${index < 3 ? rankColor : 'var(--border)'}; object-fit: cover;">
                         <div style="text-align: left;">
                             <div style="font-weight: 700; color: #fff; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(entry.nickname || entry.uniqueId)}</div>
                             <div style="font-size: 0.75rem; color: var(--text-dim);">@${escapeHtml(entry.uniqueId)}</div>

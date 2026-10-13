@@ -39,7 +39,7 @@
         }
         list.innerHTML = rows.map(v => `
             <div class="donor-row tier-${escapeHtml(v.tier)}">
-                <img src="${escapeHtml(v.profilePictureUrl || '/logo.png')}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.src='/logo.png'">
+                <img src="${escapeHtml(v.profilePictureUrl || gentokInitialAvatar(v.nickname || v.uniqueId))}" data-n="${escapeHtml(v.nickname || v.uniqueId || '')}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)">
                 <div class="donor-name">
                     <b>${escapeHtml(v.nickname)}</b>
                     <small>@${escapeHtml(v.uniqueId)} · ${escapeHtml(t('vu il y a'))} ${ago(v.lastSeen)}</small>

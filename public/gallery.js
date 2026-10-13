@@ -57,7 +57,7 @@
             params: [{ key: 'start', label: 'Départ (min)', type: 'number', def: 60 }, { key: 'coin', label: 'Secondes par pièce', type: 'number', def: 5 }, { key: 'follow', label: 'Secondes par follow', type: 'number', def: 30 }, { key: 'sub', label: 'Secondes par abonnement', type: 'number', def: 300 }, size(72), theme, color] },
 
         // ---- Games & interaction
-        { id: 'wheel', cat: 'games', icon: 'fa-dharmachakra', name: 'Roue de la fortune', desc: 'Affiche les tirages des actions « Roue de la fortune » (chaque case peut lancer une action).', h: 380, scale: true,
+        { id: 'wheel', cat: 'games', icon: 'fa-dharmachakra', name: 'Roue de la fortune', desc: 'Affiche les tirages des actions « Roue de la fortune » (chaque case peut lancer une action).', h: 380, scale: true, test: { wheel: true },
             params: [size(520), { key: 'hold', label: 'Affichage du résultat (s)', type: 'number', def: 5 }, { key: 'stand', label: 'Pied', type: 'bool', def: true }, color] },
         { id: 'coinmatch', cat: 'games', icon: 'fa-gavel', name: 'Coin Match', desc: 'Enchère en direct : les spectateurs misent avec leurs cadeaux pour être en tête.', h: 420, test: BIG_GIFT, controls: 'coinmatch', premium: true,
             params: [{ key: 'limit', label: 'Lignes', type: 'number', def: 5 }, { key: 'hold', label: 'Affichage des gagnants (s)', type: 'number', def: 12 }, { key: 'title', label: 'Titre', type: 'text' }, theme, color, color2] },
@@ -163,7 +163,7 @@
             <div class="gal-url">
                 <input type="text" readonly class="gal-link form-control form-control-sm">
                 <button class="btn btn-sm btn-outline-secondary" data-act="copy"><i class="fas fa-copy"></i> ${esc(t("Copier l'URL"))}</button>
-                <button class="btn btn-sm btn-outline-secondary" data-act="test"${o.test ? '' : ' disabled title="' + esc(t('Pas de test pour cet overlay')) + '"'}><i class="fas fa-chevron-right"></i> Test</button>
+                ${o.test ? '<button class="btn btn-sm btn-outline-secondary" data-act="test"><i class="fas fa-chevron-right"></i> Test</button>' : ''}
                 <button class="btn btn-sm btn-outline-secondary" data-act="custom"><i class="fas fa-gear"></i> ${esc(t('Personnaliser'))}</button>
                 <button class="btn btn-sm btn-outline-secondary" data-act="open" title="${esc(t('Ouvrir'))}"><i class="fas fa-external-link-alt"></i></button>
             </div>
@@ -281,6 +281,9 @@
                 delete options[o.id]; saveOptions();
                 card.querySelector('.gal-fields').outerHTML = `<div class="gal-fields">${(o.params || []).map(p => fieldHtml(o, p)).join('')}<div class="gal-field"><label>${esc(t('Police'))}</label><select class="form-select form-select-sm" data-k="font"><option value="">${esc(t('Par défaut'))}</option>${FONTS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div></div>`;
                 refreshCard(card, true);
+            } else if (act === 'test' && o.test && o.test.wheel) {
+                await api('/api/wheel/test', {});
+                showToast(t('Test envoyé : regardez votre overlay dans OBS'), 'success');
             } else if (act === 'test' && o.test) {
                 await api('/api/simulate', { uniqueId: 'gentok_test', nickname: 'Gentok Test', followRole: 1, ...o.test });
                 showToast(t('Test envoyé : regardez votre overlay dans OBS'), 'success');

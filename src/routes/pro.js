@@ -243,6 +243,23 @@ module.exports = function registerProRoutes(app, { getRequestToken }) {
         res.json({ success: true });
     }));
 
+    // "Test" of the Roue de la fortune overlay: spins the first wheel of the scene (or a demo wheel),
+    // only on the overlay — the actions linked to the segments are not run
+    app.post('/api/wheel/test', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        const settings = await config.getSettings(token);
+        const wheel = (settings.actions || []).find(a => a.type === 'wheel' && a.segments);
+        let segments = wheel ? String(wheel.segments).split(/\r?\n/).map(l => l.split('=>')[0].trim().slice(0, 40)).filter(Boolean).slice(0, 24) : [];
+        if (segments.length < 2) segments = ['10 pompes', 'Danse', 'Rien 😅', 'Chanson', 'Gage', 'x2 points'];
+        const crypto = require('crypto');
+        const { emitEvent } = require('../utils/socket');
+        emitEvent('wheel_spin', {
+            id: `test_${Date.now()}`, title: (wheel && wheel.name) || 'Test', segments,
+            winnerIndex: crypto.randomInt(segments.length), spinMs: 6000, nickname: 'Gentok Test', profilePictureUrl: ''
+        }, token);
+        res.json({ success: true });
+    }));
+
     // ---------------- Streamer.bot ----------------
     app.post('/api/streamerbot/test', wrap(async (req, res) => {
         const { host, port } = req.body || {};

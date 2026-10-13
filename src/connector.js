@@ -51,6 +51,38 @@ function pickDisplay(prev) {
     return o;
 }
 
+
+/**
+ * tiktok-live-connector (legacy mode) loses the profile picture: it reads `avatarLarge` as a list of
+ * addresses while it is an object holding that list, so `profilePictureUrl` is always null and every
+ * viewer showed the Gentok logo. The address it keeps in `userDetails.profilePictureUrls` is put back
+ * before any of our handlers sees the event.
+ */
+function pictureOf(u) {
+    const d = u && u.userDetails;
+    const v = d && d.profilePictureUrls;
+    return Array.isArray(v) ? v[0] : (typeof v === 'string' ? v : null);
+}
+function fixUser(u) {
+    if (u && typeof u === 'object' && !u.profilePictureUrl) {
+        const url = pictureOf(u);
+        if (url) u.profilePictureUrl = url;
+    }
+}
+function fixProfilePictures(connection) {
+    const emit = connection.emit.bind(connection);
+    connection.emit = (name, data, ...rest) => {
+        if (data && typeof data === 'object') {
+            try {
+                fixUser(data);
+                if (data.user) fixUser(data.user);
+                if (Array.isArray(data.topViewers)) data.topViewers.forEach(v => v && fixUser(v.user));
+            } catch (e) { }
+        }
+        return emit(name, data, ...rest);
+    };
+}
+
 class TikTokConnector {
     constructor(username, token) {
         this.username = username;
@@ -306,6 +338,7 @@ class TikTokConnector {
             const WebcastPushClass = await getWebcastPushConnection();
             const connection = new WebcastPushClass(this.username, options);
             this.connection = connection;
+            fixProfilePictures(connection);
             registerEvents(connection, this);
 
             // Any decoded message proves the socket is alive (used by the watchdog)

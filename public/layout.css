@@ -103,3 +103,17 @@ body.nav-railed #dashboard-container .nav-links a .beta-tag { flex-shrink: 0; fo
 
 /* Big page titles inside sections (e.g. Paramètres Généraux) */
 #dashboard-container .settings-content h2, #dashboard-container .settings-panel > h2, #dashboard-container .settings-title { font-size: 1.35rem !important; margin-bottom: 1rem !important; }
+
+/* ---------- Modals (Nouvelle Action, Nouvel Événement, ...) ---------- */
+.modal .modal-content { padding: 1.6rem 1.75rem; border-radius: 16px; max-height: calc(100vh - 40px); overflow-y: auto; }
+.modal .modal-content > h2 { font-size: 1.35rem; margin: 0 2rem 1.1rem 0; }
+.modal .form-group { margin-bottom: 1rem; }
+.modal .form-group > label { margin-bottom: 6px; line-height: 1.35; }
+.modal .form-actions { margin-top: 1.4rem; }
+.modal .custom-select-trigger { padding: 10px 14px; border-radius: 10px; }
+/* options: icon, then the name, then the PREMIUM badge on the right (the name used to be pushed to the right edge) */
+.modal .custom-option { justify-content: flex-start; color: var(--text); }
+.modal .custom-option .premium-lock { margin-left: auto; }
+/* the chosen option shown in the box: the badge keeps its size instead of stretching across */
+.custom-select-trigger span .premium-lock, .custom-select-trigger span span { flex: 0 0 auto; margin-right: 0; }
+.modal .custom-options { max-height: 320px; }

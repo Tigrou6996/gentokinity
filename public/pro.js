@@ -53,7 +53,7 @@
                 } else {
                     tbody.innerHTML = data.users.map(u => `
                         <tr>
-                            <td><div class="pro-user"><img src="${esc(u.profilePictureUrl || '/logo.png')}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">
+                            <td><div class="pro-user"><img src="${esc(u.profilePictureUrl || gentokInitialAvatar(u.nickname || u.uniqueId))}" data-n="${esc(u.nickname || u.uniqueId)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)">
                                 <div><div class="n">${esc(u.nickname)}</div><div class="u">@${esc(u.uniqueId)}</div></div></div></td>
                             <td><span class="pro-level">${u.level}</span></td>
                             <td class="pro-num">${fmt(u.points)}</td>
@@ -368,7 +368,7 @@
     // ------------------------------------------------------------------ giveaway & points drop
     const val = (id) => (document.getElementById(id) || {}).value;
     const checked = (id) => !!(document.getElementById(id) || {}).checked;
-    const avatarHtml = (p) => `<img src="${esc(p.profilePictureUrl || '/logo.png')}" referrerpolicy="no-referrer" onerror="this.src='/logo.png'">`;
+    const avatarHtml = (p) => `<img src="${esc(p.profilePictureUrl || gentokInitialAvatar(p.nickname || p.uniqueId))}" data-n="${esc(p.nickname || p.uniqueId)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=gentokInitialAvatar(this.dataset.n)">`;
 
     const Giveaway = {
         timer: null,

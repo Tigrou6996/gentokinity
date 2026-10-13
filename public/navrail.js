@@ -1,5 +1,5 @@
 /**
- * TikFinity-like navigation: a narrow rail of categories on the left and, next to it, only the pages of the
+ * Optional TikFinity-like navigation (Settings > Apparence > Menu; the full menu stays the default): a narrow rail of categories on the left and, next to it, only the pages of the
  * chosen category. Built from the existing menu (<ul class="nav-links"> with its "nav-category" headers), so
  * links, onclick handlers, "locked" / "scene-required" rules and active states keep working unchanged.
  * The scene picker moves to the header, like TikFinity's profile switcher.
@@ -142,7 +142,16 @@
         if (key && key !== current) select(key, false);
     }
 
+    const NAV_KEY = 'gentok_nav_style';
+    const navStyle = () => { try { return localStorage.getItem(NAV_KEY) === 'rail' ? 'rail' : 'classic'; } catch (e) { return 'classic'; } };
+    // Settings > Apparence > Menu: the full menu of the app (default) or the icon bar by category
+    window.setNavStyle = (value) => {
+        try { localStorage.setItem(NAV_KEY, value === 'rail' ? 'rail' : 'classic'); } catch (e) { }
+        location.reload();
+    };
+
     function start() {
+        if (navStyle() !== 'rail') return;
         build();
         if (!document.querySelector('.sidebar.has-rail')) {
             // menu not in the page yet (login screen): try again shortly
@@ -159,6 +168,8 @@
     document.addEventListener('DOMContentLoaded', () => {
         const sel = document.getElementById('setting-ui-density');
         if (sel) sel.value = document.documentElement.getAttribute('data-density') || 'normal';
+        const nav = document.getElementById('setting-nav-style');
+        if (nav) nav.value = navStyle();
     });
 
     window.GentokNavRail = { select, sync: syncToSection };
