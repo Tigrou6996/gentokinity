@@ -646,7 +646,7 @@
         const group = document.createElement('div');
         group.className = 'form-group';
         group.innerHTML = `<label>${esc(t('Police de l\'interface'))}</label>
-            <select id="setting-ui-font" class="form-select"><option value="">${esc(t('Police système'))} (${esc(t('Par défaut'))})</option>
+            <select id="setting-ui-font" class="form-select"><option value="">${esc(t('Police du style choisi'))} (${esc(t('Par défaut'))})</option>
             ${FONTS.filter(f => f !== 'Outfit').map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('')}</select>`;
         styleSelect.closest('.form-group').after(group);
         const sel = group.querySelector('select');

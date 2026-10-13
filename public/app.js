@@ -9842,12 +9842,19 @@ function setAccentColor(color, el) {
     savePremiumSettings();
 }
 
+// Interface style classes: "Épuré" (default) is the Classique style plus a refined finish (ui-clean.css)
+const UI_STYLE_CLASSES = ['ui-compact', 'ui-glass', 'ui-studio', 'ui-classic', 'ui-clean'];
+function uiStyleClasses(style) {
+    if (style === 'clean') return ['ui-classic', 'ui-clean'];
+    if (['compact', 'glass', 'studio', 'classic'].includes(style)) return ['ui-' + style];
+    return [];
+}
 function updateUIStyle(style) {
-    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio', 'ui-classic');
-    document.documentElement.classList.remove('ui-studio', 'ui-classic');
-    if (style === 'compact') document.body.classList.add('ui-compact');
-    if (style === 'glass') document.body.classList.add('ui-glass');
-    if (style === 'studio' || style === 'classic') { document.body.classList.add('ui-' + style); document.documentElement.classList.add('ui-' + style); }
+    document.body.classList.remove(...UI_STYLE_CLASSES);
+    document.documentElement.classList.remove(...UI_STYLE_CLASSES);
+    const classes = uiStyleClasses(style);
+    document.body.classList.add(...classes);
+    if (style !== 'compact' && style !== 'glass') document.documentElement.classList.add(...classes);
     try { localStorage.setItem('gentok_ui_style', style); } catch (e) { }
     savePremiumSettings();
 }
@@ -9855,7 +9862,7 @@ function updateUIStyle(style) {
 function savePremiumSettings() {
     const settings = {
         accentColor: document.documentElement.style.getPropertyValue('--primary'),
-        uiStyle: document.getElementById('setting-ui-style')?.value || 'classic',
+        uiStyle: document.getElementById('setting-ui-style')?.value || 'clean',
         autoConnect: document.getElementById('setting-auto-connect')?.checked,
         autoReset: document.getElementById('setting-auto-reset')?.checked,
         soundAlerts: document.getElementById('setting-sound-alerts')?.checked,
@@ -9865,13 +9872,13 @@ function savePremiumSettings() {
 }
 
 function loadPremiumSettings() {
-    // Interface style: its own key, Classique by default (older saves of "modern" were only the old default)
-    let uiStyle = 'classic';
-    try { uiStyle = localStorage.getItem('gentok_ui_style') || 'classic'; } catch (e) { }
+    // Interface style: its own key, Épuré by default (older saves of "modern" were only the old default)
+    let uiStyle = 'clean';
+    try { uiStyle = localStorage.getItem('gentok_ui_style') || 'clean'; } catch (e) { }
     const styleSelect = document.getElementById('setting-ui-style');
     if (styleSelect) styleSelect.value = uiStyle;
-    document.body.classList.remove('ui-compact', 'ui-glass', 'ui-studio', 'ui-classic');
-    if (['compact', 'glass', 'studio', 'classic'].includes(uiStyle)) document.body.classList.add('ui-' + uiStyle);
+    document.body.classList.remove(...UI_STYLE_CLASSES);
+    document.body.classList.add(...uiStyleClasses(uiStyle));
 
     const saved = localStorage.getItem('gentok_premium_settings');
     if (!saved) return;

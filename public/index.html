@@ -14,10 +14,12 @@
     <link rel="stylesheet" href="theme-studio.css">
     <link rel="stylesheet" href="ui-classic.css">
     <script>
-        // Interface style chosen in Settings (default: Classique), applied before the page draws to avoid a flash
+        // Interface style chosen in Settings (default: Épuré), applied before the page draws to avoid a flash
         (function () {
-            var style = 'classic';
-            try { style = localStorage.getItem('gentok_ui_style') || 'classic'; } catch (e) { }
+            var style = 'clean';
+            try { style = localStorage.getItem('gentok_ui_style') || 'clean'; } catch (e) { }
+            // "Épuré" is the Classique style with a refined finish (ui-clean.css)
+            if (style === 'clean') document.documentElement.classList.add('ui-classic', 'ui-clean');
             if (style === 'classic' || style === 'studio') document.documentElement.classList.add('ui-' + style);
             // Interface size (Settings > Apparence): compact | normal | large
             var density = 'normal';
@@ -31,6 +33,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css">
     <link rel="stylesheet" href="layout.css">
+    <!-- "Épuré" style (default): fonts + finish, see ui-clean.css -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="ui-clean.css">
     <style>
         .font-selector {
             background: rgba(255,255,255,0.05);
@@ -2652,7 +2659,8 @@
                                     <div class="form-group">
                                         <label>Style de l'interface</label>
                                         <select id="setting-ui-style" onchange="updateUIStyle(this.value)">
-                                            <option value="classic">Classique (Défaut)</option>
+                                            <option value="clean">Épuré (Défaut)</option>
+                                            <option value="classic">Classique</option>
                                             <option value="studio">Studio</option>
                                             <option value="modern">Néon</option>
                                             <option value="compact">Compact (Plus d'infos)</option>

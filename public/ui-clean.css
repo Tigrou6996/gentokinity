@@ -1,0 +1,226 @@
+/*
+ * "Épuré" interface style (default). Built on the Classique style (html/body get both classes ui-classic and
+ * ui-clean), loaded last: same structure and features, a calmer and more refined finish.
+ *
+ * Tokens
+ *   graphite  #111318  page            ink     #ECEEF3  text
+ *   surface   #181B22  cards, sidebar  mist    #9AA2B3  secondary text
+ *   line      #252A34  borders         field   #0F1116  inputs (inset)
+ *   accent    var(--primary)  the TikTok pink (or the colour chosen in Settings) — the only strong colour
+ *   signal    #25F4EE  TikTok cyan, only inside the signature
+ * Type: Bricolage Grotesque (titles, big numbers) · Figtree (text) · JetBrains Mono (codes, technical values)
+ * Signature: the split mark of the TikTok logo (cyan behind pink, offset) on the active menu item and before
+ * the page title. Nothing else glows or moves.
+ */
+
+/* ---------- Tokens ---------- */
+.ui-clean {
+    --bg-dark: #111318;
+    --bg-deep: #14171d;
+    --sidebar-bg: #14161c;
+    --card-bg: #181b22;
+    --card-hover: #1d2129;
+    --raised: #1f232c;
+    --field-bg: #0f1116;
+    --border: #252a34;
+    --border-hover: #363c49;
+    --text: #eceef3;
+    --text-dim: #9aa2b3;
+    --text-muted: #687083;
+    --signal: #25f4ee;
+    --font-display: var(--ui-font, 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif);
+    --font-text: var(--ui-font, 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif);
+    --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+    --bs-body-bg: #111318;
+    --bs-border-color: #252a34;
+    --bs-body-color: #eceef3;
+}
+
+/* text font everywhere except the icon fonts (the font chosen in Settings still wins) */
+.ui-clean, .ui-clean *:not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands):not(code):not(pre) {
+    font-family: var(--font-text);
+}
+body.ui-clean { background: var(--bg-dark); color: var(--text); -webkit-font-smoothing: antialiased; font-feature-settings: "ss01"; }
+.ui-clean code, .ui-clean pre, .ui-clean .pcode-code, .ui-clean .api-table code { font-family: var(--font-mono); font-size: .86em; }
+
+/* The signature: TikTok's split mark (pink in front, cyan offset behind) */
+.ui-clean .nav-links li.active a::before,
+.ui-clean #section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--primary);
+    box-shadow: -2px 1px 0 var(--signal);
+}
+
+/* ---------- Sidebar ---------- */
+.ui-clean .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 1.1rem .75rem; }
+.ui-clean .brand-wrapper { margin-bottom: 1rem; }
+.ui-clean .logo span { font-family: var(--font-display); font-weight: 700; letter-spacing: -.02em; font-size: 1.35rem; }
+.ui-clean .logo img { border-radius: 10px; }
+.ui-clean .nav-category {
+    color: var(--text-muted); font-size: .66rem; font-weight: 700; letter-spacing: .14em;
+    padding: 1.15rem .5rem .4rem .8rem;
+}
+.ui-clean .nav-links a {
+    position: relative; color: #a9b0bf; font-weight: 500; font-size: .9rem;
+    padding: .42rem .7rem .42rem .8rem; border-radius: 8px; margin: 1px 0;
+}
+.ui-clean .nav-links a:hover:not(.active) { background: rgba(255, 255, 255, .035); color: var(--text); }
+.ui-clean .nav-links li.active a { background: var(--raised); color: #fff; font-weight: 600; }
+.ui-clean .nav-links li.active a::before { position: absolute; left: 2px; top: 9px; bottom: 9px; }
+.ui-clean .nav-item-content i { color: #6f778a; font-size: .9rem; }
+.ui-clean .nav-links li.active a .nav-item-content i { color: var(--primary); }
+.ui-clean .beta-tag { border-color: var(--border) !important; color: var(--text-muted) !important; font-size: .58rem !important; letter-spacing: .04em; }
+.ui-clean .pro-banner { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: none; }
+.ui-clean .pro-banner:hover { border-color: var(--border-hover); background: var(--raised); }
+
+/* ---------- Header ---------- */
+.ui-clean header { border-bottom: 1px solid var(--border); }
+.ui-clean header h1, .ui-clean #section-title {
+    font-family: var(--font-display); font-size: 1.45rem; font-weight: 650; letter-spacing: -.015em; color: var(--text);
+    display: inline-flex; align-items: center; gap: .7rem;
+}
+.ui-clean #section-title::before { height: 1.05em; }
+.ui-clean header .btn-primary, .ui-clean header .btn-ghost, .ui-clean #header-username, .ui-clean .app-badge { border-radius: 8px; }
+.ui-clean .username-wrapper input, .ui-clean #header-username { background: var(--field-bg); border-color: var(--border); }
+.ui-clean .app-badge { border-color: var(--border); color: var(--text-dim); }
+
+/* ---------- Surfaces ---------- */
+.ui-clean .card, .ui-clean .settings-group-premium, .ui-clean .pcode-card, .ui-clean .chatbot-card, .ui-clean .gal-card, .ui-clean .gw-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: none;
+}
+.ui-clean .settings-group-premium { padding: 1.25rem 1.35rem; }
+.ui-clean .card-header h2, .ui-clean section.card > h2 {
+    font-family: var(--font-display); font-size: 1.15rem; font-weight: 650; letter-spacing: -.01em; color: var(--text);
+}
+.ui-clean .card-header h2 i, .ui-clean .settings-group-premium h3 i { color: var(--primary) !important; }
+.ui-clean .card-header p, .ui-clean .text-dim { color: var(--text-dim) !important; }
+.ui-clean .settings-group-premium h3 { font-family: var(--font-display); font-size: 1rem !important; font-weight: 650; letter-spacing: -.005em; }
+.ui-clean .pcode-card { background: var(--card-bg); }
+
+/* Dashboard tiles: one colour for the numbers, the icon only hints the kind */
+.ui-clean #dashboard-container .stat-grid { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important; gap: .75rem !important; }
+.ui-clean .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.15rem !important; min-height: 0 !important; }
+.ui-clean .stat-card:hover { border-color: var(--border-hover); background: var(--card-bg); }
+.ui-clean .stat-title { color: var(--text-dim); font-size: .8rem !important; font-weight: 600; letter-spacing: .01em; }
+.ui-clean .stat-icon-wrapper { width: 28px !important; height: 28px !important; background: transparent !important; border: 0 !important; font-size: .85rem !important; opacity: .75; }
+.ui-clean .stat-value, .ui-clean #stat-views, .ui-clean #stat-gifts, .ui-clean #stat-likes, .ui-clean #stat-follows, .ui-clean #stat-shares, .ui-clean #stat-diamonds {
+    font-family: var(--font-display); color: var(--text) !important; -webkit-text-fill-color: var(--text);
+    background: none !important; text-shadow: none !important;
+    font-size: 1.95rem !important; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.ui-clean .stat-compare { color: var(--text-muted); font-size: .74rem; }
+
+/* ---------- Buttons ---------- */
+.ui-clean .btn-primary {
+    background: var(--primary); border: 1px solid var(--primary); color: #fff; border-radius: 8px;
+    font-weight: 600; letter-spacing: .005em; box-shadow: none;
+}
+.ui-clean .btn-primary:hover { filter: brightness(1.07); }
+.ui-clean .btn-primary:active { filter: brightness(.95); }
+.ui-clean .btn-secondary, .ui-clean .btn-outline-secondary {
+    background: var(--raised); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 500;
+}
+.ui-clean .btn-secondary:hover, .ui-clean .btn-outline-secondary:hover { background: #262b35; border-color: var(--border-hover); color: #fff; }
+.ui-clean .btn-ghost, .ui-clean .btn-icon { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); }
+.ui-clean .btn-ghost:hover, .ui-clean .btn-icon:hover { background: var(--raised); color: var(--text); border-color: var(--border-hover); }
+.ui-clean .btn-danger { border-radius: 8px; font-weight: 600; }
+.ui-clean .btn-primary:focus-visible, .ui-clean .btn-secondary:focus-visible, .ui-clean .btn-ghost:focus-visible,
+.ui-clean .btn-icon:focus-visible, .ui-clean .nav-links a:focus-visible, .ui-clean button:focus-visible {
+    outline: 2px solid rgba(var(--primary-rgb), .65); outline-offset: 2px;
+}
+
+/* ---------- Forms ---------- */
+.ui-clean input[type=text], .ui-clean input[type=number], .ui-clean input[type=search], .ui-clean input[type=password],
+.ui-clean input[type=email], .ui-clean input[type=url], .ui-clean select, .ui-clean textarea, .ui-clean .form-control, .ui-clean .form-select {
+    background-color: var(--field-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: .9rem;
+}
+.ui-clean input::placeholder, .ui-clean textarea::placeholder { color: #565e70; }
+.ui-clean input:hover:not(:focus), .ui-clean select:hover:not(:focus), .ui-clean textarea:hover:not(:focus) { border-color: var(--border-hover); }
+.ui-clean input:focus, .ui-clean select:focus, .ui-clean textarea:focus, .ui-clean .form-control:focus, .ui-clean .form-select:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .16); transform: none; background-color: var(--field-bg);
+}
+.ui-clean .form-group label, .ui-clean .pro-field label {
+    color: #b3bac8; font-size: .8rem; font-weight: 600; text-transform: none; letter-spacing: 0;
+}
+.ui-clean .form-group:focus-within label { color: var(--text); transform: none; text-shadow: none; }
+.ui-clean .pro-field small { color: var(--text-muted); }
+.ui-clean input[type=checkbox], .ui-clean input[type=radio] { accent-color: var(--primary); }
+.ui-clean .custom-select-trigger { background: var(--field-bg); border: 1px solid var(--border); border-radius: 8px; }
+.ui-clean .custom-select-trigger:hover { border-color: var(--border-hover); background: var(--field-bg); }
+.ui-clean .custom-select-wrapper.open .custom-select-trigger { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .16); background: var(--field-bg); }
+.ui-clean .custom-options { background: #1a1d24; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 40px rgba(0, 0, 0, .45); }
+.ui-clean .custom-option { color: var(--text-dim); border-radius: 6px; }
+.ui-clean .custom-option:hover { background: var(--raised); color: var(--text); }
+.ui-clean .custom-option.selected { background: rgba(var(--primary-rgb), .12); color: #fff; }
+
+/* ---------- Tables ---------- */
+.ui-clean th, .ui-clean .pro-table th {
+    background: transparent !important; color: var(--text-muted); font-size: .68rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--border);
+}
+.ui-clean td { border-bottom: 1px solid rgba(37, 42, 52, .7); }
+.ui-clean tbody tr:hover td { background: rgba(255, 255, 255, .018); }
+
+/* ---------- Tabs ---------- */
+.ui-clean .pro-tabs { border-bottom: 1px solid var(--border); gap: .25rem; }
+.ui-clean .pro-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-dim); font-weight: 600; padding: .6rem .9rem; }
+.ui-clean .pro-tabs button:hover { color: var(--text); }
+.ui-clean .pro-tabs button.active { color: var(--text); border-bottom-color: var(--primary); background: transparent; }
+.ui-clean .btn-tab { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 999px; font-weight: 600; padding: .4rem 1rem; box-shadow: none; }
+.ui-clean .btn-tab:hover { color: var(--text); border-color: var(--border-hover); }
+.ui-clean .btn-tab.active { background: var(--text); border-color: var(--text); color: #111318; }
+
+/* ---------- Dialogs ---------- */
+.ui-clean .modal, .ui-clean.modal-overlay, .ui-clean .modal-overlay { background: rgba(8, 9, 12, .74) !important; }
+.ui-clean .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 64px rgba(0, 0, 0, .5); }
+.ui-clean .modal .modal-content > h2 { font-family: var(--font-display); font-weight: 650; letter-spacing: -.01em; }
+.ui-clean .swal2-popup { background: var(--card-bg) !important; border: 1px solid var(--border) !important; border-radius: 14px !important; color: var(--text) !important; }
+.ui-clean .swal2-title { font-family: var(--font-display) !important; font-weight: 650 !important; letter-spacing: -.01em; color: var(--text) !important; }
+.ui-clean .swal2-html-container { color: var(--text-dim) !important; }
+.ui-clean .swal2-styled { border-radius: 8px !important; font-weight: 600 !important; }
+.ui-clean .swal2-styled.swal2-confirm { background: var(--primary) !important; }
+.ui-clean .swal2-styled.swal2-cancel { background: var(--raised) !important; color: var(--text) !important; border: 1px solid var(--border) !important; }
+.ui-clean .swal2-input, .ui-clean .swal2-textarea { background: var(--field-bg) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; color: var(--text) !important; box-shadow: none !important; }
+.ui-clean .pcode-big { font-family: var(--font-mono); }
+
+/* ---------- Small parts ---------- */
+.ui-clean .scene-sync-badge, .ui-clean .scene-scope-hint { border-radius: 999px; }
+.ui-clean .pro-section-title { font-family: var(--font-display); font-weight: 650; letter-spacing: -.005em; }
+.ui-clean .pro-intro { color: var(--text-dim); }
+.ui-clean .pro-danger { border-radius: 12px; }
+.ui-clean ::selection { background: rgba(var(--primary-rgb), .35); color: #fff; }
+.ui-clean ::-webkit-scrollbar { width: 10px; height: 10px; }
+.ui-clean ::-webkit-scrollbar-thumb { background: #2a303b; border-radius: 10px; border: 3px solid var(--bg-dark); }
+.ui-clean ::-webkit-scrollbar-thumb:hover { background: #363c49; }
+.ui-clean ::-webkit-scrollbar-track { background: transparent; }
+.ui-clean * { scrollbar-color: #2a303b transparent; scrollbar-width: thin; }
+
+/* Login */
+.ui-clean .login-overlay { background: var(--bg-dark) !important; }
+.ui-clean #login-box { background: var(--card-bg) !important; border: 1px solid var(--border) !important; border-radius: 16px; backdrop-filter: none !important; }
+.ui-clean #login-box h2 { font-family: var(--font-display); font-weight: 650; letter-spacing: -.015em; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ui-clean * { transition: none !important; }
+}
+
+/* ---------- Lists (actions, events): plain text in the cells instead of a box in each cell ---------- */
+.ui-clean .trigger-box { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+.ui-clean .trigger-box code { color: var(--text-dim) !important; }
+
+/* ---------- Paramètres > API Gentok ---------- */
+.ui-clean .api-table td { text-align: left; vertical-align: middle; padding: .45rem .6rem; }
+.ui-clean .api-table code { color: #c9ced9; background: transparent; }
+.ui-clean .api-table td:first-child { font-family: var(--font-mono); font-size: .72rem; font-weight: 600; letter-spacing: .02em; }
+.ui-clean code { color: #c9ced9; }
+
+/* ---------- Phone ---------- */
+@media (max-width: 600px) {
+    .ui-clean #dashboard-container .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: .5rem !important; width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; padding: 0 !important; }
+    .ui-clean .stat-card { padding: .8rem .9rem !important; }
+    .ui-clean .stat-value, .ui-clean #stat-views, .ui-clean #stat-gifts, .ui-clean #stat-likes, .ui-clean #stat-follows, .ui-clean #stat-shares, .ui-clean #stat-diamonds { font-size: 1.5rem !important; }
+    .ui-clean .stat-header { margin-bottom: .35rem; }
+}

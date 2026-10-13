@@ -116,7 +116,13 @@
   "give {0} emerald_block 64": "give {0} emerald_block 64",
   "tp {0} 17.227 68.5 -19.632": "tp {0} 17.227 68.5 -19.632",
   "⚠️ [Spotify] {0}, {1}": "⚠️ [Spotify] {0}, {1}",
-  "🪙 {0} points": "🪙 {0} points"
+  "🪙 {0} points": "🪙 {0} points",
+  "Impossible de joindre le serveur Gentok ({0}). Vérifiez votre connexion (pare-feu, antivirus, VPN) ou réessayez dans un instant.": "Cannot reach the Gentok server ({0}). Check your connection (firewall, antivirus, VPN) or try again in a moment.",
+  "Le serveur Gentok n'a pas accès à sa base de données ({0}). Réessayez dans un instant.": "The Gentok server cannot reach its database ({0}). Try again in a moment.",
+  "Le serveur Gentok ne répond pas correctement (erreur {0}). Il redémarre peut-être : réessayez dans une minute.": "The Gentok server is not responding properly (error {0}). It may be restarting: try again in a minute.",
+  "Réponse inattendue du serveur Gentok (erreur {0}).": "Unexpected response from the Gentok server (error {0}).",
+  "Service de signature injoignable : {0}": "Signing service unreachable: {0}",
+  "Vérification du compte impossible (erreur {0}).": "Could not verify the account (error {0})."
  },
  "texts": {
   "0 / 3 Scènes": "0 / 3 Scenes",
@@ -1926,6 +1932,18 @@
   "action": "action",
   "événement": "event",
   "overlay personnalisé": "custom overlay",
-  "chargement": "load"
+  "chargement": "load",
+  "Police du style choisi": "Font of the chosen style",
+  "Épuré (Défaut)": "Clean (Default)",
+  "Classique": "Classic",
+  "Base de données indisponible": "Database unavailable",
+  "Clé Euler Stream non configurée sur le serveur Gentok (SIGN_API_KEY).": "Euler Stream key not set on the Gentok server (SIGN_API_KEY).",
+  "Commande vide": "Empty command",
+  "Compte Gentok inconnu": "Unknown Gentok account",
+  "Compte Gentok requis": "Gentok account required",
+  "MONGODB_URI manquante dans le fichier .env du serveur": "MONGODB_URI missing from the server .env file",
+  "Pas de connexion internet.": "No internet connection.",
+  "Serveur Gentok indisponible": "Gentok server unavailable",
+  "Trop de connexions TikTok en une minute, patientez.": "Too many TikTok connections in one minute, please wait."
  }
 }

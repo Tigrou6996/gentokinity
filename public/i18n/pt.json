@@ -116,7 +116,13 @@
   "give {0} emerald_block 64": "give {0} emerald_block 64",
   "tp {0} 17.227 68.5 -19.632": "tp {0} 17.227 68.5 -19.632",
   "⚠️ [Spotify] {0}, {1}": "⚠️ [Spotify] {0}, {1}",
-  "🪙 {0} points": "🪙 {0} pontos"
+  "🪙 {0} points": "🪙 {0} pontos",
+  "Impossible de joindre le serveur Gentok ({0}). Vérifiez votre connexion (pare-feu, antivirus, VPN) ou réessayez dans un instant.": "Não foi possível acessar o servidor Gentok ({0}). Verifique sua conexão (firewall, antivírus, VPN) ou tente novamente em instantes.",
+  "Le serveur Gentok n'a pas accès à sa base de données ({0}). Réessayez dans un instant.": "O servidor Gentok não consegue acessar seu banco de dados ({0}). Tente novamente em instantes.",
+  "Le serveur Gentok ne répond pas correctement (erreur {0}). Il redémarre peut-être : réessayez dans une minute.": "O servidor Gentok não está respondendo corretamente (erro {0}). Ele pode estar reiniciando: tente novamente em um minuto.",
+  "Réponse inattendue du serveur Gentok (erreur {0}).": "Resposta inesperada do servidor Gentok (erro {0}).",
+  "Service de signature injoignable : {0}": "Serviço de assinatura inacessível: {0}",
+  "Vérification du compte impossible (erreur {0}).": "Não foi possível verificar a conta (erro {0})."
  },
  "texts": {
   "0 / 3 Scènes": "0 / 3 Cenas",
@@ -1927,6 +1933,18 @@
   "action": "ação",
   "événement": "evento",
   "overlay personnalisé": "overlay personalizado",
-  "chargement": "carregamento"
+  "chargement": "carregamento",
+  "Police du style choisi": "Fonte do estilo escolhido",
+  "Épuré (Défaut)": "Limpo (Padrão)",
+  "Classique": "Clássico",
+  "Base de données indisponible": "Banco de dados indisponível",
+  "Clé Euler Stream non configurée sur le serveur Gentok (SIGN_API_KEY).": "Chave do Euler Stream não configurada no servidor Gentok (SIGN_API_KEY).",
+  "Commande vide": "Comando vazio",
+  "Compte Gentok inconnu": "Conta Gentok desconhecida",
+  "Compte Gentok requis": "Conta Gentok necessária",
+  "MONGODB_URI manquante dans le fichier .env du serveur": "MONGODB_URI ausente no arquivo .env do servidor",
+  "Pas de connexion internet.": "Sem conexão com a internet.",
+  "Serveur Gentok indisponible": "Servidor Gentok indisponível",
+  "Trop de connexions TikTok en une minute, patientez.": "Muitas conexões ao TikTok em um minuto, aguarde."
  }
 }
