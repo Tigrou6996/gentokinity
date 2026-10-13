@@ -149,6 +149,16 @@ module.exports = function registerProRoutes(app, { getRequestToken, getConnector
         res.json({ success: true, points: Math.max(0, doc.points) });
     }));
 
+    // Import of a file the streamer downloaded himself (sent by the dashboard in chunks of 250 rows)
+    app.post('/api/points/import', wrap(async (req, res) => {
+        const token = requireToken(req, res); if (!token) return;
+        await config.getSessionFor(token);
+        const rows = Array.isArray(req.body.rows) ? req.body.rows : null;
+        if (!rows || rows.length > 500) return res.status(400).json({ error: 'Lignes invalides (500 max par envoi)' });
+        const r = await points.importRows(token, rows, req.body.mode === 'add' ? 'add' : 'set');
+        res.json({ success: true, ...r });
+    }));
+
     app.post('/api/points/reset', wrap(async (req, res) => {
         const token = requireToken(req, res); if (!token) return;
         await config.getSessionFor(token); // the active scene decides whose points are shown (independent scene)

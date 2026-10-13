@@ -2125,6 +2125,17 @@
   "Écran": "Schermata",
   "Écran de l'overlay": "Schermata dell'overlay",
   "— Choisir un son —": "— Scegli un suono —",
-  "— 0 = tout le monde, même sans rejoindre votre équipe": "— 0 = tutti, anche senza entrare nel tuo team"
+  "— 0 = tout le monde, même sans rejoindre votre équipe": "— 0 = tutti, anche senza entrare nel tuo team",
+  "Importer": "Importa",
+  "Importer des spectateurs depuis un fichier (JSON ou CSV)": "Importa spettatori da un file (JSON o CSV)",
+  "Fichier illisible : JSON ou CSV attendu.": "File illeggibile: atteso JSON o CSV.",
+  "Aucun spectateur trouvé dans ce fichier.": "Nessuno spettatore trovato in questo file.",
+  "Importer des spectateurs": "Importa spettatori",
+  "spectateurs trouvés. Remplacer leur solde par celui du fichier, ou l'ajouter à leur solde actuel ?": "spettatori trovati. Sostituire il loro saldo con quello del file o aggiungerlo al saldo attuale?",
+  "Remplacer le solde": "Sostituisci saldo",
+  "Ajouter au solde": "Aggiungi al saldo",
+  "Import…": "Importazione…",
+  "spectateurs importés": "spettatori importati",
+  "Lignes invalides (500 max par envoi)": "Righe non valide (max 500 per invio)"
  }
 }

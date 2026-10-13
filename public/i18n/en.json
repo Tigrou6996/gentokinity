@@ -2124,6 +2124,17 @@
   "Écran": "Screen",
   "Écran de l'overlay": "Overlay screen",
   "— Choisir un son —": "— Pick a sound —",
-  "— 0 = tout le monde, même sans rejoindre votre équipe": "— 0 = everyone, even without joining your team"
+  "— 0 = tout le monde, même sans rejoindre votre équipe": "— 0 = everyone, even without joining your team",
+  "Importer": "Import",
+  "Importer des spectateurs depuis un fichier (JSON ou CSV)": "Import viewers from a file (JSON or CSV)",
+  "Fichier illisible : JSON ou CSV attendu.": "Unreadable file: JSON or CSV expected.",
+  "Aucun spectateur trouvé dans ce fichier.": "No viewer found in this file.",
+  "Importer des spectateurs": "Import viewers",
+  "spectateurs trouvés. Remplacer leur solde par celui du fichier, ou l'ajouter à leur solde actuel ?": "viewers found. Replace their balance with the file's, or add it to their current balance?",
+  "Remplacer le solde": "Replace balance",
+  "Ajouter au solde": "Add to balance",
+  "Import…": "Importing…",
+  "spectateurs importés": "viewers imported",
+  "Lignes invalides (500 max par envoi)": "Invalid rows (500 max per request)"
  }
 }

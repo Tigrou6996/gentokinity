@@ -363,7 +363,38 @@ async function reset(token) {
     return r.deletedCount;
 }
 
+/**
+ * Imports viewers from a file the streamer downloaded himself (another tool's export, a Gentok CSV...).
+ * rows: [{ uniqueId, nickname, userId, profilePictureUrl, points, levelPoints }], at most 500 per call.
+ * mode 'set': the balance becomes the imported value (XP never goes down); 'add': added to the balance.
+ */
+async function importRows(token, rows, mode = 'set') {
+    token = scopeOf(token);
+    await flushToken(token);
+    const ops = [];
+    const clean = (v, max) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
+    for (const r of (Array.isArray(rows) ? rows : []).slice(0, 500)) {
+        const uniqueId = clean(r && r.uniqueId, 64).replace(/^@/, '');
+        const pts = Math.max(0, Math.round(Number(r && r.points) || 0));
+        const xp = Math.max(pts, Math.round(Number(r && r.levelPoints) || 0));
+        if (!uniqueId || !/^[\w.\-]+$/.test(uniqueId)) continue;
+        const pic = clean(r.profilePictureUrl, 600);
+        const set = { nickname: clean(r.nickname, 80) || uniqueId };
+        if (r.userId) set.userId = clean(r.userId, 40);
+        if (/^https:\/\//i.test(pic)) set.profilePictureUrl = pic;
+        const update = mode === 'add'
+            ? { $inc: { points: pts, levelPoints: xp }, $set: set, $setOnInsert: { firstActivity: new Date(), lastActivity: new Date() } }
+            : { $set: { ...set, points: pts }, $max: { levelPoints: xp }, $setOnInsert: { firstActivity: new Date(), lastActivity: new Date() } };
+        ops.push({ updateOne: { filter: { token, uniqueId }, update, upsert: true } });
+    }
+    if (!ops.length) return { imported: 0 };
+    await ViewerPoints.bulkWrite(ops, { ordered: false });
+    userCountCache.delete(token);
+    return { imported: ops.length };
+}
+
 module.exports = {
+    importRows,
     scopeOf, tokenOf, xpOf, formatAmount, claimDaily, transfer,
     DEFAULT_SETTINGS, getSettings, award, flushToken, flushAll, getViewer, getTop, spend, adjust, reset,
     levelFromPoints, pointsForLevel, decorate, countUsers, setConnectorLookup

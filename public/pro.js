@@ -189,6 +189,92 @@
             }
         },
 
+        // Import of files the streamer downloaded himself: Gentok CSV export, another tool's JSON / CSV export
+        // (e.g. the JSON pages "value": [{ username, nickname, thumbnailUrl, totalAmount }]). Sent in chunks.
+        pickImport() {
+            let input = document.getElementById('pts-import-file');
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'file'; input.id = 'pts-import-file'; input.multiple = true; input.accept = '.json,.csv,.txt,application/json,text/csv';
+                input.hidden = true;
+                input.addEventListener('change', () => { this.importFiles([...input.files]); input.value = ''; });
+                document.body.appendChild(input);
+            }
+            input.click();
+        },
+
+        parseImport(text) {
+            const pick = (o, keys) => { for (const k of keys) if (o[k] !== undefined && o[k] !== null && o[k] !== '') return o[k]; return undefined; };
+            const toRow = (o) => {
+                const lower = Object.fromEntries(Object.entries(o).map(([k, v]) => [String(k).trim().toLowerCase(), v]));
+                let pic = pick(lower, ['profilepictureurl', 'thumbnailurl', 'avatar', 'photo']);
+                if (pic && !/^https?:\/\//i.test(pic)) pic = 'https://' + String(pic).replace(/^\/+/, '');
+                const points = Number(pick(lower, ['points', 'totalamount', 'amount', 'balance', 'score']));
+                return {
+                    uniqueId: String(pick(lower, ['uniqueid', 'username', 'pseudo', 'user', 'handle']) || '').replace(/^@/, '').trim(),
+                    nickname: pick(lower, ['nickname', 'name', 'displayname']),
+                    userId: pick(lower, ['userid']),
+                    profilePictureUrl: pic,
+                    points: Number.isFinite(points) ? points : 0,
+                    levelPoints: Number(pick(lower, ['levelpoints', 'xp', 'totalamount'])) || undefined
+                };
+            };
+            const t0 = text.replace(/^\uFEFF/, '').trim();
+            if (t0.startsWith('{') || t0.startsWith('[')) {
+                const data = JSON.parse(t0);
+                const list = Array.isArray(data) ? data : (Array.isArray(data.value) ? data.value : (Array.isArray(data.users) ? data.users : []));
+                return list.filter(o => o && typeof o === 'object').map(toRow);
+            }
+            const lines = t0.split(/\r?\n/).filter(l => l.trim());
+            if (lines.length < 2) return [];
+            const sep = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ';' : ',';
+            const split = (line) => {
+                const out = []; let cur = '', q = false;
+                for (let i = 0; i < line.length; i++) {
+                    const c = line[i];
+                    if (q) { if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
+                    else if (c === '"') q = true; else if (c === sep) { out.push(cur); cur = ''; } else cur += c;
+                }
+                out.push(cur);
+                return out;
+            };
+            const head = split(lines[0]).map(h => h.trim());
+            return lines.slice(1).map(l => { const cells = split(l); return toRow(Object.fromEntries(head.map((h, i) => [h, cells[i]]))); });
+        },
+
+        async importFiles(files) {
+            if (!files.length) return;
+            let rows = [];
+            try {
+                for (const f of files) rows = rows.concat(this.parseImport(await f.text()));
+            } catch (e) { return showToast(t('Fichier illisible : JSON ou CSV attendu.'), 'error'); }
+            // one line per viewer (the same viewer on two pages / files: the highest balance wins)
+            const byId = new Map();
+            for (const r of rows) if (r.uniqueId && (!byId.has(r.uniqueId.toLowerCase()) || byId.get(r.uniqueId.toLowerCase()).points < r.points)) byId.set(r.uniqueId.toLowerCase(), r);
+            rows = [...byId.values()];
+            if (!rows.length) return showToast(t('Aucun spectateur trouvé dans ce fichier.'), 'error');
+            const choice = await Swal.fire({
+                title: t('Importer des spectateurs'),
+                text: `${fmt(rows.length)} ${t('spectateurs trouvés. Remplacer leur solde par celui du fichier, ou l\'ajouter à leur solde actuel ?')}`,
+                icon: 'question', showDenyButton: true, showCancelButton: true,
+                confirmButtonText: t('Remplacer le solde'), denyButtonText: t('Ajouter au solde'), cancelButtonText: t('Annuler')
+            });
+            if (choice.isDismissed) return;
+            const mode = choice.isDenied ? 'add' : 'set';
+            let done = 0;
+            try {
+                for (let i = 0; i < rows.length; i += 250) {
+                    const r = await api('/api/points/import', { method: 'POST', body: { rows: rows.slice(i, i + 250), mode } });
+                    done += r.imported || 0;
+                    showToast(`${t('Import…')} ${fmt(Math.min(i + 250, rows.length))} / ${fmt(rows.length)}`, 'info');
+                }
+                showToast(`✅ ${fmt(done)} ${t('spectateurs importés')}`, 'success');
+            } catch (e) {
+                showToast(`${fmt(done)} ${t('spectateurs importés')} — ${e.message}`, 'error');
+            }
+            this.load();
+        },
+
         async resetAll() {
             const ok = await showConfirm(t('Réinitialiser tous les points ?'), t('Tous les spectateurs, leurs points et l\'historique seront supprimés. Cette action est irréversible.'), t('Oui, supprimer'));
             if (!ok) return;
