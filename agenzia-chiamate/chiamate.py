@@ -6,7 +6,6 @@ Uso:
 """
 
 import re
-import shutil
 import sys
 import time
 from datetime import date, datetime
@@ -52,47 +51,54 @@ def data_chiamata(percorso: Path) -> date:
     return date.fromtimestamp(percorso.stat().st_mtime)
 
 
-def sposta(percorso: Path, cartella: Path) -> Path:
-    destinazione = cartella / percorso.name
-    n = 1
-    while destinazione.exists():
-        destinazione = cartella / f"{percorso.stem} ({n}){percorso.suffix}"
-        n += 1
-    shutil.move(str(percorso), destinazione)
-    return destinazione
+def gia_elaborati() -> set:
+    if not config.FILE_REGISTRO_ELABORATI.exists():
+        return set()
+    righe = config.FILE_REGISTRO_ELABORATI.read_text(encoding="utf-8").splitlines()
+    return {r.split("\t")[0] for r in righe if r.strip()}
 
 
-def sposta_in_elaborate(percorso: Path, trascritto: str):
-    destinazione = sposta(percorso, config.CARTELLA_ELABORATE)
-    if trascritto and percorso.suffix.lower() not in config.ESTENSIONI_TESTO:
-        destinazione.with_name(destinazione.stem + " - trascrizione.txt").write_text(trascritto, encoding="utf-8")
+def segna_elaborato(percorso: Path, esito: str):
+    # I file originali restano dove sono (serve con Google Drive e simili):
+    # questo registro evita di rielaborarli. Cancella una riga per far rielaborare quel file.
+    with open(config.FILE_REGISTRO_ELABORATI, "a", encoding="utf-8") as f:
+        f.write(f"{percorso.name}\t{datetime.now():%d/%m/%Y %H:%M}\t{esito}\n")
+
+
+def salva_trascrizione(percorso: Path, testo: str):
+    if testo and percorso.suffix.lower() not in config.ESTENSIONI_TESTO:
+        destinazione = config.CARTELLA_TRASCRIZIONI / f"{percorso.stem} - trascrizione.txt"
+        destinazione.write_text(testo, encoding="utf-8")
 
 
 def file_da_elaborare():
     estensioni = config.ESTENSIONI_AUDIO | config.ESTENSIONI_TESTO
+    fatti = gia_elaborati()
+    dal = date.fromisoformat(config.IGNORA_CHIAMATE_PRIMA_DEL) if config.IGNORA_CHIAMATE_PRIMA_DEL else None
     adesso = time.time()
     return sorted(
         (p for p in config.CARTELLA_IN_ARRIVO.iterdir()
          if p.is_file() and p.suffix.lower() in estensioni and not p.name.startswith(".")
-         and adesso - p.stat().st_mtime > ATTESA_FILE_STABILE),
+         and p.name not in fatti
+         and adesso - p.stat().st_mtime > ATTESA_FILE_STABILE
+         and (dal is None or data_chiamata(p) >= dal)),
         key=lambda p: p.stat().st_mtime,
     )
 
 
-def elabora(percorso: Path):
+def elabora(percorso: Path) -> str:
     log(f"Elaboro: {percorso.name}")
     testo = trascrizione.trascrivi(percorso)
     if not testo:
-        log("  Trascrizione vuota (nessuna voce riconosciuta): file spostato senza modifiche all'Excel.")
-        sposta_in_elaborate(percorso, testo)
-        return
+        log("  Trascrizione vuota (nessuna voce riconosciuta): nessuna modifica all'Excel.")
+        return "trascrizione vuota"
+    salva_trascrizione(percorso, testo)
 
     giorno = data_chiamata(percorso)
     dati = estrazione.estrai(testo, giorno)
     if not dati["chiamata_pertinente"]:
         log("  Chiamata non di lavoro: ignorata.")
-        sposta_in_elaborate(percorso, testo)
-        return
+        return "non di lavoro"
 
     # Il numero nel nome del file è quello reale di chi ha chiamato: ha la precedenza.
     dati["telefono"] = telefono_dal_nome_file(percorso.stem) or dati["telefono"]
@@ -102,13 +108,13 @@ def elabora(percorso: Path):
     esito = excel.registra(dati)
     nome = f"{dati['nome']} {dati['cognome']}".strip() or "(nome non detto)"
     log(f"  {nome}: {esito}")
-    sposta_in_elaborate(percorso, testo)
+    return f"{nome}: {esito}"
 
 
 def giro():
     for percorso in file_da_elaborare():
         try:
-            elabora(percorso)
+            segna_elaborato(percorso, elabora(percorso))
         except PermissionError:
             log(f"  Non riesco a salvare {config.FILE_EXCEL.name}: è aperto in Excel? "
                 "Chiudilo, riproverò al prossimo controllo.")
@@ -120,14 +126,19 @@ def giro():
             log(f"  Servizio IA momentaneamente non raggiungibile ({e.__class__.__name__}): riproverò più tardi.")
             return
         except Exception as e:  # un file difettoso non deve bloccare gli altri
-            sposta(percorso, config.CARTELLA_ERRORI)
-            log(f"  ERRORE su {percorso.name}: {e}. File spostato in '{config.CARTELLA_ERRORI.name}'.")
+            segna_elaborato(percorso, f"ERRORE: {e}")
+            log(f"  ERRORE su {percorso.name}: {e}. Segnato in '{config.FILE_REGISTRO_ELABORATI.name}': "
+                "cancella quella riga per riprovare.")
 
 
 def main():
-    config.CARTELLA_IN_ARRIVO.mkdir(exist_ok=True)
-    config.CARTELLA_ELABORATE.mkdir(exist_ok=True)
-    config.CARTELLA_ERRORI.mkdir(exist_ok=True)
+    try:
+        config.CARTELLA_IN_ARRIVO.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        log(f"La cartella '{config.CARTELLA_IN_ARRIVO}' non è raggiungibile: Google Drive per desktop è acceso? "
+            "Controlla anche il percorso in config.py.")
+        sys.exit(1)
+    config.CARTELLA_TRASCRIZIONI.mkdir(exist_ok=True)
 
     if "--continuo" not in sys.argv:
         giro()

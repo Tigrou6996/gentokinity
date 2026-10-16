@@ -2,7 +2,7 @@
 candidati.xlsx
 ~$*.xlsx
 chiamate_in_arrivo/
-chiamate_elaborate/
-chiamate_con_errori/
+trascrizioni/
+gia_elaborati.txt
 registro.log
 __pycache__/

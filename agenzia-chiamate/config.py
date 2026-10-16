@@ -5,14 +5,19 @@ from pathlib import Path
 CARTELLA_BASE = Path(__file__).resolve().parent
 
 # Cartella dove arrivano le registrazioni delle chiamate (audio o trascrizioni .txt).
-# Puoi puntarla alla cartella sincronizzata dal telefono (Google Drive, OneDrive, ...).
+# Con Google Drive per desktop su Windows, ad esempio:
+#   CARTELLA_IN_ARRIVO = Path(r"G:\Il mio Drive\Registrazioni chiamate")
 CARTELLA_IN_ARRIVO = CARTELLA_BASE / "chiamate_in_arrivo"
 
-# Dove vengono spostati i file già elaborati (così non vengono rielaborati).
-CARTELLA_ELABORATE = CARTELLA_BASE / "chiamate_elaborate"
+# Le registrazioni elaborate restano dove sono: qui il programma si segna quali ha già fatto.
+FILE_REGISTRO_ELABORATI = CARTELLA_BASE / "gia_elaborati.txt"
 
-# Dove finiscono i file che non è stato possibile elaborare (da controllare a mano).
-CARTELLA_ERRORI = CARTELLA_BASE / "chiamate_con_errori"
+# Qui viene salvata la trascrizione di ogni chiamata audio, per poterla rileggere.
+CARTELLA_TRASCRIZIONI = CARTELLA_BASE / "trascrizioni"
+
+# Le registrazioni fatte prima di questa data (AAAA-MM-GG) vengono ignorate, così le vecchie
+# chiamate già presenti sul telefono non finiscono nell'Excel. Metti None per elaborarle tutte.
+IGNORA_CHIAMATE_PRIMA_DEL = "2026-10-16"
 
 # Il file Excel con la lista dei candidati.
 FILE_EXCEL = CARTELLA_BASE / "candidati.xlsx"

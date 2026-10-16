@@ -37,18 +37,17 @@ Un esempio di risultato è in `esempi/esempio_candidati.xlsx`.
 
 ## 1. Registrare le chiamate
 
-Il programma legge i file che trova nella cartella **`chiamate_in_arrivo`**: audio (`.mp3`, `.m4a`,
-`.wav`, `.amr`, `.ogg`, ...) oppure trascrizioni già pronte (`.txt`).
+Il programma legge i file che trova nella cartella indicata in `config.py` (`CARTELLA_IN_ARRIVO`):
+audio (`.mp3`, `.m4a`, `.wav`, `.amr`, `.ogg`, ...) oppure trascrizioni già pronte (`.txt`).
 
-- **Android**: attiva la registrazione automatica delle chiamate nell'app Telefono (Samsung, Xiaomi,
-  Google Telefono...). Poi fai sincronizzare la cartella delle registrazioni con il PC (Google Drive,
-  OneDrive o un'app come *Autosync*) e in `config.py` imposta `CARTELLA_IN_ARRIVO` su quella cartella.
-  Se il nome del file contiene il numero (es. `Chiamata +39 333 1234567_20261016.m4a`), il numero
-  viene preso da lì: è il più affidabile.
-- **iPhone (iOS 18 o successivo)**: durante la chiamata tocca il pulsante di registrazione; la
-  registrazione e la trascrizione finiscono nell'app Note. Esporta l'audio o il testo nella cartella.
-- **Centralino VoIP / app di chiamata dal PC**: quasi tutti salvano le registrazioni in una cartella:
-  basta indicarla in `config.py`.
+- **Xiaomi / Redmi / Poco + Google Drive**: tutto automatico, segui **[GUIDA_XIAOMI.md](GUIDA_XIAOMI.md)**.
+- **Altri Android**: attiva la registrazione automatica nell'app Telefono e sincronizza la cartella
+  delle registrazioni con Google Drive come spiegato nella guida Xiaomi (cambia solo la cartella).
+- **iPhone (iOS 18 o successivo)**: tocca il pulsante di registrazione durante la chiamata ed esporta
+  l'audio o la trascrizione nella cartella.
+
+Se il nome del file contiene il numero (es. `Mario Rossi(+393331234567)_20261016101500.mp3`),
+il numero viene preso da lì: è il più affidabile.
 
 > ⚠️ **Privacy (GDPR)**: avvisa sempre la persona all'inizio che la chiamata viene registrata e che i
 > suoi dati verranno usati per la selezione. Il file Excel contiene dati personali: tienilo al sicuro.
@@ -77,9 +76,13 @@ Su Mac/Linux è uguale: `pip3 install -r requirements.txt` e `export ANTHROPIC_A
   nuove chiamate. Lascialo aperto mentre lavori.
 - Oppure, per elaborare una volta sola quello che c'è: `python chiamate.py`
 
-Ogni file elaborato viene spostato in `chiamate_elaborate` (insieme alla sua trascrizione in `.txt`),
-così puoi sempre ricontrollare cosa è stato detto. I file che danno problemi finiscono in
-`chiamate_con_errori`. Tutto quello che succede è scritto in `registro.log`.
+Le registrazioni **restano dove sono** (non vengono spostate né cancellate). Il programma si segna in
+`gia_elaborati.txt` quelle già fatte, così non le rielabora; per rifarne una, cancella la sua riga.
+La trascrizione di ogni chiamata viene salvata in `trascrizioni`, così puoi sempre ricontrollare cosa è
+stato detto. Tutto quello che succede è scritto in `registro.log`.
+
+Le registrazioni più vecchie della data `IGNORA_CHIAMATE_PRIMA_DEL` (in `config.py`) vengono ignorate,
+così le vecchie chiamate già sul telefono non finiscono nell'Excel.
 
 Puoi tenere `candidati.xlsx` aperto per leggerlo, ma **chiudilo ogni tanto**: finché è aperto in Excel
 il programma non può salvarci dentro e riprova al controllo successivo (non si perde nulla).

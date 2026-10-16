@@ -25,11 +25,12 @@ with tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
     config.CARTELLA_BASE = tmp
     config.CARTELLA_IN_ARRIVO = tmp / "in"
-    config.CARTELLA_ELABORATE = tmp / "ok"
-    config.CARTELLA_ERRORI = tmp / "err"
+    config.CARTELLA_TRASCRIZIONI = tmp / "trascrizioni"
+    config.FILE_REGISTRO_ELABORATI = tmp / "gia_elaborati.txt"
+    config.IGNORA_CHIAMATE_PRIMA_DEL = "2026-10-01"
     config.FILE_EXCEL = tmp / "candidati.xlsx"
     chiamate.ATTESA_FILE_STABILE = -1
-    for c in (config.CARTELLA_IN_ARRIVO, config.CARTELLA_ELABORATE, config.CARTELLA_ERRORI):
+    for c in (config.CARTELLA_IN_ARRIVO, config.CARTELLA_TRASCRIZIONI):
         c.mkdir()
 
     def chiamata(nome_file, **dati):
@@ -74,6 +75,16 @@ with tempfile.TemporaryDirectory() as tmp:
     assert excel.formatta_telefono("02 1234567") == "+39 021234567"
     assert luca[col["disponibilita"]] == config.NON_COMUNICATO
     assert luca[col["interessato"]] == excel.VUOTA and luca[col["da_ricontattare"]] == excel.SPUNTA
-    assert len(list(config.CARTELLA_ELABORATE.iterdir())) == 5
-    assert not list(config.CARTELLA_IN_ARRIVO.iterdir())
+    # Gli originali restano nella cartella (Google Drive) e sono segnati nel registro.
+    assert len(list(config.CARTELLA_IN_ARRIVO.iterdir())) == 5
+    assert len(chiamate.gia_elaborati()) == 5
+    # Un nuovo giro non rielabora nulla (nessuna risposta IA in coda: se chiamasse l'IA darebbe errore).
+    chiamate.giro()
+    assert len(chiamate.gia_elaborati()) == 5
+    # Le chiamate vecchie (prima di IGNORA_CHIAMATE_PRIMA_DEL) vengono saltate.
+    (config.CARTELLA_IN_ARRIVO / "Chiamata 3331112222_20250101.txt").write_text("vecchia", encoding="utf-8")
+    assert not chiamate.file_da_elaborare()
+    # Nome file tipico di Xiaomi.
+    assert chiamate.telefono_dal_nome_file("Mario Rossi(+393331234567)_20261016101500") == "+393331234567"
+    assert chiamate.data_chiamata(Path("Mario Rossi(+393331234567)_20261016101500.mp3")).isoformat() == "2026-10-16"
     print("\nTUTTO OK")
