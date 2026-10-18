@@ -12,3 +12,12 @@ lbs-video/*_seg*.mp4
 lbs-video/*_silent.mp4
 lbs-video/render3.log
 lbs-video/audio/*.raw
+lbs-video/sito/node_modules
+lbs-video/sito/*.log
+lbs-video/sito/LBS-sito-bozza.mp4
+lbs-video/sito/LBS-sito-final*.mp4
+lbs-video/sito/*_seg*.mp4
+lbs-video/sito/*_silent.mp4
+lbs-video/sito/*.pcm
+lbs-video/sito/*_segs.txt
+lbs-video/sito/bozza-share.mp4
