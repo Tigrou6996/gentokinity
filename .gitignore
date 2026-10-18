@@ -21,3 +21,8 @@ lbs-video/sito/*_silent.mp4
 lbs-video/sito/*.pcm
 lbs-video/sito/*_segs.txt
 lbs-video/sito/bozza-share.mp4
+next-archimede-video/*_seg*.mp4
+next-archimede-video/*_silent.mp4
+next-archimede-video/*.pcm
+next-archimede-video/render.log
+next-archimede-video/sheet*.png
