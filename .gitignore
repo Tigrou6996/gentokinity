@@ -26,3 +26,10 @@ next-archimede-video/*_silent.mp4
 next-archimede-video/*.pcm
 next-archimede-video/render.log
 next-archimede-video/sheet*.png
+lbs-video/assistenza/node_modules
+lbs-video/assistenza/*.log
+lbs-video/assistenza/LBS-assistenza-final*.mp4
+lbs-video/assistenza/*_seg*.mp4
+lbs-video/assistenza/*_silent.mp4
+lbs-video/assistenza/*.pcm
+lbs-video/assistenza/*_segs.txt
