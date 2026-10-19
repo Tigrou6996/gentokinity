@@ -65,8 +65,7 @@ body.render #ctl{display:none}
  54.6    "risposta a ogni singolo problema... con te e per te"   lista problemi risolti uno dopo l'altro
  61.45   WIPE  "Assistenza LBS. Non un servizio. Una presenza."  logo, poi frase finale con barrato
  67.1    END CARD: logo + "E tu cosa aspetti?" + contatti        dissolvenza a nero 70.5 -> 71.5 */
-const W = 1920, H = 1080, O = 0.5, DUR = 72;
-window.VIDEO = { w: W, h: H, duration: DUR };
+const W = 1920, H = 1080, O = 0.5;
 const RENDER = location.search.includes('render');
 if (RENDER) document.body.classList.add('render');
 
@@ -188,6 +187,22 @@ const CHECKS = [24.5, 37.62, 37.74, 37.86, 37.98, 44.02, 49.5];
 const ROW_IN = i => 56.42 + i * .1, ROW_OK = [57.46, 58.02, 58.46, 58.95, 59.4];
 const SLAMS = [26.88, 27.12, 27.34, 27.54, 28.06];
 const WHOOSH = [2.25, 4.35, 7.55, 10.7, 12.25, 12.8, 18.8, 24.05, 28.35, 31.75, 37.45, 38.25, 41.8, 48.75, 50.4, 54.3, 63.4, 67.0];
+// Reading holds: at each break the picture freezes at τ = c for h seconds (with a slow push-in) while the voice
+// pauses; the voice file is split at v, a silent point next to c. Holds just before a wipe are snapped so the
+// wipe still lands on the music's beat grid.
+const BPM = 90, BEAT = 60 / BPM, BAR = BEAT * 4, M0 = 0.1;              // music grid (timeline seconds minus O)
+const BRK = [[2.04, 2.3, 2.6], [7.38, 7.5, 2.6], [10.7, 11.1, 2.2], [12.93, 12.85, 2.4], [18.62, 18.9, 2.6], [26.25, 26.8, 2.8],
+  [28.38, 28.5, 2.3], [31.8, 31.8, 2.6], [38.3, 38.4, 2.5], [41.98, 41.95, 2.4], [44.45, 44.95, 2.6], [48.2, 48.4, 1.8],
+  [50.2, 50.5, 2.4], [54.42, 54.42, 2.5], [60.9, 61.0, 2.2], [63.4, 63.5, 1.8], [66.5, 66.6, 1.5]].map(([c, v, h]) => ({ c, v, h }));
+{ let D = 0; for (const b of BRK) { const w = WIPES.find(w => w > b.c && w - b.c < 1.5); if (w) { const r = (((w + D + b.h - M0) % BEAT) + BEAT) % BEAT; b.h += r > BEAT / 2 ? BEAT - r : -r; } D += b.h; } }
+const HOLD = BRK.reduce((a, b) => a + b.h, 0), TAU_END = 72.5;
+const DUR = O + TAU_END + HOLD;
+window.VIDEO = { w: W, h: H, duration: DUR };
+const m = tau => tau + BRK.reduce((a, b) => a + (b.c < tau ? b.h : 0), 0);              // voice time -> timeline (minus O)
+const voT = tau => O + tau + BRK.reduce((a, b) => a + (b.v <= tau ? b.h : 0), 0);       // where the voice actually plays
+function inv(x) { let held = 0; for (const b of BRK) { if (x < b.c) break; if (x < b.c + b.h) return { t: b.c, held: held + x - b.c }; x -= b.h; held += b.h; } return { t: x, held }; }
+const heldBefore = tau => BRK.reduce((a, b) => a + (b.c < tau ? b.h : 0), 0);
+let WT = 0;                                                                              // wall-clock timeline seconds
 const SPEECH = [[0, 2.02], [2.68, 7.28], [7.8, 12.92], [13.04, 15.42], [15.58, 18.64], [19.16, 22.24], [22.54, 26.76], [26.88, 31.64], [32.02, 35.02], [35.32, 38.22], [38.68, 41.74], [42.14, 44.8], [45.1, 48.46], [48.58, 50.54], [50.68, 54.24], [54.64, 60.66], [61.64, 63.16], [63.88, 65.12], [65.56, 66.44]];
 
 // ---------- scenes ----------
@@ -195,18 +210,18 @@ const P = '#5e2d61', D = '#30103d', WH = '#fbf8fd';
 const SC = [
   { a: -0.5, b: 2.45, inT: 'cut', outT: 'cut', bg: P },
   { a: 2.35, b: 7.75, inT: 'fade', outT: 'fade', bg: P },
-  { a: 7.6, b: 13.15, inT: 'fade', outT: 'fade', bg: P },
+  { a: 7.6, b: 13.3, inT: 'fade', outT: 'fade', bg: P },
   { a: 12.95, b: 19.0, inT: 'fade', outT: 'fade', bg: P },
   { a: 18.85, b: 26.75, inT: 'fade', outT: 'cut', bg: P },
-  { a: 26.75, b: 31.95, inT: 'cut', outT: 'fade', bg: D },
-  { a: 31.8, b: 38.75, inT: 'fade', outT: 'fade', bg: P },
-  { a: 38.55, b: 42.0, inT: 'fade', outT: 'fade', bg: P },
-  { a: 41.85, b: 44.95, inT: 'fade', outT: 'cut', bg: P },
+  { a: 26.75, b: 32.17, inT: 'cut', outT: 'fade', bg: D },
+  { a: 31.82, b: 38.75, inT: 'fade', outT: 'fade', bg: P },
+  { a: 38.55, b: 42.35, inT: 'fade', outT: 'fade', bg: P },
+  { a: 42.0, b: 44.95, inT: 'fade', outT: 'cut', bg: P },
   { a: 44.95, b: 50.6, inT: 'cut', outT: 'fade', bg: WH },
-  { a: 50.45, b: 54.5, inT: 'fade', outT: 'fade', bg: P },
-  { a: 54.35, b: 61.45, inT: 'fade', outT: 'cut', bg: P },
+  { a: 50.45, b: 54.8, inT: 'fade', outT: 'fade', bg: P },
+  { a: 54.45, b: 61.45, inT: 'fade', outT: 'cut', bg: P },
   { a: 61.45, b: 67.3, inT: 'cut', outT: 'fade', bg: D },
-  { a: 67.1, b: 72, inT: 'fade', outT: 'none', bg: P },
+  { a: 67.1, b: TAU_END, inT: 'fade', outT: 'none', bg: P },
 ];
 const HTML = [];
 const svgL = (inner, w = 1920, h = 1080) => `<svg class="a" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="left:0;top:0;overflow:visible">${inner}</svg>`;
@@ -460,7 +475,7 @@ U[0] = t => {
   $('qbar').style.transform = `scaleX(${expo(seg(t, 1.45, 2.0))})`;
   $('c0').style.filter = z > .05 ? `blur(${z * 18}px)` : 'none'; $('c0').style.opacity = 1 - eIn(seg(t, 2.25, 2.45));
 };
-const cam1 = kcam([[2.35, 960, 470, 1.45], [3.6, 960, 500, 1.0, eOut], [4.35, 960, 520, .97, lin], [5.2, 960, 1470, 1.0], [7.75, 960, 1470, 1.09, lin]]);
+const cam1 = kcam([[2.35, 960, 470, 1.45], [3.6, 960, 500, 1.0, eOut], [4.75, 960, 520, .97, lin], [5.35, 960, 1470, 1.0], [7.75, 960, 1470, 1.09, lin]]);
 U[1] = t => {
   camK('c1', cam1, t);
   ring($('l1r1'), ease(seg(t, 2.35, 2.95))); ring($('l1r2'), ease(seg(t, 2.5, 3.15)));
@@ -472,9 +487,7 @@ U[1] = t => {
   tf($('pB'), { c: true, x: (1 - sB) * 500, o: clamp((t - 6.0) * 6), r: (1 - sB) * 18 });
   const lean = eOut(seg(t, 6.0, 6.7)) * 18; $('pA').style.transform += ` translateX(${lean * .5}px)`;
   const hk = pop($('pH'), t, 6.86, { from: 0, w: 16, z: .45 });
-  const beat = 1 + .08 * tri(t, 7.2, 7.45);
-  if (t > 7.2) $('pH').style.transform += ` scale(${beat})`;
-  ripple($('pHr'), t, 6.86, 60, 220, .9, 8); burst($('pHb'), t, 6.9, 70, 200);
+  ripple($('pHr'), t, 6.86, 60, 220, .48, 8); burst($('pHb'), t, 6.88, 70, 200, .3);
   words($('n1'), t, [6.0, 6.24, 6.46]); slams($('n2'), t, [6.86]);
 };
 const cam2 = kcam([[7.6, 960, 520, 1.18], [9.0, 960, 520, 1.08, eOut], [10.75, 960, 520, 1.0, lin], [11.3, 2880, 520, 1.0, x => ease(x)], [11.95, 2880, 520, .97, lin], [12.6, 1920, 540, .6], [13.15, 1920, 540, .58, lin]]);
@@ -517,7 +530,7 @@ U[4] = t => {
   words($('r3t'), t, [24.4, 25.4, 25.76]);
   pop($('rck'), t, 24.5, { from: 0, z: .45, c: false });
 };
-const cam5 = kcam([[26.75, 960, 535, 1.18], [28.3, 960, 535, 1.0, eOut], [28.85, 960, 1560, 1.0], [31.95, 960, 1560, 1.1, lin]]);
+const cam5 = kcam([[26.75, 960, 535, 1.18], [28.4, 960, 535, 1.0, eOut], [28.95, 960, 1560, 1.0], [31.95, 960, 1560, 1.1, lin]]);
 U[5] = t => {
   camK('c5', cam5, t, lerp(-1.5, 0, eOut(seg(t, 26.75, 27.6))));
   slams($('k1'), t, SLAMS.slice(0, 3)); slams($('k2'), t, SLAMS.slice(3));
@@ -537,8 +550,8 @@ U[7] = t => {
   PP.forEach((_, i) => { pop($('np' + i), t, 38.9 + i * .1, { from: .2 }); ring($('nl' + i), ease(seg(t, 39.0 + i * .1, 39.5 + i * .1))); });
   pop($('ntu'), t, 40.1, { from: .2 }); pop($('ntp'), t, 40.3, { from: 0 });
   ring($('nlk'), ease(seg(t, 39.52, 40.1)));
-  [0, 1, 2].forEach(i => ripple($('nr' + i), t, 39.52 + i * .9, 150, 330, 1.2, 5));
-  const pulses = [[40.32, 0], [40.88, 1], [41.26, 0], [41.6, 1]];
+  [0, 1, 2].forEach(i => ripple($('nr' + i), t, 39.52 + i * .7, 150, 330, 1.0, 5));
+  const pulses = [[40.32, 0], [40.8, 1], [41.4, 0]];
   pulses.forEach(([a, dir], i) => { const k = seg(t, a, a + .5), d = $('nd' + i); if (k > 0 && k < 1) { const p = along($('nlk'), dir ? 1 - ease(k) : ease(k)); d.setAttribute('cx', p.x); d.setAttribute('cy', p.y); d.style.opacity = 1; } else d.style.opacity = 0; });
   words($('nt1'), t, [38.68, 38.9, 39.2, 39.52]); words($('nt2'), t, [40.32, 40.52, 40.88, 41.02, 41.26, 41.44]);
 };
@@ -550,7 +563,7 @@ U[8] = t => {
   $('lk').style.transform += ` rotate(${jig}deg)`;
   const up = Math.max(0, spring(t - 43.78, 15, .5)) * 3.6;
   $('lks').setAttribute('transform', `translate(0 ${(-up).toFixed(3)})`);
-  ripple($('lkr'), t, 43.78, 165, 420, .9, 10); ripple($('lkr2'), t, 43.9, 165, 330, .8, 4); burst($('lkb'), t, 43.8, 190, 360);
+  ripple($('lkr'), t, 43.78, 165, 420, .6, 10); ripple($('lkr2'), t, 43.85, 165, 330, .5, 4); burst($('lkb'), t, 43.8, 190, 360, .5);
   pop($('lkc'), t, 44.02, { from: 0, z: .4 });
   words($('lt1'), t, [42.32, 42.52, 42.96]); words($('lt2'), t, [43.1, 43.3, 43.78, 44.02]);
 };
@@ -569,11 +582,11 @@ const BEATS10 = Array.from({ length: 6 }, (_, i) => 50.77 + i * .667);
 U[10] = t => {
   cam($('c10'), 960, 560, lerp(1.15, 1.0, eOut(seg(t, 50.45, 52.3))));
   pop($('hh'), t, 50.6, { from: .3 });
-  let b = 0; BEATS10.forEach(a => { b = Math.max(b, tri(t, a, a + .16) + .6 * tri(t, a + .2, a + .34)); });
+  const ph = WT - O - m(BEATS10[0]), kb = ((ph % BEAT) + BEAT) % BEAT, b = ph > 0 ? tri(kb, 0, .16) + .6 * tri(kb, .2, .34) : 0;
   if (t > 50.9) $('hh').style.transform += ` scale(${1 + .07 * b})`;
   [0, 1, 2, 3].forEach(i => ripple($('hr' + i), t, BEATS10[i + 1], 140, 360, 1.1, 5));
   burst($('hb'), t, 52.04, 170, 330);
-  FH.forEach(f => { const p = ((t - 50.45 + f.o) / f.d) % 1; tf(f.e, { x: f.x + Math.sin(t * 1.3 + f.sw) * 30, y: 1140 - p * 1300, o: f.a * tri(p, 0, 1) * seg(t, 50.45, 50.9) }); });
+  const tw = WT - O - m(50.45); FH.forEach(f => { const p = ((tw + f.o) / f.d) % 1; tf(f.e, { x: f.x + Math.sin(WT * 1.3 + f.sw) * 30, y: 1140 - p * 1300, o: f.a * tri(p, 0, 1) * seg(tw, 0, .45) }); });
   words($('ht1'), t, [50.96, 51.22]); words($('ht2'), t, [51.6, 51.92, 52.04]); words($('ht3'), t, [52.84, 53.18, 53.62, 53.86]);
 };
 U[11] = t => {
@@ -608,44 +621,46 @@ U[13] = t => {
 };
 
 function seekImpl(T) {
-  T = clamp(T, 0, DUR - 1e-4);
-  const t = T - O;
+  T = clamp(T, 0, DUR - 1e-4); WT = T;
+  const { t, held } = inv(T - O);
   const V = SC.map(s => vis(s, t));
-  drawBg(t, V);
+  drawBg(T - O, V);
   SC.forEach((s, i) => {
     const v = V[i]; s.el.style.display = v > 0.001 ? 'block' : 'none';
     if (v <= 0.001) return;
     s.el.style.opacity = v;
     s.el.style.filter = v < .999 ? `blur(${((1 - v) * 10).toFixed(2)}px)` : 'none';
+    s.el.style.transform = `scale(${(1 + .014 * (held - heldBefore(s.a))).toFixed(5)})`;  // slow push-in while holding
     U[i](t);
   });
   wipes(t);
   let fl = 0; for (const b of BIG) fl = Math.max(fl, b - .02 <= t ? .55 * Math.exp(-(t - b) * 9) : 0);
   $('flash').style.opacity = fl.toFixed(3);
   $('grain').style.backgroundImage = GRAIN[Math.floor(T * 24) % 4];
-  $('fade').style.opacity = Math.max(1 - seg(T, 0, .35), seg(T, 71.0, 72)).toFixed(3);
+  $('fade').style.opacity = Math.max(1 - seg(T, 0, .35), seg(T, DUR - 1, DUR)).toFixed(3);
 }
 
 // ---------- sound: voice + 90 BPM piano-led "warm corporate" track in E-flat + sfx ----------
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-const BPM = 90, BEAT = 60 / BPM, BAR = BEAT * 4, M0 = 0.1;              // music grid in τ
 const PROG = [[60, 63, 67, 36], [56, 60, 63, 44], [58, 63, 67, 39], [58, 62, 65, 46]]; // Cm  Ab  Eb  Bb
 const VO_URL = 'data:audio/mpeg;base64,{{VO}}';
 window.buildAudio = async function (ctx) {
-  const sr = ctx.sampleRate, S = x => x + O;  // τ -> seconds in the file
+  const sr = ctx.sampleRate, S = x => O + m(x);  // τ -> seconds in the file
   const master = ctx.createGain(); master.gain.value = .6; master.connect(ctx.destination);
   const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = .01; comp.release.value = .25; comp.connect(master);
   const music = ctx.createGain(), sfx = ctx.createGain(); music.connect(comp); sfx.connect(comp); sfx.gain.value = .5;
   // duck music under the voice
   const lo = .26, hi = .55; music.gain.setValueAtTime(hi, 0);
-  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, S(a) - .25, .08); music.gain.setTargetAtTime(hi, S(b) + .15, .35); }
-  music.gain.setTargetAtTime(.62, S(66.6), .5);
+  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, voT(a) - .25, .08); music.gain.setTargetAtTime(hi, voT(b) + .15, .35); }
+  music.gain.setTargetAtTime(.62, voT(66.6), .5); music.gain.setTargetAtTime(0, DUR - 1.3, .3);
   // voice
   if (!location.search.includes('novo')) try {
     const ab = await (await fetch(VO_URL)).arrayBuffer(), vb = await ctx.decodeAudioData(ab);
-    const v = ctx.createBufferSource(); v.buffer = vb; const vg = ctx.createGain(); vg.gain.value = 1.0;
+    const vg = ctx.createGain(); vg.gain.value = 1.0;
     const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 70;
-    v.connect(hp); hp.connect(vg); vg.connect(master); v.start(S(0));
+    hp.connect(vg); vg.connect(master);
+    const cuts = [0, ...BRK.map(b => b.v), vb.duration];                 // play the voice in chunks, one per hold
+    for (let i = 0; i + 1 < cuts.length; i++) { const src = ctx.createBufferSource(); src.buffer = vb; src.connect(hp); src.start(voT(cuts[i]), cuts[i], cuts[i + 1] - cuts[i]); }
   } catch (e) { console.warn('voice not decoded', e); }
 
   const nb = ctx.createBuffer(1, sr * 2, sr); { const d = nb.getChannelData(0), r = rng(1234); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
@@ -671,13 +686,14 @@ window.buildAudio = async function (ctx) {
 
   const strBus = ctx.createGain(); strBus.connect(music);
   const bassBus = ctx.createGain(); bassBus.connect(music);
-  const nBars = 27;
-  const sec = n => { const t = M0 + n * BAR; return t; };
-  const drumsOn = t => (t >= 8.0 && t < 42.7) || (t >= 50.7 && t < 61.4);
-  const fullOn = t => (t >= 26.7 && t < 42.7) || (t >= 50.7 && t < 61.4);
+  // the arrangement is laid out on the timeline (x = file seconds - O); section edges come from voice time via m()
+  const nBars = Math.ceil((DUR - O - M0) / BAR);
+  const sec = n => M0 + n * BAR;
+  const drumsOn = x => (x >= m(8.0) && x < m(42.7)) || (x >= m(50.7) && x < m(61.4));
+  const fullOn = x => (x >= m(26.7) && x < m(42.7)) || (x >= m(50.7) && x < m(61.4));
   for (let n = 0; n < nBars; n++) {
-    const tau = sec(n), t = S(tau), ch = PROG[n % 4];
-    const quiet = tau >= 45.3 && tau < 50.6, end = tau >= 61.4;
+    const tau = sec(n), t = O + tau, ch = PROG[n % 4];
+    const quiet = tau >= m(45.3) && tau < m(50.6), end = tau >= m(61.4);
     // strings pad
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = .5; lp.frequency.setValueAtTime(fullOn(tau + .1) ? 1600 : (quiet ? 600 : 1000), t);
     const env = ctx.createGain(), len = BAR + .4, pk = (n === 0 ? .03 : .05) * (quiet ? .7 : 1);
@@ -688,16 +704,16 @@ window.buildAudio = async function (ctx) {
     const arp = [ch[0] - 12, ch[0], ch[1], ch[2], ch[0] + 12, ch[2], ch[1], ch[2]];
     const pg = quiet ? .07 : (end ? .085 : .1);
     piano(t, ch[3] + 12, pg * 1.1, 3.2);
-    if (!(tau >= 61.3 && tau < 63.8)) for (let k = 0; k < 8; k++) { if (end && k % 2) continue; piano(t + k * BEAT / 2 + (k % 2 ? .012 : 0), arp[k] + (fullOn(tau + .1) && k >= 4 ? 12 : 0), pg * (k === 0 ? .9 : .62), 1.6, k % 2 ? .2 : -.2); }
+    if (!(tau >= m(61.3) && tau < m(63.8))) for (let k = 0; k < 8; k++) { if (end && k % 2) continue; piano(t + k * BEAT / 2 + (k % 2 ? .012 : 0), arp[k] + (fullOn(tau + .1) && k >= 4 ? 12 : 0), pg * (k === 0 ? .9 : .62), 1.6, k % 2 ? .2 : -.2); }
     // sub bass
     if (drumsOn(tau + .1) || quiet) { const g = quiet ? .12 : .2; tone(t, mtof(ch[3]), BAR * .95, { type: 'sine', g, a: .03, dest: bassBus }); tone(t, mtof(ch[3] + 12), BAR * .6, { type: 'triangle', g: g * .3, a: .02, dest: bassBus, lp: 600 }); }
     // marimba counter-line + glock in the full sections
     if (fullOn(tau + .1)) { [0, 3, 6, 8, 11, 14].forEach((s, j) => mar(t + s * BEAT / 4, [ch[2], ch[0] + 12, ch[1] + 12, ch[2], ch[1] + 12, ch[0] + 12][j], .05, j % 2 ? .35 : -.35)); }
-    if (tau >= 50.7 && tau < 61.4) [0, 2.5, 3].forEach((b, j) => bell(t + b * BEAT, [ch[2] + 12, ch[1] + 12, ch[0] + 24][j], .045));
+    if (tau >= m(50.7) && tau < m(61.4)) [0, 2.5, 3].forEach((b, j) => bell(t + b * BEAT, [ch[2] + 12, ch[1] + 12, ch[0] + 24][j], .045));
   }
   // drums
   for (let i = 0; i < nBars * 4; i++) {
-    const tau = M0 + i * BEAT, t = S(tau), b = i % 4;
+    const tau = M0 + i * BEAT, t = O + tau, b = i % 4;
     if (drumsOn(tau)) {
       const full = fullOn(tau);
       if (b === 0 || b === 2 || (full && b === 3 && i % 8 === 7)) {
@@ -711,7 +727,7 @@ window.buildAudio = async function (ctx) {
     }
   }
   // breakdown riser into 50.7 and final chord
-  noise(S(48.9), 1.8, { type: 'bandpass', f: 400, f2: 6000, q: 2.5, g: .14, a: 1.6, dest: music });
+  noise(S(50.7) - 1.9, 1.8, { type: 'bandpass', f: 400, f2: 6000, q: 2.5, g: .14, a: 1.6, dest: music });
   for (const m of [51, 58, 63, 67, 70, 74]) tone(S(65.6), mtof(m), 6, { wave: PIANO, g: .07, a: .01, lp: 2400, dest: music });
   [79, 82, 86, 91].forEach((m, i) => bell(S(65.78 + i * .11), m, .05));
   [75, 79, 82].forEach((m, i) => bell(S(67.3 + i * .12), m, .035));
@@ -723,7 +739,7 @@ window.buildAudio = async function (ctx) {
   noise(S(14.74), 1.2, { type: 'bandpass', f: 500, f2: 2600, q: 1.4, g: .16, a: .5, pan: -.3 }); // plane
   POPS.forEach((tau, i) => { const t = S(tau); tone(t, 340 + (i % 5) * 60, .12, { f2: 760 + (i % 5) * 80, g: .13 }); noise(t, .04, { type: 'bandpass', f: 3000, q: 2, g: .06 }); });
   HEARTS.forEach(tau => { const t = S(tau); tone(t, 90, .25, { f2: 55, g: .5 }); tone(t + .17, 85, .22, { f2: 52, g: .35 }); bell(t + .02, 84, .04); });
-  BEATS10.forEach(a => { const t = S(a); tone(t, 80, .2, { f2: 50, g: .28 }); tone(t + .2, 75, .18, { f2: 48, g: .18 }); });
+  for (let t = O + m(BEATS10[0]); t < O + m(54.6); t += BEAT) { tone(t, 80, .2, { f2: 50, g: .28 }); tone(t + .2, 75, .18, { f2: 48, g: .18 }); }
   for (let i = 0; i < 24; i++) tone(S(lerp(HOURS[0], HOURS[1], i / 23)), 1700 + (i % 4) * 80, .03, { g: .04 });
   for (let i = 0; i < 7; i++) tone(S(DAYS_T(i)), mtof(75 + [0, 2, 4, 5, 7, 9, 11][i]), .18, { g: .06 });
   SLAMS.forEach((tau, i) => { const t = S(tau); tone(t, 140, .3, { f2: 50, g: .45 }); noise(t, .12, { type: 'lowpass', f: 2500, g: .2 }); });
