@@ -26,6 +26,7 @@ Candidato invia il modulo ──► Supabase salva la riga nella tabella "candid
 | `candidatura-ricevuta.html` | email di conferma, inviata subito dopo la candidatura |
 | `candidatura-accettata.html` | email di candidatura accettata |
 | `candidatura-rifiutata.html` | email di candidatura non accettata |
+| `richiesta-informazioni.html` | risposta a chi scrive per avere informazioni (da inviare a mano, vedi in fondo) |
 | `supabase/functions/email-candidature/index.ts` | **la funzione da incollare su Supabase** (contiene già le tre email) |
 | `funzione/function.src.ts`, `funzione/build.mjs` | sorgente della funzione: se modifichi un'email `.html`, rigenera `index.ts` con `node lbs-email/funzione/build.mjs` |
 
@@ -113,3 +114,10 @@ Gli altri cambi di stato (es. "In Revisione") non inviano niente.
   supabase functions deploy email-candidature --no-verify-jwt --project-ref iedgiiucirqqrldvqqro
   supabase secrets set SMTP_USER=info@lbswork.com SMTP_PASS=... WEBHOOK_SECRET=... --project-ref iedgiiucirqqrldvqqro
   ```
+
+## Inviare a mano un'email (es. "Richiesta informazioni")
+
+1. Apri il file `.html` con Chrome o Edge (doppio clic).
+2. Premi **Ctrl+A** (seleziona tutto) e **Ctrl+C** (copia).
+3. Nella risposta (Webmail Aruba, Outlook o Gmail) clicca nel corpo del messaggio e premi **Ctrl+V**.
+4. Sostituisci `{{NOME}}` con il nome della persona (oppure lascia solo "Ciao,") e invia.
