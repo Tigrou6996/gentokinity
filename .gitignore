@@ -35,3 +35,10 @@ lbs-video/assistenza/*.pcm
 lbs-video/assistenza/*_segs.txt
 lbs-video/assistenza/thumbnail/thumb.html
 lbs-video/sito/thumbnail/thumb.html
+lbs-video/nike/node_modules
+lbs-video/nike/*.log
+lbs-video/nike/LBS-valigia-final*.mp4
+lbs-video/nike/*_seg*.mp4
+lbs-video/nike/*_silent.mp4
+lbs-video/nike/*.pcm
+lbs-video/nike/*_segs.txt
