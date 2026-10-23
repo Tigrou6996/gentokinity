@@ -673,8 +673,8 @@ window.buildAudio = async function (ctx) {
   const music = ctx.createGain(); music.connect(master); const ms = ctx.createGain(); ms.gain.value = .3; music.connect(ms); ms.connect(verb);
   const sfx = ctx.createGain(); sfx.gain.value = .55; sfx.connect(master); const ss = ctx.createGain(); ss.gain.value = .2; sfx.connect(ss); ss.connect(verb);
   // duck the music under the voice; it comes up on the chapter pauses
-  const lo = .2, hi = .5; music.gain.setValueAtTime(.55, 0);
-  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, voT(a) - .3, .1); music.gain.setTargetAtTime(hi, voT(b) + .2, .4); }
+  const lo = .26, hi = .62; music.gain.setValueAtTime(.62, 0);
+  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, voT(a) - .3, .1); music.gain.setTargetAtTime(BRK.some(k => Math.abs(k.c - b) < .7) ? .9 : hi, voT(b) + .1, .25); }
   music.gain.setTargetAtTime(.6, voT(186.2), .4); music.gain.setTargetAtTime(0, DUR - 1.4, .35);
   // voice, in chunks around the pauses
   try {
