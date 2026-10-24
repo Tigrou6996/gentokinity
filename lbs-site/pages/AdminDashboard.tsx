@@ -574,7 +574,7 @@ const AdminDashboard: React.FC = () => {
     width: '240px',
     minHeight: '100vh',
     background: 'var(--card-bg)',
-    borderRight: '4px solid var(--comic-border-color)',
+    borderRight: '1px solid var(--line-soft)',
     display: 'flex',
     flexDirection: 'column',
     flexShrink: 0,
@@ -586,7 +586,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)' }}>
+    <div className="dash" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)' }}>
 
       {/* Mobile overlay */}
       {isMobileMenuOpen && (
@@ -609,7 +609,7 @@ const AdminDashboard: React.FC = () => {
         {/* Brand */}
         <div style={{
           padding: '24px 20px',
-          borderBottom: '4px solid var(--comic-border-color)',
+          borderBottom: '1px solid var(--line-soft)',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
@@ -617,14 +617,14 @@ const AdminDashboard: React.FC = () => {
           <div style={{
             width: '40px', height: '40px',
             background: 'var(--primary)',
-            border: '3px solid var(--comic-border-color)',
+            border: '1px solid var(--line)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
             <i className="fas fa-shield-alt" style={{ color: '#fff', fontSize: '16px' }} />
           </div>
           <div>
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '-0.01em', color: 'var(--text-color)' }}>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '-0.01em', color: 'var(--text-color)' }}>
               LBS Admin
             </div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.1em' }}>
@@ -636,7 +636,7 @@ const AdminDashboard: React.FC = () => {
         {/* Admin profile */}
         <div style={{
           padding: '20px',
-          borderBottom: '4px solid var(--comic-border-color)',
+          borderBottom: '1px solid var(--line-soft)',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
@@ -644,10 +644,10 @@ const AdminDashboard: React.FC = () => {
           <div style={{
             width: '44px', height: '44px',
             background: '#FF6B35',
-            border: '3px solid var(--comic-border-color)',
+            border: '1px solid var(--line)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
+            fontWeight: 700,
             color: '#fff',
             fontSize: '15px',
             flexShrink: 0,
@@ -655,12 +655,12 @@ const AdminDashboard: React.FC = () => {
             {initials}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 900, fontSize: '13px', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {displayName}
             </div>
             <div style={{
               fontSize: '10px',
-              fontWeight: 900,
+              fontWeight: 700,
               letterSpacing: '0.15em',
               textTransform: 'uppercase',
               color: '#FF6B35',
@@ -683,10 +683,10 @@ const AdminDashboard: React.FC = () => {
                 width: '100%',
                 padding: '12px 16px',
                 background: activeTab === tab.key ? 'var(--primary)' : 'transparent',
-                border: activeTab === tab.key ? '3px solid var(--comic-border-color)' : '3px solid transparent',
-                boxShadow: activeTab === tab.key ? '3px 3px 0px var(--comic-shadow-color)' : 'none',
+                border: activeTab === tab.key ? '1px solid var(--line)' : '1px solid transparent',
+                boxShadow: activeTab === tab.key ? 'var(--shadow-soft)' : 'none',
                 color: activeTab === tab.key ? '#fff' : 'var(--text-muted)',
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: '13px',
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
@@ -704,7 +704,7 @@ const AdminDashboard: React.FC = () => {
         </nav>
 
         {/* Bottom actions */}
-        <div style={{ padding: '16px 12px', borderTop: '4px solid var(--comic-border-color)' }}>
+        <div style={{ padding: '16px 12px', borderTop: '1px solid var(--line-soft)' }}>
           <button
             onClick={() => { setShowPwdModal(true); setPwdError(null); setPwdSuccess(false); setAdminCurrentPwd(''); setAdminNewPwd(''); setAdminConfirmPwd(''); }}
             style={{
@@ -737,7 +737,7 @@ const AdminDashboard: React.FC = () => {
               display: 'flex', alignItems: 'center', gap: '10px',
               width: '100%', padding: '10px 16px',
               background: 'transparent', border: 'none',
-              color: '#dc2626', fontWeight: 900, fontSize: '13px',
+              color: '#dc2626', fontWeight: 700, fontSize: '13px',
               cursor: 'pointer', textAlign: 'left',
               fontFamily: 'var(--font-inter)',
             }}
@@ -757,14 +757,14 @@ const AdminDashboard: React.FC = () => {
           justifyContent: 'space-between',
           marginBottom: '24px',
           paddingBottom: '16px',
-          borderBottom: '3px solid var(--comic-border-color)',
+          borderBottom: '1px solid var(--line-soft)',
         }}>
-          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '1.1rem', textTransform: 'uppercase', color: 'var(--text-color)' }}>
+          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', textTransform: 'uppercase', color: 'var(--text-color)' }}>
             {tabs.find(t => t.key === activeTab)?.label || 'Dashboard'}
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            style={{ width: '40px', height: '40px', background: 'var(--primary)', border: '3px solid var(--comic-border-color)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}
+            style={{ width: '40px', height: '40px', background: 'var(--primary)', border: '1px solid var(--line)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}
           >
             <i className="fas fa-bars" />
           </button>
@@ -776,7 +776,7 @@ const AdminDashboard: React.FC = () => {
             <div style={{ marginBottom: '36px' }}>
               <h1 style={{
                 fontFamily: 'var(--font-heading)',
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: 'clamp(1.6rem, 3vw, 2.5rem)',
                 letterSpacing: '-0.03em',
                 textTransform: 'uppercase',
@@ -802,13 +802,13 @@ const AdminDashboard: React.FC = () => {
                   <div style={{
                     width: '52px', height: '52px',
                     background: stat.color,
-                    border: '3px solid var(--comic-border-color)',
+                    border: '1px solid var(--line)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     margin: '0 auto 16px',
                   }}>
                     <i className={`fas ${stat.icon}`} style={{ color: '#fff', fontSize: '20px' }} />
                   </div>
-                  <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '2rem', color: 'var(--text-color)', letterSpacing: '-0.03em' }}>
+                  <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '2rem', color: 'var(--text-color)', letterSpacing: '-0.03em' }}>
                     {stat.value}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: '4px' }}>
@@ -819,7 +819,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Quick actions */}
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: '-0.01em', color: 'var(--text-color)', marginBottom: '20px' }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: '-0.01em', color: 'var(--text-color)', marginBottom: '20px' }}>
               Azioni Rapide
             </h2>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -847,7 +847,7 @@ const AdminDashboard: React.FC = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
-                <h1 style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '2rem', textTransform: 'uppercase', letterSpacing: '-0.03em', color: 'var(--text-color)', margin: '0 0 4px' }}>
+                <h1 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '2rem', textTransform: 'uppercase', letterSpacing: '-0.03em', color: 'var(--text-color)', margin: '0 0 4px' }}>
                   Richieste di Contatto
                 </h1>
                 <p style={{ color: 'var(--text-muted)', fontWeight: 500, margin: 0, fontSize: '14px' }}>
@@ -885,15 +885,15 @@ const AdminDashboard: React.FC = () => {
                     <div style={{
                       width: '48px', height: '48px', flexShrink: 0,
                       background: 'var(--primary)',
-                      border: '3px solid var(--comic-border-color)',
+                      border: '1px solid var(--line)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--font-heading)', fontWeight: 900,
+                      fontFamily: 'var(--font-heading)', fontWeight: 700,
                       color: '#fff', fontSize: '16px',
                     }}>
                       {req.nome.charAt(0).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, fontSize: '16px', color: 'var(--text-color)', marginBottom: '4px' }}>{req.nome}</div>
+                      <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-color)', marginBottom: '4px' }}>{req.nome}</div>
                       <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500, marginBottom: '8px' }}>{req.email} {req.telefono && `• ${req.telefono}`}</div>
                       <div style={{ fontSize: '14px', color: 'var(--text-color)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {req.messaggio}
@@ -924,7 +924,7 @@ const AdminDashboard: React.FC = () => {
                 }} onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
                     <div>
-                      <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '1.6rem', textTransform: 'uppercase', letterSpacing: '-0.02em', color: 'var(--text-color)', margin: '0 0 4px' }}>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.6rem', textTransform: 'uppercase', letterSpacing: '-0.02em', color: 'var(--text-color)', margin: '0 0 4px' }}>
                         {selectedRequest.nome}
                       </h3>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -946,8 +946,8 @@ const AdminDashboard: React.FC = () => {
                         <span style={{ fontWeight: 600, color: 'var(--text-color)', fontSize: '14px' }}>{selectedRequest.telefono}</span>
                       </div>
                     )}
-                    <div style={{ border: '3px solid var(--comic-border-color)', padding: '20px', marginTop: '8px', background: 'var(--bg-color)' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '8px' }}>Messaggio</div>
+                    <div style={{ border: '1px solid var(--line)', padding: '20px', marginTop: '8px', background: 'var(--bg-color)' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '8px' }}>Messaggio</div>
                       <p style={{ color: 'var(--text-color)', fontWeight: 500, margin: 0, lineHeight: 1.6 }}>{selectedRequest.messaggio}</p>
                     </div>
                   </div>
@@ -957,7 +957,7 @@ const AdminDashboard: React.FC = () => {
                         <i className="fas fa-reply" /> RISPONDI
                       </button>
                     </a>
-                    <button onClick={() => deleteRequest(selectedRequest.id)} className="comic-button" style={{ background: '#dc2626', border: '3px solid var(--comic-border-color)', color: '#fff', padding: '14px 20px', fontSize: '12px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button onClick={() => deleteRequest(selectedRequest.id)} className="comic-button" style={{ background: '#dc2626', border: '1px solid var(--line)', color: '#fff', padding: '14px 20px', fontSize: '12px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <i className="fas fa-trash" />
                     </button>
                   </div>
@@ -971,7 +971,7 @@ const AdminDashboard: React.FC = () => {
         {activeTab === 'users' && (
           <div>
             <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '2rem', textTransform: 'uppercase', letterSpacing: '-0.03em', color: 'var(--text-color)', margin: '0 0 4px' }}>
+              <h1 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '2rem', textTransform: 'uppercase', letterSpacing: '-0.03em', color: 'var(--text-color)', margin: '0 0 4px' }}>
                 Utenti Registrati
               </h1>
               <p style={{ color: 'var(--text-muted)', fontWeight: 500, margin: 0, fontSize: '14px' }}>
@@ -994,24 +994,24 @@ const AdminDashboard: React.FC = () => {
                     <div style={{
                       width: '44px', height: '44px', flexShrink: 0,
                       background: u.role === 'admin' ? '#FF6B35' : 'var(--primary)',
-                      border: '3px solid var(--comic-border-color)',
+                      border: '1px solid var(--line)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--font-heading)', fontWeight: 900,
+                      fontFamily: 'var(--font-heading)', fontWeight: 700,
                       color: '#fff', fontSize: '14px',
                     }}>
                       {(u.full_name || u.email || '?').charAt(0).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, fontSize: '15px', color: 'var(--text-color)' }}>{u.full_name || 'Senza nome'}</div>
+                      <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)' }}>{u.full_name || 'Senza nome'}</div>
                       <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{u.email}</div>
                     </div>
                     <div style={{
                       padding: '4px 12px',
                       background: u.role === 'admin' ? '#FF6B35' : 'var(--primary)',
-                      border: '2px solid var(--comic-border-color)',
+                      border: '1px solid var(--line)',
                       color: '#fff',
                       fontSize: '10px',
-                      fontWeight: 900,
+                      fontWeight: 700,
                       letterSpacing: '0.15em',
                       textTransform: 'uppercase',
                     }}>
@@ -1032,7 +1032,7 @@ const AdminDashboard: React.FC = () => {
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px', flexWrap:'wrap', gap:'16px' }}>
               <div>
-                <h1 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'2rem', textTransform:'uppercase', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 4px' }}>Candidature</h1>
+                <h1 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'2rem', textTransform:'uppercase', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 4px' }}>Candidature</h1>
                 <p style={{ color:'var(--text-muted)', fontWeight:500, margin:0, fontSize:'14px' }}>{candidature.length} totali &middot; {candFiltered.length} visualizzate</p>
               </div>
               <button onClick={fetchCandidature} className="comic-button" style={{ padding:'10px 20px', fontSize:'12px', letterSpacing:'0.1em', display:'flex', alignItems:'center', gap:'8px' }}>
@@ -1049,7 +1049,7 @@ const AdminDashboard: React.FC = () => {
                   placeholder="Cerca nome, cognome, email..."
                   value={candSearch}
                   onChange={e => setCandSearch(e.target.value)}
-                  style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 12px 10px 36px', fontWeight:600, fontSize:'13px', outline:'none', boxSizing:'border-box' }}
+                  style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 12px 10px 36px', fontWeight:600, fontSize:'13px', outline:'none', boxSizing:'border-box' }}
                 />
               </div>
               <div style={{ display:'flex', gap:'8px', flexWrap:'wrap', alignItems:'center' }}>
@@ -1057,7 +1057,7 @@ const AdminDashboard: React.FC = () => {
                   const info: { label: string; color: string } = s === 'tutti' ? { label:'Tutti', color:'var(--primary)' } : STATO_LABELS[s];
                   return (
                     <button key={s} onClick={() => setCandFiltroStato(s)}
-                      style={{ padding:'7px 12px', border:`3px solid ${info.color}`, background: candFiltroStato === s ? info.color : 'transparent', color: candFiltroStato === s ? '#fff' : info.color, fontSize:'10px', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', transition:'all 0.15s' }}>
+                      style={{ padding:'7px 12px', border:`3px solid ${info.color}`, background: candFiltroStato === s ? info.color : 'transparent', color: candFiltroStato === s ? '#fff' : info.color, fontSize:'10px', fontWeight: 700, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', transition:'all 0.15s' }}>
                       {info.label}
                     </button>
                   );
@@ -1078,22 +1078,22 @@ const AdminDashboard: React.FC = () => {
                   const s = STATO_LABELS[c.stato] || STATO_LABELS.nuova;
                   return (
                     <div key={c.id} className="comic-card" style={{ padding:'20px 28px', display:'flex', alignItems:'center', gap:'20px', cursor:'pointer' }} onClick={() => { setSelectedCand(c); setCandNote(c.note_admin || ''); }}>
-                      <div style={{ width:'48px', height:'48px', flexShrink:0, background:s.color, border:'3px solid var(--comic-border-color)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:900, fontSize:'16px' }}>
+                      <div style={{ width:'48px', height:'48px', flexShrink:0, background:s.color, border:'1px solid var(--line)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight: 700, fontSize:'16px' }}>
                         {c.nome.charAt(0).toUpperCase()}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontWeight:900, fontSize:'16px', color:'var(--text-color)', marginBottom:'2px' }}>{c.nome} {c.cognome}</div>
+                        <div style={{ fontWeight: 700, fontSize:'16px', color:'var(--text-color)', marginBottom:'2px' }}>{c.nome} {c.cognome}</div>
                         <div style={{ fontSize:'13px', color:'var(--text-muted)', fontWeight:500 }}>
                           {c.email}{c.telefono && ` • ${c.telefono}`}
                           {c.offerta_titolo && <span style={{ color:'var(--primary)', fontWeight:700 }}> • 🎯 {c.offerta_titolo}</span>}
                         </div>
                       </div>
                       {!c.offerta_titolo && (
-                        <div style={{ padding:'3px 8px', background:'transparent', border:'2px solid #F97316', color:'#F97316', fontSize:'9px', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', whiteSpace:'nowrap', flexShrink:0 }}>
+                        <div style={{ padding:'3px 8px', background:'transparent', border:'1px solid #F97316', color:'#F97316', fontSize:'9px', fontWeight: 700, letterSpacing:'0.1em', textTransform:'uppercase', whiteSpace:'nowrap', flexShrink:0 }}>
                           Senza Offerta
                         </div>
                       )}
-                      <div style={{ padding:'4px 10px', background:s.color, border:'2px solid var(--comic-border-color)', color:'#fff', fontSize:'10px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{s.label}</div>
+                      <div style={{ padding:'4px 10px', background:s.color, border:'1px solid var(--line)', color:'#fff', fontSize:'10px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{s.label}</div>
                       <div style={{ fontSize:'11px', color:'var(--text-muted)', fontWeight:600, whiteSpace:'nowrap' }}>{formatDate(c.created_at)}</div>
                     </div>
                   );
@@ -1107,7 +1107,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="comic-card admin-modal-content" style={{ width:'100%', maxWidth:'700px', maxHeight:'90vh', overflowY:'auto', padding:'40px', background:'var(--card-bg)' }} onClick={e => e.stopPropagation()}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'20px' }}>
                     <div>
-                      <h3 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'1.6rem', textTransform:'uppercase', color:'var(--text-color)', margin:'0 0 4px' }}>{selectedCand.nome} {selectedCand.cognome}</h3>
+                      <h3 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'1.6rem', textTransform:'uppercase', color:'var(--text-color)', margin:'0 0 4px' }}>{selectedCand.nome} {selectedCand.cognome}</h3>
                       <div style={{ fontSize:'12px', color:'var(--text-muted)', fontWeight:600 }}>{formatDate(selectedCand.created_at)}</div>
                     </div>
                     <button onClick={() => setSelectedCand(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:'20px' }}><i className="fas fa-times" /></button>
@@ -1115,11 +1115,11 @@ const AdminDashboard: React.FC = () => {
 
                   {/* Offerta di riferimento */}
                   {selectedCand.offerta_titolo && (
-                    <div style={{ border:'3px solid var(--primary)', padding:'12px 16px', marginBottom:'16px', background:'var(--bg-color)', display:'flex', alignItems:'center', gap:'12px' }}>
+                    <div style={{ border:'1px solid var(--primary)', padding:'12px 16px', marginBottom:'16px', background:'var(--bg-color)', display:'flex', alignItems:'center', gap:'12px' }}>
                       <i className="fas fa-briefcase" style={{ color:'var(--primary)', fontSize:'18px' }} />
                       <div>
-                        <div style={{ fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)' }}>Offerta candidata</div>
-                        <div style={{ fontWeight:900, color:'var(--text-color)', fontSize:'14px' }}>{selectedCand.offerta_titolo}</div>
+                        <div style={{ fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)' }}>Offerta candidata</div>
+                        <div style={{ fontWeight: 700, color:'var(--text-color)', fontSize:'14px' }}>{selectedCand.offerta_titolo}</div>
                       </div>
                     </div>
                   )}
@@ -1143,8 +1143,8 @@ const AdminDashboard: React.FC = () => {
                       { icon:'fa-car', label:'Patente', value: selectedCand.patente },
                       { icon:'fa-calendar-check', label:'Disponibilità', value: selectedCand.disponibilita },
                     ].filter(f => f.value).map((f, i) => (
-                      <div key={i} style={{ border:'2px solid var(--comic-border-color)', padding:'8px 12px', background:'var(--bg-color)' }}>
-                        <div style={{ fontSize:'9px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'3px' }}>
+                      <div key={i} style={{ border:'1px solid var(--line)', padding:'8px 12px', background:'var(--bg-color)' }}>
+                        <div style={{ fontSize:'9px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'3px' }}>
                           <i className={`fas ${f.icon}`} style={{ marginRight:'5px' }} />{f.label}
                         </div>
                         <div style={{ fontWeight:700, color:'var(--text-color)', fontSize:'13px' }}>{f.value}</div>
@@ -1154,27 +1154,27 @@ const AdminDashboard: React.FC = () => {
 
                   {/* Lettera di presentazione */}
                   {selectedCand.messaggio && (
-                    <div style={{ border:'3px solid var(--comic-border-color)', padding:'16px', background:'var(--bg-color)', marginBottom:'16px' }}>
-                      <div style={{ fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Lettera di Presentazione</div>
+                    <div style={{ border:'1px solid var(--line)', padding:'16px', background:'var(--bg-color)', marginBottom:'16px' }}>
+                      <div style={{ fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Lettera di Presentazione</div>
                       <p style={{ color:'var(--text-color)', fontWeight:500, margin:0, lineHeight:1.6 }}>{selectedCand.messaggio}</p>
                     </div>
                   )}
 
                   <div style={{ marginBottom:'20px' }}>
-                    <label style={{ display:'block', fontSize:'11px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Stato Candidatura</label>
+                    <label style={{ display:'block', fontSize:'11px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Stato Candidatura</label>
                     <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
                       {Object.entries(STATO_LABELS).map(([key, val]) => (
                         <button key={key} onClick={() => setSelectedCand({...selectedCand, stato: key as Candidatura['stato']})}
-                          style={{ padding:'6px 14px', background: selectedCand.stato === key ? val.color : 'transparent', border:`3px solid ${val.color}`, color: selectedCand.stato === key ? '#fff' : val.color, fontSize:'11px', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer' }}>
+                          style={{ padding:'6px 14px', background: selectedCand.stato === key ? val.color : 'transparent', border:`3px solid ${val.color}`, color: selectedCand.stato === key ? '#fff' : val.color, fontSize:'11px', fontWeight: 700, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer' }}>
                           {val.label}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div style={{ marginBottom:'24px' }}>
-                    <label style={{ display:'block', fontSize:'11px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Note Admin</label>
+                    <label style={{ display:'block', fontSize:'11px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Note Admin</label>
                     <textarea value={candNote} onChange={e => setCandNote(e.target.value)} rows={3}
-                      style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'12px', fontWeight:600, fontSize:'14px', resize:'none', outline:'none', boxSizing:'border-box' }}
+                      style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'12px', fontWeight:600, fontSize:'14px', resize:'none', outline:'none', boxSizing:'border-box' }}
                       placeholder="Note interne (non visibili al candidato)..." />
                   </div>
                   <div style={{ display:'flex', gap:'12px' }}>
@@ -1184,7 +1184,7 @@ const AdminDashboard: React.FC = () => {
                     <a href={`mailto:${selectedCand.email}`} style={{ textDecoration:'none' }}>
                       <button className="comic-button" style={{ padding:'14px 18px', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><i className="fas fa-reply" /></button>
                     </a>
-                    <button onClick={() => deleteCandidatura(selectedCand.id)} className="comic-button" style={{ background:'#dc2626', border:'3px solid var(--comic-border-color)', color:'#fff', padding:'14px 18px', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}>
+                    <button onClick={() => deleteCandidatura(selectedCand.id)} className="comic-button" style={{ background:'#dc2626', border:'1px solid var(--line)', color:'#fff', padding:'14px 18px', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}>
                       <i className="fas fa-trash" />
                     </button>
                   </div>
@@ -1199,7 +1199,7 @@ const AdminDashboard: React.FC = () => {
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'32px', flexWrap:'wrap', gap:'16px' }}>
               <div>
-                <h1 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'2rem', textTransform:'uppercase', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 4px' }}>Offerte di Lavoro</h1>
+                <h1 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'2rem', textTransform:'uppercase', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 4px' }}>Offerte di Lavoro</h1>
                 <p style={{ color:'var(--text-muted)', fontWeight:500, margin:0, fontSize:'14px' }}>{offerte.length} offerte totali</p>
               </div>
               <button onClick={openNewOffer} className="comic-button" style={{ background:'var(--primary)', color:'#fff', padding:'12px 24px', fontSize:'12px', letterSpacing:'0.15em', display:'flex', alignItems:'center', gap:'10px' }}>
@@ -1208,13 +1208,13 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Banner Feed XML per Jooble */}
-            <div className="comic-card" style={{ padding:'16px 20px', marginBottom:'24px', background:'var(--card-bg)', border:'3px solid var(--comic-border-color)', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'16px' }}>
+            <div className="comic-card" style={{ padding:'16px 20px', marginBottom:'24px', background:'var(--card-bg)', border:'1px solid var(--line)', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'16px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
-                <div style={{ width:'40px', height:'40px', background:'#25D366', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', border:'2px solid var(--comic-border-color)', flexShrink:0 }}>
+                <div style={{ width:'40px', height:'40px', background:'#25D366', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', border:'1px solid var(--line)', flexShrink:0 }}>
                   <i className="fas fa-rss" />
                 </div>
                 <div>
-                  <div style={{ fontWeight:900, fontSize:'14px', textTransform:'uppercase', color:'var(--text-color)' }}>
+                  <div style={{ fontWeight: 700, fontSize:'14px', textTransform:'uppercase', color:'var(--text-color)' }}>
                     Feed XML per Jooble (jooble.org / de.jooble.org)
                   </div>
                   <div style={{ fontSize:'12px', color:'var(--text-muted)', fontFamily:'monospace', marginTop:'2px' }}>
@@ -1241,7 +1241,7 @@ const AdminDashboard: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="comic-button"
-                  style={{ padding:'8px 16px', fontSize:'11px', letterSpacing:'0.1em', background:'transparent', color:'var(--text-color)', border:'2px solid var(--comic-border-color)', textDecoration:'none' }}
+                  style={{ padding:'8px 16px', fontSize:'11px', letterSpacing:'0.1em', background:'transparent', color:'var(--text-color)', border:'1px solid var(--line)', textDecoration:'none' }}
                 >
                   <i className="fas fa-external-link-alt" style={{ marginRight:'6px' }} /> APRI XML
                 </a>
@@ -1261,9 +1261,9 @@ const AdminDashboard: React.FC = () => {
                   <div key={o.id} className="comic-card" style={{ padding:'16px 20px', display:'flex', alignItems:'center', gap:'16px', flexWrap:'wrap' }}>
                     {/* Thumbnail o icona */}
                     {o.immagine_url ? (
-                      <img src={o.immagine_url} alt={o.titolo} style={{ width:'56px', height:'56px', objectFit:'cover', border:'3px solid var(--comic-border-color)', flexShrink:0 }} />
+                      <img src={o.immagine_url} alt={o.titolo} style={{ width:'56px', height:'56px', objectFit:'cover', border:'1px solid var(--line)', flexShrink:0 }} />
                     ) : (
-                      <div style={{ width:'56px', height:'56px', flexShrink:0, background: o.attiva ? '#25D366' : '#999', border:'3px solid var(--comic-border-color)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'22px' }}>
+                      <div style={{ width:'56px', height:'56px', flexShrink:0, background: o.attiva ? '#25D366' : '#999', border:'1px solid var(--line)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'22px' }}>
                         <i className="fas fa-briefcase" />
                       </div>
                     )}
@@ -1271,9 +1271,9 @@ const AdminDashboard: React.FC = () => {
                     {/* Info offerta */}
                     <div style={{ flex:1, minWidth:'160px' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap', marginBottom:'2px' }}>
-                        <span style={{ fontWeight:900, fontSize:'15px', color:'var(--text-color)' }}>{o.titolo}</span>
+                        <span style={{ fontWeight: 700, fontSize:'15px', color:'var(--text-color)' }}>{o.titolo}</span>
                         {o.in_evidenza && (
-                          <span style={{ background:'#F59E0B', color:'#fff', fontSize:'10px', fontWeight:900, padding:'2px 8px', border:'2px solid var(--comic-border-color)', letterSpacing:'0.1em' }}>⭐ EVIDENZA</span>
+                          <span style={{ background:'#F59E0B', color:'#fff', fontSize:'10px', fontWeight: 700, padding:'2px 8px', border:'1px solid var(--line)', letterSpacing:'0.1em' }}>⭐ EVIDENZA</span>
                         )}
                       </div>
                       <div style={{ fontSize:'12px', color:'var(--text-muted)', fontWeight:500, display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap', marginTop:'4px' }}>
@@ -1281,9 +1281,9 @@ const AdminDashboard: React.FC = () => {
                         {(o.stipendio_min || o.stipendio_max || o.stipendio_modalita === 'concordare') && (
                           <span style={{
                             fontSize:'10px',
-                            fontWeight:900,
+                            fontWeight: 700,
                             padding:'2px 8px',
-                            border:'2px solid var(--comic-border-color)',
+                            border:'1px solid var(--line)',
                             background: o.stipendio_tipo === 'netto' ? '#dcfce7' : '#fef9c3',
                             color: o.stipendio_tipo === 'netto' ? '#166534' : '#854d0e',
                             textTransform:'uppercase',
@@ -1309,18 +1309,18 @@ const AdminDashboard: React.FC = () => {
                     {/* Azioni */}
                     <div style={{ display:'flex', gap:'6px', alignItems:'center', flexWrap:'wrap' }}>
                       <button onClick={() => toggleEvidenza(o.id, o.in_evidenza)} title={o.in_evidenza ? 'Rimuovi da evidenza' : 'Metti in evidenza'}
-                        style={{ padding:'7px 11px', border:'2px solid var(--comic-border-color)', background: o.in_evidenza ? '#F59E0B' : 'var(--bg-color)', color: o.in_evidenza ? '#fff' : 'var(--text-muted)', fontSize:'13px', cursor:'pointer', transition:'all 0.15s' }}>
+                        style={{ padding:'7px 11px', border:'1px solid var(--line)', background: o.in_evidenza ? '#F59E0B' : 'var(--bg-color)', color: o.in_evidenza ? '#fff' : 'var(--text-muted)', fontSize:'13px', cursor:'pointer', transition:'all 0.15s' }}>
                         <i className="fas fa-star" />
                       </button>
                       <button onClick={() => copyShareLink(o)} title="Copia link condivisibile"
-                        style={{ padding:'7px 11px', border:'2px solid var(--comic-border-color)', background: copiedSlug === o.id ? '#25D366' : 'var(--bg-color)', color: copiedSlug === o.id ? '#fff' : 'var(--text-muted)', fontSize:'13px', cursor:'pointer', transition:'all 0.15s' }}>
+                        style={{ padding:'7px 11px', border:'1px solid var(--line)', background: copiedSlug === o.id ? '#25D366' : 'var(--bg-color)', color: copiedSlug === o.id ? '#fff' : 'var(--text-muted)', fontSize:'13px', cursor:'pointer', transition:'all 0.15s' }}>
                         <i className={`fas ${copiedSlug === o.id ? 'fa-check' : 'fa-share-alt'}`} />
                       </button>
                       <button onClick={() => toggleAttiva(o.id, o.attiva)}
-                        style={{ padding:'5px 10px', border:'2px solid var(--comic-border-color)', background: o.attiva ? '#25D366' : '#dc2626', color:'#fff', fontSize:'10px', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap' }}>
+                        style={{ padding:'5px 10px', border:'1px solid var(--line)', background: o.attiva ? '#25D366' : '#dc2626', color:'#fff', fontSize:'10px', fontWeight: 700, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap' }}>
                         {o.attiva ? '● ON' : '○ OFF'}
                       </button>
-                      <button onClick={() => openEditOffer(o)} style={{ padding:'7px 12px', border:'2px solid var(--comic-border-color)', background:'var(--primary)', color:'#fff', cursor:'pointer', fontSize:'13px' }}><i className="fas fa-edit" /></button>
+                      <button onClick={() => openEditOffer(o)} style={{ padding:'7px 12px', border:'1px solid var(--line)', background:'var(--primary)', color:'#fff', cursor:'pointer', fontSize:'13px' }}><i className="fas fa-edit" /></button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1328,7 +1328,7 @@ const AdminDashboard: React.FC = () => {
                           setOfferToDelete(o);
                         }}
                         title="Elimina offerta"
-                        style={{ padding:'7px 12px', border:'2px solid var(--comic-border-color)', background:'#dc2626', color:'#fff', cursor:'pointer', fontSize:'13px' }}
+                        style={{ padding:'7px 12px', border:'1px solid var(--line)', background:'#dc2626', color:'#fff', cursor:'pointer', fontSize:'13px' }}
                       >
                         <i className="fas fa-trash" style={{ pointerEvents:'none' }} />
                       </button>
@@ -1342,13 +1342,13 @@ const AdminDashboard: React.FC = () => {
             {/* Modal conferma eliminazione offerta */}
             {offerToDelete && (
               <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(4px)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
-                <div className="comic-card" style={{ width:'100%', maxWidth:'460px', padding:'32px', background:'var(--card-bg)', border:'4px solid var(--comic-border-color)', boxShadow:'8px 8px 0px var(--comic-shadow-color)' }}>
+                <div className="comic-card" style={{ width:'100%', maxWidth:'460px', padding:'32px', background:'var(--card-bg)', border:'1px solid var(--line)', boxShadow:'var(--shadow-soft)' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'16px' }}>
-                    <div style={{ width:'44px', height:'44px', background:'#fee2e2', border:'3px solid #dc2626', display:'flex', alignItems:'center', justifyContent:'center', color:'#dc2626', fontSize:'20px', flexShrink:0 }}>
+                    <div style={{ width:'44px', height:'44px', background:'#fee2e2', border:'1px solid #dc2626', display:'flex', alignItems:'center', justifyContent:'center', color:'#dc2626', fontSize:'20px', flexShrink:0 }}>
                       <i className="fas fa-trash-alt" />
                     </div>
                     <div>
-                      <h3 style={{ margin:0, fontSize:'18px', fontWeight:900, textTransform:'uppercase', color:'var(--text-color)' }}>Elimina Offerta</h3>
+                      <h3 style={{ margin:0, fontSize:'18px', fontWeight: 700, textTransform:'uppercase', color:'var(--text-color)' }}>Elimina Offerta</h3>
                       <p style={{ margin:0, fontSize:'12px', color:'var(--text-muted)' }}>Operazione irreversibile</p>
                     </div>
                   </div>
@@ -1386,27 +1386,27 @@ const AdminDashboard: React.FC = () => {
               <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(6px)', zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', padding:'24px', overflowY:'auto' }}>
                 <div className="comic-card" style={{ width:'100%', maxWidth:'700px', maxHeight:'92vh', overflowY:'auto', padding:'40px', background:'var(--card-bg)' }} onClick={e => e.stopPropagation()}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
-                    <h3 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'1.5rem', textTransform:'uppercase', color:'var(--text-color)', margin:0 }}>{editingOffer ? 'Modifica Offerta' : 'Nuova Offerta'}</h3>
+                    <h3 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'1.5rem', textTransform:'uppercase', color:'var(--text-color)', margin:0 }}>{editingOffer ? 'Modifica Offerta' : 'Nuova Offerta'}</h3>
                     <button onClick={() => setShowOfferForm(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:'20px' }}><i className="fas fa-times" /></button>
                   </div>
 
                   {/* Titolo */}
                   <div style={{ marginBottom:'16px' }}>
-                    <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Titolo posizione *</label>
+                    <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Titolo posizione *</label>
                     <input type="text" value={offerForm.titolo} onChange={e => handleTitoloChange(e.target.value)}
-                      style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }}
+                      style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }}
                       placeholder="es. Muratore Qualificato" />
                   </div>
 
                   {/* Slug + Condivisione */}
                   <div style={{ marginBottom:'16px' }}>
-                    <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>
+                    <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>
                       Slug URL (auto-generato, modificabile)
                     </label>
                     <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
                       <span style={{ color:'var(--text-muted)', fontWeight:700, fontSize:'13px', flexShrink:0 }}>/offerte/</span>
                       <input type="text" value={offerForm.slug || ''} onChange={e => setOfferForm(prev => ({ ...prev, slug: e.target.value }))}
-                        style={{ flex:1, border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'13px', outline:'none', boxSizing:'border-box', fontFamily:'monospace' }}
+                        style={{ flex:1, border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'13px', outline:'none', boxSizing:'border-box', fontFamily:'monospace' }}
                         placeholder="muratore-qualificato-berlino" />
                     </div>
                     <p style={{ fontSize:'11px', color:'var(--text-muted)', fontWeight:600, margin:'4px 0 0' }}>
@@ -1421,17 +1421,17 @@ const AdminDashboard: React.FC = () => {
                       { label:'Stato (es. Bavaria)', key:'stato_germania', span:1 },
                     ].map(({ label, key, span }) => (
                       <div key={key} style={{ gridColumn: span === 2 ? '1 / -1' : 'auto' }}>
-                        <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>{label}</label>
+                        <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>{label}</label>
                         <input type="text" value={(offerForm as any)[key] ?? ''} onChange={e => setOfferForm(prev => ({ ...prev, [key]: e.target.value }))}
-                          style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }} />
+                          style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }} />
                       </div>
                     ))}
                   </div>
 
                   {/* === SEZIONE STIPENDIO === */}
-                  <div style={{ marginBottom:'18px', border:'3px solid var(--comic-border-color)', padding:'18px', background:'var(--card-bg)', boxShadow:'4px 4px 0px var(--comic-shadow-color)' }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px', borderBottom:'2px solid var(--comic-border-color)', paddingBottom:'8px' }}>
-                      <label style={{ fontSize:'12px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', display:'flex', alignItems:'center', gap:'8px', margin:0 }}>
+                  <div style={{ marginBottom:'18px', border:'1px solid var(--line)', padding:'18px', background:'var(--card-bg)', boxShadow:'var(--shadow-soft)' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px', borderBottom:'1px solid var(--line-soft)', paddingBottom:'8px' }}>
+                      <label style={{ fontSize:'12px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', display:'flex', alignItems:'center', gap:'8px', margin:0 }}>
                         <i className="fas fa-money-bill-wave" style={{ color:'#25D366' }} /> Specifiche Stipendio
                       </label>
                       <span style={{ fontSize:'10px', fontWeight:800, textTransform:'uppercase', color:'var(--text-muted)' }}>
@@ -1441,7 +1441,7 @@ const AdminDashboard: React.FC = () => {
 
                     {/* 1. SELEZIONE TIPO: LORDO vs NETTO */}
                     <div style={{ marginBottom:'14px' }}>
-                      <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:'6px' }}>
+                      <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:'6px' }}>
                         1. Tipologia Stipendio (Lordo o Netto) *
                       </label>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
@@ -1450,11 +1450,11 @@ const AdminDashboard: React.FC = () => {
                           onClick={() => setOfferForm(prev => ({ ...prev, stipendio_tipo: 'lordo' }))}
                           style={{
                             padding:'10px 14px',
-                            fontWeight:900,
+                            fontWeight: 700,
                             fontSize:'13px',
                             textTransform:'uppercase',
                             letterSpacing:'0.05em',
-                            border:'3px solid var(--comic-border-color)',
+                            border:'1px solid var(--line)',
                             cursor:'pointer',
                             transition:'all 0.15s',
                             display:'flex',
@@ -1478,11 +1478,11 @@ const AdminDashboard: React.FC = () => {
                           onClick={() => setOfferForm(prev => ({ ...prev, stipendio_tipo: 'netto' }))}
                           style={{
                             padding:'10px 14px',
-                            fontWeight:900,
+                            fontWeight: 700,
                             fontSize:'13px',
                             textTransform:'uppercase',
                             letterSpacing:'0.05em',
-                            border:'3px solid var(--comic-border-color)',
+                            border:'1px solid var(--line)',
                             cursor:'pointer',
                             transition:'all 0.15s',
                             display:'flex',
@@ -1505,7 +1505,7 @@ const AdminDashboard: React.FC = () => {
 
                     {/* 2. SELEZIONE MODALITÀ: RANGE vs FISSO vs A PARTIRE DA vs CONCORDARE */}
                     <div style={{ marginBottom:'14px' }}>
-                      <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:'6px' }}>
+                      <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:'6px' }}>
                         2. Modalità (Range, Importo Fisso o A Partire Da) *
                       </label>
                       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px, 1fr))', gap:'6px' }}>
@@ -1525,7 +1525,7 @@ const AdminDashboard: React.FC = () => {
                               fontSize:'11px',
                               textTransform:'uppercase',
                               letterSpacing:'0.05em',
-                              border:'2px solid var(--comic-border-color)',
+                              border:'1px solid var(--line)',
                               cursor:'pointer',
                               transition:'all 0.15s',
                               display:'flex',
@@ -1547,45 +1547,45 @@ const AdminDashboard: React.FC = () => {
                     {offerForm.stipendio_modalita !== 'concordare' ? (
                       <div style={{ display:'grid', gridTemplateColumns: offerForm.stipendio_modalita === 'range' ? '1fr 1fr' : '1fr', gap:'12px', marginBottom:'10px' }}>
                         <div>
-                          <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>
+                          <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>
                             {offerForm.stipendio_modalita === 'range' ? 'Stipendio Minimo (€/mese)' : offerForm.stipendio_modalita === 'fisso' ? 'Importo Fisso (€/mese)' : 'A partire da (€/mese)'}
                           </label>
                           <input
                             type="number"
                             value={offerForm.stipendio_min ?? ''}
                             onChange={e => setOfferForm(prev => ({ ...prev, stipendio_min: e.target.value ? Number(e.target.value) : null }))}
-                            style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:700, fontSize:'14px', outline:'none', boxSizing:'border-box' }}
+                            style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:700, fontSize:'14px', outline:'none', boxSizing:'border-box' }}
                             placeholder="es. 2000"
                           />
                         </div>
 
                         {offerForm.stipendio_modalita === 'range' && (
                           <div>
-                            <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>
+                            <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>
                               Stipendio Massimo (€/mese)
                             </label>
                             <input
                               type="number"
                               value={offerForm.stipendio_max ?? ''}
                               onChange={e => setOfferForm(prev => ({ ...prev, stipendio_max: e.target.value ? Number(e.target.value) : null }))}
-                              style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:700, fontSize:'14px', outline:'none', boxSizing:'border-box' }}
+                              style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:700, fontSize:'14px', outline:'none', boxSizing:'border-box' }}
                               placeholder="es. 2500"
                             />
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div style={{ padding:'12px', background:'var(--bg-color)', border:'2px dashed var(--comic-border-color)', textAlign:'center', color:'var(--text-muted)', fontSize:'12px', fontWeight:700, marginBottom:'10px' }}>
+                      <div style={{ padding:'12px', background:'var(--bg-color)', border:'1px dashed var(--plum-200, #DCCCE0)', textAlign:'center', color:'var(--text-muted)', fontSize:'12px', fontWeight:700, marginBottom:'10px' }}>
                         🤝 Lo stipendio verrà mostrato come <strong>"Da concordare in sede di colloquio"</strong>.
                       </div>
                     )}
 
                     {/* 4. ANTEPRIMA LIVE */}
-                    <div style={{ background:'var(--bg-color)', border:'2px solid var(--comic-border-color)', padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px' }}>
-                      <span style={{ fontSize:'11px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-muted)' }}>
+                    <div style={{ background:'var(--bg-color)', border:'1px solid var(--line)', padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px' }}>
+                      <span style={{ fontSize:'11px', fontWeight: 700, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--text-muted)' }}>
                         👁️ Anteprima sul sito:
                       </span>
-                      <span style={{ fontSize:'13px', fontWeight:900, color: offerForm.stipendio_tipo === 'netto' ? '#25D366' : 'var(--primary)', background: offerForm.stipendio_tipo === 'netto' ? 'rgba(37,211,102,0.1)' : 'rgba(110,66,116,0.1)', padding:'4px 10px', border:'1px solid currentColor' }}>
+                      <span style={{ fontSize:'13px', fontWeight: 700, color: offerForm.stipendio_tipo === 'netto' ? '#25D366' : 'var(--primary)', background: offerForm.stipendio_tipo === 'netto' ? 'rgba(37,211,102,0.1)' : 'rgba(110,66,116,0.1)', padding:'4px 10px', border:'1px solid currentColor' }}>
                         {offerForm.stipendio_modalita === 'concordare'
                           ? 'Stipendio da concordare'
                           : offerForm.stipendio_modalita === 'range'
@@ -1607,50 +1607,50 @@ const AdminDashboard: React.FC = () => {
 
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'16px' }}>
                     <div>
-                      <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Settore *</label>
-                      <select value={offerForm.settore} onChange={e => setOfferForm(prev => ({ ...prev, settore: e.target.value }))} style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }}>
+                      <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Settore *</label>
+                      <select value={offerForm.settore} onChange={e => setOfferForm(prev => ({ ...prev, settore: e.target.value }))} style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }}>
                         {SETTORI_OPT.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Contratto *</label>
-                      <select value={offerForm.contratto} onChange={e => setOfferForm(prev => ({ ...prev, contratto: e.target.value }))} style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }}>
+                      <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Contratto *</label>
+                      <select value={offerForm.contratto} onChange={e => setOfferForm(prev => ({ ...prev, contratto: e.target.value }))} style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', outline:'none', boxSizing:'border-box' }}>
                         {CONTRATTI_OPT.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   </div>
 
                   <div style={{ marginBottom:'16px' }}>
-                    <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Descrizione *</label>
+                    <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Descrizione *</label>
                     <textarea value={offerForm.descrizione} onChange={e => setOfferForm(prev => ({ ...prev, descrizione: e.target.value }))} rows={5}
-                      style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', resize:'vertical', outline:'none', boxSizing:'border-box' }}
+                      style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', resize:'vertical', outline:'none', boxSizing:'border-box' }}
                       placeholder="Descrivi la posizione, le mansioni, l'ambiente di lavoro..." />
                   </div>
 
                   <div style={{ marginBottom:'16px' }}>
-                    <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Requisiti</label>
+                    <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>Requisiti</label>
                     <textarea value={offerForm.requisiti || ''} onChange={e => setOfferForm(prev => ({ ...prev, requisiti: e.target.value }))} rows={3}
-                      style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', resize:'vertical', outline:'none', boxSizing:'border-box' }}
+                      style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'14px', resize:'vertical', outline:'none', boxSizing:'border-box' }}
                       placeholder="Inserisci ogni requisito su una riga separata..." />
                     <p style={{ fontSize:'11px', color:'var(--text-muted)', fontWeight:600, margin:'4px 0 0' }}>💡 Un requisito per riga — appariranno come lista nella pagina pubblica</p>
                   </div>
 
                   {/* Upload Immagine */}
-                  <div style={{ marginBottom:'16px', border:'3px dashed var(--comic-border-color)', padding:'16px', background:'var(--bg-color)' }}>
-                    <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'10px' }}>
+                  <div style={{ marginBottom:'16px', border:'1px dashed var(--plum-200, #DCCCE0)', padding:'16px', background:'var(--bg-color)' }}>
+                    <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'10px' }}>
                       <i className="fas fa-image" style={{ marginRight:'6px' }} /> Immagine Annuncio
                     </label>
                     {imagePreview && (
                       <div style={{ marginBottom:'12px', position:'relative' }}>
-                        <img src={imagePreview} alt="Anteprima" style={{ width:'100%', height:'160px', objectFit:'cover', border:'3px solid var(--comic-border-color)' }} />
+                        <img src={imagePreview} alt="Anteprima" style={{ width:'100%', height:'160px', objectFit:'cover', border:'1px solid var(--line)' }} />
                         <button
                           type="button"
                           onClick={() => { setImageFile(null); setImagePreview(null); setOfferForm(prev => ({ ...prev, immagine_url: null })); }}
-                          style={{ position:'absolute', top:'8px', right:'8px', background:'#dc2626', border:'2px solid #fff', color:'#fff', width:'28px', height:'28px', cursor:'pointer', fontWeight:900, fontSize:'12px' }}
+                          style={{ position:'absolute', top:'8px', right:'8px', background:'#dc2626', border:'1px solid #fff', color:'#fff', width:'28px', height:'28px', cursor:'pointer', fontWeight: 700, fontSize:'12px' }}
                         >✕</button>
                       </div>
                     )}
-                    <label style={{ display:'flex', alignItems:'center', gap:'8px', cursor:'pointer', padding:'10px 14px', border:'3px solid var(--comic-border-color)', background:'var(--card-bg)', fontWeight:700, fontSize:'13px', color:'var(--text-color)' }}>
+                    <label style={{ display:'flex', alignItems:'center', gap:'8px', cursor:'pointer', padding:'10px 14px', border:'1px solid var(--line)', background:'var(--card-bg)', fontWeight:700, fontSize:'13px', color:'var(--text-color)' }}>
                       <i className="fas fa-upload" style={{ color:'var(--primary)' }} />
                       {imageFile ? imageFile.name : 'Seleziona immagine (JPG, PNG, WebP)'}
                       <input type="file" accept="image/*" onChange={handleImageChange} style={{ display:'none' }} />
@@ -1678,7 +1678,7 @@ const AdminDashboard: React.FC = () => {
                     <button onClick={saveOfferta} disabled={savingOffer || !offerForm.titolo || !offerForm.citta || !offerForm.descrizione} className="comic-button" style={{ flex:1, background:'var(--primary)', color:'#fff', padding:'14px', fontSize:'12px', letterSpacing:'0.15em', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', opacity: savingOffer ? 0.7 : 1 }}>
                       <i className={savingOffer ? 'fas fa-spinner fa-spin' : 'fas fa-save'} /> {savingOffer ? 'SALVATAGGIO...' : 'SALVA OFFERTA'}
                     </button>
-                    <button onClick={() => setShowOfferForm(false)} style={{ padding:'14px 24px', border:'3px solid var(--comic-border-color)', background:'transparent', color:'var(--text-muted)', fontWeight:900, fontSize:'12px', letterSpacing:'0.1em', cursor:'pointer' }}>
+                    <button onClick={() => setShowOfferForm(false)} style={{ padding:'14px 24px', border:'1px solid var(--line)', background:'transparent', color:'var(--text-muted)', fontWeight: 700, fontSize:'12px', letterSpacing:'0.1em', cursor:'pointer' }}>
                       ANNULLA
                     </button>
                   </div>
@@ -1694,7 +1694,7 @@ const AdminDashboard: React.FC = () => {
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'24px', flexWrap:'wrap', gap:'16px' }}>
               <div>
-                <h1 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'2rem', textTransform:'uppercase', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 4px' }}>Datori di Lavoro</h1>
+                <h1 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'2rem', textTransform:'uppercase', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 4px' }}>Datori di Lavoro</h1>
                 <p style={{ color:'var(--text-muted)', fontWeight:500, margin:0, fontSize:'14px' }}>{datoriRichieste.length} richieste &middot; {datoriGestiti.length} gestiti</p>
               </div>
               <button onClick={() => { fetchDatoriRichieste(); fetchDatoriGestiti(); }} className="comic-button" style={{ padding:'10px 20px', fontSize:'12px', letterSpacing:'0.1em', display:'flex', alignItems:'center', gap:'8px' }}>
@@ -1706,8 +1706,8 @@ const AdminDashboard: React.FC = () => {
             <div style={{ marginBottom:'40px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'16px' }}>
                 <div style={{ width:'4px', height:'24px', background:'var(--primary)', flexShrink:0 }} />
-                <h2 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'1.1rem', textTransform:'uppercase', letterSpacing:'0.05em', color:'var(--text-color)', margin:0 }}>Nuove Richieste</h2>
-                <span style={{ padding:'2px 10px', background:'var(--primary)', color:'#fff', fontSize:'11px', fontWeight:900 }}>{datoriRichieste.length}</span>
+                <h2 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'1.1rem', textTransform:'uppercase', letterSpacing:'0.05em', color:'var(--text-color)', margin:0 }}>Nuove Richieste</h2>
+                <span style={{ padding:'2px 10px', background:'var(--primary)', color:'#fff', fontSize:'11px', fontWeight: 700 }}>{datoriRichieste.length}</span>
               </div>
 
               {datoriRichieste.length === 0 ? (
@@ -1721,18 +1721,18 @@ const AdminDashboard: React.FC = () => {
                     const s = STATO_LABELS[d.stato] || STATO_LABELS.nuova;
                     return (
                       <div key={d.id} className="comic-card" style={{ padding:'18px 24px', display:'flex', alignItems:'center', gap:'16px', cursor:'pointer' }} onClick={() => setSelectedDatoreReq(d)}>
-                        <div style={{ width:'44px', height:'44px', flexShrink:0, background:'#3D2045', border:'3px solid var(--comic-border-color)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'16px' }}>
+                        <div style={{ width:'44px', height:'44px', flexShrink:0, background:'#3D2045', border:'1px solid var(--line)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'16px' }}>
                           <i className="fas fa-building" />
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontWeight:900, fontSize:'15px', color:'var(--text-color)', marginBottom:'2px' }}>{d.nome_azienda}</div>
+                          <div style={{ fontWeight: 700, fontSize:'15px', color:'var(--text-color)', marginBottom:'2px' }}>{d.nome_azienda}</div>
                           <div style={{ fontSize:'13px', color:'var(--text-muted)', fontWeight:500 }}>
                             {d.email}
                             {d.settore_ricerca && <span style={{ color:'var(--primary)', fontWeight:700 }}> &bull; {d.settore_ricerca}</span>}
                             {d.num_lavoratori && ` \u2022 ${d.num_lavoratori}`}
                           </div>
                         </div>
-                        <div style={{ padding:'4px 10px', background:s.color, border:'2px solid var(--comic-border-color)', color:'#fff', fontSize:'10px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{s.label}</div>
+                        <div style={{ padding:'4px 10px', background:s.color, border:'1px solid var(--line)', color:'#fff', fontSize:'10px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{s.label}</div>
                         <div style={{ fontSize:'11px', color:'var(--text-muted)', fontWeight:600, whiteSpace:'nowrap' }}>{formatDate(d.created_at)}</div>
                       </div>
                     );
@@ -1746,8 +1746,8 @@ const AdminDashboard: React.FC = () => {
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', marginBottom:'16px', flexWrap:'wrap' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
                   <div style={{ width:'4px', height:'24px', background:'#F97316', flexShrink:0 }} />
-                  <h2 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'1.1rem', textTransform:'uppercase', letterSpacing:'0.05em', color:'var(--text-color)', margin:0 }}>Datori Gestiti</h2>
-                  <span style={{ padding:'2px 10px', background:'#F97316', color:'#fff', fontSize:'11px', fontWeight:900 }}>{datoriGestiti.length}</span>
+                  <h2 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'1.1rem', textTransform:'uppercase', letterSpacing:'0.05em', color:'var(--text-color)', margin:0 }}>Datori Gestiti</h2>
+                  <span style={{ padding:'2px 10px', background:'#F97316', color:'#fff', fontSize:'11px', fontWeight: 700 }}>{datoriGestiti.length}</span>
                 </div>
                 <button onClick={() => setShowAddDatoreForm(v => !v)} className="comic-button"
                   style={{ padding:'10px 18px', fontSize:'11px', letterSpacing:'0.1em', display:'flex', alignItems:'center', gap:'8px', background: showAddDatoreForm ? 'var(--text-muted)' : '#F97316', color:'#fff', borderColor:'var(--comic-border-color)' }}>
@@ -1757,8 +1757,8 @@ const AdminDashboard: React.FC = () => {
 
               {/* Form aggiunta rapida */}
               {showAddDatoreForm && (
-                <div className="comic-card" style={{ padding:'24px', marginBottom:'16px', border:'3px solid #F97316' }}>
-                  <h3 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'1rem', textTransform:'uppercase', color:'#F97316', margin:'0 0 16px' }}>Nuovo Datore Gestito</h3>
+                <div className="comic-card" style={{ padding:'24px', marginBottom:'16px', border:'1px solid #F97316' }}>
+                  <h3 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'1rem', textTransform:'uppercase', color:'#F97316', margin:'0 0 16px' }}>Nuovo Datore Gestito</h3>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'16px' }}>
                     {[
                       { key:'nome_azienda', label:'Nome Azienda *', placeholder:'Es: Müller GmbH', type:'text' },
@@ -1769,13 +1769,13 @@ const AdminDashboard: React.FC = () => {
                       { key:'note', label:'Note Interne', placeholder:'Note per uso interno...', type:'text' },
                     ].map(f => (
                       <div key={f.key}>
-                        <label style={{ display:'block', fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>{f.label}</label>
+                        <label style={{ display:'block', fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'6px' }}>{f.label}</label>
                         <input
                           type={f.type}
                           value={newDatoreForm[f.key as keyof typeof newDatoreForm]}
                           onChange={e => setNewDatoreForm(p => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          style={{ width:'100%', border:'3px solid var(--comic-border-color)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'13px', outline:'none', boxSizing:'border-box' }}
+                          style={{ width:'100%', border:'1px solid var(--line)', background:'var(--bg-color)', color:'var(--text-color)', padding:'10px 14px', fontWeight:600, fontSize:'13px', outline:'none', boxSizing:'border-box' }}
                         />
                       </div>
                     ))}
@@ -1796,11 +1796,11 @@ const AdminDashboard: React.FC = () => {
                 <div style={{ display:'grid', gap:'10px' }}>
                   {datoriGestiti.map(d => (
                     <div key={d.id} className="comic-card" style={{ padding:'18px 24px', display:'flex', alignItems:'center', gap:'16px' }}>
-                      <div style={{ width:'44px', height:'44px', flexShrink:0, background:'#F97316', border:'3px solid var(--comic-border-color)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'16px' }}>
+                      <div style={{ width:'44px', height:'44px', flexShrink:0, background:'#F97316', border:'1px solid var(--line)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'16px' }}>
                         <i className="fas fa-handshake" />
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontWeight:900, fontSize:'15px', color:'var(--text-color)', marginBottom:'2px' }}>{d.nome_azienda}</div>
+                        <div style={{ fontWeight: 700, fontSize:'15px', color:'var(--text-color)', marginBottom:'2px' }}>{d.nome_azienda}</div>
                         <div style={{ fontSize:'13px', color:'var(--text-muted)', fontWeight:500 }}>
                           {d.nome_referente && `${d.nome_referente} \u2022 `}
                           {d.email && `${d.email} \u2022 `}
@@ -1810,12 +1810,12 @@ const AdminDashboard: React.FC = () => {
                       </div>
                       {d.telefono && (
                         <a href={`tel:${d.telefono}`}
-                          style={{ padding:'8px 12px', border:'2px solid var(--primary)', color:'var(--primary)', fontSize:'12px', fontWeight:900, textDecoration:'none', display:'flex', alignItems:'center', gap:'6px', whiteSpace:'nowrap', flexShrink:0 }}>
+                          style={{ padding:'8px 12px', border:'1px solid var(--primary)', color:'var(--primary)', fontSize:'12px', fontWeight: 700, textDecoration:'none', display:'flex', alignItems:'center', gap:'6px', whiteSpace:'nowrap', flexShrink:0 }}>
                           <i className="fas fa-phone" /> {d.telefono}
                         </a>
                       )}
                       <button onClick={() => removeDatoreGestito(d.id)}
-                        style={{ background:'transparent', border:'2px solid #dc2626', color:'#dc2626', width:'36px', height:'36px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:'13px' }}>
+                        style={{ background:'transparent', border:'1px solid #dc2626', color:'#dc2626', width:'36px', height:'36px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:'13px' }}>
                         <i className="fas fa-trash" />
                       </button>
                     </div>
@@ -1830,7 +1830,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="comic-card" style={{ width:'100%', maxWidth:'620px', maxHeight:'90vh', overflowY:'auto', padding:'40px', background:'var(--card-bg)' }} onClick={e => e.stopPropagation()}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'20px' }}>
                     <div>
-                      <h3 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'1.6rem', textTransform:'uppercase', color:'var(--text-color)', margin:'0 0 4px' }}>{selectedDatoreReq.nome_azienda}</h3>
+                      <h3 style={{ fontFamily:'var(--font-heading)', fontWeight: 700, fontSize:'1.6rem', textTransform:'uppercase', color:'var(--text-color)', margin:'0 0 4px' }}>{selectedDatoreReq.nome_azienda}</h3>
                       <div style={{ fontSize:'12px', color:'var(--text-muted)', fontWeight:600 }}>{formatDate(selectedDatoreReq.created_at)}</div>
                     </div>
                     <button onClick={() => setSelectedDatoreReq(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:'20px' }}><i className="fas fa-times" /></button>
@@ -1844,8 +1844,8 @@ const AdminDashboard: React.FC = () => {
                       { icon:'fa-industry', label:'Settore Ricerca', value: selectedDatoreReq.settore_ricerca },
                       { icon:'fa-users', label:'Lavoratori Richiesti', value: selectedDatoreReq.num_lavoratori },
                     ].filter(f => f.value).map((f, i) => (
-                      <div key={i} style={{ border:'2px solid var(--comic-border-color)', padding:'8px 12px', background:'var(--bg-color)' }}>
-                        <div style={{ fontSize:'9px', fontWeight:900, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'3px' }}>
+                      <div key={i} style={{ border:'1px solid var(--line)', padding:'8px 12px', background:'var(--bg-color)' }}>
+                        <div style={{ fontSize:'9px', fontWeight: 700, letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'3px' }}>
                           <i className={`fas ${f.icon}`} style={{ marginRight:'5px' }} />{f.label}
                         </div>
                         <div style={{ fontWeight:700, color:'var(--text-color)', fontSize:'13px' }}>{f.value}</div>
@@ -1854,20 +1854,20 @@ const AdminDashboard: React.FC = () => {
                   </div>
 
                   {selectedDatoreReq.messaggio && (
-                    <div style={{ border:'3px solid var(--comic-border-color)', padding:'16px', background:'var(--bg-color)', marginBottom:'20px' }}>
-                      <div style={{ fontSize:'10px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Descrizione Esigenze</div>
+                    <div style={{ border:'1px solid var(--line)', padding:'16px', background:'var(--bg-color)', marginBottom:'20px' }}>
+                      <div style={{ fontSize:'10px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Descrizione Esigenze</div>
                       <p style={{ color:'var(--text-color)', fontWeight:500, margin:0, lineHeight:1.6 }}>{selectedDatoreReq.messaggio}</p>
                     </div>
                   )}
 
                   <div style={{ marginBottom:'20px' }}>
-                    <label style={{ display:'block', fontSize:'11px', fontWeight:900, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Stato Richiesta</label>
+                    <label style={{ display:'block', fontSize:'11px', fontWeight: 700, letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--primary)', marginBottom:'8px' }}>Stato Richiesta</label>
                     <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
                       {(['nuova', 'in_lavorazione', 'completata'] as const).map(stato => {
                         const info = STATO_LABELS[stato];
                         return (
                           <button key={stato} onClick={() => updateDatoreRichiestaStato(selectedDatoreReq.id, stato)}
-                            style={{ padding:'6px 14px', background: selectedDatoreReq.stato === stato ? info.color : 'transparent', border:`3px solid ${info.color}`, color: selectedDatoreReq.stato === stato ? '#fff' : info.color, fontSize:'11px', fontWeight:900, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer' }}>
+                            style={{ padding:'6px 14px', background: selectedDatoreReq.stato === stato ? info.color : 'transparent', border:`3px solid ${info.color}`, color: selectedDatoreReq.stato === stato ? '#fff' : info.color, fontSize:'11px', fontWeight: 700, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer' }}>
                             {info.label}
                           </button>
                         );
@@ -1882,7 +1882,7 @@ const AdminDashboard: React.FC = () => {
                       </button>
                     </a>
                     <button onClick={() => deleteDatoreRichiesta(selectedDatoreReq.id)} className="comic-button"
-                      style={{ background:'#dc2626', border:'3px solid var(--comic-border-color)', color:'#fff', padding:'14px 18px', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}>
+                      style={{ background:'#dc2626', border:'1px solid var(--line)', color:'#fff', padding:'14px 18px', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}>
                       <i className="fas fa-trash" />
                     </button>
                   </div>
@@ -1900,7 +1900,7 @@ const AdminDashboard: React.FC = () => {
         position: 'fixed',
         bottom: 0, left: 0, right: 0,
         background: 'var(--card-bg)',
-        borderTop: '4px solid var(--comic-border-color)',
+        borderTop: '1px solid var(--line-soft)',
         zIndex: 40,
         justifyContent: 'space-around',
         padding: '8px 0',
@@ -1913,7 +1913,7 @@ const AdminDashboard: React.FC = () => {
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
               background: 'none', border: 'none', cursor: 'pointer',
               color: activeTab === tab.key ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: 900, fontSize: '9px', letterSpacing: '0.05em', textTransform: 'uppercase',
+              fontWeight: 700, fontSize: '9px', letterSpacing: '0.05em', textTransform: 'uppercase',
               padding: '4px 8px',
               fontFamily: 'var(--font-inter)',
             }}
@@ -1972,7 +1972,7 @@ const AdminDashboard: React.FC = () => {
                 width: '44px',
                 height: '44px',
                 background: 'var(--primary)',
-                border: '3px solid var(--comic-border-color)',
+                border: '1px solid var(--line)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1984,7 +1984,7 @@ const AdminDashboard: React.FC = () => {
               <div>
                 <h3 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: '1.2rem',
                   textTransform: 'uppercase',
                   color: 'var(--text-color)',
@@ -2002,8 +2002,8 @@ const AdminDashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{
                   background: 'rgba(37,211,102,0.1)',
-                  border: '3px solid #25D366',
-                  boxShadow: '4px 4px 0px #25D366',
+                  border: '1px solid #25D366',
+                  boxShadow: 'none',
                   padding: '16px',
                   display: 'flex',
                   alignItems: 'center',
@@ -2034,8 +2034,8 @@ const AdminDashboard: React.FC = () => {
                 {pwdError && (
                   <div style={{
                     background: 'rgba(220,38,38,0.1)',
-                    border: '3px solid #dc2626',
-                    boxShadow: '4px 4px 0px #dc2626',
+                    border: '1px solid #dc2626',
+                    boxShadow: 'none',
                     padding: '12px 16px',
                     display: 'flex',
                     alignItems: 'center',
@@ -2047,7 +2047,7 @@ const AdminDashboard: React.FC = () => {
                 )}
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 900, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
                     Password Attuale
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -2062,8 +2062,8 @@ const AdminDashboard: React.FC = () => {
                         width: '100%',
                         padding: '12px 42px 12px 40px',
                         background: 'var(--bg-color)',
-                        border: '3px solid var(--comic-border-color)',
-                        boxShadow: '3px 3px 0px var(--comic-shadow-color)',
+                        border: '1px solid var(--line)',
+                        boxShadow: 'var(--shadow-soft)',
                         color: 'var(--text-color)',
                         fontSize: '14px',
                         outline: 'none',
@@ -2081,7 +2081,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 900, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
                     Nuova Password
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -2096,8 +2096,8 @@ const AdminDashboard: React.FC = () => {
                         width: '100%',
                         padding: '12px 42px 12px 40px',
                         background: 'var(--bg-color)',
-                        border: '3px solid var(--comic-border-color)',
-                        boxShadow: '3px 3px 0px var(--comic-shadow-color)',
+                        border: '1px solid var(--line)',
+                        boxShadow: 'var(--shadow-soft)',
                         color: 'var(--text-color)',
                         fontSize: '14px',
                         outline: 'none',
@@ -2115,7 +2115,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 900, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
                     Conferma Nuova Password
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -2130,8 +2130,8 @@ const AdminDashboard: React.FC = () => {
                         width: '100%',
                         padding: '12px 42px 12px 40px',
                         background: 'var(--bg-color)',
-                        border: '3px solid var(--comic-border-color)',
-                        boxShadow: '3px 3px 0px var(--comic-shadow-color)',
+                        border: '1px solid var(--line)',
+                        boxShadow: 'var(--shadow-soft)',
                         color: 'var(--text-color)',
                         fontSize: '14px',
                         outline: 'none',

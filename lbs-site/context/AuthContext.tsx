@@ -102,33 +102,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
+          const sessionUser = newSession.user;
           // Se login con Google OAuth, invia notifica email di accesso
-          if (_event === 'SIGNED_IN' && newSession.user.app_metadata?.provider === 'google' && newSession.user.email) {
+          if (_event === 'SIGNED_IN' && sessionUser.app_metadata?.provider === 'google' && sessionUser.email) {
             sendLoginAlertEmail({
-              email: newSession.user.email,
-              fullName: newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name || null,
+              email: sessionUser.email,
+              fullName: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || null,
             }).catch(() => {});
           }
 
-          // Race fetchProfile against an 8-second timeout so loading never
-          // hangs forever on slow networks / Supabase cold starts.
-          const profilePromise = fetchProfile(newSession.user.id, newSession.user);
-          const timeoutPromise = new Promise<null>(resolve =>
-            setTimeout(() => resolve(null), 8000)
-          );
-          const p = await Promise.race([profilePromise, timeoutPromise]);
-          if (p) {
-            setProfile(p);
-            try { localStorage.setItem('lbs_cached_profile', JSON.stringify(p)); } catch (e) {}
-          } else {
-            // Keep cached profile if network call timed out/failed, otherwise null
-            setProfile(prev => prev || null);
-          }
-        } else {
-          setProfile(null);
-          try { localStorage.removeItem('lbs_cached_profile'); } catch (e) {}
+          // Le query Supabase non vanno attese dentro onAuthStateChange: il client
+          // tiene il lock di sessione finché la callback non termina, quindi la
+          // query restava bloccata fino al timeout (8s di caricamento). La
+          // rimandiamo al tick successivo, fuori dalla callback.
+          setTimeout(async () => {
+            // Race fetchProfile against an 8-second timeout so loading never
+            // hangs forever on slow networks / Supabase cold starts.
+            const profilePromise = fetchProfile(sessionUser.id, sessionUser);
+            const timeoutPromise = new Promise<null>(resolve =>
+              setTimeout(() => resolve(null), 8000)
+            );
+            const p = await Promise.race([profilePromise, timeoutPromise]);
+            if (p) {
+              setProfile(p);
+              try { localStorage.setItem('lbs_cached_profile', JSON.stringify(p)); } catch (e) {}
+            } else {
+              // Keep cached profile if network call timed out/failed, otherwise null
+              setProfile(prev => prev || null);
+            }
+            setLoading(false); // Auth state is now resolved
+          }, 0);
+          return;
         }
 
+        setProfile(null);
+        try { localStorage.removeItem('lbs_cached_profile'); } catch (e) {}
         setLoading(false); // Auth state is now resolved
       }
     );

@@ -470,6 +470,32 @@ textarea.field { min-height: 120px; resize: vertical; }
 /* ─── Mobile ──────────────────────────────────────────────────────────────── */
 html, body { overflow-x: hidden; }
 
+/* ─── Area utente e pannello admin ──────────────────────────────────────────
+   Le dashboard usano stili inline: queste regole le allineano al nuovo design
+   (angoli arrotondati, titoli non maiuscoli) senza toccarne la logica. */
+:root { --line-soft: #ECE4EE; }
+.dash h1, .dash h2, .dash h3 {
+  text-transform: none !important;
+  letter-spacing: -0.02em !important;
+}
+.dash [style*="solid var(--line)"],
+.dash [style*="dashed var(--plum-200"],
+.dash [style*="solid rgba(255"],
+.dash [style*="px solid #"],
+.dash button,
+.dash input,
+.dash select,
+.dash textarea,
+.dash .comic-card {
+  border-radius: 14px;
+}
+.dash .comic-card { border-radius: 20px; }
+.dash input:focus, .dash select:focus, .dash textarea:focus {
+  outline: none;
+  border-color: #9B6FA3 !important;
+  box-shadow: 0 0 0 4px rgb(155 111 163 / 0.18) !important;
+}
+
 /* ─── Admin Dashboard Responsive ─────────────────────────────────────────── */
 @media (max-width: 767px) {
   .admin-sidebar {

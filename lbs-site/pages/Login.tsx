@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logoLBS from '../img/logo_LBS-192.png';
 
 type Mode = 'login' | 'register' | 'forgot';
 
@@ -30,41 +31,6 @@ const getPasswordStrength = (pwd: string): { score: number; label: string; color
   if (score <= 2) return { score, label: 'Accettabile', color: '#d97706' };
   if (score <= 3) return { score, label: 'Buona', color: '#16a34a' };
   return { score, label: 'Ottima', color: '#059669' };
-};
-
-// ─── Shared input style ───────────────────────────────────────────────────────
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px 16px 14px 46px',
-  background: 'var(--bg-color)',
-  border: '3px solid var(--comic-border-color)',
-  boxShadow: '3px 3px 0px var(--comic-shadow-color)',
-  color: 'var(--text-color)',
-  fontSize: '15px',
-  fontWeight: 600,
-  outline: 'none',
-  boxSizing: 'border-box' as const,
-  transition: 'box-shadow 0.15s ease, transform 0.15s ease',
-  fontFamily: 'var(--font-inter)',
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontWeight: 900,
-  fontSize: '11px',
-  letterSpacing: '0.2em',
-  textTransform: 'uppercase' as const,
-  color: 'var(--primary)',
-  marginBottom: '8px',
-};
-
-const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.boxShadow = '5px 5px 0px var(--primary)';
-  e.currentTarget.style.transform = 'translate(-2px, -2px)';
-};
-const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.boxShadow = '3px 3px 0px var(--comic-shadow-color)';
-  e.currentTarget.style.transform = 'translate(0, 0)';
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -341,669 +307,312 @@ const Login: React.FC = () => {
     }
   };
 
-  // ── Decorative background ────────────────────────────────────────────────────
-  const bg = (
-    <>
-      <div style={{ position:'absolute', top:'-200px', left:'-200px', width:'600px', height:'600px', background:'var(--primary)', borderRadius:'50%', opacity:0.08, filter:'blur(80px)', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', bottom:'-200px', right:'-200px', width:'500px', height:'500px', background:'var(--secondary)', borderRadius:'50%', opacity:0.08, filter:'blur(80px)', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(var(--dark) 1px, transparent 1px)', backgroundSize:'28px 28px', opacity:0.15, pointerEvents:'none' }} />
-    </>
-  );
 
-  const wrapStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'var(--bg-color)',
-    padding: '24px',
-    position: 'relative',
-    overflow: 'hidden',
-  };
+  const title = mode === 'login' ? 'Bentornato' : mode === 'register' ? 'Crea il tuo account' : 'Password dimenticata';
+  const subtitle = mode === 'login'
+    ? 'Accedi al portale LBS Business'
+    : mode === 'register'
+      ? 'Registrati al portale LBS Business'
+      : 'Inserisci la tua email per ricevere il link di recupero';
 
-  // ── Main card (login + register tabs) ────────────────────────────────────────
+  const modalTone = authModal.type === 'not_found'
+    ? { tile: 'bg-orange-50 text-orange-600', chip: '!bg-orange-50 !text-orange-700 !border-orange-200', icon: 'fa-user-slash' }
+    : authModal.type === 'already_exists'
+      ? { tile: 'bg-plum-50 text-plum-600', chip: '', icon: 'fa-user-check' }
+      : { tile: 'bg-red-50 text-red-600', chip: '!bg-red-50 !text-red-700 !border-red-200', icon: 'fa-exclamation-triangle' };
+
   return (
-    <div style={wrapStyle}>
-      {bg}
+    <div className="min-h-screen bg-paper grid grid-cols-1 lg:grid-cols-2">
+      {/* PANNELLO MARCHIO (desktop) */}
+      <aside className="hidden lg:flex surface-plum flex-col justify-between p-12 xl:p-16">
+        <Link to="/" className="flex items-center gap-3 self-start">
+          <img src={logoLBS} alt="" className="h-11 w-11" width={44} height={44} />
+          <span>
+            <span className="block font-heading font-bold text-lg leading-tight text-white">LBS Work</span>
+            <span className="block text-xs text-white/55">Lavoro &amp; servizi in Germania</span>
+          </span>
+        </Link>
+        <div className="max-w-md">
+          <h2 className="h-display text-white text-5xl">La tua nuova vita in Germania, <span className="text-sun-400">a portata di clic.</span></h2>
+          <ul className="mt-10 space-y-4 text-white/80">
+            {[
+              { icon: 'fa-paper-plane', t: 'Candidati alle offerte con un clic' },
+              { icon: 'fa-chart-line', t: 'Segui lo stato delle tue candidature' },
+              { icon: 'fa-headset', t: 'Assistenza 24/7, sempre in italiano' },
+            ].map(i => (
+              <li key={i.t} className="flex items-center gap-3">
+                <span className="h-10 w-10 rounded-xl bg-white/10 text-sun-400 flex items-center justify-center"><i className={`fas ${i.icon}`} /></span>
+                {i.t}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-sm text-white/45">© {new Date().getFullYear()} LBS Lavoro Business e Servizi in Germania</p>
+      </aside>
 
-      <div style={{ width:'100%', maxWidth:'460px', position:'relative', zIndex:10 }}>
+      {/* MODULO */}
+      <main className="flex flex-col items-center justify-center px-5 py-10 sm:py-16 surface-tint lg:bg-none lg:bg-paper">
+        <div className="w-full max-w-[440px]">
+          <Link to="/" className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
+            <img src={logoLBS} alt="" className="h-11 w-11" width={44} height={44} />
+            <span className="font-heading font-bold text-lg text-plum-800">LBS Work</span>
+          </Link>
 
-        {/* Brand header */}
-        <div style={{ textAlign:'center', marginBottom:'32px' }}>
-          <div style={{
-            display:'inline-flex', alignItems:'center', justifyContent:'center',
-            width:'72px', height:'72px', background:'var(--primary)',
-            border:'4px solid var(--comic-border-color)',
-            boxShadow:'6px 6px 0px var(--comic-shadow-color)', marginBottom:'20px',
-          }}>
-            <i className={`fas ${mode === 'forgot' ? 'fa-key' : 'fa-shield-alt'}`} style={{ fontSize:'28px', color:'#fff' }} />
+          <div className="text-center mb-8">
+            <span className="mx-auto icon-tile !w-14 !h-14 !rounded-2xl !bg-plum-600 !text-white">
+              <i className={`fas ${mode === 'forgot' ? 'fa-key' : 'fa-shield-alt'} text-xl`} />
+            </span>
+            <h1 className="h-display text-plum-800 text-3xl sm:text-4xl mt-5">{title}</h1>
+            <p className="text-ink-soft mt-2">{subtitle}</p>
           </div>
-          <h1 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'2rem', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 8px', textTransform:'uppercase' }}>
-            {mode === 'login' ? 'Area Riservata' : mode === 'register' ? 'Crea Account' : 'Password Dimenticata'}
-          </h1>
-          <p style={{ color:'var(--text-muted)', fontSize:'14px', fontWeight:500, margin:0 }}>
-            {mode === 'login' ? 'Accedi al portale LBS Business' : mode === 'register' ? 'Registrati al portale LBS Business' : 'Inserisci la tua email per ricevere il link di recupero'}
-          </p>
-        </div>
 
-        {/* Tab switcher */}
-        <div style={{ display:'flex', border:'4px solid var(--comic-border-color)', boxShadow:'4px 4px 0px var(--comic-shadow-color)', marginBottom:'0', overflow:'hidden' }}>
-          {(['login', 'register'] as ('login' | 'register')[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => switchMode(m)}
-              style={{
-                flex: 1,
-                padding: '14px',
-                background: mode === m ? 'var(--primary)' : 'var(--bg-color)',
-                color: mode === m ? '#fff' : 'var(--text-muted)',
-                border: 'none',
-                borderRight: m === 'login' ? '3px solid var(--comic-border-color)' : 'none',
-                fontWeight: 900,
-                fontSize: '11px',
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                fontFamily: 'var(--font-inter)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
-            >
-              <i className={`fas ${m === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'}`} />
-              {m === 'login' ? 'Accedi' : 'Registrati'}
-            </button>
-          ))}
-        </div>
-
-        {/* Card body */}
-        <div className="comic-card" style={{ padding:'36px 40px', borderTop:'none' }}>
-
-          {/* ── GOOGLE AUTH BUTTON ── */}
           {mode !== 'forgot' && (
-            <div style={{ marginBottom:'22px' }}>
-              <button
-                type="button"
-                id="google-login-btn"
-                onClick={handleGoogleLogin}
-                disabled={googleLoading}
-                className="comic-button"
-                style={{
-                  width: '100%',
-                  padding: '14px 18px',
-                  background: '#ffffff',
-                  color: '#1f2937',
-                  border: '3px solid var(--comic-border-color)',
-                  boxShadow: '4px 4px 0px var(--comic-shadow-color)',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '12px',
-                  cursor: googleLoading ? 'not-allowed' : 'pointer',
-                  opacity: googleLoading ? 0.7 : 1,
-                  transition: 'all 0.15s ease',
-                  fontFamily: 'var(--font-inter)',
-                }}
-              >
-                {googleLoading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin" style={{ color: 'var(--primary)' }} />
-                    <span>Connessione a Google...</span>
-                  </>
-                ) : (
-                  <>
-                    <GoogleIcon />
-                    <span>{mode === 'login' ? 'Accedi con Google' : 'Registrati con Google'}</span>
-                  </>
-                )}
-              </button>
-
-              <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 4px', gap: '14px' }}>
-                <div style={{ flex: 1, height: '2px', background: 'var(--comic-border-color)', opacity: 0.2 }} />
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 900,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
-                }}>
-                  oppure con email
-                </span>
-                <div style={{ flex: 1, height: '2px', background: 'var(--comic-border-color)', opacity: 0.2 }} />
-              </div>
+            <div role="tablist" aria-label="Accedi o registrati" className="grid grid-cols-2 gap-1 p-1 rounded-full bg-plum-100/60 mb-5">
+              {(['login', 'register'] as ('login' | 'register')[]).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  onClick={() => switchMode(m)}
+                  className={`min-h-[44px] rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+                    mode === m ? 'bg-white text-plum-800 shadow-sm' : 'text-ink-soft hover:text-plum-800'
+                  }`}
+                >
+                  <i className={`fas ${m === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'} text-xs`} />
+                  {m === 'login' ? 'Accedi' : 'Registrati'}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* ── FORGOT PASSWORD FORM ── */}
-          {mode === 'forgot' && (
-            <form onSubmit={handleForgot} style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
-              {forgotError && <ErrorBox message={forgotError} />}
-              {forgotSuccess ? (
-                <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
-                  <SuccessBox message="Link di recupero inviato! Controlla la tua casella di posta (e anche la cartella Spam)." />
-                  <p style={{ margin:0, fontSize:'14px', color:'var(--text-color)', lineHeight:1.6 }}>
-                    Abbiamo inviato un'email a <strong>{forgotEmail}</strong> con le istruzioni e il link per impostare la tua nuova password.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => switchMode('login')}
-                    className="comic-button"
-                    style={{ width:'100%', padding:'14px', background:'var(--primary)', color:'#fff', fontSize:'12px', letterSpacing:'0.15em', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}
-                  >
-                    <i className="fas fa-arrow-left" /> Torna all'accesso
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <p style={{ margin:0, fontSize:'13px', color:'var(--text-muted)', lineHeight:1.5 }}>
-                    Inserisci l'indirizzo email del tuo account. Ti invieremo un link sicuro per reimpostare la tua password.
-                  </p>
-
-                  {/* Email */}
-                  <div>
-                    <label style={labelStyle}>Email dell'account</label>
-                    <div style={{ position:'relative' }}>
-                      <i className="fas fa-envelope" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                      <input
-                        id="forgot-email"
-                        type="email"
-                        value={forgotEmail}
-                        onChange={e => setForgotEmail(e.target.value)}
-                        required
-                        placeholder="la-tua@email.com"
-                        style={inputStyle}
-                        onFocus={onFocus}
-                        onBlur={onBlur}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    id="forgot-submit"
-                    type="submit"
-                    disabled={forgotLoading}
-                    className="comic-button"
-                    style={{ width:'100%', padding:'16px', background: forgotLoading ? 'var(--secondary)' : 'var(--primary)', color:'#fff', fontSize:'13px', letterSpacing:'0.2em', marginTop:'4px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', opacity: forgotLoading ? 0.7 : 1, cursor: forgotLoading ? 'not-allowed' : 'pointer', transition:'all 0.15s ease' }}
-                  >
-                    {forgotLoading ? <><i className="fas fa-spinner fa-spin" /> Invio in corso...</> : <><i className="fas fa-paper-plane" /> INVIA LINK DI RECUPERO</>}
-                  </button>
-
-                  <p style={{ textAlign:'center', margin:0, fontSize:'13px', color:'var(--text-muted)' }}>
-                    Ti ricordi la password?{' '}
-                    <button type="button" onClick={() => switchMode('login')} style={{ background:'none', border:'none', color:'var(--primary)', fontWeight:900, cursor:'pointer', fontSize:'13px', padding:0, textDecoration:'underline' }}>
-                      Accedi
-                    </button>
-                  </p>
-                </>
-              )}
-            </form>
-          )}
-
-          {/* ── LOGIN FORM ── */}
-          {mode === 'login' && (
-            <form onSubmit={handleLogin} style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
-              {loginError && <ErrorBox message={loginError} />}
-
-              {/* Email */}
-              <div>
-                <label style={labelStyle}>Email</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-envelope" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="login-email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={e => setLoginEmail(e.target.value)}
-                    required
-                    placeholder="la-tua@email.com"
-                    style={inputStyle}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label style={labelStyle}>Password</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-key" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="login-password"
-                    type={showLoginPwd ? 'text' : 'password'}
-                    value={loginPassword}
-                    onChange={e => setLoginPassword(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    style={{ ...inputStyle, paddingRight:'46px' }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                  <EyeToggle show={showLoginPwd} onToggle={() => setShowLoginPwd(v => !v)} />
-                </div>
-              </div>
-
-              {/* Password dimenticata */}
-              <div style={{ display:'flex', justifyContent:'flex-end', marginTop:'-10px' }}>
+          <div className="card p-6 sm:p-8">
+            {/* ── GOOGLE ── */}
+            {mode !== 'forgot' && (
+              <div className="mb-6">
                 <button
                   type="button"
-                  onClick={() => { setForgotEmail(loginEmail); switchMode('forgot'); }}
-                  style={{ background:'none', border:'none', color:'var(--primary)', fontSize:'12px', fontWeight:700, cursor:'pointer', padding:0, textDecoration:'underline' }}
+                  id="google-login-btn"
+                  onClick={handleGoogleLogin}
+                  disabled={googleLoading}
+                  className="btn btn-outline w-full !text-ink"
                 >
-                  Password dimenticata?
+                  {googleLoading ? (
+                    <><i className="fas fa-spinner fa-spin text-plum-600" /> Connessione a Google...</>
+                  ) : (
+                    <><GoogleIcon /> {mode === 'login' ? 'Accedi con Google' : 'Registrati con Google'}</>
+                  )}
                 </button>
-              </div>
-
-              <button
-                id="login-submit"
-                type="submit"
-                disabled={loginLoading}
-                className="comic-button"
-                style={{ width:'100%', padding:'16px', background: loginLoading ? 'var(--secondary)' : 'var(--primary)', color:'#fff', fontSize:'13px', letterSpacing:'0.2em', marginTop:'4px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', opacity: loginLoading ? 0.7 : 1, cursor: loginLoading ? 'not-allowed' : 'pointer', transition:'all 0.15s ease' }}
-              >
-                {loginLoading ? <><i className="fas fa-spinner fa-spin" /> Accesso in corso...</> : <><i className="fas fa-sign-in-alt" /> ACCEDI</>}
-              </button>
-
-              <p style={{ textAlign:'center', margin:0, fontSize:'13px', color:'var(--text-muted)' }}>
-                Non hai un account?{' '}
-                <button type="button" onClick={() => switchMode('register')} style={{ background:'none', border:'none', color:'var(--primary)', fontWeight:900, cursor:'pointer', fontSize:'13px', padding:0, textDecoration:'underline' }}>
-                  Registrati gratis
-                </button>
-              </p>
-            </form>
-          )}
-
-          {/* ── REGISTER FORM ── */}
-          {mode === 'register' && (
-            <form onSubmit={handleRegister} style={{ display:'flex', flexDirection:'column', gap:'18px' }}>
-              {regError && <ErrorBox message={regError} />}
-
-              {/* Nome */}
-              <div>
-                <label style={labelStyle}>Nome completo</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-user" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="reg-name"
-                    type="text"
-                    value={regName}
-                    onChange={e => setRegName(e.target.value)}
-                    required
-                    placeholder="Mario Rossi"
-                    style={inputStyle}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
+                <div className="flex items-center gap-3 mt-6">
+                  <span className="flex-1 h-px bg-line" />
+                  <span className="text-xs font-medium text-ink-soft">oppure con email</span>
+                  <span className="flex-1 h-px bg-line" />
                 </div>
               </div>
+            )}
 
-              {/* Email */}
-              <div>
-                <label style={labelStyle}>Email</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-envelope" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="reg-email"
-                    type="email"
-                    value={regEmail}
-                    onChange={e => setRegEmail(e.target.value)}
-                    required
-                    placeholder="la-tua@email.com"
-                    style={inputStyle}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label style={labelStyle}>Password</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-lock" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="reg-password"
-                    type={showRegPwd ? 'text' : 'password'}
-                    value={regPassword}
-                    onChange={e => setRegPassword(e.target.value)}
-                    required
-                    placeholder="Min. 8 caratteri"
-                    style={{ ...inputStyle, paddingRight:'46px' }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                  <EyeToggle show={showRegPwd} onToggle={() => setShowRegPwd(v => !v)} />
-                </div>
-                {/* Strength bar */}
-                {regPassword.length > 0 && (
-                  <div style={{ marginTop:'8px' }}>
-                    <div style={{ display:'flex', gap:'4px', marginBottom:'4px' }}>
-                      {[1,2,3,4].map(i => (
-                        <div key={i} style={{ flex:1, height:'4px', background: i <= pwdStrength.score ? pwdStrength.color : 'var(--comic-border-color)', transition:'background 0.2s ease', border:'1px solid var(--comic-border-color)' }} />
-                      ))}
-                    </div>
-                    <p style={{ margin:0, fontSize:'11px', fontWeight:700, color: pwdStrength.color, letterSpacing:'0.1em' }}>
-                      {pwdStrength.label}
+            {/* ── PASSWORD DIMENTICATA ── */}
+            {mode === 'forgot' && (
+              <form onSubmit={handleForgot} className="flex flex-col gap-5">
+                {forgotError && <ErrorBox message={forgotError} />}
+                {forgotSuccess ? (
+                  <div className="flex flex-col gap-5">
+                    <SuccessBox message="Link di recupero inviato! Controlla la tua casella di posta (e anche la cartella Spam)." />
+                    <p className="text-sm text-ink leading-relaxed m-0">
+                      Abbiamo inviato un'email a <strong>{forgotEmail}</strong> con le istruzioni e il link per impostare la tua nuova password.
                     </p>
+                    <button type="button" onClick={() => switchMode('login')} className="btn btn-lg btn-primary w-full">
+                      <i className="fas fa-arrow-left text-xs" /> Torna all'accesso
+                    </button>
                   </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-ink-soft leading-relaxed m-0">
+                      Inserisci l'indirizzo email del tuo account. Ti invieremo un link sicuro per reimpostare la tua password.
+                    </p>
+                    <IconField icon="fa-envelope" label="Email dell'account" id="forgot-email">
+                      <input id="forgot-email" type="email" autoComplete="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required placeholder="la-tua@email.com" className="field !pl-11" />
+                    </IconField>
+                    <button id="forgot-submit" type="submit" disabled={forgotLoading} className="btn btn-lg btn-primary w-full">
+                      {forgotLoading ? <><i className="fas fa-spinner fa-spin" /> Invio in corso...</> : <><i className="fas fa-paper-plane" /> Invia link di recupero</>}
+                    </button>
+                    <p className="text-center text-sm text-ink-soft m-0">
+                      Ti ricordi la password?{' '}
+                      <button type="button" onClick={() => switchMode('login')} className="font-semibold text-plum-600 hover:text-plum-800 underline cursor-pointer">Accedi</button>
+                    </p>
+                  </>
                 )}
-              </div>
+              </form>
+            )}
 
-              {/* Conferma password */}
-              <div>
-                <label style={labelStyle}>Conferma password</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-check-circle" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color: regConfirm && regConfirm === regPassword ? '#16a34a' : 'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="reg-confirm"
-                    type={showConfirmPwd ? 'text' : 'password'}
-                    value={regConfirm}
-                    onChange={e => setRegConfirm(e.target.value)}
-                    required
-                    placeholder="Ripeti la password"
-                    style={{ ...inputStyle, paddingRight:'46px', borderColor: regConfirm && regConfirm !== regPassword ? '#dc2626' : undefined }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                  <EyeToggle show={showConfirmPwd} onToggle={() => setShowConfirmPwd(v => !v)} />
+            {/* ── LOGIN ── */}
+            {mode === 'login' && (
+              <form onSubmit={handleLogin} className="flex flex-col gap-5">
+                {loginError && <ErrorBox message={loginError} />}
+                <IconField icon="fa-envelope" label="Email" id="login-email">
+                  <input id="login-email" type="email" autoComplete="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required placeholder="la-tua@email.com" className="field !pl-11" />
+                </IconField>
+                <div>
+                  <IconField icon="fa-key" label="Password" id="login-password">
+                    <input id="login-password" type={showLoginPwd ? 'text' : 'password'} autoComplete="current-password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required placeholder="••••••••" className="field !pl-11 !pr-12" />
+                    <EyeToggle show={showLoginPwd} onToggle={() => setShowLoginPwd(v => !v)} />
+                  </IconField>
+                  <div className="flex justify-end mt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setForgotEmail(loginEmail); switchMode('forgot'); }}
+                      className="text-sm font-medium text-plum-600 hover:text-plum-800 cursor-pointer"
+                    >
+                      Password dimenticata?
+                    </button>
+                  </div>
                 </div>
-                {regConfirm && regConfirm !== regPassword && (
-                  <p style={{ margin:'6px 0 0', fontSize:'11px', color:'#dc2626', fontWeight:700 }}>
-                    <i className="fas fa-times-circle" style={{ marginRight:'4px' }} /> Le password non coincidono
-                  </p>
-                )}
-              </div>
-
-              {/* Terms note */}
-              <p style={{ margin:0, fontSize:'12px', color:'var(--text-muted)', lineHeight:1.5 }}>
-                <i className="fas fa-shield-alt" style={{ color:'var(--primary)', marginRight:'6px' }} />
-                Registrandoti accetti le nostre condizioni d'uso e l'informativa sulla privacy.
-              </p>
-
-              <button
-                id="reg-submit"
-                type="submit"
-                disabled={regLoading}
-                className="comic-button"
-                style={{ width:'100%', padding:'16px', background: regLoading ? 'var(--secondary)' : 'var(--primary)', color:'#fff', fontSize:'13px', letterSpacing:'0.2em', marginTop:'4px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', opacity: regLoading ? 0.7 : 1, cursor: regLoading ? 'not-allowed' : 'pointer', transition:'all 0.15s ease' }}
-              >
-                {regLoading ? <><i className="fas fa-spinner fa-spin" /> Registrazione...</> : <><i className="fas fa-user-plus" /> CREA ACCOUNT</>}
-              </button>
-
-              <p style={{ textAlign:'center', margin:0, fontSize:'13px', color:'var(--text-muted)' }}>
-                Hai già un account?{' '}
-                <button type="button" onClick={() => switchMode('login')} style={{ background:'none', border:'none', color:'var(--primary)', fontWeight:900, cursor:'pointer', fontSize:'13px', padding:0, textDecoration:'underline' }}>
-                  Accedi
+                <button id="login-submit" type="submit" disabled={loginLoading} className="btn btn-lg btn-primary w-full">
+                  {loginLoading ? <><i className="fas fa-spinner fa-spin" /> Accesso in corso...</> : <><i className="fas fa-sign-in-alt" /> Accedi</>}
                 </button>
-              </p>
-            </form>
-          )}
+                <p className="text-center text-sm text-ink-soft m-0">
+                  Non hai un account?{' '}
+                  <button type="button" onClick={() => switchMode('register')} className="font-semibold text-plum-600 hover:text-plum-800 underline cursor-pointer">Registrati gratis</button>
+                </p>
+              </form>
+            )}
+
+            {/* ── REGISTRAZIONE ── */}
+            {mode === 'register' && (
+              <form onSubmit={handleRegister} className="flex flex-col gap-5">
+                {regError && <ErrorBox message={regError} />}
+                <IconField icon="fa-user" label="Nome completo" id="reg-name">
+                  <input id="reg-name" type="text" autoComplete="name" value={regName} onChange={e => setRegName(e.target.value)} required placeholder="Mario Rossi" className="field !pl-11" />
+                </IconField>
+                <IconField icon="fa-envelope" label="Email" id="reg-email">
+                  <input id="reg-email" type="email" autoComplete="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} required placeholder="la-tua@email.com" className="field !pl-11" />
+                </IconField>
+                <div>
+                  <IconField icon="fa-lock" label="Password" id="reg-password">
+                    <input id="reg-password" type={showRegPwd ? 'text' : 'password'} autoComplete="new-password" value={regPassword} onChange={e => setRegPassword(e.target.value)} required placeholder="Min. 8 caratteri" className="field !pl-11 !pr-12" />
+                    <EyeToggle show={showRegPwd} onToggle={() => setShowRegPwd(v => !v)} />
+                  </IconField>
+                  {regPassword.length > 0 && (
+                    <div className="mt-2">
+                      <div className="flex gap-1 mb-1">
+                        {[1, 2, 3, 4].map(i => (
+                          <div key={i} className="flex-1 h-1.5 rounded-full transition-colors" style={{ background: i <= pwdStrength.score ? pwdStrength.color : 'var(--line)' }} />
+                        ))}
+                      </div>
+                      <p className="m-0 text-xs font-semibold" style={{ color: pwdStrength.color }}>{pwdStrength.label}</p>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <IconField icon="fa-check-circle" iconClass={regConfirm && regConfirm === regPassword ? '!text-emerald-600' : ''} label="Conferma password" id="reg-confirm">
+                    <input
+                      id="reg-confirm"
+                      type={showConfirmPwd ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      value={regConfirm}
+                      onChange={e => setRegConfirm(e.target.value)}
+                      required
+                      placeholder="Ripeti la password"
+                      aria-invalid={Boolean(regConfirm && regConfirm !== regPassword)}
+                      className={`field !pl-11 !pr-12 ${regConfirm && regConfirm !== regPassword ? '!border-red-400' : ''}`}
+                    />
+                    <EyeToggle show={showConfirmPwd} onToggle={() => setShowConfirmPwd(v => !v)} />
+                  </IconField>
+                  {regConfirm && regConfirm !== regPassword && (
+                    <p className="mt-1.5 mb-0 text-xs font-medium text-red-600">
+                      <i className="fas fa-times-circle mr-1" /> Le password non coincidono
+                    </p>
+                  )}
+                </div>
+                <p className="m-0 text-xs text-ink-soft leading-relaxed">
+                  <i className="fas fa-shield-alt text-plum-400 mr-1.5" />
+                  Registrandoti accetti le nostre condizioni d'uso e l'informativa sulla privacy.
+                </p>
+                <button id="reg-submit" type="submit" disabled={regLoading} className="btn btn-lg btn-primary w-full">
+                  {regLoading ? <><i className="fas fa-spinner fa-spin" /> Registrazione...</> : <><i className="fas fa-user-plus" /> Crea account</>}
+                </button>
+                <p className="text-center text-sm text-ink-soft m-0">
+                  Hai già un account?{' '}
+                  <button type="button" onClick={() => switchMode('login')} className="font-semibold text-plum-600 hover:text-plum-800 underline cursor-pointer">Accedi</button>
+                </p>
+              </form>
+            )}
+          </div>
+
+          <p className="text-center mt-6">
+            <Link to="/" className="text-sm font-semibold text-plum-600 hover:text-plum-800">
+              <i className="fas fa-arrow-left text-xs mr-1.5" /> Torna al sito
+            </Link>
+          </p>
         </div>
+      </main>
 
-        <p style={{ textAlign:'center', marginTop:'24px', color:'var(--text-muted)', fontSize:'13px', fontWeight:500 }}>
-          <Link to="/" style={{ color:'var(--primary)', fontWeight:700, textDecoration:'none' }}>← Torna al sito</Link>
-        </p>
-      </div>
-
-      {/* ── STYLED COMIC POPUP MODAL ── */}
+      {/* ── POPUP ACCOUNT ── */}
       {authModal.isOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(5px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '20px',
-            animation: 'fadeIn 0.2s ease',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) authModal.onSecondaryClick();
-          }}
+          className="fixed inset-0 z-[9999] bg-plum-950/60 backdrop-blur-sm flex items-center justify-center p-5"
+          onClick={(e) => { if (e.target === e.currentTarget) authModal.onSecondaryClick(); }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auth-modal-title"
         >
-          <div
-            className="comic-card"
-            style={{
-              background: 'var(--card-bg)',
-              maxWidth: '460px',
-              width: '100%',
-              padding: '36px 32px',
-              position: 'relative',
-              boxShadow: '10px 10px 0px var(--comic-shadow-color)',
-              border: '4px solid var(--comic-border-color)',
-              animation: 'comicPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-            }}
-          >
-            {/* Close button */}
-            <button
-              onClick={authModal.onSecondaryClick}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'var(--bg-color)',
-                border: '2px solid var(--comic-border-color)',
-                boxShadow: '2px 2px 0px var(--comic-shadow-color)',
-                color: 'var(--text-color)',
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '15px',
-                cursor: 'pointer',
-                fontWeight: 900,
-              }}
-              aria-label="Chiudi"
-            >
+          <div className="animate-pop-in relative w-full max-w-[460px] bg-white rounded-[2rem] p-7 sm:p-8 shadow-[var(--shadow-lift)]">
+            <button type="button" onClick={authModal.onSecondaryClick} aria-label="Chiudi" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
               <i className="fas fa-times" />
             </button>
-
-            {/* Badge */}
-            <div style={{ marginBottom: '16px' }}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  background: authModal.type === 'not_found'
-                    ? '#FF6B35'
-                    : authModal.type === 'already_exists'
-                    ? 'var(--primary)'
-                    : '#dc2626',
-                  color: '#ffffff',
-                  padding: '4px 12px',
-                  fontWeight: 900,
-                  fontSize: '10px',
-                  letterSpacing: '0.2em',
-                  textTransform: 'uppercase',
-                  border: '2px solid var(--comic-border-color)',
-                  boxShadow: '3px 3px 0px var(--comic-shadow-color)',
-                }}
-              >
-                {authModal.badge}
+            <span className={`chip ${modalTone.chip}`}>{authModal.badge}</span>
+            <div className="flex items-center gap-4 mt-4 mb-4">
+              <span className={`h-14 w-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${modalTone.tile}`}>
+                <i className={`fas ${modalTone.icon}`} />
               </span>
-            </div>
-
-            {/* Icon + Title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '18px' }}>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  background: authModal.type === 'not_found'
-                    ? 'rgba(255, 107, 53, 0.15)'
-                    : authModal.type === 'already_exists'
-                    ? 'rgba(110, 66, 116, 0.15)'
-                    : 'rgba(220, 38, 38, 0.15)',
-                  border: '3px solid var(--comic-border-color)',
-                  boxShadow: '4px 4px 0px var(--comic-shadow-color)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '24px',
-                  color: authModal.type === 'not_found'
-                    ? '#FF6B35'
-                    : authModal.type === 'already_exists'
-                    ? 'var(--primary)'
-                    : '#dc2626',
-                  flexShrink: 0,
-                }}
-              >
-                <i
-                  className={`fas ${
-                    authModal.type === 'not_found'
-                      ? 'fa-user-slash'
-                      : authModal.type === 'already_exists'
-                      ? 'fa-user-check'
-                      : 'fa-exclamation-triangle'
-                  }`}
-                />
-              </div>
-
-              <div>
-                <h3
-                  style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontWeight: 900,
-                    fontSize: '1.3rem',
-                    textTransform: 'uppercase',
-                    color: 'var(--text-color)',
-                    margin: '0 0 4px',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {authModal.title}
-                </h3>
-                {authModal.email && (
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--text-muted)',
-                      fontWeight: 700,
-                      wordBreak: 'break-all',
-                    }}
-                  >
-                    {authModal.email}
-                  </span>
-                )}
+              <div className="min-w-0">
+                <h3 id="auth-modal-title" className="font-heading font-bold text-xl text-plum-800 m-0">{authModal.title}</h3>
+                {authModal.email && <span className="text-sm text-ink-soft break-all">{authModal.email}</span>}
               </div>
             </div>
-
-            {/* Message box */}
-            <div
-              style={{
-                background: 'var(--bg-color)',
-                border: '3px solid var(--comic-border-color)',
-                boxShadow: '3px 3px 0px var(--comic-shadow-color)',
-                padding: '16px 18px',
-                marginBottom: '24px',
-                fontSize: '14px',
-                lineHeight: 1.6,
-                color: 'var(--text-color)',
-                fontWeight: 600,
-              }}
-            >
-              {authModal.message}
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={authModal.onSecondaryClick}
-                className="comic-button"
-                style={{
-                  flex: 1,
-                  minWidth: '130px',
-                  background: 'transparent',
-                  color: 'var(--text-color)',
-                  border: '3px solid var(--comic-border-color)',
-                  boxShadow: '3px 3px 0px var(--comic-shadow-color)',
-                  padding: '14px 16px',
-                  fontSize: '11px',
-                  fontWeight: 900,
-                  letterSpacing: '0.15em',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  fontFamily: 'var(--font-inter)',
-                }}
-              >
+            <p className="rounded-2xl bg-plum-50 p-4 text-sm text-ink leading-relaxed mb-6">{authModal.message}</p>
+            <div className="flex flex-wrap gap-3">
+              <button type="button" onClick={authModal.onSecondaryClick} className="btn btn-outline flex-1 min-w-[130px]">
                 {authModal.secondaryButtonText}
               </button>
-
               <button
                 type="button"
                 onClick={authModal.onPrimaryClick}
-                className="comic-button"
-                style={{
-                  flex: 1.4,
-                  minWidth: '160px',
-                  background: authModal.type === 'not_found'
-                    ? '#25D366'
-                    : 'var(--primary)',
-                  color: '#ffffff',
-                  border: '3px solid var(--comic-border-color)',
-                  boxShadow: '4px 4px 0px var(--comic-shadow-color)',
-                  padding: '14px 18px',
-                  fontSize: '12px',
-                  fontWeight: 900,
-                  letterSpacing: '0.15em',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  fontFamily: 'var(--font-inter)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                }}
+                className={`btn flex-[1.4] min-w-[160px] ${authModal.type === 'not_found' ? 'btn-wa' : 'btn-primary'}`}
               >
-                <i
-                  className={`fas ${
-                    authModal.type === 'not_found'
-                      ? 'fa-user-plus'
-                      : authModal.type === 'already_exists'
-                      ? 'fa-sign-in-alt'
-                      : 'fa-arrow-right'
-                  }`}
-                />
+                <i className={`fas ${authModal.type === 'not_found' ? 'fa-user-plus' : authModal.type === 'already_exists' ? 'fa-sign-in-alt' : 'fa-arrow-right'}`} />
                 {authModal.primaryButtonText}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes comicPop {
-          0% { transform: scale(0.9) translateY(16px); opacity: 0; }
-          100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+const IconField: React.FC<{ icon: string; label: string; id: string; iconClass?: string; children: React.ReactNode }> = ({ icon, label, id, iconClass = '', children }) => (
+  <div>
+    <label htmlFor={id} className="field-label">{label}</label>
+    <div className="relative">
+      <i className={`fas ${icon} absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm pointer-events-none ${iconClass}`} />
+      {children}
+    </div>
+  </div>
+);
+
 const SuccessBox: React.FC<{ message: string }> = ({ message }) => (
-  <div style={{ background:'rgba(37,211,102,0.1)', border:'3px solid #25D366', boxShadow:'4px 4px 0px #25D366', padding:'14px 18px', display:'flex', alignItems:'center', gap:'12px' }}>
-    <i className="fas fa-check-circle" style={{ color:'#25D366', fontSize:'16px', flexShrink:0 }} />
-    <span style={{ color:'#16a34a', fontWeight:700, fontSize:'14px' }}>{message}</span>
+  <div role="status" className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
+    <i className="fas fa-check-circle text-emerald-600 shrink-0" />
+    <span className="text-emerald-800 font-medium text-sm">{message}</span>
   </div>
 );
 
 const ErrorBox: React.FC<{ message: string }> = ({ message }) => (
-  <div style={{ background:'rgba(220,38,38,0.1)', border:'3px solid #dc2626', boxShadow:'4px 4px 0px #dc2626', padding:'14px 18px', display:'flex', alignItems:'center', gap:'12px' }}>
-    <i className="fas fa-exclamation-triangle" style={{ color:'#dc2626', fontSize:'16px', flexShrink:0 }} />
-    <span style={{ color:'#dc2626', fontWeight:700, fontSize:'14px' }}>{message}</span>
+  <div role="alert" className="rounded-2xl bg-red-50 border border-red-200 p-4 flex items-center gap-3">
+    <i className="fas fa-exclamation-triangle text-red-600 shrink-0" />
+    <span className="text-red-700 font-medium text-sm">{message}</span>
   </div>
 );
 
@@ -1011,14 +620,15 @@ const EyeToggle: React.FC<{ show: boolean; onToggle: () => void }> = ({ show, on
   <button
     type="button"
     onClick={onToggle}
-    style={{ position:'absolute', right:'16px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--primary)', fontSize:'15px', padding:0, opacity:0.7 }}
+    aria-label={show ? 'Nascondi password' : 'Mostra password'}
+    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer"
   >
     <i className={`fas ${show ? 'fa-eye-slash' : 'fa-eye'}`} />
   </button>
 );
 
 const GoogleIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+  <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }} aria-hidden="true">
     <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17Z" />
     <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24Z" />
     <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15Z" />

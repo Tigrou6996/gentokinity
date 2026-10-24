@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import logoLBS from '../img/logo_LBS-192.png';
 
 const STATO_COLORS: Record<string, { bg: string; label: string }> = {
   nuova: { bg: '#6E4274', label: 'Inviata' },
@@ -108,96 +109,45 @@ const UserDashboard: React.FC = () => {
   ];
 
   return (
-    <div style={{
+    <div className="dash" style={{
       minHeight: '100vh',
       background: 'var(--bg-color)',
       paddingBottom: '60px',
     }}>
       {/* Top bar */}
-      <header style={{
-        background: 'var(--card-bg)',
-        borderBottom: '4px solid var(--comic-border-color)',
-        boxShadow: '0 4px 0px var(--comic-shadow-color)',
-        padding: '0 32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: '72px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-      }}>
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '40px', height: '40px',
-            background: 'var(--primary)',
-            border: '3px solid var(--comic-border-color)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <i className="fas fa-globe-europe" style={{ color: '#fff', fontSize: '16px' }} />
-          </div>
-          <span style={{
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
-            fontSize: '18px',
-            color: 'var(--text-color)',
-            letterSpacing: '-0.03em',
-            textTransform: 'uppercase',
-          }}>LBS</span>
-        </Link>
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-line">
+        <div className="max-w-6xl mx-auto h-[72px] px-4 sm:px-8 flex items-center justify-between gap-3">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0">
+            <img src={logoLBS} alt="" className="h-10 w-10" width={40} height={40} />
+            <span className="font-heading font-bold text-lg text-plum-800 hidden sm:inline">LBS Work</span>
+          </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '40px', height: '40px',
-            background: 'var(--primary)',
-            border: '3px solid var(--comic-border-color)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
-            color: '#fff',
-            fontSize: '14px',
-          }}>
-            {initials}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="h-10 w-10 rounded-full bg-plum-600 text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+              {initials}
+            </span>
+            <span className="hidden md:inline font-semibold text-ink text-sm truncate max-w-[180px]">{displayName}</span>
+            <button
+              id="user-pwd-btn"
+              type="button"
+              onClick={() => { setShowPasswordModal(true); setPwdError(null); setPwdSuccess(false); }}
+              aria-label="Cambia password"
+              className="btn btn-sm btn-primary !shadow-none"
+            >
+              <i className="fas fa-key" />
+              <span className="hidden sm:inline">Password</span>
+            </button>
+            <button
+              id="user-logout-btn"
+              type="button"
+              onClick={handleLogout}
+              aria-label="Esci"
+              className="btn btn-sm btn-outline"
+            >
+              <i className="fas fa-sign-out-alt" />
+              <span className="hidden sm:inline">Esci</span>
+            </button>
           </div>
-          <span style={{ fontWeight: 700, color: 'var(--text-color)', fontSize: '14px' }}>
-            {displayName}
-          </span>
-          <button
-            id="user-pwd-btn"
-            onClick={() => { setShowPasswordModal(true); setPwdError(null); setPwdSuccess(false); }}
-            className="comic-button"
-            style={{
-              background: 'var(--primary)',
-              color: '#fff',
-              padding: '8px 14px',
-              fontSize: '12px',
-              letterSpacing: '0.1em',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <i className="fas fa-key" />
-            Password
-          </button>
-          <button
-            id="user-logout-btn"
-            onClick={handleLogout}
-            className="comic-button"
-            style={{
-              background: 'transparent',
-              color: 'var(--text-color)',
-              padding: '8px 14px',
-              fontSize: '12px',
-              letterSpacing: '0.1em',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <i className="fas fa-sign-out-alt" />
-            Esci
-          </button>
         </div>
       </header>
 
@@ -208,8 +158,8 @@ const UserDashboard: React.FC = () => {
           padding: '48px',
           marginBottom: '40px',
           background: 'var(--primary)',
-          border: '4px solid var(--comic-border-color)',
-          boxShadow: '8px 8px 0px var(--comic-shadow-color)',
+          border: '1px solid var(--line)',
+          boxShadow: 'var(--shadow-soft)',
           display: 'flex',
           alignItems: 'center',
           gap: '32px',
@@ -223,7 +173,7 @@ const UserDashboard: React.FC = () => {
             fontSize: '32px',
             color: '#fff',
             fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
+            fontWeight: 700,
           }}>
             {initials}
           </div>
@@ -231,7 +181,7 @@ const UserDashboard: React.FC = () => {
             <p style={{
               color: 'rgba(255,255,255,0.75)',
               fontSize: '12px',
-              fontWeight: 900,
+              fontWeight: 700,
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               margin: '0 0 8px',
@@ -240,7 +190,7 @@ const UserDashboard: React.FC = () => {
             </p>
             <h1 style={{
               fontFamily: 'var(--font-heading)',
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
               color: '#fff',
               margin: '0 0 8px',
@@ -259,7 +209,7 @@ const UserDashboard: React.FC = () => {
             padding: '20px 28px',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: '28px', fontWeight: 900, color: '#fff', fontFamily: 'var(--font-heading)' }}>{candidature.length}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-heading)' }}>{candidature.length}</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Candidature Inviate</div>
           </div>
         </div>
@@ -267,7 +217,7 @@ const UserDashboard: React.FC = () => {
         {/* Quick Links */}
         <h2 style={{
           fontFamily: 'var(--font-heading)',
-          fontWeight: 900,
+          fontWeight: 700,
           fontSize: '1.3rem',
           letterSpacing: '-0.02em',
           textTransform: 'uppercase',
@@ -296,8 +246,8 @@ const UserDashboard: React.FC = () => {
                 boxSizing: 'border-box',
               }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.transform = 'translate(-4px, -4px)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = '12px 12px 0px var(--comic-shadow-color)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-lift)';
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLElement).style.transform = 'translate(0, 0)';
@@ -307,7 +257,7 @@ const UserDashboard: React.FC = () => {
                 <div style={{
                   width: '52px', height: '52px',
                   background: link.color,
-                  border: '3px solid var(--comic-border-color)',
+                  border: '1px solid var(--line)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <i className={`fas ${link.icon}`} style={{ color: '#fff', fontSize: '20px' }} />
@@ -315,7 +265,7 @@ const UserDashboard: React.FC = () => {
                 <div>
                   <div style={{
                     fontFamily: 'var(--font-heading)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: '15px',
                     color: 'var(--text-color)',
                     marginBottom: '4px',
@@ -353,7 +303,7 @@ const UserDashboard: React.FC = () => {
         </div>
 
         {/* Le Mie Candidature */}
-        <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '1.3rem', letterSpacing: '-0.02em', textTransform: 'uppercase', color: 'var(--text-color)', marginBottom: '20px', marginTop: '48px' }}>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.3rem', letterSpacing: '-0.02em', textTransform: 'uppercase', color: 'var(--text-color)', marginBottom: '20px', marginTop: '48px' }}>
           Le Mie Candidature
         </h2>
 
@@ -362,9 +312,9 @@ const UserDashboard: React.FC = () => {
             <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px' }} />
           </div>
         ) : candidature.length === 0 ? (
-          <div style={{ border: '4px solid var(--comic-border-color)', boxShadow: '6px 6px 0px var(--comic-shadow-color)', padding: '40px 32px', background: 'var(--card-bg)', textAlign: 'center', marginBottom: '48px' }}>
+          <div style={{ border: '1px solid var(--line)', boxShadow: 'var(--shadow-soft)', padding: '40px 32px', background: 'var(--card-bg)', textAlign: 'center', marginBottom: '48px' }}>
             <i className="fas fa-file-alt" style={{ fontSize: '40px', color: 'var(--text-muted)', marginBottom: '16px', display: 'block' }} />
-            <div style={{ fontWeight: 900, color: 'var(--text-color)', fontSize: '15px', textTransform: 'uppercase', marginBottom: '8px' }}>Nessuna candidatura ancora</div>
+            <div style={{ fontWeight: 700, color: 'var(--text-color)', fontSize: '15px', textTransform: 'uppercase', marginBottom: '8px' }}>Nessuna candidatura ancora</div>
             <div style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500, marginBottom: '20px' }}>Esplora le offerte e candidati in un click!</div>
             <Link to="/offerte">
               <button className="comic-button" style={{ background: 'var(--primary)', color: '#fff', padding: '12px 24px', fontSize: '12px', letterSpacing: '0.15em', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
@@ -377,19 +327,19 @@ const UserDashboard: React.FC = () => {
             {candidature.map(c => {
               const stato = STATO_COLORS[c.stato] || STATO_COLORS.nuova;
               return (
-                <div key={c.id} style={{ border: '4px solid var(--comic-border-color)', boxShadow: '5px 5px 0px var(--comic-shadow-color)', padding: '20px 28px', background: 'var(--card-bg)', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                  <div style={{ width: '44px', height: '44px', flexShrink: 0, background: stato.bg, border: '3px solid var(--comic-border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px' }}>
+                <div key={c.id} style={{ border: '1px solid var(--line)', boxShadow: 'var(--shadow-soft)', padding: '20px 28px', background: 'var(--card-bg)', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ width: '44px', height: '44px', flexShrink: 0, background: stato.bg, border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px' }}>
                     <i className="fas fa-briefcase" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 900, fontSize: '15px', color: 'var(--text-color)', marginBottom: '2px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)', marginBottom: '2px' }}>
                       {c.offerta_titolo || 'Candidatura generica'}
                     </div>
                     <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
                       {c.settore && `${c.settore} • `}{new Date(c.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </div>
                   </div>
-                  <div style={{ padding: '5px 14px', background: stato.bg, border: '2px solid var(--comic-border-color)', color: '#fff', fontSize: '10px', fontWeight: 900, letterSpacing: '0.15em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  <div style={{ padding: '5px 14px', background: stato.bg, border: '1px solid var(--line)', color: '#fff', fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                     {stato.label}
                   </div>
                 </div>
@@ -400,8 +350,8 @@ const UserDashboard: React.FC = () => {
 
         {/* Info banner */}
         <div style={{
-          border: '4px solid var(--comic-border-color)',
-          boxShadow: '6px 6px 0px var(--comic-shadow-color)',
+          border: '1px solid var(--line)',
+          boxShadow: 'var(--shadow-soft)',
           padding: '28px 32px',
           background: 'var(--card-bg)',
           display: 'flex',
@@ -412,13 +362,13 @@ const UserDashboard: React.FC = () => {
           <div style={{
             width: '52px', height: '52px', flexShrink: 0,
             background: '#FF6B35',
-            border: '3px solid var(--comic-border-color)',
+            border: '1px solid var(--line)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <i className="fas fa-headset" style={{ color: '#fff', fontSize: '20px' }} />
           </div>
           <div style={{ flex: 1, minWidth: '200px' }}>
-            <div style={{ fontWeight: 900, color: 'var(--text-color)', fontSize: '15px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+            <div style={{ fontWeight: 700, color: 'var(--text-color)', fontSize: '15px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
               Hai bisogno di supporto?
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>
@@ -490,7 +440,7 @@ const UserDashboard: React.FC = () => {
                 width: '44px',
                 height: '44px',
                 background: 'var(--primary)',
-                border: '3px solid var(--comic-border-color)',
+                border: '1px solid var(--line)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -502,7 +452,7 @@ const UserDashboard: React.FC = () => {
               <div>
                 <h3 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: '1.2rem',
                   textTransform: 'uppercase',
                   color: 'var(--text-color)',
@@ -520,8 +470,8 @@ const UserDashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{
                   background: 'rgba(37,211,102,0.1)',
-                  border: '3px solid #25D366',
-                  boxShadow: '4px 4px 0px #25D366',
+                  border: '1px solid #25D366',
+                  boxShadow: 'none',
                   padding: '16px',
                   display: 'flex',
                   alignItems: 'center',
@@ -552,8 +502,8 @@ const UserDashboard: React.FC = () => {
                 {pwdError && (
                   <div style={{
                     background: 'rgba(220,38,38,0.1)',
-                    border: '3px solid #dc2626',
-                    boxShadow: '4px 4px 0px #dc2626',
+                    border: '1px solid #dc2626',
+                    boxShadow: 'none',
                     padding: '12px 16px',
                     display: 'flex',
                     alignItems: 'center',
@@ -565,7 +515,7 @@ const UserDashboard: React.FC = () => {
                 )}
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 900, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
                     Password Attuale
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -580,8 +530,8 @@ const UserDashboard: React.FC = () => {
                         width: '100%',
                         padding: '12px 42px 12px 40px',
                         background: 'var(--bg-color)',
-                        border: '3px solid var(--comic-border-color)',
-                        boxShadow: '3px 3px 0px var(--comic-shadow-color)',
+                        border: '1px solid var(--line)',
+                        boxShadow: 'var(--shadow-soft)',
                         color: 'var(--text-color)',
                         fontSize: '14px',
                         outline: 'none',
@@ -599,7 +549,7 @@ const UserDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 900, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
                     Nuova Password
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -614,8 +564,8 @@ const UserDashboard: React.FC = () => {
                         width: '100%',
                         padding: '12px 42px 12px 40px',
                         background: 'var(--bg-color)',
-                        border: '3px solid var(--comic-border-color)',
-                        boxShadow: '3px 3px 0px var(--comic-shadow-color)',
+                        border: '1px solid var(--line)',
+                        boxShadow: 'var(--shadow-soft)',
                         color: 'var(--text-color)',
                         fontSize: '14px',
                         outline: 'none',
@@ -633,7 +583,7 @@ const UserDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 900, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '6px' }}>
                     Conferma Nuova Password
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -648,8 +598,8 @@ const UserDashboard: React.FC = () => {
                         width: '100%',
                         padding: '12px 42px 12px 40px',
                         background: 'var(--bg-color)',
-                        border: '3px solid var(--comic-border-color)',
-                        boxShadow: '3px 3px 0px var(--comic-shadow-color)',
+                        border: '1px solid var(--line)',
+                        boxShadow: 'var(--shadow-soft)',
                         color: 'var(--text-color)',
                         fontSize: '14px',
                         outline: 'none',

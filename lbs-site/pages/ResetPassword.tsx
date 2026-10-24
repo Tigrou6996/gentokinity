@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import logoLBS from '../img/logo_LBS-192.png';
 
 // ─── Password strength helper ─────────────────────────────────────────────────
 const getPasswordStrength = (pwd: string): { score: number; label: string; color: string } => {
@@ -16,41 +17,6 @@ const getPasswordStrength = (pwd: string): { score: number; label: string; color
   if (score <= 2) return { score, label: 'Accettabile', color: '#d97706' };
   if (score <= 3) return { score, label: 'Buona', color: '#16a34a' };
   return { score, label: 'Ottima', color: '#059669' };
-};
-
-// ─── Shared input style ───────────────────────────────────────────────────────
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px 16px 14px 46px',
-  background: 'var(--bg-color)',
-  border: '3px solid var(--comic-border-color)',
-  boxShadow: '3px 3px 0px var(--comic-shadow-color)',
-  color: 'var(--text-color)',
-  fontSize: '15px',
-  fontWeight: 600,
-  outline: 'none',
-  boxSizing: 'border-box' as const,
-  transition: 'box-shadow 0.15s ease, transform 0.15s ease',
-  fontFamily: 'var(--font-inter)',
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontWeight: 900,
-  fontSize: '11px',
-  letterSpacing: '0.2em',
-  textTransform: 'uppercase' as const,
-  color: 'var(--primary)',
-  marginBottom: '8px',
-};
-
-const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.boxShadow = '5px 5px 0px var(--primary)';
-  e.currentTarget.style.transform = 'translate(-2px, -2px)';
-};
-const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.boxShadow = '3px 3px 0px var(--comic-shadow-color)';
-  e.currentTarget.style.transform = 'translate(0, 0)';
 };
 
 const ResetPassword: React.FC = () => {
@@ -126,194 +92,102 @@ const ResetPassword: React.FC = () => {
     }
   };
 
-  // ── Decorative background ────────────────────────────────────────────────────
-  const bg = (
-    <>
-      <div style={{ position:'absolute', top:'-200px', left:'-200px', width:'600px', height:'600px', background:'var(--primary)', borderRadius:'50%', opacity:0.08, filter:'blur(80px)', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', bottom:'-200px', right:'-200px', width:'500px', height:'500px', background:'var(--secondary)', borderRadius:'50%', opacity:0.08, filter:'blur(80px)', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(var(--dark) 1px, transparent 1px)', backgroundSize:'28px 28px', opacity:0.15, pointerEvents:'none' }} />
-    </>
-  );
+  const mismatch = Boolean(confirmPassword && confirmPassword !== password);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--bg-color)',
-      padding: '24px',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {bg}
+    <div className="min-h-screen surface-tint flex items-center justify-center px-5 py-12">
+      <div className="w-full max-w-[440px]">
+        <Link to="/" className="flex items-center justify-center gap-2.5 mb-8">
+          <img src={logoLBS} alt="" className="h-11 w-11" width={44} height={44} />
+          <span className="font-heading font-bold text-lg text-plum-800">LBS Work</span>
+        </Link>
 
-      <div style={{ width:'100%', maxWidth:'460px', position:'relative', zIndex:10 }}>
-        {/* Brand header */}
-        <div style={{ textAlign:'center', marginBottom:'32px' }}>
-          <div style={{
-            display:'inline-flex', alignItems:'center', justifyContent:'center',
-            width:'72px', height:'72px', background:'var(--primary)',
-            border:'4px solid var(--comic-border-color)',
-            boxShadow:'6px 6px 0px var(--comic-shadow-color)', marginBottom:'20px',
-          }}>
-            <i className="fas fa-lock" style={{ fontSize:'28px', color:'#fff' }} />
-          </div>
-          <h1 style={{ fontFamily:'var(--font-heading)', fontWeight:900, fontSize:'2rem', letterSpacing:'-0.03em', color:'var(--text-color)', margin:'0 0 8px', textTransform:'uppercase' }}>
-            Nuova Password
-          </h1>
-          <p style={{ color:'var(--text-muted)', fontSize:'14px', fontWeight:500, margin:0 }}>
-            Imposta la tua nuova password di accesso
-          </p>
+        <div className="text-center mb-8">
+          <span className="mx-auto icon-tile !w-14 !h-14 !rounded-2xl !bg-plum-600 !text-white"><i className="fas fa-lock text-xl" /></span>
+          <h1 className="h-display text-plum-800 text-3xl sm:text-4xl mt-5">Nuova password</h1>
+          <p className="text-ink-soft mt-2">Imposta la tua nuova password di accesso</p>
         </div>
 
-        <div className="comic-card" style={{ padding:'36px 40px' }}>
+        <div className="card p-6 sm:p-8">
           {success ? (
-            <div style={{ display:'flex', flexDirection:'column', gap:'20px', textAlign:'center' }}>
-              <div style={{
-                background:'rgba(37,211,102,0.1)',
-                border:'3px solid #25D366',
-                boxShadow:'4px 4px 0px #25D366',
-                padding:'20px',
-                display:'flex',
-                alignItems:'center',
-                gap:'12px',
-                textAlign:'left',
-              }}>
-                <i className="fas fa-check-circle" style={{ color:'#25D366', fontSize:'24px', flexShrink:0 }} />
+            <div className="flex flex-col gap-5">
+              <div role="status" className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5 flex items-start gap-3">
+                <i className="fas fa-check-circle text-emerald-600 text-xl shrink-0 mt-0.5" />
                 <div>
-                  <div style={{ color:'#16a34a', fontWeight:900, fontSize:'15px', textTransform:'uppercase', marginBottom:'4px' }}>Password Aggiornata!</div>
-                  <div style={{ color:'var(--text-color)', fontSize:'13px', lineHeight:1.5 }}>
-                    La tua nuova password è stata salvata correttamente. Ora puoi continuare sul tuo account.
-                  </div>
+                  <div className="font-semibold text-emerald-800">Password aggiornata!</div>
+                  <div className="text-sm text-ink leading-relaxed mt-1">La tua nuova password è stata salvata correttamente. Ora puoi continuare sul tuo account.</div>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard', { replace: true })}
-                className="comic-button"
-                style={{ width:'100%', padding:'16px', background:'var(--primary)', color:'#fff', fontSize:'13px', letterSpacing:'0.15em', marginTop:'8px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px' }}
-              >
-                <i className="fas fa-arrow-right" /> VAI ALLA DASHBOARD
+              <button type="button" onClick={() => navigate('/dashboard', { replace: true })} className="btn btn-lg btn-primary w-full">
+                Vai alla dashboard <i className="fas fa-arrow-right text-xs" />
               </button>
             </div>
           ) : isRecoverySession === false ? (
-            <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
-              <div style={{ background:'rgba(220,38,38,0.1)', border:'3px solid #dc2626', boxShadow:'4px 4px 0px #dc2626', padding:'18px', display:'flex', alignItems:'center', gap:'12px' }}>
-                <i className="fas fa-exclamation-triangle" style={{ color:'#dc2626', fontSize:'20px', flexShrink:0 }} />
+            <div className="flex flex-col gap-5">
+              <div role="alert" className="rounded-2xl bg-red-50 border border-red-200 p-5 flex items-start gap-3">
+                <i className="fas fa-exclamation-triangle text-red-600 text-lg shrink-0 mt-0.5" />
                 <div>
-                  <div style={{ color:'#dc2626', fontWeight:900, fontSize:'14px', textTransform:'uppercase', marginBottom:'4px' }}>Link non valido o scaduto</div>
-                  <div style={{ color:'var(--text-color)', fontSize:'13px', lineHeight:1.4 }}>
-                    {errorMessage || 'Il link per il recupero password è scaduto o è già stato utilizzato.'}
-                  </div>
+                  <div className="font-semibold text-red-700">Link non valido o scaduto</div>
+                  <div className="text-sm text-ink leading-relaxed mt-1">{errorMessage || 'Il link per il recupero password è scaduto o è già stato utilizzato.'}</div>
                 </div>
               </div>
-
-              <Link to="/login" style={{ textDecoration:'none' }}>
-                <button
-                  type="button"
-                  className="comic-button"
-                  style={{ width:'100%', padding:'14px', background:'var(--primary)', color:'#fff', fontSize:'12px', letterSpacing:'0.15em', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}
-                >
-                  <i className="fas fa-redo" /> Richiedi un nuovo link
-                </button>
+              <Link to="/login" className="btn btn-lg btn-primary w-full">
+                <i className="fas fa-redo text-xs" /> Richiedi un nuovo link
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               {errorMessage && (
-                <div style={{ background:'rgba(220,38,38,0.1)', border:'3px solid #dc2626', boxShadow:'4px 4px 0px #dc2626', padding:'14px 18px', display:'flex', alignItems:'center', gap:'12px' }}>
-                  <i className="fas fa-exclamation-triangle" style={{ color:'#dc2626', fontSize:'16px', flexShrink:0 }} />
-                  <span style={{ color:'#dc2626', fontWeight:700, fontSize:'14px' }}>{errorMessage}</span>
+                <div role="alert" className="rounded-2xl bg-red-50 border border-red-200 p-4 flex items-center gap-3">
+                  <i className="fas fa-exclamation-triangle text-red-600 shrink-0" />
+                  <span className="text-red-700 font-medium text-sm">{errorMessage}</span>
                 </div>
               )}
 
-              {/* Nuova Password */}
               <div>
-                <label style={labelStyle}>Nuova Password</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-key" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color:'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="new-password"
-                    type={showPwd ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                    placeholder="Minimo 8 caratteri"
-                    style={{ ...inputStyle, paddingRight:'46px' }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPwd(v => !v)}
-                    style={{ position:'absolute', right:'16px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--primary)', fontSize:'15px', padding:0, opacity:0.7 }}
-                  >
+                <label htmlFor="new-password" className="field-label">Nuova password</label>
+                <div className="relative">
+                  <i className="fas fa-key absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm pointer-events-none" />
+                  <input id="new-password" type={showPwd ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Minimo 8 caratteri" className="field !pl-11 !pr-12" />
+                  <button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? 'Nascondi password' : 'Mostra password'} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
                     <i className={`fas ${showPwd ? 'fa-eye-slash' : 'fa-eye'}`} />
                   </button>
                 </div>
-                {/* Strength bar */}
                 {password.length > 0 && (
-                  <div style={{ marginTop:'8px' }}>
-                    <div style={{ display:'flex', gap:'4px', marginBottom:'4px' }}>
-                      {[1,2,3,4].map(i => (
-                        <div key={i} style={{ flex:1, height:'4px', background: i <= pwdStrength.score ? pwdStrength.color : 'var(--comic-border-color)', transition:'background 0.2s ease', border:'1px solid var(--comic-border-color)' }} />
+                  <div className="mt-2">
+                    <div className="flex gap-1 mb-1">
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="flex-1 h-1.5 rounded-full transition-colors" style={{ background: i <= pwdStrength.score ? pwdStrength.color : 'var(--line)' }} />
                       ))}
                     </div>
-                    <p style={{ margin:0, fontSize:'11px', fontWeight:700, color: pwdStrength.color, letterSpacing:'0.1em' }}>
-                      {pwdStrength.label}
-                    </p>
+                    <p className="m-0 text-xs font-semibold" style={{ color: pwdStrength.color }}>{pwdStrength.label}</p>
                   </div>
                 )}
               </div>
 
-              {/* Conferma Password */}
               <div>
-                <label style={labelStyle}>Conferma Nuova Password</label>
-                <div style={{ position:'relative' }}>
-                  <i className="fas fa-check-circle" style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', color: confirmPassword && confirmPassword === password ? '#16a34a' : 'var(--primary)', fontSize:'15px', opacity:0.7 }} />
-                  <input
-                    id="confirm-password"
-                    type={showConfirmPwd ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    required
-                    placeholder="Ripeti la password"
-                    style={{ ...inputStyle, paddingRight:'46px', borderColor: confirmPassword && confirmPassword !== password ? '#dc2626' : undefined }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPwd(v => !v)}
-                    style={{ position:'absolute', right:'16px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--primary)', fontSize:'15px', padding:0, opacity:0.7 }}
-                  >
+                <label htmlFor="confirm-password" className="field-label">Conferma nuova password</label>
+                <div className="relative">
+                  <i className={`fas fa-check-circle absolute left-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none ${confirmPassword && confirmPassword === password ? 'text-emerald-600' : 'text-plum-400'}`} />
+                  <input id="confirm-password" type={showConfirmPwd ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required placeholder="Ripeti la password" aria-invalid={mismatch} className={`field !pl-11 !pr-12 ${mismatch ? '!border-red-400' : ''}`} />
+                  <button type="button" onClick={() => setShowConfirmPwd(v => !v)} aria-label={showConfirmPwd ? 'Nascondi password' : 'Mostra password'} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
                     <i className={`fas ${showConfirmPwd ? 'fa-eye-slash' : 'fa-eye'}`} />
                   </button>
                 </div>
-                {confirmPassword && confirmPassword !== password && (
-                  <p style={{ margin:'6px 0 0', fontSize:'11px', color:'#dc2626', fontWeight:700 }}>
-                    <i className="fas fa-times-circle" style={{ marginRight:'4px' }} /> Le password non coincidono
-                  </p>
+                {mismatch && (
+                  <p className="mt-1.5 mb-0 text-xs font-medium text-red-600"><i className="fas fa-times-circle mr-1" /> Le password non coincidono</p>
                 )}
               </div>
 
-              <button
-                id="reset-submit"
-                type="submit"
-                disabled={loadingSubmit}
-                className="comic-button"
-                style={{ width:'100%', padding:'16px', background: loadingSubmit ? 'var(--secondary)' : 'var(--primary)', color:'#fff', fontSize:'13px', letterSpacing:'0.2em', marginTop:'8px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', opacity: loadingSubmit ? 0.7 : 1, cursor: loadingSubmit ? 'not-allowed' : 'pointer' }}
-              >
-                {loadingSubmit ? <><i className="fas fa-spinner fa-spin" /> Aggiornamento...</> : <><i className="fas fa-save" /> AGGIORNA PASSWORD</>}
+              <button id="reset-submit" type="submit" disabled={loadingSubmit} className="btn btn-lg btn-primary w-full">
+                {loadingSubmit ? <><i className="fas fa-spinner fa-spin" /> Aggiornamento...</> : <><i className="fas fa-save" /> Aggiorna password</>}
               </button>
             </form>
           )}
         </div>
 
-        <p style={{ textAlign:'center', marginTop:'24px', color:'var(--text-muted)', fontSize:'13px', fontWeight:500 }}>
-          <Link to="/login" style={{ color:'var(--primary)', fontWeight:700, textDecoration:'none' }}>← Torna al login</Link>
+        <p className="text-center mt-6">
+          <Link to="/login" className="text-sm font-semibold text-plum-600 hover:text-plum-800"><i className="fas fa-arrow-left text-xs mr-1.5" /> Torna al login</Link>
         </p>
       </div>
     </div>
