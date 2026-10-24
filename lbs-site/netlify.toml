@@ -1,0 +1,32 @@
+[build]
+  # Pubblica solo la cartella dist — MAI la root del progetto
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# ─── SPA: tutte le route → index.html (React Router) ───────────────────────
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# ─── Header di sicurezza ─────────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Blocca il caricamento in iframe (clickjacking)
+    X-Frame-Options = "DENY"
+    # Forza HTTPS
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    # Blocca MIME sniffing
+    X-Content-Type-Options = "nosniff"
+    # Referrer policy
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Permessi browser
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache lunga per asset statici (JS/CSS/immagini con hash nel nome)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
