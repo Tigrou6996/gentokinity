@@ -1,149 +1,166 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import logoLBS from '../img/logo_LBS.png';
+import logoLBS from '../img/logo_LBS-192.png';
 import { WhatsAppModal } from './WhatsAppModal';
+
+const NAV = [
+  { to: '/', label: 'Home' },
+  { to: '/servizi', label: 'Servizi' },
+  { to: '/offerte', label: 'Offerte di lavoro' },
+  { to: '/chi-siamo', label: 'Chi siamo' },
+  { to: '/contatti', label: 'Contatti' },
+];
+
+const LEGAL = [
+  { to: '/privacy-policy', label: 'Privacy Policy' },
+  { to: '/cookie-policy', label: 'Cookie Policy' },
+  { to: '/termini-e-condizioni', label: 'Termini e Condizioni' },
+  { to: '/note-legali', label: 'Note Legali' },
+];
+
+const SOCIAL = [
+  { href: 'https://www.facebook.com/lbs.business.e.servizi', icon: 'fa-facebook-f', label: 'Facebook' },
+  { href: 'https://www.instagram.com/lbs_business_servizi/', icon: 'fa-instagram', label: 'Instagram' },
+  { href: 'https://www.youtube.com/@LBS.Work.Germany', icon: 'fa-youtube', label: 'YouTube' },
+];
 
 const Footer: React.FC = () => {
   const [showWaModal, setShowWaModal] = useState(false);
 
   return (
-    <footer className="bg-[#3D2045] text-white pt-20 pb-10 border-t-8 border-[#6E4274]">
-      {showWaModal && <WhatsAppModal onClose={() => setShowWaModal(false)} />}
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
+    <footer className="surface-plum text-white overflow-hidden">
+      <WhatsAppModal isOpen={showWaModal} onClose={() => setShowWaModal(false)} />
 
-        {/* BRAND */}
-        <div className="col-span-2 md:col-span-1">
-          <div className="flex items-center gap-3 mb-6">
-            <img
-              src={logoLBS}
-              alt="LBS Lavoro Business e Servizi in Germania"
-              className="h-14 w-auto flex-shrink-0"
-            />
-            <div>
-              <div className="text-xs font-black uppercase tracking-widest leading-tight">Lavoro Business</div>
-              <div className="text-[10px] text-[#9B6FA3] font-bold uppercase tracking-widest">e Servizi in Germania</div>
+      {/* CTA */}
+      <div className="container-x pt-20 sm:pt-24">
+        <div className="relative rounded-[2rem] bg-sun-400 text-plum-800 px-6 py-10 sm:px-12 sm:py-14 overflow-hidden">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full border-[28px] border-plum-800/[0.07]" />
+          <div className="pointer-events-none absolute right-24 -bottom-24 h-48 w-48 rounded-full bg-white/30 blur-2xl" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="max-w-2xl">
+              <h2 className="h-display text-3xl sm:text-5xl">Il tuo nuovo lavoro in Germania inizia con un messaggio.</h2>
+              <p className="mt-3 text-plum-800/75 text-base sm:text-lg">
+                Consulenza gratuita, nessun anticipo. Ti richiamiamo entro 24 ore.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-dark">
+                <i className="fab fa-whatsapp text-lg" /> Scrivici su WhatsApp
+              </button>
+              <a href="/#candidatura" className="btn btn-lg bg-white/70 hover:bg-white text-plum-800">
+                Candidati gratis <i className="fas fa-arrow-right text-xs" />
+              </a>
             </div>
           </div>
-          <p className="text-white/60 text-sm leading-relaxed mb-6">
-            La tua agenzia di riferimento per lavorare in Germania. 11 anni di esperienza, 350+ lavoratori collocati. <strong className="text-yellow-300">Contratti regolari, alloggio e assistenza 24/7.</strong>
+        </div>
+      </div>
+
+      <div className="container-x pt-16 pb-10 grid grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-12">
+        {/* BRAND */}
+        <div className="col-span-2 lg:col-span-4">
+          <Link to="/" className="inline-flex items-center gap-3">
+            <img src={logoLBS} alt="LBS Lavoro Business e Servizi in Germania" className="h-12 w-12" width={48} height={48} />
+            <span>
+              <span className="block font-heading font-bold text-lg leading-tight">LBS Work</span>
+              <span className="block text-xs text-white/55">Lavoro Business e Servizi in Germania</span>
+            </span>
+          </Link>
+          <p className="text-white/65 text-sm leading-relaxed mt-5 max-w-sm">
+            La tua agenzia di riferimento per lavorare in Germania. 11 anni di esperienza, 350+ lavoratori collocati.{' '}
+            <span className="text-sun-400 font-medium">Contratti regolari, alloggio e assistenza 24/7.</span>
           </p>
-          <div className="flex gap-3">
-            <a href="https://www.facebook.com/lbs.business.e.servizi" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/5 flex items-center justify-center hover:bg-[#3b5998] transition-colors border border-white/10 hover:border-[#3b5998]">
-              <i className="fab fa-facebook-f text-sm"></i>
-            </a>
-            <a href="https://www.instagram.com/lbs_business_servizi/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/5 flex items-center justify-center hover:bg-[#e1306c] transition-colors border border-white/10 hover:border-[#e1306c]">
-              <i className="fab fa-instagram text-sm"></i>
-            </a>
-            <a href="https://www.youtube.com/@LBS.Work.Germany" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/5 flex items-center justify-center hover:bg-[#FF0000] transition-colors border border-white/10 hover:border-[#FF0000]">
-              <i className="fab fa-youtube text-sm"></i>
-            </a>
+          <div className="flex gap-2 mt-6">
+            {SOCIAL.map(s => (
+              <a
+                key={s.href}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="h-11 w-11 rounded-full bg-white/[0.07] border border-white/10 flex items-center justify-center hover:bg-sun-400 hover:text-plum-800 hover:border-sun-400 transition-colors"
+              >
+                <i className={`fab ${s.icon} text-sm`} />
+              </a>
+            ))}
           </div>
         </div>
 
         {/* NAVIGA */}
-        <div>
-          <h4 className="text-[#9B6FA3] font-black mb-6 uppercase tracking-widest text-xs border-b-2 border-[#6E4274] pb-3">Naviga</h4>
-          <ul className="space-y-3 text-white/60 text-sm font-bold">
-            <li><Link to="/" className="hover:text-white transition-colors hover:text-[#9B6FA3]">Home</Link></li>
-            <li><Link to="/servizi" className="hover:text-white transition-colors hover:text-[#9B6FA3]">Servizi</Link></li>
-            <li><Link to="/offerte" className="hover:text-white transition-colors hover:text-[#9B6FA3]">Offerte 🇩🇪</Link></li>
-            <li><Link to="/datori-di-lavoro" className="hover:text-yellow-300 transition-colors text-yellow-300/90 font-black">Per le Aziende (Datori)</Link></li>
-            <li><Link to="/chi-siamo" className="hover:text-white transition-colors hover:text-[#9B6FA3]">Chi Siamo</Link></li>
-            <li><Link to="/contatti" className="hover:text-white transition-colors hover:text-[#9B6FA3]">Contatti</Link></li>
-            <li><a href="/#candidatura" className="hover:text-yellow-300 transition-colors font-black text-yellow-300/80">→ Candidati Gratis</a></li>
-            <li className="pt-2 border-t border-white/10">
-              <Link to="/privacy-policy" className="hover:text-white transition-colors text-white/40 text-xs">Privacy Policy</Link>
-            </li>
-            <li>
-              <Link to="/cookie-policy" className="hover:text-white transition-colors text-white/40 text-xs">Cookie Policy</Link>
-            </li>
-            <li>
-              <Link to="/termini-e-condizioni" className="hover:text-white transition-colors text-white/40 text-xs">Termini e Condizioni</Link>
-            </li>
-            <li>
-              <Link to="/note-legali" className="hover:text-white transition-colors text-white/40 text-xs">Note Legali</Link>
-            </li>
+        <div className="lg:col-span-2">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45 mb-5 font-sans">Naviga</h3>
+          <ul className="space-y-3 text-sm">
+            {NAV.map(l => (
+              <li key={l.to}><Link to={l.to} className="text-white/75 hover:text-white transition-colors">{l.label}</Link></li>
+            ))}
+            <li><Link to="/datori-di-lavoro" className="text-sun-400 hover:text-sun-300 font-medium">Per le aziende</Link></li>
+            <li><a href="/#candidatura" className="text-sun-400 hover:text-sun-300 font-medium">Candidati gratis →</a></li>
           </ul>
         </div>
 
         {/* CONTATTI */}
-        <div>
-          <h4 className="text-[#9B6FA3] font-black mb-6 uppercase tracking-widest text-xs border-b-2 border-[#6E4274] pb-3">Contatti</h4>
-          <ul className="space-y-4 text-white/60 text-sm font-bold">
-            <li className="flex items-center gap-3">
-              <i className="fas fa-phone text-[#9B6FA3] w-4"></i>
-              <a href="tel:+393518818391" className="hover:text-white transition-colors">+39 351 881 8391 (IT)</a>
+        <div className="lg:col-span-3">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45 mb-5 font-sans">Contatti</h3>
+          <ul className="space-y-3.5 text-sm">
+            <li>
+              <a href="tel:+393518818391" className="flex items-center gap-3 text-white/75 hover:text-white">
+                <i className="fas fa-phone text-plum-300 w-4" /> +39 351 881 8391 (IT)
+              </a>
             </li>
-            <li className="flex items-center gap-3">
-              <i className="fab fa-whatsapp text-[#25D366] w-4"></i>
-              <button onClick={() => setShowWaModal(true)} className="hover:text-white transition-colors cursor-pointer text-left">+49 1573 9037885 (DE) / +39 (IT)</button>
+            <li>
+              <button type="button" onClick={() => setShowWaModal(true)} className="flex items-center gap-3 text-white/75 hover:text-white text-left cursor-pointer">
+                <i className="fab fa-whatsapp text-wa w-4" /> +49 1573 9037885 (DE) / +39 (IT)
+              </button>
             </li>
-            <li className="flex items-center gap-3">
-              <i className="fas fa-envelope text-[#9B6FA3] w-4"></i>
-              <a href="mailto:info@lbswork.com" className="hover:text-white transition-colors">info@lbswork.com</a>
+            <li>
+              <a href="mailto:info@lbswork.com" className="flex items-center gap-3 text-white/75 hover:text-white">
+                <i className="fas fa-envelope text-plum-300 w-4" /> info@lbswork.com
+              </a>
             </li>
           </ul>
-          <div className="mt-6 bg-[#6E4274]/30 border-2 border-[#6E4274] p-4 cursor-pointer" onClick={() => setShowWaModal(true)}>
-            <div className="text-xs font-black text-yellow-300 uppercase tracking-widest mb-1">WhatsApp h24</div>
-            <div className="text-white/70 text-xs font-bold">Disponibili sia al numero Tedesco che Italiano</div>
-          </div>
-        </div>
-
-        {/* SEDI */}
-        <div>
-          <h4 className="text-[#9B6FA3] font-black mb-4 uppercase tracking-widest text-xs border-b-2 border-[#6E4274] pb-2">Le Nostre Sedi</h4>
-          
-          <div className="mb-3">
-            <div className="text-[11px] font-black uppercase text-yellow-300 tracking-wider flex items-center gap-1.5 mb-1">
-              <i className="fas fa-map-marker-alt"></i> Sede Operativa (Italia)
-            </div>
-            <p className="text-white/70 text-xs font-bold leading-relaxed">
-              Viale Vittorio Veneto, 335<br/>
-              95126 Catania (CT) — Italia
-            </p>
-          </div>
-
-          <div className="pt-3 border-t border-white/10 mb-3">
-            <div className="text-[11px] font-black uppercase text-yellow-300 tracking-wider flex items-center gap-1.5 mb-1">
-              <i className="fas fa-building"></i> Sede Legale (Germania)
-            </div>
-            <p className="text-white/70 text-xs font-bold leading-relaxed">
-              Henkelstraße 7<br/>
-              34127 Kassel — Germania
-            </p>
-            <span className="inline-block mt-1 bg-white/10 text-white/80 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 border border-white/20">
-              Non aperta al pubblico
-            </span>
-          </div>
-
-          <div className="space-y-1 text-[11px] text-white/50 font-bold uppercase tracking-widest pt-2 border-t border-white/10">
-            <div>Lun–Ven: 09:00–18:00</div>
-            <div>Sabato: 09:00–13:00</div>
-          </div>
           <button
             type="button"
             onClick={() => setShowWaModal(true)}
-            className="mt-4 block w-full comic-button bg-[#25D366] text-white text-center py-2.5 text-xs border-white hover:bg-green-400 cursor-pointer"
+            className="mt-6 w-full text-left rounded-2xl bg-white/[0.06] border border-white/10 p-4 hover:bg-white/[0.1] transition-colors cursor-pointer"
           >
-            <i className="fab fa-whatsapp mr-2"></i>SCRIVICI ORA
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <span className="h-2 w-2 rounded-full bg-wa pulse-dot" /> WhatsApp h24
+            </span>
+            <span className="block text-xs text-white/55 mt-1">Disponibili sia al numero tedesco che italiano</span>
           </button>
+        </div>
+
+        {/* SEDI */}
+        <div className="col-span-2 sm:col-span-1 lg:col-span-3">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45 mb-5 font-sans">Le nostre sedi</h3>
+          <div className="space-y-5 text-sm">
+            <div>
+              <div className="flex items-center gap-2 font-medium text-white">
+                <i className="fas fa-map-marker-alt text-sun-400 text-xs" /> Sede operativa (Italia)
+              </div>
+              <p className="text-white/60 mt-1 leading-relaxed">Viale Vittorio Veneto, 335<br />95126 Catania (CT) — Italia</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 font-medium text-white">
+                <i className="fas fa-building text-sun-400 text-xs" /> Sede legale (Germania)
+              </div>
+              <p className="text-white/60 mt-1 leading-relaxed">Henkelstraße 7<br />34127 Kassel — Germania</p>
+              <span className="chip chip-dark mt-2 !text-[11px]">Non aperta al pubblico</span>
+            </div>
+            <div className="text-white/55 text-xs leading-relaxed">
+              Lun–Ven: 09:00–18:00 · Sabato: 09:00–13:00
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/10">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-          <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">
-            © {new Date().getFullYear()} LBS LAVORO BUSINESS E SERVIZI IN GERMANIA — TUTTI I DIRITTI RISERVATI.
-          </p>
-          <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">
-            P.IVA — Agenzia per l'Impiego — Catania, Italia
-          </p>
-        </div>
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-          <Link to="/privacy-policy" className="text-white/30 hover:text-white/60 transition-colors text-[10px] font-bold uppercase tracking-widest">Privacy Policy</Link>
-          <Link to="/cookie-policy" className="text-white/30 hover:text-white/60 transition-colors text-[10px] font-bold uppercase tracking-widest">Cookie Policy</Link>
-          <Link to="/termini-e-condizioni" className="text-white/30 hover:text-white/60 transition-colors text-[10px] font-bold uppercase tracking-widest">Termini e Condizioni</Link>
-          <Link to="/note-legali" className="text-white/30 hover:text-white/60 transition-colors text-[10px] font-bold uppercase tracking-widest">Note Legali</Link>
+      <div className="container-x pb-10">
+        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/45">
+          <p>© {new Date().getFullYear()} LBS Lavoro Business e Servizi in Germania — Tutti i diritti riservati. · Agenzia per l'impiego — Catania, Italia</p>
+          <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            {LEGAL.map(l => (
+              <li key={l.to}><Link to={l.to} className="hover:text-white/80 transition-colors">{l.label}</Link></li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>

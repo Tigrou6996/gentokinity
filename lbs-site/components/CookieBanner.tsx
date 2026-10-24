@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const COOKIE_KEY = 'lbs_cookie_consent';
 const GA_ID = 'G-434XX8P8NY';
@@ -50,235 +51,65 @@ const CookieBanner: React.FC = () => {
   if (!visible) return null;
 
   return (
-    <>
-      {/* Overlay leggero */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(61,32,69,0.4)',
-          backdropFilter: 'blur(2px)',
-          zIndex: 9998,
-        }}
-      />
+    <div
+      role="dialog"
+      aria-live="polite"
+      aria-label="Consenso cookie"
+      className="fixed z-[9998] bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-md animate-pop-in"
+    >
+      <div className="bg-white rounded-3xl border border-line shadow-[var(--shadow-lift)] p-5 sm:p-6">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="icon-tile !w-10 !h-10 !rounded-xl !bg-sun-100 !text-plum-800">
+            <i className="fas fa-cookie-bite" />
+          </div>
+          <div>
+            <div className="font-heading font-bold text-plum-800 text-lg leading-tight">Usiamo i cookie</div>
+            <p className="text-sm text-ink-soft leading-relaxed mt-1">
+              Cookie tecnici necessari e, con il tuo consenso, Google Analytics per capire come
+              viene usato il sito. I tuoi dati non vengono venduti a terzi.
+            </p>
+          </div>
+        </div>
 
-      {/* Banner */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '100%',
-          maxWidth: '680px',
-          padding: '0 16px',
-          zIndex: 9999,
-          animation: 'cookieSlideUp 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both',
-        }}
-      >
-        <style>{`
-          @keyframes cookieSlideUp {
-            from { opacity: 0; transform: translateX(-50%) translateY(40px); }
-            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-          }
-        `}</style>
-
-        <div
-          style={{
-            background: '#ffffff',
-            border: '5px solid #3D2045',
-            boxShadow: '8px 8px 0px #3D2045',
-            padding: '28px 28px 24px',
-          }}
+        <button
+          type="button"
+          onClick={() => setShowDetails(d => !d)}
+          aria-expanded={showDetails}
+          className="text-sm font-semibold text-plum-600 hover:text-plum-800 flex items-center gap-1.5 mb-3 cursor-pointer"
         >
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                background: '#6E4274',
-                border: '4px solid #3D2045',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <i className="fas fa-cookie-bite" style={{ color: '#F59E0B', fontSize: '18px' }} />
+          {showDetails ? 'Nascondi dettagli' : 'Mostra dettagli'}
+          <i className={`fas fa-chevron-${showDetails ? 'up' : 'down'} text-[10px]`} />
+        </button>
+
+        {showDetails && (
+          <div className="rounded-2xl bg-plum-50 p-4 mb-4 text-xs text-ink-soft leading-relaxed space-y-2">
+            <div>
+              <strong className="text-plum-800">Cookie tecnici (sempre attivi)</strong><br />
+              Necessari per il corretto funzionamento del sito (sessione, sicurezza, preferenze).
             </div>
             <div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 900,
-                  fontSize: '15px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: '#3D2045',
-                }}
-              >
-                Utilizziamo i Cookie 🍪
-              </div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: '#6E4274',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                }}
-              >
-                Per migliorare la tua esperienza sul sito
-              </div>
+              <strong className="text-plum-800">Google Analytics (con consenso) — {GA_ID}</strong><br />
+              Ci aiutano a capire come usi il sito (pagine visitate, provenienza, dispositivo).
+              Gli IP sono anonimizzati. Nessun dato personale venduto.
             </div>
           </div>
+        )}
 
-          {/* Testo */}
-          <p
-            style={{
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#3D2045cc',
-              lineHeight: 1.6,
-              marginBottom: '10px',
-            }}
-          >
-            Questo sito usa cookie tecnici necessari al funzionamento e, con il tuo consenso,
-            cookie analitici (Google Analytics) per capire come viene utilizzato. I tuoi dati
-            non vengono venduti a terzi.
-          </p>
-
-          {/* Dettagli espandibili */}
-          <button
-            onClick={() => setShowDetails(d => !d)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#6E4274',
-              fontSize: '12px',
-              fontWeight: 900,
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-              cursor: 'pointer',
-              padding: 0,
-              marginBottom: showDetails ? '12px' : '18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <i className={`fas fa-chevron-${showDetails ? 'up' : 'down'}`} style={{ fontSize: '10px' }} />
-            {showDetails ? 'Nascondi dettagli' : 'Mostra dettagli'}
+        <div className="flex gap-2">
+          <button type="button" onClick={decline} className="btn btn-outline btn-sm flex-1">
+            Solo necessari
           </button>
-
-          {showDetails && (
-            <div
-              style={{
-                background: '#f9f6fa',
-                border: '3px solid #6E427440',
-                padding: '14px',
-                marginBottom: '18px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#3D2045aa',
-                lineHeight: 1.7,
-              }}
-            >
-              <div style={{ marginBottom: '8px' }}>
-                <strong style={{ color: '#3D2045', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  🔒 Cookie Tecnici (sempre attivi)
-                </strong>
-                <br />
-                Necessari per il corretto funzionamento del sito (sessione, sicurezza, preferenze).
-              </div>
-              <div>
-                <strong style={{ color: '#3D2045', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  📊 Google Analytics (con consenso) — {GA_ID}
-                </strong>
-                <br />
-                Ci aiutano a capire come usi il sito (pagine visitate, provenienza, dispositivo).
-                Gli IP sono anonimizzati. Nessun dato personale venduto.
-              </div>
-            </div>
-          )}
-
-          {/* Bottoni */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              onClick={accept}
-              style={{
-                flex: 1,
-                minWidth: '140px',
-                background: '#6E4274',
-                color: '#fff',
-                border: '4px solid #3D2045',
-                boxShadow: '4px 4px 0px #3D2045',
-                padding: '12px 20px',
-                fontFamily: 'var(--font-inter)',
-                fontWeight: 900,
-                fontSize: '13px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#3D2045')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#6E4274')}
-            >
-              <i className="fas fa-check" /> Accetta Tutti
-            </button>
-
-            <button
-              onClick={decline}
-              style={{
-                flex: 1,
-                minWidth: '140px',
-                background: 'transparent',
-                color: '#3D2045',
-                border: '4px solid #3D2045',
-                boxShadow: '4px 4px 0px #3D204560',
-                padding: '12px 20px',
-                fontFamily: 'var(--font-inter)',
-                fontWeight: 900,
-                fontSize: '13px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#f9f6fa')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <i className="fas fa-times" /> Solo Necessari
-            </button>
-          </div>
-
-          {/* Note GDPR */}
-          <p
-            style={{
-              marginTop: '12px',
-              fontSize: '10px',
-              fontWeight: 700,
-              color: '#3D204580',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              textAlign: 'center',
-            }}
-          >
-            🔒 Ai sensi del GDPR (Reg. UE 2016/679) — puoi revocare il consenso in qualsiasi momento.
-          </p>
+          <button type="button" onClick={accept} className="btn btn-primary btn-sm flex-1">
+            Accetta tutti
+          </button>
         </div>
+
+        <p className="mt-3 text-[11px] text-ink-soft/80 text-center">
+          Ai sensi del GDPR (Reg. UE 2016/679) puoi revocare il consenso in qualsiasi momento.{' '}
+          <Link to="/cookie-policy" className="underline hover:text-plum-600">Cookie policy</Link>
+        </p>
       </div>
-    </>
+    </div>
   );
 };
 

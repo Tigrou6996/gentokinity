@@ -1,9 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import logoLBS from '../img/logo_LBS.png';
+import logoLBS from '../img/logo_LBS-192.png';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+
+const navLinks = [
+  { path: '/', label: 'Home' },
+  { path: '/servizi', label: 'Servizi' },
+  { path: '/offerte', label: 'Offerte di lavoro' },
+  { path: '/datori-di-lavoro', label: 'Per le aziende' },
+  { path: '/chi-siamo', label: 'Chi siamo' },
+  { path: '/contatti', label: 'Contatti' },
+];
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -12,13 +20,13 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
   const { session, user, profile, signOut } = useAuth();
   const isAdmin = profile?.role === 'admin' || (user as any)?.user_metadata?.role === 'admin';
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 60);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => setIsScrolled(window.scrollY > 24);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -26,6 +34,12 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // Blocca lo scroll della pagina quando il menu mobile è aperto
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isMobileMenuOpen]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -39,175 +53,185 @@ const Navbar: React.FC = () => {
     }
   };
 
-  const navLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/servizi', label: 'Servizi' },
-    { path: '/offerte', label: 'Offerte 🇩🇪' },
-    { path: '/datori-di-lavoro', label: 'Datori di Lavoro' },
-    { path: '/chi-siamo', label: 'Chi Siamo' },
-    { path: '/contatti', label: 'Contatti' },
-  ];
+  const isActive = (path: string) => (path === '/' ? pathname === '/' : pathname.startsWith(path));
 
-  // Trasparente solo sulla home NON scrollata; su tutte le altre pagine sempre solido
-  const onHero = !isScrolled && pathname === '/';
+  // Trasparente solo sulla home non scrollata (hero scuro); altrove barra chiara
+  const onHero = !isScrolled && pathname === '/' && !isMobileMenuOpen;
 
   return (
     <>
-      <nav className={`fixed top-0 w-full z-[60] transition-all duration-300 ${
-        isScrolled || pathname !== '/'
-          ? 'bg-[#3D2045]/95 backdrop-blur-md border-b-4 border-[#3D2045] py-3 shadow-xl'
-          : 'bg-transparent py-5'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center">
-
+      <header className="fixed top-0 inset-x-0 z-[60] px-3 sm:px-5 pt-3">
+        <nav
+          aria-label="Navigazione principale"
+          className={`relative mx-auto max-w-7xl flex items-center justify-between gap-4 rounded-full pl-2 pr-2 sm:pr-3 py-2 transition-all duration-300 ${
+            onHero
+              ? 'bg-white/[0.06] border border-white/10 backdrop-blur-md'
+              : 'bg-white/85 border border-line backdrop-blur-xl shadow-[var(--shadow-soft)]'
+          }`}
+        >
           {/* LOGO */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="bg-white/10 backdrop-blur-md border-2 border-white/30 p-1.5 px-3 flex items-center gap-2 hover:bg-white/20 transition-all">
-              <img
-                src={logoLBS}
-                alt="LBS Lavoro Business e Servizi in Germania"
-                className="h-9 w-auto flex-shrink-0 transition-all duration-300"
-              />
-              <span className="text-white font-black text-xs tracking-wider uppercase hidden sm:inline-block">
-                LBS
+          <Link to="/" className="flex items-center gap-2.5 rounded-full pr-2" aria-label="LBS — Home">
+            <img src={logoLBS} alt="" className="h-10 w-10 flex-shrink-0" width={40} height={40} />
+            <span className="leading-none">
+              <span className={`block font-heading font-bold text-[15px] tracking-tight ${onHero ? 'text-white' : 'text-plum-800'}`}>
+                LBS Work
               </span>
-            </div>
+              <span className={`hidden sm:block text-[11px] font-medium mt-0.5 ${onHero ? 'text-white/60' : 'text-ink-soft'}`}>
+                Lavoro &amp; servizi in Germania
+              </span>
+            </span>
           </Link>
 
-          {/* DESKTOP NAV - SPIGOLOSO */}
-          <div className="hidden lg:flex items-center gap-1 bg-white/10 backdrop-blur-xl border-2 border-white/30 p-1 shadow-lg">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-xs font-bold tracking-wider uppercase px-3.5 py-1.5 transition-all duration-200 ${
-                  pathname === link.path
-                    ? 'bg-[#ffdf20] text-[#3D2045] font-black shadow-sm'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {link.label}
-              </Link>
+          {/* DESKTOP NAV */}
+          <ul className="hidden lg:flex items-center gap-0.5">
+            {navLinks.map(link => (
+              <li key={link.path}>
+                <Link
+                  to={link.path}
+                  aria-current={isActive(link.path) ? 'page' : undefined}
+                  className={`relative inline-flex items-center px-3.5 py-2 rounded-full text-sm font-medium transition-colors ${
+                    onHero
+                      ? isActive(link.path) ? 'text-white bg-white/10' : 'text-white/75 hover:text-white hover:bg-white/10'
+                      : isActive(link.path) ? 'text-plum-800 bg-plum-50' : 'text-ink-soft hover:text-plum-800 hover:bg-plum-50'
+                  }`}
+                >
+                  {link.label}
+                  {isActive(link.path) && (
+                    <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 h-1 w-1 rounded-full bg-sun-400" />
+                  )}
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
 
-          {/* TABLET NAV (md to lg) - slightly more compact */}
-          <div className="hidden md:flex lg:hidden items-center gap-0.5 bg-white/10 backdrop-blur-xl border-2 border-white/30 p-1 shadow-lg">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-[11px] font-bold tracking-tight uppercase px-2 py-1.5 transition-all duration-200 ${
-                  pathname === link.path
-                    ? 'bg-[#ffdf20] text-[#3D2045] font-black shadow-sm'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {link.label === 'Datori di Lavoro' ? 'Datori' : link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* AUTH BUTTONS / RIGHT ACTIONS */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* AZIONI */}
+          <div className="hidden md:flex items-center gap-2">
             {session ? (
               <>
                 <Link
                   to={isAdmin ? '/admin' : '/dashboard'}
-                  className="text-xs font-bold uppercase tracking-wider px-5 py-2 border-2 border-white/30 text-white hover:bg-white/15 transition-all flex items-center gap-2"
+                  className={`btn btn-sm ${onHero ? 'btn-ghost-light' : 'btn-outline'}`}
                 >
-                  <i className="fas fa-user text-[#ffdf20]"></i>
-                  {isAdmin ? 'Admin' : 'Area'}
+                  <i className="fas fa-user-circle" />
+                  {isAdmin ? 'Pannello admin' : 'Area personale'}
                 </Link>
                 <button
+                  type="button"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="text-xs font-bold uppercase tracking-wider px-4 py-2 border-2 border-white/20 text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  aria-label="Esci"
+                  className={`btn btn-sm !px-3 ${onHero ? 'btn-ghost-light' : 'btn-outline'}`}
                 >
-                  <i className={`fas ${isLoggingOut ? 'fa-spinner fa-spin' : 'fa-sign-out-alt'}`}></i>
-                  <span>Esci</span>
+                  <i className={`fas ${isLoggingOut ? 'fa-spinner fa-spin' : 'fa-sign-out-alt'}`} />
+                  <span className="hidden xl:inline">Esci</span>
                 </button>
               </>
             ) : (
               <>
                 <Link
                   to="/login"
-                  className="text-xs font-bold uppercase tracking-wider px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2"
+                  className={`btn btn-sm !bg-transparent ${onHero ? 'text-white/85 hover:text-white' : 'text-plum-800 hover:text-plum-600'}`}
                 >
                   Accedi
                 </Link>
-                <Link
-                  to="/contatti"
-                  className="text-xs font-black uppercase tracking-wider px-5 py-2.5 border-2 border-[#ffdf20] bg-[#ffdf20] text-[#3D2045] hover:bg-yellow-300 transition-all duration-200 shadow-[3px_3px_0px_#3D2045] flex items-center gap-2"
-                >
-                  <span>Candidati Ora</span>
-                  <i className="fas fa-arrow-right text-[10px]"></i>
+                <Link to="/contatti" className="btn btn-sm btn-accent">
+                  Candidati ora <i className="fas fa-arrow-right text-[11px]" />
                 </Link>
               </>
             )}
           </div>
 
-          {/* MOBILE BUTTONS */}
-          <div className="md:hidden flex items-center gap-3">
+          {/* MOBILE */}
+          <div className="flex md:hidden items-center gap-2">
+            {!session && (
+              <Link to="/contatti" className="btn btn-sm btn-accent !px-4">Candidati</Link>
+            )}
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="w-10 h-10 bg-white/10 border-2 border-white/30 flex items-center justify-center text-white"
+              type="button"
+              onClick={() => setIsMobileMenuOpen(o => !o)}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
+              aria-label={isMobileMenuOpen ? 'Chiudi menu' : 'Apri menu'}
+              className={`h-11 w-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                onHero ? 'bg-white/10 text-white' : 'bg-plum-50 text-plum-800'
+              }`}
             >
-              <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'} text-sm`}></i>
+              <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`} />
             </button>
           </div>
-        </div>
-      </nav>
+
+          {/* TABLET: link compatti sotto lg */}
+          <div className="hidden md:flex lg:hidden absolute left-0 right-0 top-full mt-2 justify-center pointer-events-none">
+            <ul className={`pointer-events-auto flex gap-0.5 rounded-full px-1.5 py-1.5 ${onHero ? 'bg-white/[0.06] border border-white/10 backdrop-blur-md' : 'bg-white/90 border border-line backdrop-blur-xl shadow-[var(--shadow-soft)]'}`}>
+              {navLinks.map(link => (
+                <li key={link.path}>
+                  <Link
+                    to={link.path}
+                    className={`inline-flex px-3 py-1.5 rounded-full text-[13px] font-medium ${
+                      onHero
+                        ? isActive(link.path) ? 'text-white bg-white/10' : 'text-white/75'
+                        : isActive(link.path) ? 'text-plum-800 bg-plum-50' : 'text-ink-soft'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </nav>
+      </header>
 
       {/* MOBILE MENU */}
-      <div className={`fixed inset-0 z-[55] bg-[#6E4274] flex flex-col items-center justify-center gap-8 transition-all duration-300 md:hidden ${
-        isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}>
-        {navLinks.map((link) => (
-          <Link
-            key={link.path}
-            to={link.path}
-            className={`text-4xl font-black uppercase tracking-tighter transition-colors ${
-              pathname === link.path ? 'text-yellow-300' : 'text-white hover:text-yellow-300'
-            }`}
-          >
-            {link.label}
-          </Link>
-        ))}
+      <div
+        id="mobile-menu"
+        className={`fixed inset-0 z-[55] md:hidden bg-paper transition-all duration-300 ${
+          isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="h-full overflow-y-auto pt-24 pb-8 px-5 flex flex-col">
+          <ul className="flex flex-col">
+            {navLinks.map((link, i) => (
+              <li key={link.path} className="border-b border-line">
+                <Link
+                  to={link.path}
+                  className={`flex items-center justify-between py-4 font-heading font-bold text-2xl tracking-tight transition-all duration-500 ${
+                    isActive(link.path) ? 'text-plum-600' : 'text-plum-800'
+                  } ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'}`}
+                  style={{ transitionDelay: isMobileMenuOpen ? `${60 + i * 40}ms` : '0ms' }}
+                >
+                  {link.label}
+                  <i className="fas fa-arrow-right text-sm text-plum-300" />
+                </Link>
+              </li>
+            ))}
+          </ul>
 
-        {/* Mobile Auth */}
-        {session ? (
-          <>
-            <Link
-              to={isAdmin ? '/admin' : '/dashboard'}
-              className="text-2xl font-black text-white/80 uppercase tracking-tight flex items-center gap-3"
-            >
-              <i className="fas fa-user text-yellow-300"></i>
-              {isAdmin ? 'Pannello Admin' : 'Area Personale'}
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-white/60 text-lg font-black uppercase tracking-widest flex items-center gap-2"
-            >
-              <i className="fas fa-sign-out-alt"></i> Esci
-            </button>
-          </>
-        ) : (
-          <>
-            <Link
-              to="/login"
-              className="text-2xl font-black text-white/80 uppercase tracking-tight flex items-center gap-3"
-            >
-              <i className="fas fa-lock text-yellow-300"></i> Accedi
-            </Link>
-            <Link
-              to="/contatti"
-              className="bg-yellow-300 text-[#3D2045] border-4 border-white px-10 py-4 text-lg font-black uppercase tracking-widest mt-4"
-            >
-              Candidati Gratis
-            </Link>
-          </>
-        )}
+          <div className="mt-auto pt-8 flex flex-col gap-3">
+            {session ? (
+              <>
+                <Link to={isAdmin ? '/admin' : '/dashboard'} className="btn btn-lg btn-primary w-full">
+                  <i className="fas fa-user-circle" /> {isAdmin ? 'Pannello admin' : 'Area personale'}
+                </Link>
+                <button type="button" onClick={handleLogout} disabled={isLoggingOut} className="btn btn-lg btn-outline w-full">
+                  <i className={`fas ${isLoggingOut ? 'fa-spinner fa-spin' : 'fa-sign-out-alt'}`} /> Esci
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/contatti" className="btn btn-lg btn-accent w-full">
+                  Candidati gratis <i className="fas fa-arrow-right text-xs" />
+                </Link>
+                <Link to="/login" className="btn btn-lg btn-outline w-full">
+                  <i className="fas fa-lock text-plum-400" /> Accedi
+                </Link>
+              </>
+            )}
+            <a href="tel:+393518818391" className="text-center text-sm text-ink-soft mt-2">
+              Oppure chiamaci: <span className="font-semibold text-plum-800">+39 351 881 8391</span>
+            </a>
+          </div>
+        </div>
       </div>
     </>
   );
