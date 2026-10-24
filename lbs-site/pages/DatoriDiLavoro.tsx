@@ -26,22 +26,22 @@ const SETTORI_RICERCA = [
 const BENEFIT_DATORI = [
   {
     icon: 'fa-tags',
-    title: 'Servizio 100% Gratuito',
+    title: 'Servizio 100% gratuito',
     desc: 'Zero commissioni di agenzia e nessun costo per la tua azienda. Ricerca, selezione e presentazione dei profili sono totalmente a costo zero.',
   },
   {
     icon: 'fa-users',
-    title: 'Lavoratori Qualificati',
+    title: 'Lavoratori qualificati',
     desc: 'Ti forniamo lavoratori selezionati, pronti a partire. Profili verificati e disponibili.',
   },
   {
     icon: 'fa-file-contract',
-    title: 'Gestione Burocrazia',
+    title: 'Gestione burocrazia',
     desc: 'Gestiamo noi visti, documenti e pratiche burocratiche. Zero stress per la tua azienda.',
   },
   {
     icon: 'fa-plane',
-    title: 'Assistenza 24/7 in Viaggio',
+    title: 'Assistenza 24/7 in viaggio',
     desc: 'Assistiamo i lavoratori 24/7 durante il viaggio con traduzioni incluse. Arrivano sereni e pronti al lavoro.',
   },
 ];
@@ -124,63 +124,46 @@ const DatoriDiLavoro: React.FC = () => {
     <div className="flex flex-col relative overflow-hidden">
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
-      <section className="relative min-h-[60vh] flex items-center pt-32 pb-20 overflow-hidden bg-[#3D2045]">
-        <div className="absolute inset-0 pointer-events-none opacity-10">
-          <i className="fas fa-building absolute top-10 left-[5%] text-white" style={{ fontSize: 80 }} />
-          <i className="fas fa-handshake absolute top-20 right-[10%] text-white" style={{ fontSize: 60 }} />
-          <i className="fas fa-users absolute bottom-10 left-[20%] text-white" style={{ fontSize: 70 }} />
-          <i className="fas fa-briefcase absolute bottom-20 right-[20%] text-white" style={{ fontSize: 50 }} />
-        </div>
-        <div className="max-w-7xl mx-auto px-6 z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="reveal">
-              <div className="flex flex-wrap items-center gap-3 mb-6">
-                <div className="inline-block bg-yellow-300 text-[#3D2045] px-4 py-2 font-black text-xs tracking-[0.3em] uppercase border-4 border-[#3D2045]">
-                  🏢 Per Aziende e Imprese
-                </div>
-                <div className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 font-black text-xs tracking-[0.2em] uppercase border-4 border-[#3D2045] shadow-[4px_4px_0px_#3D2045]">
-                  <i className="fas fa-check-circle text-white"></i>
-                  <span>SERVIZIO 100% GRATIS</span>
-                </div>
-              </div>
-              <h1 className="text-4xl sm:text-5xl md:text-7xl font-heading font-black text-white leading-[1.0] tracking-tighter uppercase mb-6">
-                Trovare<br />
-                Lavoratori<br />
-                <span className="text-yellow-300">Qualificati,</span><br />
-                100% Gratis.
-              </h1>
-              <p className="text-lg sm:text-xl text-white/80 font-bold max-w-2xl mb-6">
-                LBS ti mette in contatto con lavoratori italiani selezionati, pronti a operare in Germania.
-                <strong className="text-yellow-300"> Il nostro servizio di ricerca e selezione è 100% gratuito per i datori di lavoro</strong>: zero commissioni di agenzia, nessun costo anticipato o nascosto. Gestiamo burocrazia, visti e supporto con precisione e professionalità. Tu ti concentri sul lavoro.
-              </p>
-
-              {/* Callout box zero spese */}
-              <div className="bg-white/10 backdrop-blur-md border-2 border-yellow-300 p-4 mb-8 flex items-center gap-4 shadow-[4px_4px_0px_#1a0d1e]">
-                <div className="w-12 h-12 bg-yellow-300 text-[#3D2045] flex items-center justify-center font-black text-2xl border-2 border-[#3D2045] flex-shrink-0">
-                  0€
-                </div>
-                <div className="text-sm font-bold text-white">
-                  <span className="text-yellow-300 font-black uppercase tracking-wider block text-xs sm:text-sm">Nessuna Commissione per la Tua Impresa</span>
-                  La ricerca, preselezione e presentazione dei candidati è al 100% gratuita per i datori di lavoro.
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a href="#form-datori" className="comic-button bg-yellow-300 text-[#3D2045] border-[#3D2045] px-8 py-4 text-lg flex items-center justify-center gap-3 group w-full sm:w-auto">
-                  Richiedi Lavoratori <i className="fas fa-arrow-right text-sm group-hover:translate-x-2 transition-transform" />
-                </a>
-                <Link to="/contatti" className="comic-button-secondary border-white text-white px-8 py-4 text-lg hover:bg-white/10 flex items-center justify-center w-full sm:w-auto">
-                  Parla con Noi
-                </Link>
-              </div>
+      <section className="surface-plum pt-32 sm:pt-40 pb-20 sm:pb-28">
+        <div className="container-x grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-7">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="chip chip-dark"><i className="fas fa-building text-sun-400" /> Per aziende e imprese</span>
+              <span className="chip !bg-wa/15 !text-[#7CF0A9] !border-wa/25"><i className="fas fa-check-circle" /> Servizio 100% gratis</span>
             </div>
-            <div className="reveal hidden lg:block">
-              <div className="border-4 border-[#ffdf20] shadow-[8px_8px_0px_#1a0d1e] overflow-hidden">
-                <img
-                  src="/img/ufficio_social.jpg"
-                  alt="Ufficio LBS — pagina social aziendale"
-                  className="w-full h-full object-cover"
-                  style={{ aspectRatio: '4/3' }}
-                />
+            <h1 className="h-display text-white text-[2.6rem] sm:text-6xl lg:text-7xl mt-6">
+              Trovare lavoratori <span className="text-sun-400">qualificati</span>, 100% gratis.
+            </h1>
+            <p className="text-white/75 text-lg leading-relaxed max-w-2xl mt-6">
+              LBS ti mette in contatto con lavoratori italiani selezionati, pronti a operare in Germania.{' '}
+              <span className="text-white font-medium">Il nostro servizio di ricerca e selezione è 100% gratuito per i datori di lavoro</span>: zero commissioni di agenzia, nessun costo anticipato o nascosto. Gestiamo burocrazia, visti e supporto con precisione e professionalità. Tu ti concentri sul lavoro.
+            </p>
+
+            <div className="mt-8 max-w-xl rounded-3xl bg-white/[0.06] border border-sun-400/40 p-4 flex items-center gap-4">
+              <span className="h-14 w-14 rounded-2xl bg-sun-400 text-plum-800 font-heading font-bold text-2xl flex items-center justify-center shrink-0">0€</span>
+              <span className="text-sm text-white/75">
+                <span className="block font-semibold text-sun-400">Nessuna commissione per la tua impresa</span>
+                La ricerca, preselezione e presentazione dei candidati è al 100% gratuita per i datori di lavoro.
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 mt-8">
+              <a href="#form-datori" className="btn btn-lg btn-accent group">
+                Richiedi lavoratori <i className="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform" />
+              </a>
+              <Link to="/contatti" className="btn btn-lg btn-ghost-light">Parla con noi</Link>
+            </div>
+          </div>
+          <div className="lg:col-span-5 hidden lg:block">
+            <div className="relative">
+              <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-sun-400/20 to-plum-400/20 blur-2xl" />
+              <img src="/img/ufficio_social.jpg" alt="Ufficio LBS — pagina social aziendale" className="relative w-full aspect-[4/5] object-cover rounded-[2rem] ring-1 ring-white/15" />
+              <div className="absolute -left-8 bottom-10 bg-white rounded-2xl shadow-[var(--shadow-lift)] p-4 pr-6 flex items-center gap-3">
+                <span className="icon-tile !w-11 !h-11 !rounded-xl"><i className="fas fa-user-check" /></span>
+                <span>
+                  <span className="block text-sm font-semibold text-plum-800">Profili verificati</span>
+                  <span className="block text-xs text-ink-soft">pronti a partire</span>
+                </span>
               </div>
             </div>
           </div>
@@ -188,23 +171,18 @@ const DatoriDiLavoro: React.FC = () => {
       </section>
 
       {/* ── VANTAGGI ──────────────────────────────────────────────── */}
-      <section className="py-24 bg-transparent">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-left pb-8 reveal">
-            <div className="text-[#6E4274] font-black text-xs tracking-[0.2em] uppercase mb-3">Perché Scegliere LBS</div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-black dark:text-white tracking-tighter">
-              Il Partner che fa la differenza
-            </h2>
+      <section className="section">
+        <div className="container-x">
+          <div className="max-w-2xl mb-12 reveal">
+            <span className="eyebrow">Perché scegliere LBS</span>
+            <h2 className="h-section text-plum-800 mt-4">Il partner che <span className="mark">fa la differenza</span></h2>
           </div>
-          <hr className="border-t border-black/10 dark:border-white/10 mb-16" style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-0 border-4 border-[#3D2045]" style={{ boxShadow: '8px 8px 0px #3D2045' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {BENEFIT_DATORI.map((b, i) => (
-              <div key={i} className="reveal p-8 border-r-4 border-[#3D2045] last:border-r-0 bg-[var(--card-bg)] group hover:bg-[#6E4274] transition-colors duration-300">
-                <div className="w-14 h-14 bg-[#6E4274] group-hover:bg-yellow-300 border-4 border-[#3D2045] flex items-center justify-center text-white group-hover:text-[#3D2045] text-xl mb-6 transition-colors">
-                  <i className={`fas ${b.icon}`} />
-                </div>
-                <h3 className="text-lg font-black text-black dark:text-white group-hover:text-white uppercase tracking-tight mb-3 transition-colors">{b.title}</h3>
-                <p className="text-sm text-black/70 dark:text-white/70 group-hover:text-white/90 font-bold leading-relaxed transition-colors">{b.desc}</p>
+              <div key={b.title} className={`reveal p-7 rounded-3xl ${i === 0 ? 'bg-sun-400 text-plum-800' : 'card card-hover'}`} style={{ transitionDelay: `${i * 60}ms` }}>
+                <span className={`icon-tile ${i === 0 ? '!bg-plum-800 !text-sun-400' : ''}`}><i className={`fas ${b.icon} text-lg`} /></span>
+                <h3 className="font-heading font-bold text-xl mt-6 text-plum-800">{b.title}</h3>
+                <p className={`leading-relaxed mt-2 text-[15px] ${i === 0 ? 'text-plum-800/75' : 'text-ink-soft'}`}>{b.desc}</p>
               </div>
             ))}
           </div>
@@ -212,178 +190,158 @@ const DatoriDiLavoro: React.FC = () => {
       </section>
 
       {/* ── FORM ──────────────────────────────────────────────────── */}
-      <section id="form-datori" className="py-24 bg-[#3D2045] relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none opacity-5">
-          <i className="fas fa-building absolute top-10 right-10 text-white" style={{ fontSize: 120 }} />
-        </div>
-        <div className="max-w-3xl mx-auto px-6 relative z-10">
-          <div className="text-left pb-8 reveal">
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <div className="text-yellow-300 font-black text-xs tracking-[0.2em] uppercase">
-                Richiesta Personale
+      <section id="form-datori" className="pb-20 md:pb-28">
+        <div className="container-x">
+          <div className="rounded-[2.5rem] surface-plum p-6 sm:p-12 lg:p-14 grid grid-cols-1 lg:grid-cols-12 gap-10 overflow-hidden">
+            <div className="lg:col-span-5 reveal">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="eyebrow eyebrow-light">Richiesta personale</span>
+                <span className="chip !bg-wa/15 !text-[#7CF0A9] !border-wa/25">100% gratis per le aziende</span>
               </div>
-              <span className="bg-[#25D366] text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 border border-[#3D2045]">
-                100% Gratis per le Aziende
-              </span>
+              <h2 className="h-section text-white mt-4">Richiedi i tuoi lavoratori a costo zero</h2>
+              <p className="text-white/70 text-lg leading-relaxed mt-4">
+                Compila il modulo — nessun costo, nessuna commissione. Ti ricontatteremo entro 24 ore per discutere le tue esigenze.
+              </p>
+              <ul className="mt-8 space-y-3 text-white/80">
+                {['Nessun costo per la tua azienda', 'Risposta entro 24 ore', 'Nessuno spam'].map(t => (
+                  <li key={t} className="flex items-center gap-3">
+                    <span className="h-6 w-6 rounded-full bg-sun-400 text-plum-800 flex items-center justify-center text-[10px]"><i className="fas fa-check" /></span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-white tracking-tighter">
-              Richiedi i tuoi Lavoratori a Costo Zero
-            </h2>
-            <p className="text-white/80 font-medium text-base sm:text-lg mt-4">
-              Compila il modulo — nessun costo, nessuna commissione. Ti ricontatteremo entro 24 ore per discutere le tue esigenze.
-            </p>
-          </div>
-          <hr className="border-t border-white/20 mb-16" style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }} />
 
-          {/* Popup successo */}
-          {formSent && (
-            <div
-              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
-              onClick={() => setFormSent(false)}>
-              <div
-                className="comic-card border-8 border-yellow-300"
-                style={{ width: '100%', maxWidth: '520px', padding: '48px 40px', textAlign: 'center', background: 'var(--card-bg)', boxShadow: '8px 8px 0px #F59E0B', animation: 'successPop 0.45s cubic-bezier(0.175,0.885,0.32,1.275) both' }}
-                onClick={e => e.stopPropagation()}>
-                <style>{`@keyframes successPop { from { opacity:0; transform:scale(0.75) translateY(32px); } to { opacity:1; transform:scale(1) translateY(0); } }`}</style>
-                <div style={{ fontSize: '80px', marginBottom: '16px', lineHeight: 1 }}>🏢</div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.5rem,4vw,2rem)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.03em', color: 'var(--text-color)', margin: '0 0 12px' }}>
-                  Richiesta Ricevuta!
-                </h3>
-                <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '1rem', marginBottom: '32px', lineHeight: 1.6 }}>
-                  Il nostro team ti contatterà entro <strong style={{ color: '#6E4274' }}>24 ore</strong> per discutere le tue esigenze di personale.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <button onClick={() => setShowWaModal(true)}
-                    className="comic-button"
-                    style={{ background: '#25D366', color: '#fff', padding: '16px 24px', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', textDecoration: 'none', borderColor: '#3D2045', cursor: 'pointer' }}>
-                    <i className="fab fa-whatsapp" style={{ fontSize: '22px' }} /> Scrivici su WhatsApp
-                  </button>
-                  <button onClick={() => setFormSent(false)}
-                    style={{ background: 'transparent', border: '3px solid var(--comic-border-color)', color: 'var(--text-muted)', padding: '12px', fontWeight: 900, fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                    Chiudi
-                  </button>
+            <form onSubmit={handleSubmit} className="lg:col-span-7 reveal bg-white rounded-3xl p-6 sm:p-9 relative">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="sm:col-span-2">
+                  <label htmlFor="d-azienda" className="field-label">Nome azienda / impresa *</label>
+                  <input id="d-azienda" type="text" name="nome_azienda" required autoComplete="organization" value={form.nome_azienda} onChange={handleChange} placeholder="Es: Müller GmbH" className="field" />
+                </div>
+                <div>
+                  <label htmlFor="d-ref" className="field-label">Nome referente</label>
+                  <input id="d-ref" type="text" name="nome_referente" autoComplete="name" value={form.nome_referente} onChange={handleChange} placeholder="Il tuo nome e cognome" className="field" />
+                </div>
+                <div>
+                  <label htmlFor="d-email" className="field-label">Email aziendale *</label>
+                  <input id="d-email" type="email" name="email" required autoComplete="email" value={form.email} onChange={handleChange} placeholder="azienda@email.de" className="field" />
+                </div>
+                <div>
+                  <label htmlFor="d-tel" className="field-label">Telefono</label>
+                  <input id="d-tel" type="tel" name="telefono" autoComplete="tel" value={form.telefono} onChange={handleChange} placeholder="+49 000 0000000" className="field" />
+                </div>
+                <div>
+                  <label htmlFor="d-settore" className="field-label">Settore di ricerca *</label>
+                  <select id="d-settore" name="settore_ricerca" required value={form.settore_ricerca} onChange={handleChange} className="field">
+                    <option value="">Seleziona settore</option>
+                    {SETTORI_RICERCA.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label htmlFor="d-num" className="field-label">Lavoratori necessari *</label>
+                  <select id="d-num" name="num_lavoratori" required value={form.num_lavoratori} onChange={handleChange} className="field">
+                    <option value="">Quanti lavoratori?</option>
+                    <option value="1-2">1 - 2 lavoratori</option>
+                    <option value="3-5">3 - 5 lavoratori</option>
+                    <option value="6-10">6 - 10 lavoratori</option>
+                    <option value="10-20">10 - 20 lavoratori</option>
+                    <option value="20+">Più di 20 lavoratori</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label htmlFor="d-msg" className="field-label">Descrivi le tue esigenze</label>
+                  <textarea id="d-msg" name="messaggio" value={form.messaggio} onChange={handleChange} rows={4}
+                    placeholder="Descrivici il tipo di lavoratori che cerchi, le competenze richieste, la zona di lavoro, i turni..."
+                    className="field" />
                 </div>
               </div>
-            </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="reveal comic-card border-8 border-yellow-300 p-6 sm:p-10 md:p-14" style={{ boxShadow: '8px 8px 0px #F59E0B' }}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-black uppercase tracking-[0.2em] text-black dark:text-white mb-2">Nome Azienda / Impresa *</label>
-                <input type="text" name="nome_azienda" required value={form.nome_azienda} onChange={handleChange}
-                  placeholder="Es: Müller GmbH"
-                  className="w-full border-4 border-[#3D2045] bg-transparent px-5 py-4 font-bold text-black dark:text-white outline-none focus:border-yellow-400 transition-colors placeholder:text-black/30 dark:placeholder:text-white/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-[0.2em] text-black dark:text-white mb-2">Nome Referente</label>
-                <input type="text" name="nome_referente" value={form.nome_referente} onChange={handleChange}
-                  placeholder="Il tuo nome e cognome"
-                  className="w-full border-4 border-[#3D2045] bg-transparent px-5 py-4 font-bold text-black dark:text-white outline-none focus:border-yellow-400 transition-colors placeholder:text-black/30 dark:placeholder:text-white/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-[0.2em] text-black dark:text-white mb-2">Email Aziendale *</label>
-                <input type="email" name="email" required value={form.email} onChange={handleChange}
-                  placeholder="azienda@email.de"
-                  className="w-full border-4 border-[#3D2045] bg-transparent px-5 py-4 font-bold text-black dark:text-white outline-none focus:border-yellow-400 transition-colors placeholder:text-black/30 dark:placeholder:text-white/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-[0.2em] text-black dark:text-white mb-2">Telefono</label>
-                <input type="tel" name="telefono" value={form.telefono} onChange={handleChange}
-                  placeholder="+49 000 0000000"
-                  className="w-full border-4 border-[#3D2045] bg-transparent px-5 py-4 font-bold text-black dark:text-white outline-none focus:border-yellow-400 transition-colors placeholder:text-black/30 dark:placeholder:text-white/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-[0.2em] text-black dark:text-white mb-2">Settore di Ricerca *</label>
-                <select name="settore_ricerca" required value={form.settore_ricerca} onChange={handleChange}
-                  className="w-full border-4 border-[#3D2045] bg-[var(--card-bg)] px-5 py-4 font-bold text-black dark:text-white outline-none focus:border-yellow-400 transition-colors">
-                  <option value="">— Seleziona settore —</option>
-                  {SETTORI_RICERCA.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-[0.2em] text-black dark:text-white mb-2">Lavoratori Necessari *</label>
-                <select name="num_lavoratori" required value={form.num_lavoratori} onChange={handleChange}
-                  className="w-full border-4 border-[#3D2045] bg-[var(--card-bg)] px-5 py-4 font-bold text-black dark:text-white outline-none focus:border-yellow-400 transition-colors">
-                  <option value="">— Quanti lavoratori? —</option>
-                  <option value="1-2">1 - 2 lavoratori</option>
-                  <option value="3-5">3 - 5 lavoratori</option>
-                  <option value="6-10">6 - 10 lavoratori</option>
-                  <option value="10-20">10 - 20 lavoratori</option>
-                  <option value="20+">Più di 20 lavoratori</option>
-                </select>
-              </div>
-            </div>
-            <div className="mb-8">
-              <label className="block text-xs font-black uppercase tracking-[0.2em] text-black dark:text-white mb-2">Descrivi le tue esigenze</label>
-              <textarea name="messaggio" value={form.messaggio} onChange={handleChange} rows={4}
-                placeholder="Descrivici il tipo di lavoratori che cerchi, le competenze richieste, la zona di lavoro, i turni..."
-                className="w-full border-4 border-[#3D2045] bg-transparent px-5 py-4 font-bold text-black dark:text-white outline-none focus:border-yellow-400 transition-colors placeholder:text-black/30 dark:placeholder:text-white/30 resize-none" />
-            </div>
-            {formError && (
-              <div className="mb-4 p-4 bg-red-50 border-4 border-red-400 text-red-700 font-bold text-sm flex items-center gap-3">
-                <i className="fas fa-exclamation-triangle" />{formError}
-              </div>
-            )}
+              {formError && (
+                <div role="alert" className="mt-5 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-3">
+                  <i className="fas fa-exclamation-triangle" />{formError}
+                </div>
+              )}
 
-            {/* Honeypot — invisibile agli umani */}
-            <div aria-hidden="true" className="absolute opacity-0 pointer-events-none h-0 overflow-hidden">
-              <input
-                tabIndex={-1}
-                autoComplete="off"
-                value={honeypot}
-                onChange={e => setHoneypot(e.target.value)}
-                placeholder="Non compilare questo campo"
-              />
-            </div>
+              {/* Honeypot — invisibile agli umani */}
+              <div aria-hidden="true" className="absolute opacity-0 pointer-events-none h-0 overflow-hidden">
+                <input
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={e => setHoneypot(e.target.value)}
+                  placeholder="Non compilare questo campo"
+                />
+              </div>
 
-            {/* hCaptcha */}
-            <div className="flex justify-center mb-6">
-              <HCaptcha
-                ref={captchaRef}
-                sitekey={HCAPTCHA_SITE_KEY}
-                onVerify={(token) => { setCaptchaToken(token); setFormError(null); }}
-                onExpire={() => setCaptchaToken(null)}
-                theme="light"
-              />
-            </div>
+              {/* hCaptcha */}
+              <div className="flex justify-center mt-6">
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={HCAPTCHA_SITE_KEY}
+                  onVerify={(token) => { setCaptchaToken(token); setFormError(null); }}
+                  onExpire={() => setCaptchaToken(null)}
+                  theme="light"
+                />
+              </div>
 
-            <button type="submit" disabled={formLoading || !captchaToken}
-              className="comic-button w-full bg-yellow-300 text-[#3D2045] py-4 sm:py-6 text-base sm:text-xl hover:bg-yellow-200 border-[#3D2045] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed font-black">
-              {formLoading
-                ? <><i className="fas fa-spinner fa-spin" /> INVIO IN CORSO...</>
-                : <><i className="fas fa-paper-plane" /> INVIA RICHIESTA GRATUITA</>}
-            </button>
-            <p className="text-center text-xs text-black/50 dark:text-white/50 mt-4 font-bold uppercase tracking-widest">
-              🔒 Nessun costo per la tua azienda • Servizio 100% Gratuito • Nessuno spam
-            </p>
-          </form>
-        </div>
-      </section>
-
-      {/* ── CTA finale ────────────────────────────────────────────── */}
-      <section className="py-20 bg-transparent">
-        <div className="max-w-4xl mx-auto px-6 text-left reveal">
-          <div className="pb-8">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-black dark:text-white tracking-tighter">
-              Hai già lavorato con noi? Siamo qui per te.
-            </h2>
-            <p className="text-base sm:text-lg text-black/60 dark:text-white/60 font-medium mt-4">
-              Per assistenza diretta contattaci su WhatsApp o via email.
-            </p>
-          </div>
-          <hr className="border-t border-black/10 dark:border-white/10 mb-10" style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }} />
-          <div className="flex flex-col sm:flex-row gap-4 justify-start">
-            <button onClick={() => setShowWaModal(true)}
-              className="comic-button bg-[#25D366] text-white border-[#3D2045] px-8 py-4 text-lg flex items-center justify-center gap-3 cursor-pointer">
-              <i className="fab fa-whatsapp" /> WhatsApp
-            </button>
-            <Link to="/contatti" className="comic-button bg-[#6E4274] text-white border-[#3D2045] px-8 py-4 text-lg flex items-center justify-center gap-3">
-              <i className="fas fa-envelope" /> Contattaci
-            </Link>
+              <button type="submit" disabled={formLoading || !captchaToken} className="btn btn-lg btn-primary w-full mt-6">
+                {formLoading
+                  ? <><i className="fas fa-spinner fa-spin" /> Invio in corso...</>
+                  : <><i className="fas fa-paper-plane" /> Invia richiesta gratuita</>}
+              </button>
+              <p className="text-center text-xs text-ink-soft mt-4">
+                <i className="fas fa-lock mr-1 text-plum-300" /> Nessun costo per la tua azienda · Servizio 100% gratuito · Nessuno spam
+              </p>
+            </form>
           </div>
         </div>
       </section>
+
+      {/* ── ASSISTENZA ────────────────────────────────────────────── */}
+      <section className="pb-20 md:pb-24">
+        <div className="container-x">
+          <div className="reveal card p-7 sm:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h2 className="font-heading font-bold text-2xl sm:text-3xl text-plum-800 tracking-tight">Hai già lavorato con noi? Siamo qui per te.</h2>
+              <p className="text-ink-soft mt-2">Per assistenza diretta contattaci su WhatsApp o via email.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-wa">
+                <i className="fab fa-whatsapp text-lg" /> WhatsApp
+              </button>
+              <Link to="/contatti" className="btn btn-lg btn-outline">
+                <i className="fas fa-envelope text-plum-400" /> Contattaci
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Popup successo */}
+      {formSent && (
+        <div
+          className="fixed inset-0 z-[999] bg-plum-950/60 backdrop-blur-sm flex items-center justify-center p-6"
+          onClick={() => setFormSent(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="animate-pop-in w-full max-w-md bg-white rounded-[2rem] p-8 sm:p-10 text-center shadow-[var(--shadow-lift)]" onClick={e => e.stopPropagation()}>
+            <span className="mx-auto h-20 w-20 rounded-full bg-sun-100 text-plum-800 flex items-center justify-center text-3xl">
+              <i className="fas fa-building" />
+            </span>
+            <h3 className="h-display text-3xl text-plum-800 mt-6">Richiesta ricevuta!</h3>
+            <p className="text-ink-soft mt-3 leading-relaxed">
+              Il nostro team ti contatterà entro <strong className="text-plum-600">24 ore</strong> per discutere le tue esigenze di personale.
+            </p>
+            <div className="flex flex-col gap-3 mt-8">
+              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-wa w-full">
+                <i className="fab fa-whatsapp text-xl" /> Scrivici su WhatsApp
+              </button>
+              <button type="button" onClick={() => setFormSent(false)} className="btn btn-outline w-full">Chiudi</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <WhatsAppModal isOpen={showWaModal} onClose={() => setShowWaModal(false)} />
     </div>

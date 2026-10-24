@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import logoLBS from '../img/logo_LBS.png';
+import logoLBS from '../img/logo_LBS-192.png';
 import { supabase } from '../lib/supabaseClient';
 import { WhatsAppModal } from '../components/WhatsAppModal';
-import { useTheme } from '../context/ThemeContext';
 
 const SETTORI_LIST = [
   'Edilizia e Costruzioni',
@@ -32,7 +31,6 @@ const DISPONIBILITA_LIST = [
 
 export const Candidati: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { theme, toggleTheme } = useTheme();
   const [showWaModal, setShowWaModal] = useState(false);
 
   // Form State
@@ -137,148 +135,116 @@ export const Candidati: React.FC = () => {
     }
   };
 
+  const VANTAGGI = [
+    { icon: 'fa-home', text: 'Alloggio già pronto all\'arrivo', desc: 'Camere o appartamenti arredati' },
+    { icon: 'fa-file-signature', text: 'Contratto a tempo indeterminato', desc: 'Sanità, contributi e ferie pagate' },
+    { icon: 'fa-euro-sign', text: 'Stipendi netti da 1.800€ a 3.500€+', desc: 'Puntuali ogni mese sul tuo conto' },
+    { icon: 'fa-language', text: 'Tedesco NON sempre richiesto', desc: 'Team italiani nei settori più richiesti' },
+    { icon: 'fa-user-shield', text: 'Assistenza in loco in italiano', desc: 'Registrazione anagrafe, c/c e codice fiscale' },
+    { icon: 'fa-check-circle', text: 'Nessuna spesa di candidatura', desc: 'Selezione trasparente e affidabile' },
+  ];
+
+  const PASSI = [
+    { step: '01', title: 'Compila il modulo', desc: 'Inserisci i tuoi dati e il settore in cui cerchi lavoro. Il nostro team analizza il tuo profilo entro 24 ore.', icon: 'fa-pen-to-square' },
+    { step: '02', title: 'Colloquio conoscitivo', desc: 'Ti chiamiamo al telefono o su WhatsApp per spiegarti le posizioni disponibili, lo stipendio esatto e le foto dell\'alloggio.', icon: 'fa-phone-volume' },
+    { step: '03', title: 'Partenza e inizio lavoro', desc: 'Arrivi in Germania, prendi possesso dell\'alloggio e inizi il tuo nuovo percorso con contratto tedesco e stipendio a norma.', icon: 'fa-plane-arrival' },
+  ];
+
+  const FAQ = [
+    {
+      q: 'È obbligatorio sapere la lingua tedesca?',
+      a: 'No! In molti settori (ad esempio edilizia, cucine, pizzerie, magazzino e logistica) si lavora all\'interno di squadre italiane o con responsabili bilingue. Se invece parli già un po\' di tedesco avrai accesso a posizioni ancora più remunerative.',
+    },
+    {
+      q: 'Come funziona l\'alloggio garantito?',
+      a: 'Tutte le offerte che proponiamo includono la disponibilità di alloggi selezionati, arredati e vicini al posto di lavoro, spesso con trattenuta agevolata direttamente dalla busta paga.',
+    },
+    {
+      q: 'Ci sono costi per candidarsi o inviare il modulo?',
+      a: 'Assolutamente NO. La registrazione, l\'invio del modulo e i colloqui conoscitivi con il nostro team sono gratuiti al 100%.',
+    },
+    {
+      q: 'Quando vengo ricontattato dopo aver compilato il modulo?',
+      a: 'Un nostro consulente della sede di Catania o Germania ti contatterà al numero di telefono/WhatsApp indicato entro 24 ore lavorative per verificare insieme il tuo profilo.',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[var(--bg-color)] text-[var(--text-color)] font-sans antialiased selection:bg-[#ffdf20] selection:text-[#3D2045]">
-      {/* ─── TOP BAR DEDICATA SENZA DISTRAZIONI ─── */}
-      <header className="sticky top-0 z-40 bg-[var(--card-bg)]/95 backdrop-blur-md border-b-4 border-[#3D2045] px-4 sm:px-8 py-3.5 shadow-sm transition-colors">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <img src={logoLBS} alt="LBS Lavoro in Germania" className="h-10 sm:h-12 w-auto object-contain" />
-            <div className="hidden sm:block">
-              <span className="font-heading font-black tracking-wider text-sm sm:text-base text-black dark:text-white uppercase block leading-none">
-                LBS Business
-              </span>
-              <span className="text-[10px] font-black tracking-widest text-[#6E4274] uppercase block mt-0.5">
-                Lavoro in Germania
-              </span>
-            </div>
+    <div className="min-h-screen bg-paper text-ink">
+      {/* ─── BARRA SUPERIORE SENZA DISTRAZIONI ─── */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-line">
+        <div className="container-x flex items-center justify-between gap-4 py-3">
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src={logoLBS} alt="LBS Lavoro in Germania" className="h-10 w-10" width={40} height={40} />
+            <span className="hidden sm:block leading-none">
+              <span className="block font-heading font-bold text-plum-800">LBS Work</span>
+              <span className="block text-[11px] text-ink-soft mt-0.5">Lavoro in Germania</span>
+            </span>
           </Link>
 
-          {/* Social Proof + CTAs veloci */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden lg:flex items-center gap-2 bg-[#ffdf20]/30 border-2 border-[#3D2045] px-3 py-1 font-black text-xs text-[#3D2045] dark:text-yellow-300">
-              <span>⭐⭐⭐⭐⭐</span>
-              <span>Oltre 850+ Inserimenti riusciti</span>
-            </div>
-
-            <button
-              onClick={toggleTheme}
-              className="w-10 h-10 border-2 border-[#3D2045] flex items-center justify-center font-black hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              title="Cambia tema"
-            >
-              <i className={theme === 'dark' ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-[#3D2045]'} />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden lg:inline-flex chip chip-sun">
+              <span className="text-sun-500 tracking-tight" aria-hidden="true">★★★★★</span> Oltre 850+ inserimenti riusciti
+            </span>
+            <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-sm btn-wa">
+              <i className="fab fa-whatsapp text-base" /> <span className="hidden sm:inline">WhatsApp</span>
             </button>
-
-            <button
-              onClick={() => setShowWaModal(true)}
-              className="comic-button bg-[#25D366] text-white py-2 px-3 sm:px-4 text-xs sm:text-sm font-black flex items-center gap-2 hover:bg-green-600 border-[#3D2045]"
-            >
-              <i className="fab fa-whatsapp text-base" />
-              <span className="hidden xs:inline">WhatsApp</span>
-            </button>
-
-            <a
-              href="tel:+393518818391"
-              className="comic-button bg-[#6E4274] text-white py-2 px-3 sm:px-4 text-xs sm:text-sm font-black hidden md:flex items-center gap-2 hover:bg-[#3D2045] border-[#3D2045]"
-            >
-              <i className="fas fa-phone-alt text-xs" />
-              <span>+39 351 881 8391</span>
+            <a href="tel:+393518818391" className="btn btn-sm btn-outline hidden md:inline-flex">
+              <i className="fas fa-phone-alt text-xs text-plum-400" /> +39 351 881 8391
             </a>
           </div>
         </div>
       </header>
 
-      {/* ─── HERO SECTION AD ALTA CONVERSIONE ─── */}
-      <section className="relative overflow-hidden pt-8 sm:pt-14 pb-16 sm:pb-24 border-b-8 border-[#3D2045] bg-gradient-to-b from-[#6E4274]/10 via-transparent to-transparent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Badge Annuncio Google */}
-          <div className="inline-flex items-center gap-2 bg-[#ffdf20] text-[#3D2045] px-4 py-1.5 font-heading font-black text-xs sm:text-sm uppercase tracking-widest border-3 border-[#3D2045] shadow-[3px_3px_0px_#3D2045] mb-6">
-            <i className="fas fa-bullhorn" /> Selezioni Aperte per Cittadini Italiani ed Europei
-          </div>
+      {/* ─── HERO + MODULO ─── */}
+      <section className="surface-tint pt-8 sm:pt-14 pb-16 sm:pb-24">
+        <div className="container-x">
+          <span className="chip chip-sun mb-6"><i className="fas fa-bullhorn" /> Selezioni aperte per cittadini italiani ed europei</span>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            {/* COLONNA SINISTRA: Titoli, Vantaggi e Credibilità (7 Colonne) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
             <div className="lg:col-span-7 flex flex-col gap-6">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading font-black uppercase tracking-tight text-black dark:text-white leading-[1.08]">
-                Lavora in Germania <br />
-                <span className="bg-[#6E4274] text-white px-3 py-1 inline-block border-4 border-[#3D2045] shadow-[4px_4px_0px_#3D2045] mt-1">
-                  Alloggio Garantito
-                </span>{' '}
-                <br />
-                e Contratto Diretto.
+              <h1 className="h-display text-plum-800 text-[2.4rem] sm:text-6xl">
+                Lavora in Germania: <span className="mark">alloggio garantito</span> e contratto diretto.
               </h1>
-
-              <p className="text-base sm:text-xl font-bold text-black/80 dark:text-white/80 leading-relaxed max-w-2xl">
+              <p className="lead max-w-2xl">
                 Trova lavoro sicuro con regolare contratto di lavoro a norma di legge tedesca. Alloggio vicino alla sede di lavoro, supporto burocratico completo e assistenza in italiano h24.
               </p>
 
-              {/* I 5 Vantaggi Chiave per l'utente Ads */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-2">
-                {[
-                  { icon: 'fa-home', text: 'Alloggio già pronto all\'arrivo', desc: 'Camere o appartamenti arredati' },
-                  { icon: 'fa-file-signature', text: 'Contratto a tempo indeterminato', desc: 'Sanità, contributi e ferie pagate' },
-                  { icon: 'fa-euro-sign', text: 'Stipendi netti da 1.800€ a 3.500€+', desc: 'Puntuali ogni mese sul tuo conto' },
-                  { icon: 'fa-language', text: 'Tedesco NON sempre richiesto', desc: 'Team italiani nei settori più richiesti' },
-                  { icon: 'fa-user-shield', text: 'Assistenza in loco in italiano', desc: 'Registrazione anagrafe, c/c e codice fiscale' },
-                  { icon: 'fa-check-circle', text: 'Nessuna spesa di candidatura', desc: 'Selezione trasparente e affidabile' },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="comic-card border-3 border-[#3D2045] p-3.5 bg-[var(--card-bg)] shadow-[3px_3px_0px_#3D2045] flex items-start gap-3"
-                  >
-                    <div className="w-9 h-9 bg-[#25D366] text-white border-2 border-[#3D2045] flex items-center justify-center font-black text-sm flex-shrink-0 shadow-[2px_2px_0px_#3D2045]">
-                      <i className={`fas ${item.icon}`} />
-                    </div>
-                    <div>
-                      <h4 className="font-heading font-black text-xs sm:text-sm uppercase text-black dark:text-white leading-tight">
-                        {item.text}
-                      </h4>
-                      <p className="text-[11px] font-bold text-black/60 dark:text-white/60 leading-tight mt-0.5">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {VANTAGGI.map(item => (
+                  <li key={item.text} className="flex items-start gap-3 rounded-2xl bg-white border border-line p-4">
+                    <span className="icon-tile !w-10 !h-10 !rounded-xl !bg-wa/15 !text-[#128C4B]"><i className={`fas ${item.icon}`} /></span>
+                    <span>
+                      <span className="block font-semibold text-plum-800 leading-snug">{item.text}</span>
+                      <span className="block text-sm text-ink-soft mt-0.5">{item.desc}</span>
+                    </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
-              {/* Box Fondatore & Garanzia Umana */}
-              <div className="comic-card border-4 border-[#3D2045] p-5 sm:p-6 bg-[var(--card-bg)] shadow-[5px_5px_0px_#3D2045] flex flex-col sm:flex-row items-center gap-5 mt-2">
-                <img
-                  src="/img/salvatore_hero.jpg"
-                  alt="Salvatore Cucuzza - LBS Business"
-                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-none border-4 border-[#3D2045] flex-shrink-0 shadow-[3px_3px_0px_#3D2045]"
-                />
+              <figure className="card p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                <img src="/img/salvatore_hero.jpg" alt="Salvatore Cucuzza - LBS Business" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full ring-4 ring-sun-400 shrink-0" />
                 <div className="text-center sm:text-left">
-                  <span className="bg-[#6E4274] text-white text-[10px] font-black px-2.5 py-0.5 uppercase tracking-widest border-2 border-[#3D2045]">
-                    Salvatore Cucuzza &bull; Fondatore LBS
-                  </span>
-                  <p className="text-xs sm:text-sm font-bold text-black/80 dark:text-white/80 mt-2 italic leading-snug">
-                    "Sappiamo quanto sia delicato trasferirsi all'estero. Noi di LBS ti accompagniamo personalmente dal primo colloquio fino alla firma del contratto in Germania. Non sarai mai solo."
-                  </p>
+                  <blockquote className="font-heading text-lg text-plum-800 leading-snug">
+                    “Sappiamo quanto sia delicato trasferirsi all'estero. Noi di LBS ti accompagniamo personalmente dal primo colloquio fino alla firma del contratto in Germania. Non sarai mai solo.”
+                  </blockquote>
+                  <figcaption className="text-sm text-ink-soft mt-3">Salvatore Cucuzza · Fondatore LBS</figcaption>
                 </div>
-              </div>
+              </figure>
             </div>
 
-            {/* COLONNA DESTRA: IL MODULO GOOGLE ADS (5 Colonne) */}
-            <div id="modulo-candidatura" className="lg:col-span-5 w-full">
-              <div className="comic-card border-6 sm:border-8 border-[#3D2045] p-5 sm:p-8 bg-[var(--card-bg)] shadow-[8px_8px_0px_#3D2045] relative">
-                {/* Badge intestazione */}
+            {/* MODULO */}
+            <div id="modulo-candidatura" className="lg:col-span-5 w-full lg:sticky lg:top-24 scroll-mt-24">
+              <div className="bg-white rounded-[2rem] border border-line shadow-[var(--shadow-lift)] p-5 sm:p-8 relative">
                 <div className="text-center mb-6">
-                  <div className="inline-block bg-[#25D366] text-white px-3.5 py-1 text-xs font-heading font-black uppercase tracking-widest border-3 border-[#3D2045] shadow-[2px_2px_0px_#3D2045] mb-2">
-                    ⚡ RISPOSTA ENTRO 24 ORE
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-heading font-black uppercase text-black dark:text-white tracking-tight">
-                    Candidatura Rapida
-                  </h3>
-                  <p className="text-xs font-bold text-black/70 dark:text-white/70 mt-1">
-                    Compila in 60 secondi: verrai ricontattato via WhatsApp o telefono
-                  </p>
+                  <span className="chip !bg-wa/10 !text-[#128C4B] !border-wa/20"><i className="fas fa-bolt text-[10px]" /> Risposta entro 24 ore</span>
+                  <h2 className="font-heading font-bold text-2xl sm:text-3xl text-plum-800 tracking-tight mt-3">Candidatura rapida</h2>
+                  <p className="text-sm text-ink-soft mt-1">Compila in 60 secondi: verrai ricontattato via WhatsApp o telefono</p>
                 </div>
 
                 {errorMessage && (
-                  <div className="mb-5 p-3.5 bg-red-100 border-3 border-red-500 text-red-900 font-bold text-xs flex items-center gap-2">
-                    <i className="fas fa-exclamation-circle text-base flex-shrink-0" />
+                  <div role="alert" className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium flex items-center gap-2">
+                    <i className="fas fa-exclamation-circle shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
                 )}
@@ -295,206 +261,104 @@ export const Candidati: React.FC = () => {
                     />
                   </div>
 
-                  {/* Nome e Cognome */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                        Nome *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Es. Mario"
-                        value={nome}
-                        onChange={e => setNome(e.target.value)}
-                        className="w-full border-3 border-[#3D2045] bg-[var(--bg-color)] px-3.5 py-2.5 font-bold text-sm text-black dark:text-white outline-none focus:border-[#6E4274] transition-colors"
-                      />
+                      <label htmlFor="g-nome" className="field-label">Nome *</label>
+                      <input id="g-nome" type="text" required autoComplete="given-name" placeholder="Es. Mario" value={nome} onChange={e => setNome(e.target.value)} className="field" />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                        Cognome *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Es. Rossi"
-                        value={cognome}
-                        onChange={e => setCognome(e.target.value)}
-                        className="w-full border-3 border-[#3D2045] bg-[var(--bg-color)] px-3.5 py-2.5 font-bold text-sm text-black dark:text-white outline-none focus:border-[#6E4274] transition-colors"
-                      />
+                      <label htmlFor="g-cognome" className="field-label">Cognome *</label>
+                      <input id="g-cognome" type="text" required autoComplete="family-name" placeholder="Es. Rossi" value={cognome} onChange={e => setCognome(e.target.value)} className="field" />
                     </div>
                   </div>
 
-                  {/* Telefono / WhatsApp (Cruciale per Google Ads) */}
                   <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                      Numero Telefono / WhatsApp *
-                    </label>
+                    <label htmlFor="g-tel" className="field-label">Numero telefono / WhatsApp *</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-black/40 dark:text-white/40">
-                        <i className="fab fa-whatsapp text-green-600 font-bold" />
-                      </div>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="+39 340 1234567"
-                        value={telefono}
-                        onChange={e => setTelefono(e.target.value)}
-                        className="w-full pl-9 border-3 border-[#3D2045] bg-[var(--bg-color)] px-3.5 py-2.5 font-bold text-sm text-black dark:text-white outline-none focus:border-[#6E4274] transition-colors"
-                      />
+                      <i className="fab fa-whatsapp absolute left-4 top-1/2 -translate-y-1/2 text-[#128C4B]" />
+                      <input id="g-tel" type="tel" required autoComplete="tel" placeholder="+39 340 1234567" value={telefono} onChange={e => setTelefono(e.target.value)} className="field !pl-10" />
                     </div>
-                    <span className="text-[10px] text-black/50 dark:text-white/50 font-bold mt-1 block">
-                      Ti scriveremo o chiameremo a questo numero per concordare il colloquio.
-                    </span>
+                    <span className="text-xs text-ink-soft mt-1.5 block">Ti scriveremo o chiameremo a questo numero per concordare il colloquio.</span>
                   </div>
 
-                  {/* Email */}
                   <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="es. mario.rossi@email.it"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      className="w-full border-3 border-[#3D2045] bg-[var(--bg-color)] px-3.5 py-2.5 font-bold text-sm text-black dark:text-white outline-none focus:border-[#6E4274] transition-colors"
-                    />
+                    <label htmlFor="g-email" className="field-label">Email *</label>
+                    <input id="g-email" type="email" required autoComplete="email" placeholder="es. mario.rossi@email.it" value={email} onChange={e => setEmail(e.target.value)} className="field" />
                   </div>
 
-                  {/* Settore di interesse */}
                   <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                      Settore in cui vuoi lavorare *
-                    </label>
-                    <select
-                      required
-                      value={settore}
-                      onChange={e => setSettore(e.target.value)}
-                      className="w-full border-3 border-[#3D2045] bg-[var(--bg-color)] px-3.5 py-2.5 font-bold text-xs sm:text-sm text-black dark:text-white outline-none focus:border-[#6E4274] transition-colors"
-                    >
-                      <option value="">-- Seleziona il settore --</option>
-                      {SETTORI_LIST.map(s => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
+                    <label htmlFor="g-settore" className="field-label">Settore in cui vuoi lavorare *</label>
+                    <select id="g-settore" required value={settore} onChange={e => setSettore(e.target.value)} className="field">
+                      <option value="">Seleziona il settore</option>
+                      {SETTORI_LIST.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
 
-                  {/* Tedesco & Disponibilità (Grid 2 colonne) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                        Livello di Tedesco
-                      </label>
-                      <select
-                        value={tedesco}
-                        onChange={e => setTedesco(e.target.value)}
-                        className="w-full border-3 border-[#3D2045] bg-[var(--bg-color)] px-2.5 py-2 font-bold text-xs text-black dark:text-white outline-none focus:border-[#6E4274] transition-colors"
-                      >
-                        {LIVELLI_TEDESCO.map(l => (
-                          <option key={l} value={l}>
-                            {l}
-                          </option>
-                        ))}
+                      <label htmlFor="g-de" className="field-label">Livello di tedesco</label>
+                      <select id="g-de" value={tedesco} onChange={e => setTedesco(e.target.value)} className="field !text-sm">
+                        {LIVELLI_TEDESCO.map(l => <option key={l} value={l}>{l}</option>)}
                       </select>
                     </div>
-
                     <div>
-                      <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                        Disponibilità
-                      </label>
-                      <select
-                        value={disponibilita}
-                        onChange={e => setDisponibilita(e.target.value)}
-                        className="w-full border-3 border-[#3D2045] bg-[var(--bg-color)] px-2.5 py-2 font-bold text-xs text-black dark:text-white outline-none focus:border-[#6E4274] transition-colors"
-                      >
-                        {DISPONIBILITA_LIST.map(d => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
+                      <label htmlFor="g-disp" className="field-label">Disponibilità</label>
+                      <select id="g-disp" value={disponibilita} onChange={e => setDisponibilita(e.target.value)} className="field !text-sm">
+                        {DISPONIBILITA_LIST.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                   </div>
 
-                  {/* Patente B */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                      Hai la Patente di Guida?
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
+                  <fieldset>
+                    <legend className="field-label">Hai la patente di guida?</legend>
+                    <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-plum-50">
                       {['Sì (Patente B)', 'No (Senza Patente)'].map(opt => (
                         <button
                           type="button"
                           key={opt}
                           onClick={() => setPatente(opt)}
-                          className={`py-2 px-3 text-xs font-black border-2 border-[#3D2045] transition-all text-center ${
-                            patente === opt
-                              ? 'bg-[#6E4274] text-white shadow-[2px_2px_0px_#3D2045]'
-                              : 'bg-[var(--bg-color)] text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5'
+                          aria-pressed={patente === opt}
+                          className={`min-h-[44px] rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
+                            patente === opt ? 'bg-white text-plum-800 shadow-sm' : 'text-ink-soft hover:text-plum-800'
                           }`}
                         >
                           {opt}
                         </button>
                       ))}
                     </div>
-                  </div>
+                  </fieldset>
 
-                  {/* Messaggio o note */}
                   <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-1">
-                      Note o Esperienze precedenti (Opzionale)
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="Es. Esperienza come muratore / pizzaiolo da 4 anni..."
-                      value={messaggio}
-                      onChange={e => setMessaggio(e.target.value)}
-                      className="w-full border-3 border-[#3D2045] bg-[var(--bg-color)] px-3.5 py-2 font-bold text-xs text-black dark:text-white outline-none focus:border-[#6E4274] resize-none"
-                    />
+                    <label htmlFor="g-note" className="field-label">Note o esperienze precedenti (opzionale)</label>
+                    <textarea id="g-note" rows={2} placeholder="Es. Esperienza come muratore / pizzaiolo da 4 anni..." value={messaggio} onChange={e => setMessaggio(e.target.value)} className="field !min-h-[80px]" />
                   </div>
 
-                  {/* Privacy Checkbox */}
-                  <div className="flex items-start gap-2.5 mt-1">
+                  <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       id="privacy"
                       required
                       checked={privacyAccepted}
                       onChange={e => setPrivacyAccepted(e.target.checked)}
-                      className="mt-1 w-4 h-4 cursor-pointer accent-[#6E4274]"
+                      className="mt-0.5 w-5 h-5 cursor-pointer accent-[#6E4274] shrink-0"
                     />
-                    <label htmlFor="privacy" className="text-[11px] font-bold text-black/70 dark:text-white/70 leading-snug cursor-pointer">
+                    <label htmlFor="privacy" className="text-sm text-ink-soft leading-snug cursor-pointer">
                       Dichiaro di aver letto e accetto l'informativa sulla{' '}
-                      <Link to="/privacy-policy" target="_blank" className="text-[#6E4274] underline font-black">
-                        Privacy Policy
-                      </Link>{' '}
+                      <Link to="/privacy-policy" target="_blank" className="text-plum-600 underline font-semibold">Privacy Policy</Link>{' '}
                       per essere ricontattato in merito alle offerte di lavoro.
                     </label>
                   </div>
 
-                  {/* Pulsante Invia CTA Google Ads */}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="comic-button w-full bg-[#25D366] text-white py-4 sm:py-4.5 text-sm sm:text-base font-black uppercase tracking-wider border-4 border-[#3D2045] shadow-[4px_4px_0px_#3D2045] hover:bg-green-600 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50 cursor-pointer"
-                  >
-                    {loading ? (
-                      <>
-                        <i className="fas fa-spinner fa-spin" /> INVIO IN CORSO...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-paper-plane" /> INVIA CANDIDATURA GRATUITA
-                      </>
-                    )}
+                  <button type="submit" disabled={loading} className="btn btn-lg btn-wa w-full mt-1">
+                    {loading
+                      ? <><i className="fas fa-spinner fa-spin" /> Invio in corso...</>
+                      : <><i className="fas fa-paper-plane" /> Invia candidatura gratuita</>}
                   </button>
 
-                  <div className="flex items-center justify-center gap-3 text-[11px] font-black text-black/60 dark:text-white/60 text-center uppercase tracking-wider mt-1">
-                    <span>🔒 Nessun costo</span> &bull; <span>🛡️ Dati protetti</span> &bull; <span>⚡ Risposta veloce</span>
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-ink-soft">
+                    <span><i className="fas fa-lock text-plum-300 mr-1" /> Nessun costo</span>
+                    <span><i className="fas fa-shield-alt text-plum-300 mr-1" /> Dati protetti</span>
+                    <span><i className="fas fa-bolt text-plum-300 mr-1" /> Risposta veloce</span>
                   </div>
                 </form>
               </div>
@@ -503,254 +367,132 @@ export const Candidati: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── COME FUNZIONA IN 3 SEMPLICI PASSI ─── */}
-      <section className="py-16 sm:py-20 bg-[var(--card-bg)] border-b-8 border-[#3D2045]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ─── COME FUNZIONA ─── */}
+      <section className="section">
+        <div className="container-x">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="bg-[#6E4274] text-white px-3 py-1 font-black text-xs uppercase tracking-widest border-2 border-[#3D2045]">
-              Semplice e Veloce
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-heading font-black uppercase text-black dark:text-white mt-3 tracking-tight">
-              Come Funziona il Nostro Metodo
-            </h2>
-            <p className="text-sm sm:text-base font-bold text-black/70 dark:text-white/70 mt-2">
-              Dalla tua candidatura all'arrivo in Germania in totale sicurezza.
+            <span className="eyebrow">Semplice e veloce</span>
+            <h2 className="h-section text-plum-800 mt-4">Come funziona il nostro metodo</h2>
+            <p className="lead mt-3">Dalla tua candidatura all'arrivo in Germania in totale sicurezza.</p>
+          </div>
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {PASSI.map(s => (
+              <li key={s.step} className="card card-hover p-7 sm:p-8">
+                <div className="flex items-center justify-between">
+                  <span className="h-11 w-11 rounded-full bg-plum-600 text-white font-heading font-bold flex items-center justify-center">{s.step}</span>
+                  <i className={`fas ${s.icon} text-2xl text-plum-200`} />
+                </div>
+                <h3 className="font-heading font-bold text-xl text-plum-800 mt-6">{s.title}</h3>
+                <p className="text-ink-soft leading-relaxed mt-2">{s.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ─── SEDE REALE ─── */}
+      <section className="pb-20 md:pb-28">
+        <div className="container-x grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <span className="eyebrow">Trasparenza totale</span>
+            <h2 className="h-section text-plum-800 mt-4">Una sede reale, persone vere.</h2>
+            <p className="lead mt-4">
+              A differenza di annunci anonimi su Facebook o portali poco chiari, LBS è un'azienda con uffici fisici a Catania e una presenza operativa costante in Germania.
             </p>
+            <ul className="flex flex-col gap-3 mt-6">
+              {[
+                'Sede legale e uffici operativi aperti al pubblico',
+                'Contratti di lavoro firmati direttamente con le aziende tedesche',
+                'Accompagnamento burocratico: registrazione anagrafica (Anmeldung) e codice fiscale tedesco',
+                'Supporto continuativo per tutta la durata del tuo rapporto di lavoro',
+              ].map(point => (
+                <li key={point} className="flex items-start gap-3 text-ink">
+                  <span className="mt-0.5 h-5 w-5 rounded-full bg-wa text-white flex items-center justify-center text-[9px] shrink-0"><i className="fas fa-check" /></span>
+                  {point}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-wa">
+                <i className="fab fa-whatsapp text-lg" /> Parla con un consulente LBS
+              </button>
+              <a href="#modulo-candidatura" className="btn btn-lg btn-outline">
+                <i className="fas fa-arrow-up text-xs text-plum-400" /> Torna al modulo
+              </a>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                step: '01',
-                title: 'Compila il Modulo',
-                desc: 'Inserisci i tuoi dati e il settore in cui cerchi lavoro. Il nostro team analizza il tuo profilo entro 24 ore.',
-                icon: 'fa-wpforms',
-                color: '#6E4274',
-              },
-              {
-                step: '02',
-                title: 'Colloquio Conoscitivo',
-                desc: 'Ti chiamiamo al telefono o su WhatsApp per spiegarti le posizioni disponibili, lo stipendio esatto e le foto dell\'alloggio.',
-                icon: 'fa-phone-volume',
-                color: '#FF6B35',
-              },
-              {
-                step: '03',
-                title: 'Partenza e Inizio Lavoro',
-                desc: 'Arrivi in Germania, prendi possesso dell\'alloggio e inizi il tuo nuovo percorso con contratto tedesco e stipendio a norma.',
-                icon: 'fa-plane-arrival',
-                color: '#25D366',
-              },
-            ].map((s, idx) => (
-              <div
-                key={idx}
-                className="comic-card border-4 border-[#3D2045] p-6 sm:p-8 bg-[var(--bg-color)] shadow-[6px_6px_0px_#3D2045] flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span
-                      className="text-white text-xs font-black px-3 py-1 border-2 border-[#3D2045] shadow-[2px_2px_0px_#3D2045]"
-                      style={{ background: s.color }}
-                    >
-                      PASSO {s.step}
-                    </span>
-                    <i className={`fas ${s.icon} text-2xl text-black/30 dark:text-white/30`} />
-                  </div>
-                  <h3 className="text-xl font-heading font-black uppercase text-black dark:text-white mb-2">
-                    {s.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm font-bold text-black/70 dark:text-white/70 leading-relaxed">
-                    {s.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-4">
+            <figure className="relative overflow-hidden rounded-3xl aspect-[3/4]">
+              <img src="/img/ufficio_reception.jpg" alt="Ufficio LBS Reception" loading="lazy" className="w-full h-full object-cover" />
+              <figcaption className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-plum-950/80 to-transparent text-white font-semibold text-sm">I nostri uffici</figcaption>
+            </figure>
+            <figure className="relative overflow-hidden rounded-3xl aspect-[3/4] mt-10">
+              <img src="/img/salvatore_desk.jpg" alt="Salvatore Cucuzza al lavoro" loading="lazy" className="w-full h-full object-cover" />
+              <figcaption className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-plum-950/80 to-transparent text-white font-semibold text-sm">Consulenza diretta</figcaption>
+            </figure>
           </div>
         </div>
       </section>
 
-      {/* ─── FOTO SEDE E CHI SIAMO ─── */}
-      <section className="py-16 sm:py-20 border-b-8 border-[#3D2045] bg-[var(--bg-color)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <span className="bg-[#ffdf20] text-[#3D2045] px-3 py-1 font-black text-xs uppercase tracking-widest border-2 border-[#3D2045]">
-                Trasparenza Totale
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-heading font-black uppercase text-black dark:text-white mt-3 tracking-tight">
-                Una Sede Reale, Persone Vere.
-              </h2>
-              <p className="text-sm sm:text-base font-bold text-black/70 dark:text-white/70 mt-3 leading-relaxed">
-                A differenza di annunci anonimi su Facebook o portali poco chiari, LBS è un'azienda con uffici fisici a Catania e una presenza operativa costante in Germania.
-              </p>
-
-              <div className="flex flex-col gap-3 mt-6">
-                {[
-                  'Sede legale e uffici operativi aperti al pubblico',
-                  'Contratti di lavoro firmati direttamente con le aziende tedesche',
-                  'Accompagnamento burocratico: registrazione anagrafica (Anmeldung) e codice fiscale tedesco',
-                  'Supporto continuativo per tutta la durata del tuo rapporto di lavoro',
-                ].map((point, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-[#25D366] text-white border-2 border-[#3D2045] flex items-center justify-center font-black text-xs flex-shrink-0">
-                      ✓
-                    </div>
-                    <span className="text-xs sm:text-sm font-black text-black dark:text-white">{point}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-4">
-                <button
-                  onClick={() => setShowWaModal(true)}
-                  className="comic-button bg-[#25D366] text-white py-3 px-6 text-xs sm:text-sm font-black flex items-center gap-2 border-[#3D2045] shadow-[4px_4px_0px_#3D2045]"
-                >
-                  <i className="fab fa-whatsapp text-lg" /> Parla con un Consulente LBS
-                </button>
-                <a
-                  href="#modulo-candidatura"
-                  className="comic-button bg-[#6E4274] text-white py-3 px-6 text-xs sm:text-sm font-black flex items-center gap-2 border-[#3D2045] shadow-[4px_4px_0px_#3D2045]"
-                >
-                  <i className="fas fa-arrow-up" /> Torna al Modulo
-                </a>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="comic-card border-4 border-[#3D2045] shadow-[4px_4px_0px_#3D2045] overflow-hidden">
-                <img
-                  src="/img/ufficio_reception.jpg"
-                  alt="Ufficio LBS Reception"
-                  className="w-full h-44 sm:h-56 object-cover hover:scale-105 transition-transform duration-300"
-                />
-                <div className="p-3 bg-[var(--card-bg)] text-[11px] font-black uppercase text-center border-t-2 border-[#3D2045]">
-                  I Nostri Uffici
-                </div>
-              </div>
-
-              <div className="comic-card border-4 border-[#3D2045] shadow-[4px_4px_0px_#3D2045] overflow-hidden">
-                <img
-                  src="/img/salvatore_desk.jpg"
-                  alt="Salvatore Cucuzza al lavoro"
-                  className="w-full h-44 sm:h-56 object-cover hover:scale-105 transition-transform duration-300"
-                />
-                <div className="p-3 bg-[var(--card-bg)] text-[11px] font-black uppercase text-center border-t-2 border-[#3D2045]">
-                  Consulenza Diretta
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── DOMANDE FREQUENTI (FAQ PER ADS) ─── */}
-      <section className="py-16 sm:py-20 bg-[var(--card-bg)] border-b-8 border-[#3D2045]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      {/* ─── FAQ ─── */}
+      <section className="section surface-tint">
+        <div className="container-x max-w-3xl">
           <div className="text-center mb-10">
-            <span className="bg-[#6E4274] text-white px-3 py-1 font-black text-xs uppercase tracking-widest border-2 border-[#3D2045]">
-              FAQ
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-heading font-black uppercase text-black dark:text-white mt-3 tracking-tight">
-              Domande Frequenti dei Candidati
-            </h2>
+            <span className="eyebrow">FAQ</span>
+            <h2 className="h-section text-plum-800 mt-4">Domande frequenti dei candidati</h2>
           </div>
-
-          <div className="flex flex-col gap-4">
-            {[
-              {
-                q: 'È obbligatorio sapere la lingua tedesca?',
-                a: 'No! In molti settori (ad esempio edilizia, cucine, pizzerie, magazzino e logistica) si lavora all\'interno di squadre italiane o con responsabili bilingue. Se invece parli già un po\' di tedesco avrai accesso a posizioni ancora più remunerative.',
-              },
-              {
-                q: 'Come funziona l\'alloggio garantito?',
-                a: 'Tutte le offerte che proponiamo includono la disponibilità di alloggi selezionati, arredati e vicini al posto di lavoro, spesso con trattenuta agevolata direttamente dalla busta paga.',
-              },
-              {
-                q: 'Ci sono costi per candidarsi o inviare il modulo?',
-                a: 'Assolutamente NO. La registrazione, l\'invio del modulo e i colloqui conoscitivi con il nostro team sono gratuiti al 100%.',
-              },
-              {
-                q: 'Quando vengo ricontattato dopo aver compilato il modulo?',
-                a: 'Un nostro consulente della sede di Catania o Germania ti contatterà al numero di telefono/WhatsApp indicato entro 24 ore lavorative per verificare insieme il tuo profilo.',
-              },
-            ].map((faq, idx) => (
-              <div
-                key={idx}
-                className="comic-card border-3 border-[#3D2045] p-5 bg-[var(--bg-color)] shadow-[4px_4px_0px_#3D2045]"
-              >
-                <h4 className="font-heading font-black text-sm sm:text-base uppercase text-black dark:text-white mb-2 flex items-center gap-2">
-                  <span className="text-[#6E4274] font-black text-lg">Q.</span> {faq.q}
-                </h4>
-                <p className="text-xs sm:text-sm font-bold text-black/70 dark:text-white/70 leading-relaxed pl-6">
-                  {faq.a}
-                </p>
-              </div>
+          <div className="flex flex-col gap-3">
+            {FAQ.map((faq, idx) => (
+              <details key={faq.q} className="group card !rounded-2xl p-5 sm:p-6 open:shadow-[var(--shadow-lift)]" open={idx === 0}>
+                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none font-heading font-bold text-lg text-plum-800 [&::-webkit-details-marker]:hidden">
+                  {faq.q}
+                  <span className="h-9 w-9 rounded-full bg-plum-50 text-plum-600 flex items-center justify-center shrink-0 transition-transform group-open:rotate-45">
+                    <i className="fas fa-plus text-sm" />
+                  </span>
+                </summary>
+                <p className="text-ink-soft leading-relaxed mt-3">{faq.a}</p>
+              </details>
             ))}
           </div>
-
-          {/* Box Call to Action finale */}
-          <div className="text-center mt-12">
-            <a
-              href="#modulo-candidatura"
-              className="comic-button inline-flex items-center gap-3 bg-[#25D366] text-white py-4 px-8 text-sm sm:text-base font-black uppercase tracking-wider border-4 border-[#3D2045] shadow-[6px_6px_0px_#3D2045] hover:bg-green-600 transition-all cursor-pointer"
-            >
-              <i className="fas fa-arrow-up" /> VOGLIO CANDIDARMI ORA &bull; POSTI LIMITATI
+          <div className="text-center mt-10">
+            <a href="#modulo-candidatura" className="btn btn-lg btn-wa">
+              <i className="fas fa-arrow-up text-xs" /> Voglio candidarmi ora · posti limitati
             </a>
           </div>
         </div>
       </section>
 
-      {/* ─── FOOTER ESSENZIALE PER ADS ─── */}
-      <footer className="py-8 bg-[var(--card-bg)] text-center text-xs font-bold text-black/60 dark:text-white/60">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            &copy; {new Date().getFullYear()} LBS Business &amp; Servizi di Salvatore Cucuzza &bull; P.IVA / Cod. Fiscale
-          </div>
+      {/* ─── FOOTER ESSENZIALE ─── */}
+      <footer className="py-8 border-t border-line text-sm text-ink-soft">
+        <div className="container-x flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>&copy; {new Date().getFullYear()} LBS Business &amp; Servizi di Salvatore Cucuzza</div>
           <div className="flex items-center gap-4">
-            <Link to="/privacy-policy" className="hover:underline font-black">
-              Privacy Policy
-            </Link>
-            <span>&bull;</span>
-            <Link to="/cookie-policy" className="hover:underline font-black">
-              Cookie Policy
-            </Link>
-            <span>&bull;</span>
-            <Link to="/termini-e-condizioni" className="hover:underline font-black">
-              Termini
-            </Link>
+            <Link to="/privacy-policy" className="hover:text-plum-800">Privacy Policy</Link>
+            <Link to="/cookie-policy" className="hover:text-plum-800">Cookie Policy</Link>
+            <Link to="/termini-e-condizioni" className="hover:text-plum-800">Termini</Link>
           </div>
         </div>
       </footer>
 
-      {/* ─── MODALE DI SUCCESSO (THANK YOU) ─── */}
+      {/* ─── MODALE DI SUCCESSO ─── */}
       {success && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="comic-card border-8 border-[#3D2045] bg-[var(--card-bg)] max-w-lg w-full p-6 sm:p-10 text-center shadow-[12px_12px_0px_#3D2045] animate-in zoom-in-95 duration-200">
-            <div className="w-20 h-20 bg-[#25D366] text-white border-4 border-[#3D2045] flex items-center justify-center text-4xl mx-auto mb-6 shadow-[4px_4px_0px_#3D2045]">
+        <div className="fixed inset-0 bg-plum-950/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="animate-pop-in bg-white rounded-[2rem] max-w-lg w-full p-7 sm:p-10 text-center shadow-[var(--shadow-lift)]">
+            <span className="mx-auto h-20 w-20 rounded-full bg-wa/15 text-[#128C4B] flex items-center justify-center text-3xl">
               <i className="fas fa-check" />
-            </div>
-
-            <span className="bg-[#25D366] text-white text-[11px] font-black px-3 py-1 uppercase tracking-widest border-2 border-[#3D2045]">
-              Candidatura Inviata
             </span>
-
-            <h3 className="text-2xl sm:text-3xl font-heading font-black uppercase text-black dark:text-white mt-4 tracking-tight">
-              Grazie, {nome}!
-            </h3>
-
-            <p className="text-sm font-bold text-black/70 dark:text-white/70 mt-3 leading-relaxed">
-              Abbiamo ricevuto la tua candidatura per il settore <strong>{settore}</strong>. Il nostro team la prenderà in carico e ti contatterà al numero <strong>{telefono}</strong> entro 24 ore lavorative.
+            <span className="chip !bg-wa/10 !text-[#128C4B] !border-wa/20 mt-5">Candidatura inviata</span>
+            <h3 className="h-display text-3xl text-plum-800 mt-4">Grazie, {nome}!</h3>
+            <p className="text-ink-soft mt-3 leading-relaxed">
+              Abbiamo ricevuto la tua candidatura per il settore <strong className="text-plum-800">{settore}</strong>. Il nostro team la prenderà in carico e ti contatterà al numero <strong className="text-plum-800">{telefono}</strong> entro 24 ore lavorative.
             </p>
-
-            <div className="p-4 bg-[var(--bg-color)] border-3 border-[#3D2045] mt-6 text-left">
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#6E4274] block mb-1">
-                ⚡ Vuoi velocizzare la tua pratica?
-              </span>
-              <p className="text-xs font-bold text-black/80 dark:text-white/80 leading-relaxed m-0">
+            <div className="rounded-2xl bg-sun-100 p-4 mt-6 text-left">
+              <span className="text-sm font-semibold text-plum-800 block mb-1"><i className="fas fa-bolt mr-1" /> Vuoi velocizzare la tua pratica?</span>
+              <p className="text-sm text-plum-800/75 leading-relaxed m-0">
                 Puoi scriverci direttamente su WhatsApp per avvisarci del tuo invio o allegare il tuo CV aggiornato.
               </p>
             </div>
-
             <div className="flex flex-col sm:flex-row gap-3 mt-6">
               <a
                 href={`https://wa.me/393518818391?text=${encodeURIComponent(
@@ -758,12 +500,12 @@ export const Candidati: React.FC = () => {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="comic-button bg-[#25D366] text-white py-3 px-4 text-xs sm:text-sm font-black flex items-center justify-center gap-2 border-3 border-[#3D2045] flex-1 hover:bg-green-600"
+                className="btn btn-lg btn-wa flex-1"
               >
-                <i className="fab fa-whatsapp text-lg" /> SCRIVICI SU WHATSAPP
+                <i className="fab fa-whatsapp text-lg" /> Scrivici su WhatsApp
               </a>
-
               <button
+                type="button"
                 onClick={() => {
                   setSuccess(false);
                   setNome('');
@@ -773,7 +515,7 @@ export const Candidati: React.FC = () => {
                   setMessaggio('');
                   setSettore('');
                 }}
-                className="py-3 px-4 border-3 border-[#3D2045] text-xs font-black uppercase hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="btn btn-lg btn-outline"
               >
                 Chiudi
               </button>

@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { supabase } from '../lib/supabaseClient';
 import { WhatsAppModal } from '../components/WhatsAppModal';
-import { CloseButton } from '../components/CloseButton';
-import FluidOrb from '../components/ui/fluid-orb';
 
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY as string;
 // Rate-limit: max 3 candidature per 10 minuti (localStorage)
@@ -34,7 +32,6 @@ interface Offerta {
 
 const JobOfferDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const [offerta, setOfferta] = useState<Offerta | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -226,21 +223,21 @@ const JobOfferDetail: React.FC = () => {
   };
 
   if (loading) return (
-    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="min-h-[70vh] flex items-center justify-center pt-24">
       <div className="text-center">
-        <div className="w-14 h-14 border-4 border-[#6E4274] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="font-black text-xs tracking-widest uppercase text-[#6E4274]">Caricamento offerta...</p>
+        <div className="w-12 h-12 border-4 border-plum-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-sm font-medium text-plum-600">Caricamento offerta...</p>
       </div>
     </div>
   );
 
   if (notFound || !offerta) return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 px-4 text-center">
-      <div className="text-6xl">🔍</div>
-      <h1 className="text-3xl font-heading font-black uppercase tracking-tight text-black dark:text-white">Offerta non trovata</h1>
-      <p className="text-[#6E4274] font-bold">Questa offerta potrebbe essere scaduta o non esistere.</p>
-      <Link to="/offerte" className="comic-button bg-[#6E4274] text-white px-8 py-4 border-[#3D2045] text-sm font-black uppercase tracking-widest">
-        ← Vedi tutte le offerte
+    <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 px-5 pt-24 text-center">
+      <span className="icon-tile !w-16 !h-16 !rounded-2xl"><i className="fas fa-search text-2xl" /></span>
+      <h1 className="h-display text-3xl sm:text-4xl text-plum-800">Offerta non trovata</h1>
+      <p className="text-ink-soft">Questa offerta potrebbe essere scaduta o non esistere.</p>
+      <Link to="/offerte" className="btn btn-lg btn-primary mt-2">
+        <i className="fas fa-arrow-left text-xs" /> Vedi tutte le offerte
       </Link>
     </div>
   );
@@ -264,237 +261,200 @@ const JobOfferDetail: React.FC = () => {
     ? offerta.requisiti.split('\n').filter(Boolean)
     : [];
 
+  const facts = [
+    { icon: 'fa-map-marker-alt', label: 'Luogo', value: offerta.citta, sub: offerta.stato_germania },
+    { icon: 'fa-file-contract', label: 'Contratto', value: offerta.contratto },
+    { icon: 'fa-briefcase', label: 'Settore', value: offerta.settore },
+  ];
+
   return (
-    <div className="min-h-screen bg-[var(--bg-color)] pt-20 pb-20">
-      {/* Hero immagine */}
-      {offerta.immagine_url && (
-        <div className="w-full h-64 sm:h-80 md:h-96 overflow-hidden relative">
-          <img
-            src={offerta.immagine_url}
-            alt={offerta.titolo}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#3D2045]/80 via-[#3D2045]/20 to-transparent" />
-          {offerta.in_evidenza && (
-            <div className="absolute top-6 left-6 bg-yellow-300 text-[#3D2045] px-4 py-2 font-black text-xs uppercase tracking-widest border-4 border-[#3D2045] flex items-center gap-2">
-              ⭐ In Evidenza
+    <div className="pb-28 lg:pb-20">
+      {/* INTESTAZIONE */}
+      <section className="surface-tint pt-28 sm:pt-36 pb-10 sm:pb-14">
+        <div className="container-x">
+          <nav aria-label="Percorso" className="flex items-center gap-2 text-sm text-ink-soft mb-6">
+            <Link to="/" className="hover:text-plum-800">Home</Link>
+            <i className="fas fa-chevron-right text-[9px] text-plum-300" />
+            <Link to="/offerte" className="hover:text-plum-800">Offerte</Link>
+            <i className="fas fa-chevron-right text-[9px] text-plum-300" />
+            <span className="text-plum-800 font-medium truncate max-w-[220px]">{offerta.titolo}</span>
+          </nav>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+            <div className="lg:col-span-8">
+              <div className="flex flex-wrap gap-2">
+                {offerta.in_evidenza && <span className="chip chip-sun"><i className="fas fa-star text-[10px]" /> In evidenza</span>}
+                <span className="chip">{offerta.settore}</span>
+              </div>
+              <h1 className="h-display text-plum-800 text-3xl sm:text-5xl mt-4">{offerta.titolo}</h1>
+              {offerta.azienda && <p className="text-plum-600 font-medium text-lg mt-2">{offerta.azienda}</p>}
             </div>
-          )}
-        </div>
-      )}
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mt-8 mb-6 text-xs font-black uppercase tracking-widest text-[#6E4274]">
-          <Link to="/" className="hover:text-[#3D2045] transition-colors">Home</Link>
-          <span className="text-black/30 dark:text-white/30">›</span>
-          <Link to="/offerte" className="hover:text-[#3D2045] transition-colors">Offerte</Link>
-          <span className="text-black/30 dark:text-white/30">›</span>
-          <span className="text-black dark:text-white truncate max-w-[200px]">{offerta.titolo}</span>
-        </div>
-
-        {/* Header offerta */}
-        <div className="comic-card border-8 border-[#3D2045] p-6 sm:p-10 shadow-[8px_8px_0px_#3D2045] mb-8">
-          {!offerta.immagine_url && offerta.in_evidenza && (
-            <div className="inline-flex items-center gap-2 bg-yellow-300 text-[#3D2045] px-3 py-1 font-black text-xs uppercase tracking-widest border-2 border-[#3D2045] mb-4">
-              ⭐ In Evidenza
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-            <div className="flex-1">
-              <span className="inline-block bg-[#6E4274] text-white text-xs font-black uppercase tracking-widest px-3 py-1 border-2 border-[#3D2045] mb-3">
-                {offerta.settore}
-              </span>
-              <h1 className="text-2xl sm:text-4xl font-heading font-black uppercase tracking-tight text-black dark:text-white leading-tight">
-                {offerta.titolo}
-              </h1>
-              {offerta.azienda && (
-                <p className="text-[#6E4274] dark:text-[#9B6FA3] font-black text-lg mt-1">{offerta.azienda}</p>
-              )}
-            </div>
-
-            {/* Azioni */}
-            <div className="flex flex-row sm:flex-col gap-2 flex-shrink-0">
-              <button
-                onClick={handleShare}
-                className="comic-button bg-white dark:bg-[#1a0d20] text-[#3D2045] dark:text-white border-[#3D2045] px-4 py-2.5 text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors min-w-[120px] justify-center"
-              >
-                <i className={`fas ${copied ? 'fa-check text-green-500' : 'fa-share-alt'}`} />
+            <div className="lg:col-span-4 flex lg:justify-end">
+              <button type="button" onClick={handleShare} className="btn btn-outline">
+                <i className={`fas ${copied ? 'fa-check text-emerald-600' : 'fa-share-alt text-plum-400'}`} />
                 {copied ? 'Copiato!' : 'Condividi'}
               </button>
             </div>
           </div>
 
-          {/* Info rapide */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <div className="bg-[#6E4274]/10 border-2 border-[#6E4274]/30 p-3 text-center">
-              <i className="fas fa-map-marker-alt text-[#6E4274] text-lg mb-1 block" />
-              <div className="text-xs font-black uppercase tracking-widest text-black dark:text-white">{offerta.citta}</div>
-              {offerta.stato_germania && <div className="text-[10px] text-[#6E4274] font-bold">{offerta.stato_germania}</div>}
+          {offerta.immagine_url && (
+            <div className="mt-8 rounded-[2rem] overflow-hidden h-56 sm:h-80 md:h-[26rem] shadow-[var(--shadow-lift)]">
+              <img src={offerta.immagine_url} alt={offerta.titolo} className="w-full h-full object-cover" />
             </div>
-            <div className="bg-[#6E4274]/10 border-2 border-[#6E4274]/30 p-3 text-center">
-              <i className="fas fa-file-contract text-[#6E4274] text-lg mb-1 block" />
-              <div className="text-xs font-black uppercase tracking-widest text-black dark:text-white">{offerta.contratto}</div>
-              <div className="text-[10px] text-[#6E4274] font-bold">Contratto</div>
-            </div>
-            <div className="bg-[#6E4274]/10 border-2 border-[#6E4274]/30 p-3 text-center">
-              <i className="fas fa-briefcase text-[#6E4274] text-lg mb-1 block" />
-              <div className="text-xs font-black uppercase tracking-widest text-black dark:text-white">{offerta.settore}</div>
-              <div className="text-[10px] text-[#6E4274] font-bold">Settore</div>
-            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="container-x mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* CONTENUTO */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {facts.map(f => (
+              <div key={f.label} className="card !rounded-2xl p-4">
+                <i className={`fas ${f.icon} text-plum-400`} />
+                <div className="text-xs text-ink-soft mt-2">{f.label}</div>
+                <div className="font-semibold text-plum-800 leading-snug">{f.value}</div>
+                {f.sub && <div className="text-xs text-plum-600">{f.sub}</div>}
+              </div>
+            ))}
             {salaryText && (
-              <div className="bg-green-500/10 border-2 border-green-500/30 p-3 text-center">
-                <i className="fas fa-euro-sign text-green-600 text-lg mb-1 block" />
-                <div className="text-xs font-black uppercase tracking-widest text-black dark:text-white">{salaryText}</div>
-                <div className="text-[10px] text-green-600 font-bold">Stipendio</div>
+              <div className="rounded-2xl bg-sun-100 border border-sun-300 p-4">
+                <i className="fas fa-euro-sign text-plum-800" />
+                <div className="text-xs text-plum-800/70 mt-2">Stipendio</div>
+                <div className="font-semibold text-plum-800 leading-snug">{salaryText}</div>
               </div>
             )}
           </div>
 
-          {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => setShowApply(true)}
-              className="comic-button flex-1 bg-[#6E4274] text-white border-[#3D2045] py-4 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#3D2045] transition-colors"
-            >
-              <i className="fas fa-paper-plane text-lg" /> Candidati Ora
-            </button>
-            <button
-              onClick={() => setShowWaModal(true)}
-              className="comic-button bg-[#25D366] text-white border-[#3D2045] px-8 py-4 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:brightness-110 transition-all"
-            >
-              <i className="fab fa-whatsapp text-lg" /> WhatsApp
-            </button>
+          <div className="card p-6 sm:p-9">
+            <h2 className="font-heading font-bold text-2xl text-plum-800 flex items-center gap-3">
+              <span className="icon-tile !w-10 !h-10 !rounded-xl"><i className="fas fa-align-left" /></span>
+              Descrizione del lavoro
+            </h2>
+            <div className="mt-6 text-ink leading-relaxed text-[16px]">
+              {offerta.descrizione.split('\n').map((line, i) => (
+                line.trim() ? <p key={i} className="mb-3">{line}</p> : <div key={i} className="h-2" aria-hidden="true" />
+              ))}
+            </div>
           </div>
+
+          {requisiti.length > 0 && (
+            <div className="card p-6 sm:p-9">
+              <h2 className="font-heading font-bold text-2xl text-plum-800 flex items-center gap-3">
+                <span className="icon-tile !w-10 !h-10 !rounded-xl"><i className="fas fa-list-check" /></span>
+                Requisiti
+              </h2>
+              <ul className="mt-6 space-y-3">
+                {requisiti.map((req, i) => (
+                  <li key={i} className="flex items-start gap-3 text-ink">
+                    <span className="mt-0.5 h-5 w-5 rounded-full bg-plum-600 text-white flex items-center justify-center text-[9px] shrink-0">
+                      <i className="fas fa-check" />
+                    </span>
+                    {req.replace(/^[-•*]\s*/, '')}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
-        {/* Descrizione */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
-            <div className="comic-card border-4 border-[#3D2045] p-6 sm:p-8 shadow-[4px_4px_0px_#3D2045]">
-              <h2 className="text-xl font-heading font-black uppercase tracking-tight text-black dark:text-white mb-4 border-b-4 border-[#6E4274] pb-3">
-                <i className="fas fa-align-left text-[#6E4274] mr-2" /> Descrizione del Lavoro
-              </h2>
-              <div className="prose prose-sm max-w-none">
-                {offerta.descrizione.split('\n').map((line, i) => (
-                  line ? (
-                    <p key={i} className="text-black dark:text-white font-bold text-sm leading-relaxed mb-3">{line}</p>
-                  ) : <br key={i} />
-                ))}
-              </div>
+        {/* SIDEBAR */}
+        <aside className="lg:col-span-4">
+          <div className="lg:sticky lg:top-28 space-y-4">
+            <div className="card p-6 sm:p-7">
+              <h3 className="font-heading font-bold text-xl text-plum-800">Ti interessa?</h3>
+              <p className="text-sm text-ink-soft mt-1">Candidati in 1 minuto: ti contattiamo entro 24 ore.</p>
+              <button type="button" onClick={() => setShowApply(true)} className="btn btn-lg btn-primary w-full mt-5">
+                <i className="fas fa-paper-plane" /> Candidati ora
+              </button>
+              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-wa w-full mt-3">
+                <i className="fab fa-whatsapp text-lg" /> WhatsApp
+              </button>
             </div>
 
-            {requisiti.length > 0 && (
-              <div className="comic-card border-4 border-[#3D2045] p-6 sm:p-8 shadow-[4px_4px_0px_#3D2045]">
-                <h2 className="text-xl font-heading font-black uppercase tracking-tight text-black dark:text-white mb-4 border-b-4 border-[#6E4274] pb-3">
-                  <i className="fas fa-list-check text-[#6E4274] mr-2" /> Requisiti
-                </h2>
-                <ul className="space-y-3">
-                  {requisiti.map((req, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm font-bold text-black dark:text-white">
-                      <span className="w-5 h-5 bg-[#6E4274] text-white text-xs font-black flex items-center justify-center flex-shrink-0 mt-0.5 border-2 border-[#3D2045]">✓</span>
-                      {req.replace(/^[-•*]\s*/, '')}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Condividi */}
-            <div className="comic-card border-4 border-[#3D2045] p-5 shadow-[4px_4px_0px_#3D2045] text-center">
-              <div className="text-2xl mb-2">🔗</div>
-              <h3 className="font-heading font-black uppercase text-sm text-black dark:text-white mb-2">Condividi questo annuncio</h3>
-              <p className="text-xs font-bold text-black/60 dark:text-white/60 mb-4">Invia il link a chi potrebbe essere interessato</p>
-              <button
-                onClick={handleShare}
-                className="comic-button w-full bg-[#6E4274] text-white border-[#3D2045] py-3 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#3D2045]"
-              >
-                <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} />
+            <div className="card p-6">
+              <h3 className="font-heading font-bold text-lg text-plum-800 flex items-center gap-2">
+                <i className="fas fa-link text-plum-400 text-base" /> Condividi questo annuncio
+              </h3>
+              <p className="text-sm text-ink-soft mt-1 mb-4">Invia il link a chi potrebbe essere interessato.</p>
+              <button type="button" onClick={handleShare} className="btn btn-outline w-full">
+                <i className={`fas ${copied ? 'fa-check text-emerald-600' : 'fa-copy text-plum-400'}`} />
                 {copied ? 'Link copiato!' : 'Copia link'}
               </button>
             </div>
 
-            {/* WhatsApp box */}
-            <div className="comic-card border-4 border-[#25D366] p-5 shadow-[4px_4px_0px_#3D2045] text-center bg-green-50 dark:bg-green-950/30">
-              <i className="fab fa-whatsapp text-[#25D366] text-3xl mb-2 block" />
-              <h3 className="font-heading font-black uppercase text-sm text-black dark:text-white mb-1">Hai domande?</h3>
-              <p className="text-xs font-bold text-black/60 dark:text-white/60 mb-4">Scrivici su WhatsApp — risposta entro 24h</p>
-              <button
-                onClick={() => setShowWaModal(true)}
-                className="comic-button w-full bg-[#25D366] text-white border-[#3D2045] py-3 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110"
-              >
+            <div className="rounded-3xl bg-wa/10 border border-wa/20 p-6">
+              <h3 className="font-heading font-bold text-lg text-plum-800 flex items-center gap-2">
+                <i className="fab fa-whatsapp text-[#128C4B]" /> Hai domande?
+              </h3>
+              <p className="text-sm text-ink-soft mt-1 mb-4">Scrivici su WhatsApp — risposta entro 24h.</p>
+              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-wa w-full">
                 <i className="fab fa-whatsapp" /> Scrivici
               </button>
             </div>
 
-            {/* Tutte le offerte */}
-            <Link
-              to="/offerte"
-              className="comic-button block w-full text-center bg-white dark:bg-[#1a0d20] text-[#3D2045] dark:text-white border-[#3D2045] py-3 text-xs font-black uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-white/10"
-            >
-              ← Tutte le Offerte
+            <Link to="/offerte" className="btn btn-outline w-full">
+              <i className="fas fa-arrow-left text-xs" /> Tutte le offerte
             </Link>
           </div>
-        </div>
+        </aside>
+      </div>
+
+      {/* BARRA MOBILE */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-line px-4 py-3 flex gap-2" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+        <button type="button" onClick={() => setShowApply(true)} className="btn btn-primary flex-1">
+          <i className="fas fa-paper-plane" /> Candidati ora
+        </button>
+        <button type="button" onClick={() => setShowWaModal(true)} aria-label="Scrivici su WhatsApp" className="btn btn-wa !px-4">
+          <i className="fab fa-whatsapp text-lg" />
+        </button>
       </div>
 
       {/* Apply Modal */}
       {showApply && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-plum-950/60 backdrop-blur-sm z-[9998] flex items-end sm:items-center justify-center sm:p-6"
           onClick={() => setShowApply(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="apply-title"
         >
           <div
-            className="comic-card border-8 border-[#3D2045] bg-[var(--card-bg)] max-w-lg w-full p-6 sm:p-8 relative shadow-[12px_12px_0px_#3D2045] overflow-hidden"
+            className="animate-pop-in bg-white w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:rounded-[2rem] p-6 sm:p-8 relative shadow-[var(--shadow-lift)]"
             onClick={e => e.stopPropagation()}
           >
-            {/* FluidOrb decorativa in alto a destra */}
-            <div className="pointer-events-none absolute -top-10 -right-10 opacity-20">
-              <FluidOrb size={160} color="#6E4274" />
-            </div>
-
-            {/* CloseButton animato */}
-            <div className="absolute top-4 right-4 z-10">
-              <CloseButton onConfirm={() => setShowApply(false)} />
-            </div>
+            <button type="button" onClick={() => setShowApply(false)} aria-label="Chiudi" className="absolute top-4 right-4 h-11 w-11 rounded-full bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
+              <i className="fas fa-times" />
+            </button>
             {applySent ? (
               <div className="text-center py-8">
-                <div className="text-5xl mb-4">✅</div>
-                <h3 className="font-heading font-black text-2xl uppercase text-black dark:text-white mb-2">Candidatura Inviata!</h3>
-                <p className="text-[#6E4274] font-bold text-sm mb-6">Ti contatteremo entro 24 ore.</p>
-                <button onClick={() => { setShowApply(false); setApplySent(false); }} className="comic-button bg-[#6E4274] text-white border-[#3D2045] px-8 py-3 text-xs font-black uppercase tracking-widest">Chiudi</button>
+                <span className="mx-auto h-16 w-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl"><i className="fas fa-check" /></span>
+                <h3 className="font-heading font-bold text-2xl text-plum-800 mt-4">Candidatura inviata!</h3>
+                <p className="text-ink-soft mt-2 mb-6">Ti contatteremo entro 24 ore.</p>
+                <button type="button" onClick={() => { setShowApply(false); setApplySent(false); }} className="btn btn-primary">Chiudi</button>
               </div>
             ) : (
               <>
-                <div className="mb-6">
-                  <span className="inline-block bg-[#6E4274] text-white text-xs font-black uppercase tracking-widest px-3 py-1 border-2 border-[#3D2045] mb-2">Candidatura</span>
-                  <h2 className="text-xl font-heading font-black uppercase text-black dark:text-white">{offerta.titolo}</h2>
+                <div className="mb-6 pr-12">
+                  <span className="chip">Candidatura</span>
+                  <h2 id="apply-title" className="font-heading font-bold text-2xl text-plum-800 tracking-tight mt-3">{offerta.titolo}</h2>
                 </div>
                 <form onSubmit={handleApply} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-black dark:text-white mb-1">Nome e Cognome *</label>
-                    <input value={applyName} onChange={e => setApplyName(e.target.value)} required placeholder="Mario Rossi"
-                      className="w-full border-3 border-[#3D2045] bg-white dark:bg-[#1a0d20] text-black dark:text-white px-4 py-3 font-bold text-sm focus:outline-none focus:border-[#6E4274]" />
+                    <label htmlFor="ap-name" className="field-label">Nome e cognome *</label>
+                    <input id="ap-name" value={applyName} onChange={e => setApplyName(e.target.value)} required autoComplete="name" placeholder="Mario Rossi" className="field" />
                   </div>
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-black dark:text-white mb-1">Email *</label>
-                    <input type="email" value={applyEmail} onChange={e => setApplyEmail(e.target.value)} required placeholder="mario@email.com"
-                      className="w-full border-3 border-[#3D2045] bg-white dark:bg-[#1a0d20] text-black dark:text-white px-4 py-3 font-bold text-sm focus:outline-none focus:border-[#6E4274]" />
+                    <label htmlFor="ap-email" className="field-label">Email *</label>
+                    <input id="ap-email" type="email" value={applyEmail} onChange={e => setApplyEmail(e.target.value)} required autoComplete="email" placeholder="mario@email.com" className="field" />
                   </div>
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-black dark:text-white mb-1">Telefono</label>
-                    <input value={applyPhone} onChange={e => setApplyPhone(e.target.value)} placeholder="+39 333 000 0000"
-                      className="w-full border-3 border-[#3D2045] bg-white dark:bg-[#1a0d20] text-black dark:text-white px-4 py-3 font-bold text-sm focus:outline-none focus:border-[#6E4274]" />
+                    <label htmlFor="ap-tel" className="field-label">Telefono</label>
+                    <input id="ap-tel" type="tel" value={applyPhone} onChange={e => setApplyPhone(e.target.value)} autoComplete="tel" placeholder="+39 333 000 0000" className="field" />
                   </div>
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-black dark:text-white mb-1">Messaggio</label>
-                    <textarea value={applyMsg} onChange={e => setApplyMsg(e.target.value)} placeholder="Raccontaci qualcosa di te..." rows={3}
-                      className="w-full border-3 border-[#3D2045] bg-white dark:bg-[#1a0d20] text-black dark:text-white px-4 py-3 font-bold text-sm focus:outline-none focus:border-[#6E4274] resize-none" />
+                    <label htmlFor="ap-msg" className="field-label">Messaggio</label>
+                    <textarea id="ap-msg" value={applyMsg} onChange={e => setApplyMsg(e.target.value)} placeholder="Raccontaci qualcosa di te..." rows={3} className="field !min-h-[96px]" />
                   </div>
 
                   {/* Honeypot — invisibile agli umani, i bot lo compilano */}
@@ -518,17 +478,14 @@ const JobOfferDetail: React.FC = () => {
                       theme="light"
                     />
                     {captchaError && (
-                      <p className="text-red-600 font-bold text-xs text-center">
-                        ⚠️ {captchaError}
+                      <p role="alert" className="text-red-600 font-medium text-sm text-center">
+                        <i className="fas fa-exclamation-triangle mr-1" /> {captchaError}
                       </p>
                     )}
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={applyLoading || !captchaToken}
-                    className="comic-button w-full bg-[#6E4274] text-white border-[#3D2045] py-4 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    {applyLoading ? <><i className="fas fa-spinner fa-spin" /> Invio...</> : <><i className="fas fa-paper-plane" /> Invia Candidatura</>}
+                  <button type="submit" disabled={applyLoading || !captchaToken} className="btn btn-lg btn-primary w-full">
+                    {applyLoading ? <><i className="fas fa-spinner fa-spin" /> Invio...</> : <><i className="fas fa-paper-plane" /> Invia candidatura</>}
                   </button>
                 </form>
               </>

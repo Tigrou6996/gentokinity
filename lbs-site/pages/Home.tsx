@@ -237,6 +237,13 @@ const Home: React.FC = () => {
       });
   }, []);
 
+  // Link esterni a /#candidatura: porta al modulo dopo il render
+  useEffect(() => {
+    if (window.location.hash !== '#candidatura') return;
+    const t = setTimeout(() => document.getElementById('candidatura')?.scrollIntoView({ behavior: 'smooth' }), 350);
+    return () => clearTimeout(t);
+  }, []);
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
