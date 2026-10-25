@@ -1,20 +1,22 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# LBS – Lavoro Business e Servizi in Germania
 
-# Run and deploy your AI Studio app
+Sito React + Vite + Tailwind CSS v4, dati e login su Supabase.
+Lo stile segue il design system in `design-system/lbs-work/MASTER.md`.
 
-This contains everything you need to run your app locally.
+## Avvio in locale
 
-View your app in AI Studio: https://ai.studio/apps/drive/1MIp0Bk6nF-w4ON23huWCnokB6xR0bE3n
+1. Installa Node.js (versione 20 o successiva).
+2. Apri il terminale **dentro questa cartella** (quella che contiene `package.json`).
+3. Copia qui il file `.env.local` con le chiavi (vedi `.env.example` per l'elenco).
+   Senza questo file il sito parte comunque con i valori pubblici di Supabase,
+   ma hCaptcha e le notifiche email non funzionano.
+4. Installa le dipendenze: `npm install`
+5. Avvia: `npm run dev`
+6. Apri l'indirizzo che compare nel terminale (di solito http://localhost:3000).
+   Se la porta 3000 è occupata da un altro programma, Vite usa la 3001, 3002…:
+   usa sempre l'indirizzo indicato nel terminale.
 
-## Run Locally
+## Pubblicazione
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- `npm run build` crea la cartella `dist/` pronta per Vercel o Netlify.
+- Su Vercel imposta le stesse variabili di `.env.local` in Settings → Environment Variables.

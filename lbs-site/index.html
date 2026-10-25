@@ -91,221 +91,147 @@
     ]
   }
   </script>
+  <!-- Stile della versione statica (prima dell'avvio di React), allineato al design system -->
+  <style>
+    .seo{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;color:#1F1424;background:#fff;line-height:1.6;min-height:100vh}
+    .seo a{color:inherit}
+    .seo-wrap{max-width:76rem;margin:0 auto;padding:0 20px}
+    .seo-nav{background:#3D2045;border-bottom:1px solid rgba(255,255,255,.15)}
+    .seo-nav-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
+    .seo .seo-brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:600}
+    .seo-brand small{display:block;font-weight:400;font-size:11px;color:rgba(255,255,255,.6)}
+    .seo-links{display:flex;flex-wrap:wrap;align-items:center;gap:20px;font-size:14px}
+    .seo-links a{color:rgba(255,255,255,.75);text-decoration:none}
+    .seo-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 18px;border-radius:6px;font-weight:500;text-decoration:none;border:1px solid transparent}
+    .seo .seo-btn-accent{background:#FFDF20;color:#3D2045}
+    .seo .seo-btn-ghost{color:#fff;border-color:rgba(255,255,255,.3)}
+    .seo-hero{background:#3D2045;color:#fff;padding:64px 0}
+    .seo-hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:48px;align-items:end}
+    .seo-eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#FFDF20;margin:0}
+    .seo h1{font-size:clamp(34px,5vw,64px);font-weight:600;letter-spacing:-.035em;line-height:1.05;margin:20px 0}
+    .seo h1 span{color:#FFDF20}
+    .seo-lead{color:rgba(255,255,255,.7);font-size:17px;max-width:36rem}
+    .seo-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+    .seo-photo{width:100%;max-width:440px;height:auto;border-radius:8px;justify-self:center}
+    .seo-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin:56px 0 0}
+    .seo-stats div{background:#3D2045;padding:22px;display:flex;flex-direction:column-reverse}
+    .seo-stats dd{margin:0;font-size:40px;font-weight:600;letter-spacing:-.03em}
+    .seo-stats dt{font-size:14px;color:rgba(255,255,255,.55)}
+    .seo-section{padding-top:72px}
+    .seo h2{font-size:clamp(26px,3.4vw,40px);font-weight:600;letter-spacing:-.03em;color:#3D2045;margin:0 0 24px}
+    .seo h3{font-size:18px;font-weight:600;color:#3D2045;margin:0 0 8px}
+    .seo-muted{color:#5B4F60;margin:-12px 0 24px}
+    .seo-grid{display:grid;gap:1px;background:#E7E1EA;border:1px solid #E7E1EA;border-radius:8px;overflow:hidden}
+    .seo-grid>div{background:#fff;padding:28px}
+    .seo-grid p{color:#5B4F60;margin:0 0 8px}
+    .seo-grid a{color:#6E4274}
+    .seo-grid-2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+    .seo-grid-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .seo-grid-4{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+    .seo-list{color:#5B4F60;padding-left:20px}
+    .seo-list li{margin-bottom:10px}
+    .seo-list strong{color:#3D2045}
+    .seo-footer{background:#3D2045;margin-top:72px;padding:56px 0}
+    .seo .seo-grid-dark{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.12)}
+    .seo .seo-grid-dark>div{background:#3D2045}
+    .seo .seo-grid-dark h3{color:#FFDF20}
+    .seo .seo-grid-dark p{color:rgba(255,255,255,.75)}
+    .seo .seo-grid-dark a{color:#fff}
+  </style>
 </head>
 <body>
   <div id="root">
-    <!-- Contenuto semantico strutturato per AI, motori di ricerca e screen reader. All'avvio di React viene attivata l'applicazione interattiva completa. -->
-    <div style="background-color: #3D2045; color: #ffffff; font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.6;">
-      
-      <!-- NAVBAR -->
-      <nav style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 2px solid rgba(255,255,255,0.1);">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="/img/logo_LBS.png" alt="LBS Logo" width="56" height="56" style="height: 52px; width: auto; object-fit: contain;" />
-          <div>
-            <div style="font-size: 16px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">LBS – LAVORO BUSINESS</div>
-            <div style="font-size: 12px; color: #ffdf20; font-weight: 700; text-transform: uppercase;">E SERVIZI IN GERMANIA</div>
+    <!-- Contenuto semantico strutturato per AI, motori di ricerca e screen reader. All'avvio di React viene attivata l'applicazione interattiva completa. Lo stile segue il design system (design-system/lbs-work/MASTER.md). -->
+    <div class="seo">
+      <nav class="seo-nav">
+        <div class="seo-wrap seo-nav-in">
+          <a href="/" class="seo-brand"><img src="/img/logo_LBS.png" alt="LBS Logo" width="36" height="36" /><span>LBS Work<small>Lavoro &amp; servizi in Germania</small></span></a>
+          <div class="seo-links">
+            <a href="/offerte">Offerte di lavoro</a>
+            <a href="/servizi">Servizi</a>
+            <a href="/datori-di-lavoro">Per le aziende</a>
+            <a href="/chi-siamo">Chi siamo</a>
+            <a href="/contatti">Contatti</a>
+            <a href="https://wa.me/4915739037885" class="seo-btn seo-btn-accent">Scrivici su WhatsApp</a>
           </div>
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; font-weight: 800;">
-          <a href="/offerte" style="color: #ffffff; text-decoration: none; padding: 8px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">Offerte 🇩🇪</a>
-          <a href="/servizi" style="color: #ffffff; text-decoration: none; padding: 8px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">Servizi</a>
-          <a href="/datori-di-lavoro" style="color: #ffdf20; text-decoration: none; padding: 8px 14px; background: rgba(255,223,32,0.15); border: 1px solid #ffdf20;">Per le Aziende</a>
-          <a href="/chi-siamo" style="color: #ffffff; text-decoration: none; padding: 8px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">Chi Siamo</a>
-          <a href="/contatti" style="color: #ffffff; text-decoration: none; padding: 8px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">Contatti</a>
-          <a href="https://wa.me/4915739037885" style="color: #3D2045; background-color: #ffdf20; text-decoration: none; padding: 8px 16px; font-weight: 900; border: 2px solid #3D2045;">Scrivici su WhatsApp</a>
         </div>
       </nav>
 
-      <!-- HERO SECTION -->
-      <header style="max-width: 1280px; margin: 40px auto 0; padding: 0 24px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; align-items: center;">
+      <header class="seo-hero">
+        <div class="seo-wrap seo-hero-grid">
           <div>
-            <h1 style="font-size: clamp(34px, 5vw, 64px); font-weight: 900; line-height: 0.95; text-transform: uppercase; letter-spacing: -0.03em; margin: 0 0 24px 0;">
-              <span style="color: #ffdf20;">#LBS</span><br />
-              <span>LAVORO BUSINESS</span><br />
-              <span style="color: #ffdf20;">E SERVIZI</span><br />
-              <span style="font-size: clamp(20px, 3vw, 36px); border-left: 5px solid #ffdf20; padding-left: 14px; display: inline-block; margin-top: 10px; color: rgba(255,255,255,0.9);">IN GERMANIA</span>
-            </h1>
-            <p style="font-size: 16px; color: rgba(255,255,255,0.9); line-height: 1.7; margin-bottom: 24px;">
-              Lavoro in Germania con assistenza 24 ore su 24, 7 giorni su 7. LBS, agenzia per italiani, ti segue dal viaggio alla nuova vita: alloggio, documenti, banca, medico, contratto e busta paga. Se il posto non ti soddisfa, ti spostiamo subito. <strong>Servizio gratuito per i datori di lavoro e per i candidati. Non sei mai solo: scrivici su WhatsApp!</strong>
-            </p>
-            <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 32px;">
-              <a href="https://wa.me/4915739037885" style="display: inline-block; background-color: #25D366; color: #ffffff; padding: 14px 26px; font-size: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; border: 2px solid #ffffff;">
-                💬 WhatsApp (+49 1573 9037885)
-              </a>
-              <a href="tel:+393518818391" style="display: inline-block; background-color: #ffdf20; color: #3D2045; padding: 14px 26px; font-size: 14px; font-weight: 900; text-decoration: none; text-transform: uppercase; border: 2px solid #3D2045;">
-                📞 Chiamaci (+39 351 881 8391)
-              </a>
-            </div>
-            <!-- STATS -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.15);">
-              <div><strong style="color: #ffdf20; font-size: 22px; display: block;">11+</strong><span style="font-size: 11px; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 700;">Anni Esperienza</span></div>
-              <div><strong style="color: #ffdf20; font-size: 22px; display: block;">350+</strong><span style="font-size: 11px; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 700;">Collocati</span></div>
-              <div><strong style="color: #ffdf20; font-size: 22px; display: block;">200+</strong><span style="font-size: 11px; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 700;">Aziende Partner</span></div>
-              <div><strong style="color: #ffdf20; font-size: 22px; display: block;">24/7</strong><span style="font-size: 11px; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 700;">Supporto H24</span></div>
+            <p class="seo-eyebrow">Agenzia per italiani in Germania · 11 anni di esperienza</p>
+            <h1>LBS – Lavoro Business e Servizi in Germania: lavoro con casa e assistenza <span>24/7.</span></h1>
+            <p class="seo-lead">Lavoro in Germania con assistenza 24 ore su 24, 7 giorni su 7. LBS, agenzia per italiani, ti segue dal viaggio alla nuova vita: alloggio, documenti, banca, medico, contratto e busta paga. Se il posto non ti soddisfa, ti spostiamo subito. Servizio gratuito per i datori di lavoro e per i candidati. Non sei mai solo: scrivici su WhatsApp!</p>
+            <div class="seo-actions">
+              <a href="https://wa.me/4915739037885" class="seo-btn seo-btn-accent">WhatsApp (+49 1573 9037885)</a>
+              <a href="tel:+393518818391" class="seo-btn seo-btn-ghost">Chiamaci (+39 351 881 8391)</a>
             </div>
           </div>
-
-          <div style="text-align: center;">
-            <div style="border: 4px solid #ffdf20; box-shadow: 8px 8px 0px #1a0d1e; max-width: 440px; margin: 0 auto; overflow: hidden;">
-              <img src="/img/salvatore_hero.jpg" alt="Salvatore Cucuzza — Titolare LBS" width="440" height="480" style="width: 100%; height: auto; display: block; object-fit: cover;" />
-            </div>
-          </div>
+          <img class="seo-photo" src="/img/salvatore_hero.jpg" alt="Salvatore Cucuzza — Titolare LBS" width="440" height="550" />
+        </div>
+        <div class="seo-wrap">
+          <dl class="seo-stats">
+            <div><dd>11+</dd><dt>Anni di esperienza</dt></div>
+            <div><dd>350+</dd><dt>Lavoratori collocati</dt></div>
+            <div><dd>200+</dd><dt>Aziende partner</dt></div>
+            <div><dd>24/7</dd><dt>Supporto H24</dt></div>
+          </dl>
         </div>
       </header>
 
-      <!-- 3 CARD VANTAGGI -->
-      <section style="max-width: 1280px; margin: 60px auto 0; padding: 0 24px;">
-        <h2 style="font-size: 24px; font-weight: 900; text-transform: uppercase; color: #ffdf20; margin-bottom: 20px;">I Punti di Forza di LBS Work</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-          <div style="background: rgba(255,255,255,0.06); padding: 24px; border: 3px solid rgba(255,255,255,0.2);">
-            <h3 style="font-size: 18px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin: 0 0 10px 0;">Partenza Sicura & Diretta</h3>
-            <p style="font-size: 14px; color: rgba(255,255,255,0.85); margin: 0;">Ti colleghiamo direttamente con aziende serie e verificate in Germania prima ancora di metterti in viaggio. Niente intermediari improvvisati.</p>
+      <section class="seo-wrap seo-section">
+        <h2>I punti di forza di LBS Work</h2>
+        <div class="seo-grid seo-grid-3">
+          <div><h3>Partenza sicura e diretta</h3><p>Ti colleghiamo direttamente con aziende serie e verificate in Germania prima ancora di metterti in viaggio. Niente intermediari improvvisati.</p></div>
+          <div><h3>Contratto e alloggio incluso</h3><p>Contratto regolare a norma di legge tedesca con alloggio pronto all'arrivo. Oltre 200 imprese partner verificate sul territorio tedesco.</p></div>
+          <div><h3>Assistenza 24/7 e traduzioni</h3><p>Ti seguiamo lungo tutto il percorso: medico, apertura conto in banca, codice fiscale e documenti sempre inclusi senza spese anticipate.</p></div>
+        </div>
+      </section>
+
+      <section class="seo-wrap seo-section">
+        <h2>Come funziona: 4 passi verso la Germania</h2>
+        <div class="seo-grid seo-grid-4">
+          <div><h3>01. Contattaci</h3><p>Chiamaci o scrivi su WhatsApp. In 24h ti richiamiamo per una consulenza gratuita.</p></div>
+          <div><h3>02. Analisi profilo</h3><p>Valutiamo il tuo CV e ti abbiniamo alle aziende tedesche più adatte alla tua professione.</p></div>
+          <div><h3>03. Colloquio e offerta</h3><p>Ti presentiamo all'azienda e concordiamo contratto, stipendio e alloggio in totale chiarezza.</p></div>
+          <div><h3>04. Partenza per la Germania</h3><p>Sistemiamo casa, documenti e contratto. Tu pensi solo a partire con la nostra assistenza.</p></div>
+        </div>
+      </section>
+
+      <section class="seo-wrap seo-section">
+        <h2>Guarda come lavoriamo</h2>
+        <p class="seo-muted">Spiegazioni chiare e dirette: dall'assistenza sul campo per chi parte, alla selezione del personale per le aziende.</p>
+        <div class="seo-grid seo-grid-2">
+          <div>
+            <h3>Cerchi lavoro?</h3>
+            <p><a href="https://www.youtube.com/watch?v=x3VZojZ8xk8">Video: cos'è l'assistenza 24/7 di LBS in Germania</a> — alloggio garantito, documenti, conto bancario e assistenza continua: Salvatore Cucuzza ti spiega punto per punto come funziona.</p>
+            <p>Prossimamente: «Dalla valigia al primo giorno di lavoro» — viaggio, alloggio e inserimento lavorativo sereno.</p>
+            <p><a href="/offerte">Vedi tutte le offerte →</a></p>
           </div>
-          <div style="background: rgba(255,255,255,0.06); padding: 24px; border: 3px solid rgba(255,255,255,0.2);">
-            <h3 style="font-size: 18px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin: 0 0 10px 0;">Contratto & Alloggio Incluso</h3>
-            <p style="font-size: 14px; color: rgba(255,255,255,0.85); margin: 0;">Contratto regolare a norma di legge tedesca con alloggio pronto all'arrivo. Oltre 200 imprese partner verificate sul territorio tedesco.</p>
-          </div>
-          <div style="background: rgba(255,255,255,0.06); padding: 24px; border: 3px solid rgba(255,255,255,0.2);">
-            <h3 style="font-size: 18px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin: 0 0 10px 0;">Assistenza 24/7 & Traduzioni</h3>
-            <p style="font-size: 14px; color: rgba(255,255,255,0.85); margin: 0;">Ti seguiamo lungo tutto il percorso: medico, apertura conto in banca, codice fiscale e documenti sempre inclusi senza spese anticipate.</p>
+          <div>
+            <h3>Cerchi personale?</h3>
+            <p>Servizio per ristoranti, hotel, imprese edili e logistica in Germania. Prossimamente: «Come selezioniamo e verifichiamo i profili» e «Perché il servizio è gratuito per i datori».</p>
+            <p><a href="/datori-di-lavoro">Info per datori di lavoro →</a></p>
           </div>
         </div>
       </section>
 
-      <!-- SEZIONE VIDEO GUIDA (GRANDI E D'IMPATTO) -->
-      <section style="max-width: 1280px; margin: 60px auto 0; padding: 0 24px;">
-        <div style="margin-bottom: 32px;">
-          <span style="background-color: #ffdf20; color: #3D2045; font-weight: 900; font-size: 11px; padding: 4px 10px; text-transform: uppercase; letter-spacing: 0.1em; display: inline-block; margin-bottom: 8px;">Video Ufficiali LBS</span>
-          <h2 style="font-size: 32px; font-weight: 900; text-transform: uppercase; color: #ffffff; margin: 0 0 8px 0;">Guarda come lavoriamo</h2>
-          <p style="font-size: 16px; color: rgba(255,255,255,0.8); margin: 0;">Spiegazioni chiare e dirette: dall'assistenza sul campo per chi parte, alla selezione del personale per le aziende. Guarda i video in grande formato.</p>
-        </div>
-
-        <!-- SEZIONE 1: CERCHI LAVORO? -->
-        <div style="background: rgba(255,255,255,0.04); border: 3px solid rgba(255,255,255,0.15); padding: 32px; margin-bottom: 36px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <h3 style="font-size: 24px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin: 0;">Cerchi lavoro?</h3>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Guide e spiegazioni per chi vuole lavorare in Germania</p>
-            </div>
-            <a href="/offerte" style="color: #3D2045; background-color: #ffdf20; text-decoration: none; padding: 8px 16px; font-size: 12px; font-weight: 900; text-transform: uppercase;">Vedi tutte le offerte →</a>
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
-            <!-- Video 1: Attivo (Assistenza LBS) -->
-            <div style="background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.1); padding: 16px;">
-              <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-bottom: 12px; background: #000; border: 2px solid #000;">
-                <iframe src="https://www.youtube-nocookie.com/embed/x3VZojZ8xk8" title="Lavoro in Germania con assistenza 24/7 | Cos'è l'assistenza LBS" style="position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
-              </div>
-              <span style="background: #10B981; color: #ffffff; font-size: 10px; font-weight: 900; padding: 2px 6px; text-transform: uppercase;">Video Disponibile</span>
-              <strong style="font-size: 16px; color: #ffffff; display: block; margin: 6px 0 4px 0;">Cos'è l'assistenza 24/7 di LBS in Germania</strong>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 0;">Alloggio garantito, documenti, conto bancario e assistenza continua: Salvatore Cucuzza ti spiega punto per punto come funziona.</p>
-            </div>
-
-            <!-- Video 2: Coming Soon -->
-            <div style="background: rgba(0,0,0,0.3); border: 2px dashed rgba(255,255,255,0.2); padding: 16px; display: flex; flex-direction: column; justify-content: center; text-align: center;">
-              <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-bottom: 12px; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                  <span style="background: #ffdf20; color: #3D2045; font-size: 12px; font-weight: 900; padding: 4px 10px; text-transform: uppercase;">Coming Soon</span>
-                </div>
-              </div>
-              <span style="color: rgba(255,255,255,0.5); font-size: 11px; text-transform: uppercase; font-weight: 700;">In fase di montaggio</span>
-              <strong style="font-size: 16px; color: #ffffff; display: block; margin: 6px 0 4px 0;">Dalla valigia al primo giorno di lavoro</strong>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 0;">Guida completa: viaggio, alloggio e inserimento lavorativo sereno.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- SEZIONE 2: CERCHI PERSONALE? -->
-        <div style="background: rgba(255,255,255,0.04); border: 3px solid rgba(255,255,255,0.15); padding: 32px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <h3 style="font-size: 24px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin: 0;">Cerchi personale?</h3>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Servizio per ristoranti, hotel, imprese edili e logistica in Germania</p>
-            </div>
-            <a href="/datori-di-lavoro" style="color: #3D2045; background-color: #ffdf20; text-decoration: none; padding: 8px 16px; font-size: 12px; font-weight: 900; text-transform: uppercase;">Info per datori di lavoro →</a>
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
-            <!-- Video 1 Aziende: Coming Soon -->
-            <div style="background: rgba(0,0,0,0.3); border: 2px dashed rgba(255,255,255,0.2); padding: 16px; text-align: center;">
-              <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-bottom: 12px; background: rgba(0,0,0,0.5);">
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                  <span style="background: #ffdf20; color: #3D2045; font-size: 12px; font-weight: 900; padding: 4px 10px; text-transform: uppercase;">Coming Soon</span>
-                </div>
-              </div>
-              <span style="color: rgba(255,255,255,0.5); font-size: 11px; text-transform: uppercase; font-weight: 700;">In fase di ripresa</span>
-              <strong style="font-size: 16px; color: #ffffff; display: block; margin: 6px 0 4px 0;">Come selezioniamo e verifichiamo i profili</strong>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 0;">Screening candidati, colloqui tecnici e referenze verificate per la tua azienda.</p>
-            </div>
-
-            <!-- Video 2 Aziende: Coming Soon -->
-            <div style="background: rgba(0,0,0,0.3); border: 2px dashed rgba(255,255,255,0.2); padding: 16px; text-align: center;">
-              <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-bottom: 12px; background: rgba(0,0,0,0.5);">
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                  <span style="background: #ffdf20; color: #3D2045; font-size: 12px; font-weight: 900; padding: 4px 10px; text-transform: uppercase;">Coming Soon</span>
-                </div>
-              </div>
-              <span style="color: rgba(255,255,255,0.5); font-size: 11px; text-transform: uppercase; font-weight: 700;">In fase di ripresa</span>
-              <strong style="font-size: 16px; color: #ffffff; display: block; margin: 6px 0 4px 0;">Perché il servizio è gratuito per i datori</strong>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 0;">Zero costi di intermediazione per le aziende e gestione completa della documentazione.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- COME FUNZIONA (4 PASSI) -->
-      <section style="max-width: 1280px; margin: 60px auto 0; padding: 0 24px;">
-        <h2 style="font-size: 24px; font-weight: 900; text-transform: uppercase; color: #ffdf20; margin-bottom: 20px;">Come Funziona: 4 Passi verso la Germania</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
-          <div style="background: rgba(255,255,255,0.05); padding: 20px; border-left: 4px solid #ffdf20;">
-            <div style="font-size: 24px; font-weight: 900; color: #ffdf20; margin-bottom: 4px;">01. Contattaci</div>
-            <p style="font-size: 13px; color: rgba(255,255,255,0.85); margin: 0;">Chiamaci o scrivi su WhatsApp. In 24h ti richiamiamo per una consulenza gratuita.</p>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 20px; border-left: 4px solid #ffdf20;">
-            <div style="font-size: 24px; font-weight: 900; color: #ffdf20; margin-bottom: 4px;">02. Analisi Profilo</div>
-            <p style="font-size: 13px; color: rgba(255,255,255,0.85); margin: 0;">Valutiamo il tuo CV e ti abbiniamo alle aziende tedesche più adatte alla tua professione.</p>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 20px; border-left: 4px solid #ffdf20;">
-            <div style="font-size: 24px; font-weight: 900; color: #ffdf20; margin-bottom: 4px;">03. Colloquio & Offerta</div>
-            <p style="font-size: 13px; color: rgba(255,255,255,0.85); margin: 0;">Ti presentiamo all'azienda e concordiamo contratto, stipendio e alloggio in totale chiarezza.</p>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 20px; border-left: 4px solid #ffdf20;">
-            <div style="font-size: 24px; font-weight: 900; color: #ffdf20; margin-bottom: 4px;">04. Partenza per la Germania</div>
-            <p style="font-size: 13px; color: rgba(255,255,255,0.85); margin: 0;">Sistemiamo casa, documenti e contratto. Tu pensi solo a partire con la nostra assistenza.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- I SERVIZI -->
-      <section style="max-width: 1280px; margin: 60px auto 0; padding: 0 24px;">
-        <h2 style="font-size: 24px; font-weight: 900; text-transform: uppercase; color: #ffdf20; margin-bottom: 20px;">I Nostri Servizi Completi</h2>
-        <ul style="list-style-type: square; padding-left: 20px; display: grid; gap: 10px; font-size: 14px; color: rgba(255,255,255,0.9);">
-          <li><strong>Gestione Burocratica:</strong> Pratiche permessi, riconoscimento titoli di studio, codice fiscale tedesco (Steuer-ID), Krankenkasse e contratti a norma.</li>
-          <li><strong>Ricerca Alloggio Certificato:</strong> Camere o appartamenti arredati pronti all'arrivo con utenze attive.</li>
-          <li><strong>Assistenza Continua 24/7:</strong> Supporto giorno e notte per visite mediche, apertura conto bancario e pratiche comunali con traduzioni incluse.</li>
-          <li><strong>Supporto Familiare:</strong> Iscrizione alle scuole e asili per i figli e gestione pratiche assegni familiari tedeschi (Kindergeld).</li>
+      <section class="seo-wrap seo-section">
+        <h2>I nostri servizi completi</h2>
+        <ul class="seo-list">
+          <li><strong>Gestione burocratica:</strong> pratiche permessi, riconoscimento titoli di studio, codice fiscale tedesco (Steuer-ID), Krankenkasse e contratti a norma.</li>
+          <li><strong>Ricerca alloggio certificato:</strong> camere o appartamenti arredati pronti all'arrivo con utenze attive.</li>
+          <li><strong>Assistenza continua 24/7:</strong> supporto giorno e notte per visite mediche, apertura conto bancario e pratiche comunali con traduzioni incluse.</li>
+          <li><strong>Supporto familiare:</strong> iscrizione alle scuole e asili per i figli e gestione pratiche assegni familiari tedeschi (Kindergeld).</li>
         </ul>
       </section>
 
-      <!-- SEDI E CONTATTI -->
-      <footer style="max-width: 1280px; margin: 60px auto 0; padding: 30px 24px 60px; border-top: 2px solid rgba(255,255,255,0.15);">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; font-size: 14px;">
-          <div>
-            <h3 style="font-size: 16px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin-bottom: 8px;">📍 Sede Operativa Italia</h3>
-            <p style="color: rgba(255,255,255,0.85); margin: 0 0 6px 0;">Viale Vittorio Veneto 335, 95126 Catania (CT)</p>
-            <p style="margin: 0;">Tel: <a href="tel:+393518818391" style="color: #ffdf20; font-weight: 700;">+39 351 881 8391</a></p>
-          </div>
-          <div>
-            <h3 style="font-size: 16px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin-bottom: 8px;">🏢 Sede Legale Germania</h3>
-            <p style="color: rgba(255,255,255,0.85); margin: 0 0 6px 0;">Henkelstraße 7, 34127 Kassel — Germania</p>
-            <p style="margin: 0;">WhatsApp: <a href="https://wa.me/4915739037885" style="color: #ffdf20; font-weight: 700;">+49 1573 9037885</a></p>
-          </div>
-          <div>
-            <h3 style="font-size: 16px; font-weight: 900; color: #ffdf20; text-transform: uppercase; margin-bottom: 8px;">✉️ Recapiti Ufficiali</h3>
-            <p style="color: rgba(255,255,255,0.85); margin: 0 0 6px 0;">Email: <a href="mailto:info@lbswork.com" style="color: #ffdf20; font-weight: 700;">info@lbswork.com</a></p>
-            <p style="color: rgba(255,255,255,0.85); margin: 0;">Orari: Lun–Ven 09:00–18:00 | Sabato 09:00–13:00</p>
-          </div>
+      <footer class="seo-footer">
+        <div class="seo-wrap seo-grid seo-grid-3 seo-grid-dark">
+          <div><h3>Sede operativa Italia</h3><p>Viale Vittorio Veneto 335, 95126 Catania (CT)</p><p>Tel: <a href="tel:+393518818391">+39 351 881 8391</a></p></div>
+          <div><h3>Sede legale Germania</h3><p>Henkelstraße 7, 34127 Kassel — Germania</p><p>WhatsApp: <a href="https://wa.me/4915739037885">+49 1573 9037885</a></p></div>
+          <div><h3>Recapiti ufficiali</h3><p>Email: <a href="mailto:info@lbswork.com">info@lbswork.com</a></p><p>Orari: Lun–Ven 09:00–18:00 · Sabato 09:00–13:00</p></div>
         </div>
       </footer>
     </div>
