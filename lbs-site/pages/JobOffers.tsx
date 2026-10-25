@@ -249,7 +249,7 @@ const JobOffers: React.FC = () => {
           <form
             onSubmit={handlePageSearchSubmit}
             role="search"
-            className="mt-9 bg-white rounded-3xl sm:rounded-full border border-line p-2 shadow-[var(--shadow-soft)] flex flex-col sm:flex-row gap-2 max-w-4xl"
+            className="mt-9 bg-white rounded-xl sm:rounded-lg border border-line p-2 shadow-[var(--shadow-soft)] flex flex-col sm:flex-row gap-2 max-w-4xl"
           >
             <label className="relative flex-1">
               <span className="sr-only">Ruolo</span>
@@ -259,7 +259,7 @@ const JobOffers: React.FC = () => {
                 value={inputRuolo}
                 onChange={e => setInputRuolo(e.target.value)}
                 placeholder="Ruolo (es. Cuoco, Operaio)"
-                className="w-full h-12 rounded-full pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
+                className="w-full h-12 rounded-md pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
               />
             </label>
             <span className="hidden sm:block w-px my-2 bg-line" />
@@ -271,7 +271,7 @@ const JobOffers: React.FC = () => {
                 value={inputCitta}
                 onChange={e => setInputCitta(e.target.value)}
                 placeholder="Città (es. Berlino, Monaco)"
-                className="w-full h-12 rounded-full pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
+                className="w-full h-12 rounded-md pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
               />
             </label>
             <button type="submit" className="btn btn-primary h-12 !px-7">
@@ -299,11 +299,7 @@ const JobOffers: React.FC = () => {
                   type="button"
                   onClick={() => setFiltroSettore(s)}
                   aria-pressed={filtroSettore === s}
-                  className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
-                    filtroSettore === s
-                      ? 'bg-plum-800 text-white border-plum-800'
-                      : 'bg-white text-ink-soft border-line hover:border-plum-300 hover:text-plum-800'
-                  }`}
+                  className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border transition-colors cursor-pointer ${ filtroSettore === s ? 'bg-plum-800 text-white border-plum-800' : 'bg-white text-ink-soft border-line hover:border-plum-300 hover:text-plum-800' }`}
                 >
                   {s !== 'Tutti' && <i className={`fas ${SETTORE_ICONS[s] ?? 'fa-briefcase'} text-xs opacity-70`} />}
                   {s}
@@ -319,10 +315,10 @@ const JobOffers: React.FC = () => {
 
           {/* FALLBACK QUANDO NON CI SONO RISULTATI ESATTI */}
           {isFallback && (
-            <div className="reveal rounded-3xl bg-sun-400 text-plum-800 p-7 sm:p-10 mb-12 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="reveal rounded-lg border border-line border-l-4 border-l-sun-400 bg-white text-plum-800 p-7 sm:p-10 mb-12 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
               <div className="max-w-3xl">
                 <span className="chip !bg-plum-800 !text-white !border-plum-800"><i className="fas fa-search text-[10px]" /> Nessun risultato diretto</span>
-                <h2 className="font-heading font-bold text-2xl sm:text-3xl tracking-tight mt-4 leading-snug">
+                <h2 className="font-semibold text-2xl sm:text-3xl tracking-tight mt-4 leading-snug">
                   Per ora non abbiamo la tua ricerca per “{queryRuolo || 'tutti i ruoli'}”{queryCitta ? <> a “{queryCitta}”</> : ''}
                 </h2>
                 <p className="text-plum-800/75 mt-3 leading-relaxed">
@@ -333,7 +329,7 @@ const JobOffers: React.FC = () => {
                 <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-dark">
                   <i className="fab fa-whatsapp text-lg" /> Scrivici su WhatsApp
                 </button>
-                <a href="/#candidatura" className="btn btn-lg bg-white/70 hover:bg-white text-plum-800">
+                <a href="/#candidatura" className="btn btn-lg btn-outline">
                   Candidatura spontanea
                 </a>
               </div>
@@ -362,8 +358,8 @@ const JobOffers: React.FC = () => {
             </div>
           ) : displayedOfferte.length === 0 ? (
             <div className="card p-10 sm:p-16 text-center reveal">
-              <span className="mx-auto icon-tile !w-16 !h-16 !rounded-2xl"><i className="fas fa-briefcase text-2xl" /></span>
-              <h3 className="font-heading font-bold text-2xl text-plum-800 mt-6">Nessuna offerta per questo settore</h3>
+              <span className="mx-auto icon-tile !w-16 !h-16 !rounded-lg"><i className="fas fa-briefcase text-2xl" /></span>
+              <h3 className="font-semibold text-2xl text-plum-800 mt-6">Nessuna offerta per questo settore</h3>
               <p className="text-ink-soft mt-2 mb-8 max-w-md mx-auto">
                 Inviaci comunque la tua candidatura — ti teniamo in considerazione per le prossime aperture.
               </p>
@@ -395,7 +391,7 @@ const JobOffers: React.FC = () => {
                         <i className={`fas ${SETTORE_ICONS[offerta.settore] ?? 'fa-briefcase'} text-plum-400`} />
                         <span className="truncate">{offerta.settore}</span>
                       </div>
-                      <h3 className="font-heading font-bold text-xl text-plum-800 tracking-tight leading-snug mt-2">
+                      <h3 className="font-semibold text-xl text-plum-800 tracking-tight leading-snug mt-2">
                         <Link to={`/offerte/${offerta.slug || offerta.id}`} className="hover:text-plum-600">{offerta.titolo}</Link>
                       </h3>
                       <p className="flex items-center gap-2 text-sm text-ink-soft mt-3">
@@ -431,7 +427,7 @@ const JobOffers: React.FC = () => {
           )}
 
           {/* CTA */}
-          <div className="reveal mt-16 rounded-[2.5rem] surface-plum px-6 py-12 sm:px-12 sm:py-16 text-center overflow-hidden">
+          <div className="reveal mt-16 rounded-xl surface-plum px-6 py-12 sm:px-12 sm:py-16 text-center overflow-hidden">
             <h2 className="h-section text-white">Non trovi quello che cerchi? <span className="text-sun-400">Candidati comunque.</span></h2>
             <p className="text-white/70 text-lg mt-4 max-w-2xl mx-auto">
               Riceviamo nuove offerte ogni settimana. Inviaci il tuo profilo e ti contatteremo appena arriva qualcosa di adatto.
@@ -453,7 +449,7 @@ const JobOffers: React.FC = () => {
           aria-labelledby="offer-modal-title"
         >
           <div
-            className="animate-pop-in w-full sm:max-w-2xl max-h-[92dvh] overflow-y-auto bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-[var(--shadow-lift)]"
+            className="animate-pop-in w-full sm:max-w-2xl max-h-[92dvh] overflow-y-auto bg-white rounded-t-xl sm:rounded-xl shadow-[var(--shadow-lift)]"
             onClick={e => e.stopPropagation()}
           >
             <div className="p-6 sm:p-10">
@@ -462,25 +458,25 @@ const JobOffers: React.FC = () => {
                   <span className="chip" style={{ color: CONTRATTO_COLORS[selected.contratto] || '#6E4274', borderColor: (CONTRATTO_COLORS[selected.contratto] || '#6E4274') + '33', background: (CONTRATTO_COLORS[selected.contratto] || '#6E4274') + '10' }}>
                     {selected.contratto}
                   </span>
-                  <h2 id="offer-modal-title" className="font-heading font-bold text-2xl sm:text-3xl text-plum-800 tracking-tight mt-3">{selected.titolo}</h2>
+                  <h2 id="offer-modal-title" className="font-semibold text-2xl sm:text-3xl text-plum-800 tracking-tight mt-3">{selected.titolo}</h2>
                   {selected.azienda && <p className="text-plum-600 font-medium mt-1">{selected.azienda}</p>}
                 </div>
-                <button type="button" onClick={() => setSelected(null)} aria-label="Chiudi" className="h-11 w-11 rounded-full bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center shrink-0 cursor-pointer">
+                <button type="button" onClick={() => setSelected(null)} aria-label="Chiudi" className="h-11 w-11 rounded-md bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center shrink-0 cursor-pointer">
                   <i className="fas fa-times" />
                 </button>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-7">
-                <div className="rounded-2xl bg-plum-50 p-4">
+                <div className="rounded-lg bg-plum-50 p-4">
                   <div className="text-xs font-semibold text-plum-600 mb-1"><i className="fas fa-map-marker-alt mr-1" /> Città</div>
                   <div className="font-semibold text-plum-800">{selected.citta}{selected.stato_germania ? `, ${selected.stato_germania}` : ''} 🇩🇪</div>
                 </div>
-                <div className="rounded-2xl bg-plum-50 p-4">
+                <div className="rounded-lg bg-plum-50 p-4">
                   <div className="text-xs font-semibold text-plum-600 mb-1"><i className="fas fa-industry mr-1" /> Settore</div>
                   <div className="font-semibold text-plum-800">{selected.settore}</div>
                 </div>
                 {formatStipendio(selected) && (
-                  <div className="rounded-2xl bg-sun-100 p-4 col-span-2">
+                  <div className="rounded-lg bg-sun-100 p-4 col-span-2">
                     <div className="text-xs font-semibold text-plum-600 mb-1"><i className="fas fa-euro-sign mr-1" /> Stipendio</div>
                     <div className="font-semibold text-plum-800">{formatStipendio(selected)}</div>
                   </div>
@@ -500,11 +496,11 @@ const JobOffers: React.FC = () => {
               )}
 
               {showApply ? (
-                <div className="rounded-3xl border border-line bg-paper p-5 sm:p-6">
+                <div className="rounded-xl border border-line bg-paper p-5 sm:p-6">
                   {applyDone ? (
                     <div className="text-center py-6">
-                      <span className="mx-auto h-16 w-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl"><i className="fas fa-check" /></span>
-                      <h3 className="font-heading font-bold text-2xl text-plum-800 mt-4">Candidatura inviata!</h3>
+                      <span className="mx-auto h-16 w-16 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl"><i className="fas fa-check" /></span>
+                      <h3 className="font-semibold text-2xl text-plum-800 mt-4">Candidatura inviata!</h3>
                       <p className="text-ink-soft mt-2 mb-6">Ti contatteremo presto. Puoi seguire lo stato nella tua dashboard.</p>
                       <button type="button" onClick={() => { setSelected(null); setShowApply(false); }} className="btn btn-primary">
                         Chiudi
@@ -512,7 +508,7 @@ const JobOffers: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      <h3 className="font-heading font-bold text-lg text-plum-800 mb-4">Candidatura — {selected?.titolo}</h3>
+                      <h3 className="font-semibold text-lg text-plum-800 mb-4">Candidatura — {selected?.titolo}</h3>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>

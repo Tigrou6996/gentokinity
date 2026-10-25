@@ -99,11 +99,11 @@ const ResetPassword: React.FC = () => {
       <div className="w-full max-w-[440px]">
         <Link to="/" className="flex items-center justify-center gap-2.5 mb-8">
           <img src={logoLBS} alt="" className="h-11 w-11" width={44} height={44} />
-          <span className="font-heading font-bold text-lg text-plum-800">LBS Work</span>
+          <span className="font-semibold text-lg text-plum-800">LBS Work</span>
         </Link>
 
         <div className="text-center mb-8">
-          <span className="mx-auto icon-tile !w-14 !h-14 !rounded-2xl !bg-plum-600 !text-white"><i className="fas fa-lock text-xl" /></span>
+          <span className="mx-auto icon-tile !w-14 !h-14 !rounded-lg !bg-plum-600 !text-white"><i className="fas fa-lock text-xl" /></span>
           <h1 className="h-display text-plum-800 text-3xl sm:text-4xl mt-5">Nuova password</h1>
           <p className="text-ink-soft mt-2">Imposta la tua nuova password di accesso</p>
         </div>
@@ -111,7 +111,7 @@ const ResetPassword: React.FC = () => {
         <div className="card p-6 sm:p-8">
           {success ? (
             <div className="flex flex-col gap-5">
-              <div role="status" className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5 flex items-start gap-3">
+              <div role="status" className="rounded-lg bg-emerald-50 border border-emerald-200 p-5 flex items-start gap-3">
                 <i className="fas fa-check-circle text-emerald-600 text-xl shrink-0 mt-0.5" />
                 <div>
                   <div className="font-semibold text-emerald-800">Password aggiornata!</div>
@@ -124,7 +124,7 @@ const ResetPassword: React.FC = () => {
             </div>
           ) : isRecoverySession === false ? (
             <div className="flex flex-col gap-5">
-              <div role="alert" className="rounded-2xl bg-red-50 border border-red-200 p-5 flex items-start gap-3">
+              <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-5 flex items-start gap-3">
                 <i className="fas fa-exclamation-triangle text-red-600 text-lg shrink-0 mt-0.5" />
                 <div>
                   <div className="font-semibold text-red-700">Link non valido o scaduto</div>
@@ -138,7 +138,7 @@ const ResetPassword: React.FC = () => {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               {errorMessage && (
-                <div role="alert" className="rounded-2xl bg-red-50 border border-red-200 p-4 flex items-center gap-3">
+                <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-center gap-3">
                   <i className="fas fa-exclamation-triangle text-red-600 shrink-0" />
                   <span className="text-red-700 font-medium text-sm">{errorMessage}</span>
                 </div>
@@ -149,7 +149,7 @@ const ResetPassword: React.FC = () => {
                 <div className="relative">
                   <i className="fas fa-key absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm pointer-events-none" />
                   <input id="new-password" type={showPwd ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Minimo 8 caratteri" className="field !pl-11 !pr-12" />
-                  <button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? 'Nascondi password' : 'Mostra password'} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
+                  <button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? 'Nascondi password' : 'Mostra password'} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-md text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
                     <i className={`fas ${showPwd ? 'fa-eye-slash' : 'fa-eye'}`} />
                   </button>
                 </div>
@@ -170,7 +170,7 @@ const ResetPassword: React.FC = () => {
                 <div className="relative">
                   <i className={`fas fa-check-circle absolute left-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none ${confirmPassword && confirmPassword === password ? 'text-emerald-600' : 'text-plum-400'}`} />
                   <input id="confirm-password" type={showConfirmPwd ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required placeholder="Ripeti la password" aria-invalid={mismatch} className={`field !pl-11 !pr-12 ${mismatch ? '!border-red-400' : ''}`} />
-                  <button type="button" onClick={() => setShowConfirmPwd(v => !v)} aria-label={showConfirmPwd ? 'Nascondi password' : 'Mostra password'} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
+                  <button type="button" onClick={() => setShowConfirmPwd(v => !v)} aria-label={showConfirmPwd ? 'Nascondi password' : 'Mostra password'} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-md text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
                     <i className={`fas ${showConfirmPwd ? 'fa-eye-slash' : 'fa-eye'}`} />
                   </button>
                 </div>

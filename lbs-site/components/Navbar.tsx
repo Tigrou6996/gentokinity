@@ -60,20 +60,17 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-[60] px-3 sm:px-5 pt-3">
-        <nav
-          aria-label="Navigazione principale"
-          className={`relative mx-auto max-w-7xl flex items-center justify-between gap-4 rounded-full pl-2 pr-2 sm:pr-3 py-2 transition-all duration-300 ${
-            onHero
-              ? 'bg-white/[0.06] border border-white/10 backdrop-blur-md'
-              : 'bg-white/85 border border-line backdrop-blur-xl shadow-[var(--shadow-soft)]'
-          }`}
-        >
+      <header
+        className={`fixed top-0 inset-x-0 z-[60] border-b transition-colors duration-300 ${
+          onHero ? 'bg-transparent border-white/15' : 'bg-white/95 backdrop-blur border-line'
+        }`}
+      >
+        <nav aria-label="Navigazione principale" className="container-x relative h-16 flex items-center justify-between gap-6">
           {/* LOGO */}
-          <Link to="/" className="flex items-center gap-2.5 rounded-full pr-2" aria-label="LBS — Home">
-            <img src={logoLBS} alt="" className="h-10 w-10 flex-shrink-0" width={40} height={40} />
+          <Link to="/" className="flex items-center gap-2.5" aria-label="LBS — Home">
+            <img src={logoLBS} alt="" className="h-9 w-9 flex-shrink-0" width={36} height={36} />
             <span className="leading-none">
-              <span className={`block font-heading font-bold text-[15px] tracking-tight ${onHero ? 'text-white' : 'text-plum-800'}`}>
+              <span className={`block font-semibold text-[15px] tracking-tight ${onHero ? 'text-white' : 'text-plum-800'}`}>
                 LBS Work
               </span>
               <span className={`hidden sm:block text-[11px] font-medium mt-0.5 ${onHero ? 'text-white/60' : 'text-ink-soft'}`}>
@@ -83,21 +80,17 @@ const Navbar: React.FC = () => {
           </Link>
 
           {/* DESKTOP NAV */}
-          <ul className="hidden lg:flex items-center gap-0.5">
+          <ul className="hidden lg:flex items-stretch self-stretch gap-7">
             {navLinks.map(link => (
-              <li key={link.path}>
+              <li key={link.path} className="flex">
                 <Link
                   to={link.path}
                   aria-current={isActive(link.path) ? 'page' : undefined}
-                  className={`relative inline-flex items-center px-3.5 py-2 rounded-full text-sm font-medium transition-colors ${
-                    onHero
-                      ? isActive(link.path) ? 'text-white bg-white/10' : 'text-white/75 hover:text-white hover:bg-white/10'
-                      : isActive(link.path) ? 'text-plum-800 bg-plum-50' : 'text-ink-soft hover:text-plum-800 hover:bg-plum-50'
-                  }`}
+                  className={`relative inline-flex items-center text-sm font-medium transition-colors ${ onHero ? isActive(link.path) ? 'text-white' : 'text-white/70 hover:text-white' : isActive(link.path) ? 'text-plum-800' : 'text-ink-soft hover:text-plum-800' }`}
                 >
                   {link.label}
                   {isActive(link.path) && (
-                    <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 h-1 w-1 rounded-full bg-sun-400" />
+                    <span className={`absolute inset-x-0 -bottom-px h-0.5 ${onHero ? 'bg-sun-400' : 'bg-plum-600'}`} />
                   )}
                 </Link>
               </li>
@@ -152,26 +145,20 @@ const Navbar: React.FC = () => {
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMobileMenuOpen ? 'Chiudi menu' : 'Apri menu'}
-              className={`h-11 w-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-                onHero ? 'bg-white/10 text-white' : 'bg-plum-50 text-plum-800'
-              }`}
+              className={`h-11 w-11 rounded-md border flex items-center justify-center transition-colors cursor-pointer ${ onHero ? 'border-white/25 text-white' : 'border-line text-plum-800' }`}
             >
               <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`} />
             </button>
           </div>
 
           {/* TABLET: link compatti sotto lg */}
-          <div className="hidden md:flex lg:hidden absolute left-0 right-0 top-full mt-2 justify-center pointer-events-none">
-            <ul className={`pointer-events-auto flex gap-0.5 rounded-full px-1.5 py-1.5 ${onHero ? 'bg-white/[0.06] border border-white/10 backdrop-blur-md' : 'bg-white/90 border border-line backdrop-blur-xl shadow-[var(--shadow-soft)]'}`}>
+          <div className={`hidden md:flex lg:hidden absolute left-0 right-0 top-full justify-center border-t border-b ${onHero ? 'border-white/15' : 'bg-white/95 border-line'}`}>
+            <ul className="flex gap-6 h-11 items-center">
               {navLinks.map(link => (
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className={`inline-flex px-3 py-1.5 rounded-full text-[13px] font-medium ${
-                      onHero
-                        ? isActive(link.path) ? 'text-white bg-white/10' : 'text-white/75'
-                        : isActive(link.path) ? 'text-plum-800 bg-plum-50' : 'text-ink-soft'
-                    }`}
+                    className={`inline-flex text-[13px] font-medium ${ onHero ? isActive(link.path) ? 'text-white' : 'text-white/70' : isActive(link.path) ? 'text-plum-600' : 'text-ink-soft' }`}
                   >
                     {link.label}
                   </Link>
@@ -185,9 +172,7 @@ const Navbar: React.FC = () => {
       {/* MOBILE MENU */}
       <div
         id="mobile-menu"
-        className={`fixed inset-0 z-[55] md:hidden bg-paper transition-all duration-300 ${
-          isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 z-[55] md:hidden bg-paper transition-all duration-300 ${ isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none' }`}
       >
         <div className="h-full overflow-y-auto pt-24 pb-8 px-5 flex flex-col">
           <ul className="flex flex-col">
@@ -195,9 +180,7 @@ const Navbar: React.FC = () => {
               <li key={link.path} className="border-b border-line">
                 <Link
                   to={link.path}
-                  className={`flex items-center justify-between py-4 font-heading font-bold text-2xl tracking-tight transition-all duration-500 ${
-                    isActive(link.path) ? 'text-plum-600' : 'text-plum-800'
-                  } ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'}`}
+                  className={`flex items-center justify-between py-4 font-semibold text-xl tracking-tight transition-all duration-500 ${ isActive(link.path) ? 'text-plum-600' : 'text-plum-800' } ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'}`}
                   style={{ transitionDelay: isMobileMenuOpen ? `${60 + i * 40}ms` : '0ms' }}
                 >
                   {link.label}

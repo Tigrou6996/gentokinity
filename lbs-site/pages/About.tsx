@@ -45,11 +45,11 @@ const About: React.FC = () => {
           </>
         }
         aside={
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid-lines grid-cols-2">
             {ABOUT_STATS.map((s, i) => (
-              <div key={s.label} className={`rounded-3xl p-6 sm:p-7 ${i === 0 ? 'bg-plum-800 text-white' : i === 3 ? 'bg-sun-400 text-plum-800' : 'card'}`}>
-                <div className={`font-heading font-bold text-4xl sm:text-5xl tracking-tight ${i === 0 || i === 3 ? '' : 'text-plum-800'}`}>{s.val}</div>
-                <div className={`text-sm mt-2 ${i === 0 ? 'text-white/65' : i === 3 ? 'text-plum-800/70' : 'text-ink-soft'}`}>{s.label}</div>
+              <div key={s.label} className="p-6 sm:p-8">
+                <div className={`font-semibold text-4xl sm:text-5xl tracking-tight ${i === 0 ? 'text-plum-600' : 'text-plum-800'}`}>{s.val}</div>
+                <div className="text-sm mt-2 text-ink-soft">{s.label}</div>
               </div>
             ))}
           </div>
@@ -68,7 +68,7 @@ const About: React.FC = () => {
             </p>
             <ul className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {MISSION_POINTS.map(item => (
-                <li key={item} className="flex items-start gap-3 rounded-2xl bg-white border border-line p-4 text-[15px] text-ink">
+                <li key={item} className="flex items-start gap-3 rounded-lg bg-white border border-line p-4 text-[15px] text-ink">
                   <span className="mt-0.5 h-5 w-5 rounded-full bg-plum-600 text-white flex items-center justify-center text-[9px] shrink-0">
                     <i className="fas fa-check" />
                   </span>
@@ -78,9 +78,9 @@ const About: React.FC = () => {
             </ul>
           </div>
           <div className="relative reveal">
-            <img src="/img/ufficio_reception.jpg" alt="Sala consulenze LBS" loading="lazy" className="w-full aspect-square object-cover rounded-[2rem] shadow-[var(--shadow-lift)]" />
-            <div className="absolute -bottom-6 left-6 sm:-left-6 bg-plum-800 text-white rounded-3xl p-6 shadow-[var(--shadow-lift)]">
-              <div className="font-heading font-bold text-4xl tracking-tight text-sun-400">1000+</div>
+            <img src="/img/ufficio_reception.jpg" alt="Sala consulenze LBS" loading="lazy" className="w-full aspect-square object-cover rounded-lg" />
+            <div className="absolute -bottom-6 left-6 sm:-left-6 bg-plum-800 text-white rounded-lg p-6">
+              <div className="font-semibold text-4xl tracking-tight text-sun-400">1000+</div>
               <div className="text-sm text-white/70">Storie di successo</div>
             </div>
           </div>
@@ -95,7 +95,7 @@ const About: React.FC = () => {
               src="/img/salvatore_presentazione.jpg"
               alt="Salvatore Cucuzza — Titolare LBS con un lavoratore"
               loading="lazy"
-              className="w-full object-cover rounded-[2rem] shadow-[var(--shadow-lift)] aspect-[3/4]"
+              className="w-full object-cover rounded-lg aspect-[3/4]"
               style={{ objectPosition: 'center 15%' }}
             />
             <span className="absolute top-6 -right-3 sm:-right-6 chip chip-sun !text-base !px-5 !py-2.5 shadow-[var(--shadow-soft)]">Dal 2013</span>
@@ -123,11 +123,11 @@ const About: React.FC = () => {
             <span className="eyebrow">Il nostro team</span>
             <h2 className="h-section text-plum-800 mt-4">Persone reali, <span className="mark">non algoritmi</span></h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid-lines grid-cols-1 md:grid-cols-3">
             {TEAM.map(member => (
-              <div key={member.id} className="reveal card card-hover p-8">
-                <span className="icon-tile !w-16 !h-16 !rounded-2xl !bg-plum-600 !text-white"><i className={`fas ${member.icon} text-2xl`} /></span>
-                <h3 className="font-heading font-bold text-2xl text-plum-800 mt-7">{member.name}</h3>
+              <div key={member.id} className="reveal p-7 sm:p-9">
+                <span className="icon-tile"><i className={`fas ${member.icon}`} /></span>
+                <h3 className="font-semibold text-2xl text-plum-800 mt-7">{member.name}</h3>
                 <p className="chip mt-3">{member.role}</p>
                 <p className="text-ink-soft leading-relaxed mt-4">{member.description}</p>
               </div>
@@ -145,10 +145,10 @@ const About: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {OFFICE.map(item => (
-              <figure key={item.img} className="reveal group relative overflow-hidden rounded-3xl aspect-[4/3]">
+              <figure key={item.img} className="reveal group relative overflow-hidden rounded-xl aspect-[4/3]">
                 <img src={item.img} alt={item.caption} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <figcaption className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-plum-950/80 to-transparent flex items-end justify-between gap-3">
-                  <span className="font-heading font-bold text-white text-lg">{item.caption}</span>
+                  <span className="font-semibold text-white text-lg">{item.caption}</span>
                   <span className="chip chip-sun">{item.tag}</span>
                 </figcaption>
               </figure>

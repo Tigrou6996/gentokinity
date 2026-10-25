@@ -177,7 +177,7 @@ export const Candidati: React.FC = () => {
           <Link to="/" className="flex items-center gap-2.5">
             <img src={logoLBS} alt="LBS Lavoro in Germania" className="h-10 w-10" width={40} height={40} />
             <span className="hidden sm:block leading-none">
-              <span className="block font-heading font-bold text-plum-800">LBS Work</span>
+              <span className="block font-semibold text-plum-800">LBS Work</span>
               <span className="block text-[11px] text-ink-soft mt-0.5">Lavoro in Germania</span>
             </span>
           </Link>
@@ -212,8 +212,8 @@ export const Candidati: React.FC = () => {
 
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {VANTAGGI.map(item => (
-                  <li key={item.text} className="flex items-start gap-3 rounded-2xl bg-white border border-line p-4">
-                    <span className="icon-tile !w-10 !h-10 !rounded-xl !bg-wa/15 !text-[#128C4B]"><i className={`fas ${item.icon}`} /></span>
+                  <li key={item.text} className="flex items-start gap-3 rounded-lg bg-white border border-line p-4">
+                    <span className="icon-tile !w-10 !h-10 !rounded-md !bg-wa/15 !text-[#128C4B]"><i className={`fas ${item.icon}`} /></span>
                     <span>
                       <span className="block font-semibold text-plum-800 leading-snug">{item.text}</span>
                       <span className="block text-sm text-ink-soft mt-0.5">{item.desc}</span>
@@ -235,15 +235,15 @@ export const Candidati: React.FC = () => {
 
             {/* MODULO */}
             <div id="modulo-candidatura" className="lg:col-span-5 w-full lg:sticky lg:top-24 scroll-mt-24">
-              <div className="bg-white rounded-[2rem] border border-line shadow-[var(--shadow-lift)] p-5 sm:p-8 relative">
+              <div className="bg-white rounded-lg border border-line p-5 sm:p-8 relative">
                 <div className="text-center mb-6">
                   <span className="chip !bg-wa/10 !text-[#128C4B] !border-wa/20"><i className="fas fa-bolt text-[10px]" /> Risposta entro 24 ore</span>
-                  <h2 className="font-heading font-bold text-2xl sm:text-3xl text-plum-800 tracking-tight mt-3">Candidatura rapida</h2>
+                  <h2 className="font-semibold text-2xl sm:text-3xl text-plum-800 tracking-tight mt-3">Candidatura rapida</h2>
                   <p className="text-sm text-ink-soft mt-1">Compila in 60 secondi: verrai ricontattato via WhatsApp o telefono</p>
                 </div>
 
                 {errorMessage && (
-                  <div role="alert" className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium flex items-center gap-2">
+                  <div role="alert" className="mb-5 p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm font-medium flex items-center gap-2">
                     <i className="fas fa-exclamation-circle shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
@@ -311,16 +311,14 @@ export const Candidati: React.FC = () => {
 
                   <fieldset>
                     <legend className="field-label">Hai la patente di guida?</legend>
-                    <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-plum-50">
+                    <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-plum-50">
                       {['Sì (Patente B)', 'No (Senza Patente)'].map(opt => (
                         <button
                           type="button"
                           key={opt}
                           onClick={() => setPatente(opt)}
                           aria-pressed={patente === opt}
-                          className={`min-h-[44px] rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
-                            patente === opt ? 'bg-white text-plum-800 shadow-sm' : 'text-ink-soft hover:text-plum-800'
-                          }`}
+                          className={`min-h-[44px] rounded-xl text-sm font-semibold transition-colors cursor-pointer ${ patente === opt ? 'bg-white text-plum-800 shadow-sm' : 'text-ink-soft hover:text-plum-800' }`}
                         >
                           {opt}
                         </button>
@@ -375,14 +373,14 @@ export const Candidati: React.FC = () => {
             <h2 className="h-section text-plum-800 mt-4">Come funziona il nostro metodo</h2>
             <p className="lead mt-3">Dalla tua candidatura all'arrivo in Germania in totale sicurezza.</p>
           </div>
-          <ol className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <ol className="grid-lines grid-cols-1 md:grid-cols-3">
             {PASSI.map(s => (
-              <li key={s.step} className="card card-hover p-7 sm:p-8">
+              <li key={s.step} className="p-7 sm:p-8">
                 <div className="flex items-center justify-between">
-                  <span className="h-11 w-11 rounded-full bg-plum-600 text-white font-heading font-bold flex items-center justify-center">{s.step}</span>
-                  <i className={`fas ${s.icon} text-2xl text-plum-200`} />
+                  <span className="text-sm font-semibold text-plum-600 tabular-nums">{s.step}</span>
+                  <i className={`fas ${s.icon} text-plum-300`} />
                 </div>
-                <h3 className="font-heading font-bold text-xl text-plum-800 mt-6">{s.title}</h3>
+                <h3 className="font-semibold text-xl text-plum-800 mt-6">{s.title}</h3>
                 <p className="text-ink-soft leading-relaxed mt-2">{s.desc}</p>
               </li>
             ))}
@@ -423,11 +421,11 @@ export const Candidati: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <figure className="relative overflow-hidden rounded-3xl aspect-[3/4]">
+            <figure className="relative overflow-hidden rounded-xl aspect-[3/4]">
               <img src="/img/ufficio_reception.jpg" alt="Ufficio LBS Reception" loading="lazy" className="w-full h-full object-cover" />
               <figcaption className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-plum-950/80 to-transparent text-white font-semibold text-sm">I nostri uffici</figcaption>
             </figure>
-            <figure className="relative overflow-hidden rounded-3xl aspect-[3/4] mt-10">
+            <figure className="relative overflow-hidden rounded-xl aspect-[3/4] mt-10">
               <img src="/img/salvatore_desk.jpg" alt="Salvatore Cucuzza al lavoro" loading="lazy" className="w-full h-full object-cover" />
               <figcaption className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-plum-950/80 to-transparent text-white font-semibold text-sm">Consulenza diretta</figcaption>
             </figure>
@@ -444,10 +442,10 @@ export const Candidati: React.FC = () => {
           </div>
           <div className="flex flex-col gap-3">
             {FAQ.map((faq, idx) => (
-              <details key={faq.q} className="group card !rounded-2xl p-5 sm:p-6 open:shadow-[var(--shadow-lift)]" open={idx === 0}>
-                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none font-heading font-bold text-lg text-plum-800 [&::-webkit-details-marker]:hidden">
+              <details key={faq.q} className="group card !rounded-lg p-5 sm:p-6 open:border-plum-300" open={idx === 0}>
+                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none font-semibold text-lg text-plum-800 [&::-webkit-details-marker]:hidden">
                   {faq.q}
-                  <span className="h-9 w-9 rounded-full bg-plum-50 text-plum-600 flex items-center justify-center shrink-0 transition-transform group-open:rotate-45">
+                  <span className="h-9 w-9 rounded-md bg-plum-50 text-plum-600 flex items-center justify-center shrink-0 transition-transform group-open:rotate-45">
                     <i className="fas fa-plus text-sm" />
                   </span>
                 </summary>
@@ -478,8 +476,8 @@ export const Candidati: React.FC = () => {
       {/* ─── MODALE DI SUCCESSO ─── */}
       {success && (
         <div className="fixed inset-0 bg-plum-950/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="animate-pop-in bg-white rounded-[2rem] max-w-lg w-full p-7 sm:p-10 text-center shadow-[var(--shadow-lift)]">
-            <span className="mx-auto h-20 w-20 rounded-full bg-wa/15 text-[#128C4B] flex items-center justify-center text-3xl">
+          <div className="animate-pop-in bg-white rounded-xl max-w-lg w-full p-7 sm:p-10 text-center shadow-[var(--shadow-lift)]">
+            <span className="mx-auto h-20 w-20 rounded-md bg-wa/15 text-[#128C4B] flex items-center justify-center text-3xl">
               <i className="fas fa-check" />
             </span>
             <span className="chip !bg-wa/10 !text-[#128C4B] !border-wa/20 mt-5">Candidatura inviata</span>
@@ -487,7 +485,7 @@ export const Candidati: React.FC = () => {
             <p className="text-ink-soft mt-3 leading-relaxed">
               Abbiamo ricevuto la tua candidatura per il settore <strong className="text-plum-800">{settore}</strong>. Il nostro team la prenderà in carico e ti contatterà al numero <strong className="text-plum-800">{telefono}</strong> entro 24 ore lavorative.
             </p>
-            <div className="rounded-2xl bg-sun-100 p-4 mt-6 text-left">
+            <div className="rounded-lg bg-sun-100 p-4 mt-6 text-left">
               <span className="text-sm font-semibold text-plum-800 block mb-1"><i className="fas fa-bolt mr-1" /> Vuoi velocizzare la tua pratica?</span>
               <p className="text-sm text-plum-800/75 leading-relaxed m-0">
                 Puoi scriverci direttamente su WhatsApp per avvisarci del tuo invio o allegare il tuo CV aggiornato.

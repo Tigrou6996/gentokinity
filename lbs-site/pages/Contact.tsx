@@ -27,34 +27,34 @@ const Contact: React.FC = () => {
 
       {/* CANALI */}
       <section className="pt-12 pb-20 md:pb-24">
-        <div className="container-x grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="container-x"><div className="grid-lines grid-cols-1 md:grid-cols-3">
           <button
             type="button"
             onClick={() => setShowWaModal(true)}
-            className="reveal group text-left rounded-3xl bg-wa text-white p-8 sm:p-9 flex flex-col cursor-pointer transition-transform duration-300 hover:-translate-y-1 shadow-[0_24px_48px_-24px_rgba(37,211,102,0.8)]"
+            className="reveal group text-left p-8 sm:p-9 flex flex-col cursor-pointer hover:bg-plum-50! transition-colors"
           >
-            <span className="h-14 w-14 rounded-2xl bg-white/20 flex items-center justify-center text-3xl"><i className="fab fa-whatsapp" /></span>
-            <span className="chip !bg-white/20 !text-white !border-white/25 mt-8 self-start">WhatsApp · h24</span>
-            <h2 className="font-heading font-bold text-2xl mt-4">Contattaci su WhatsApp</h2>
-            <p className="text-white/85 leading-relaxed mt-2 flex-1">Risposta rapida dai nostri consulenti (numero italiano e tedesco). Disponibili h24.</p>
-            <span className="mt-6 font-semibold flex items-center gap-2">Scegli il numero <i className="fas fa-arrow-right text-sm group-hover:translate-x-1 transition-transform" /></span>
+            <span className="icon-tile !text-[#128C4B]"><i className="fab fa-whatsapp text-lg" /></span>
+            <span className="chip mt-8 self-start">WhatsApp · h24</span>
+            <h2 className="font-semibold text-xl text-plum-800 mt-4">Contattaci su WhatsApp</h2>
+            <p className="text-ink-soft leading-relaxed mt-2 flex-1">Risposta rapida dai nostri consulenti (numero italiano e tedesco). Disponibili h24.</p>
+            <span className="mt-6 font-medium text-[#128C4B] flex items-center gap-2">Scegli il numero <i className="fas fa-arrow-right text-sm group-hover:translate-x-1 transition-transform" /></span>
           </button>
 
           <a
             href="tel:+393518818391"
-            className="reveal group rounded-3xl bg-plum-800 text-white p-8 sm:p-9 flex flex-col transition-transform duration-300 hover:-translate-y-1 shadow-[var(--shadow-lift)]"
+            className="reveal group p-8 sm:p-9 flex flex-col hover:bg-plum-50! transition-colors"
           >
-            <span className="h-14 w-14 rounded-2xl bg-white/10 text-sun-400 flex items-center justify-center text-2xl"><i className="fas fa-phone" /></span>
-            <span className="chip chip-dark mt-8 self-start">Italia</span>
-            <h2 className="font-heading font-bold text-2xl mt-4">Telefono IT</h2>
-            <p className="text-white/70 leading-relaxed mt-2 flex-1">Chiamaci per una consulenza immediata con il nostro team a Catania. Siamo a tua disposizione.</p>
-            <span className="mt-6 font-semibold text-sun-400 flex items-center gap-2">+39 351 881 8391 <i className="fas fa-arrow-right text-sm group-hover:translate-x-1 transition-transform" /></span>
+            <span className="icon-tile"><i className="fas fa-phone" /></span>
+            <span className="chip mt-8 self-start">Italia</span>
+            <h2 className="font-semibold text-xl text-plum-800 mt-4">Telefono IT</h2>
+            <p className="text-ink-soft leading-relaxed mt-2 flex-1">Chiamaci per una consulenza immediata con il nostro team a Catania. Siamo a tua disposizione.</p>
+            <span className="mt-6 font-medium text-plum-600 flex items-center gap-2">+39 351 881 8391 <i className="fas fa-arrow-right text-sm group-hover:translate-x-1 transition-transform" /></span>
           </a>
 
-          <div className="reveal card p-8 sm:p-9 flex flex-col">
-            <span className="icon-tile !w-14 !h-14 !rounded-2xl"><i className="fas fa-at text-2xl" /></span>
+          <div className="reveal p-8 sm:p-9 flex flex-col">
+            <span className="icon-tile"><i className="fas fa-at" /></span>
             <span className="chip mt-8 self-start">Online</span>
-            <h2 className="font-heading font-bold text-2xl text-plum-800 mt-4">Email e social</h2>
+            <h2 className="font-semibold text-xl text-plum-800 mt-4">Email e social</h2>
             <p className="text-ink-soft leading-relaxed mt-2">Scrivici via email o seguici sui social per aggiornamenti e nuove offerte di lavoro.</p>
             <a href="mailto:info@lbswork.com" className="mt-5 font-semibold text-plum-600 hover:text-plum-800">info@lbswork.com</a>
             <div className="flex gap-2 mt-auto pt-6">
@@ -65,48 +65,48 @@ const Contact: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.label}
-                  className="h-11 w-11 rounded-full border border-line flex items-center justify-center text-plum-800 hover:bg-plum-800 hover:text-white hover:border-plum-800 transition-colors"
+                  className="h-11 w-11 rounded-md border border-line flex items-center justify-center text-plum-800 hover:bg-plum-800 hover:text-white hover:border-plum-800 transition-colors"
                 >
                   <i className={`fab ${s.icon}`} />
                 </a>
               ))}
             </div>
           </div>
-        </div>
+        </div></div>
       </section>
 
       {/* SEDI + ORARI */}
       <section className="pb-20 md:pb-28">
         <div className="container-x grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div className="lg:col-span-7 grid grid-cols-2 gap-5">
-            <figure className="reveal relative overflow-hidden rounded-3xl aspect-[3/4] sm:aspect-[4/5]">
+            <figure className="reveal relative overflow-hidden rounded-xl aspect-[3/4] sm:aspect-[4/5]">
               <img src="/img/salvatore_hero.jpg" alt="Salvatore Cucuzza — Titolare LBS" loading="lazy" className="w-full h-full object-cover" />
               <figcaption className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-plum-950/80 to-transparent">
                 <span className="chip chip-sun">Titolare</span>
-                <span className="block text-white font-heading font-bold mt-2">Salvatore Cucuzza</span>
+                <span className="block text-white font-semibold mt-2">Salvatore Cucuzza</span>
               </figcaption>
             </figure>
-            <figure className="reveal relative overflow-hidden rounded-3xl aspect-[3/4] sm:aspect-[4/5] mt-10">
+            <figure className="reveal relative overflow-hidden rounded-xl aspect-[3/4] sm:aspect-[4/5] mt-10">
               <img src="/img/ufficio_reception.jpg" alt="Sala consulenze LBS" loading="lazy" className="w-full h-full object-cover" />
               <figcaption className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-plum-950/80 to-transparent">
                 <span className="chip chip-sun">Sede</span>
-                <span className="block text-white font-heading font-bold mt-2">Il nostro ufficio a Catania</span>
+                <span className="block text-white font-semibold mt-2">Il nostro ufficio a Catania</span>
               </figcaption>
             </figure>
           </div>
 
           <div className="lg:col-span-5 flex flex-col gap-5">
             <div className="reveal card p-7 sm:p-8">
-              <h2 className="font-heading font-bold text-2xl text-plum-800 flex items-center gap-3">
+              <h2 className="font-semibold text-2xl text-plum-800 flex items-center gap-3">
                 <i className="fas fa-map-marker-alt text-plum-400 text-xl" /> Le nostre sedi
               </h2>
               <div className="mt-6 space-y-4">
-                <div className="rounded-2xl bg-plum-50 p-5">
+                <div className="rounded-lg bg-plum-50 p-5">
                   <span className="text-xs font-semibold uppercase tracking-[0.12em] text-plum-600">🇮🇹 Sede operativa (Italia)</span>
                   <p className="font-semibold text-plum-800 text-lg mt-1">Viale Vittorio Veneto, 335</p>
                   <p className="text-ink-soft text-sm">Catania, 95126 (CT) — Italia</p>
                 </div>
-                <div className="rounded-2xl bg-plum-50 p-5">
+                <div className="rounded-lg bg-plum-50 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-plum-600">🇩🇪 Sede legale (Germania)</span>
                     <span className="chip !bg-white !text-[11px]">Non aperta al pubblico</span>
@@ -115,13 +115,13 @@ const Contact: React.FC = () => {
                   <p className="text-ink-soft text-sm">34127 Kassel — Germania</p>
                 </div>
               </div>
-              <p className="mt-5 flex items-center gap-3 rounded-2xl bg-sun-100 px-4 py-3 text-sm font-medium text-plum-800">
+              <p className="mt-5 flex items-center gap-3 rounded-lg bg-sun-100 px-4 py-3 text-sm font-medium text-plum-800">
                 <i className="fas fa-check-circle" /> Presidio costante sia sul territorio italiano che tedesco
               </p>
             </div>
 
             <div className="reveal card p-7 sm:p-8">
-              <h2 className="font-heading font-bold text-2xl text-plum-800 flex items-center gap-3">
+              <h2 className="font-semibold text-2xl text-plum-800 flex items-center gap-3">
                 <i className="fas fa-clock text-plum-400 text-xl" /> Orari
               </h2>
               <dl className="mt-5 divide-y divide-line">
@@ -129,7 +129,7 @@ const Contact: React.FC = () => {
                   <div key={item.g} className="flex justify-between items-center py-3.5">
                     <dt className="text-ink">{item.g}</dt>
                     <dd className={`font-semibold ${i === 2 ? 'text-[#128C4B] flex items-center gap-2' : 'text-plum-700'}`}>
-                      {i === 2 && <span className="h-2 w-2 rounded-full bg-wa pulse-dot" />}
+                      {i === 2 && <span className="h-2 w-2 rounded-full bg-wa" />}
                       {item.o}
                     </dd>
                   </div>

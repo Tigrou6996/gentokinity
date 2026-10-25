@@ -139,8 +139,8 @@ const DatoriDiLavoro: React.FC = () => {
               <span className="text-white font-medium">Il nostro servizio di ricerca e selezione è 100% gratuito per i datori di lavoro</span>: zero commissioni di agenzia, nessun costo anticipato o nascosto. Gestiamo burocrazia, visti e supporto con precisione e professionalità. Tu ti concentri sul lavoro.
             </p>
 
-            <div className="mt-8 max-w-xl rounded-3xl bg-white/[0.06] border border-sun-400/40 p-4 flex items-center gap-4">
-              <span className="h-14 w-14 rounded-2xl bg-sun-400 text-plum-800 font-heading font-bold text-2xl flex items-center justify-center shrink-0">0€</span>
+            <div className="mt-8 max-w-xl rounded-xl bg-white/[0.06] border border-sun-400/40 p-4 flex items-center gap-4">
+              <span className="h-14 w-14 rounded-lg bg-sun-400 text-plum-800 font-semibold text-2xl flex items-center justify-center shrink-0">0€</span>
               <span className="text-sm text-white/75">
                 <span className="block font-semibold text-sun-400">Nessuna commissione per la tua impresa</span>
                 La ricerca, preselezione e presentazione dei candidati è al 100% gratuita per i datori di lavoro.
@@ -156,15 +156,7 @@ const DatoriDiLavoro: React.FC = () => {
           </div>
           <div className="lg:col-span-5 hidden lg:block">
             <div className="relative">
-              <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-sun-400/20 to-plum-400/20 blur-2xl" />
-              <img src="/img/ufficio_social.jpg" alt="Ufficio LBS — pagina social aziendale" className="relative w-full aspect-[4/5] object-cover rounded-[2rem] ring-1 ring-white/15" />
-              <div className="absolute -left-8 bottom-10 bg-white rounded-2xl shadow-[var(--shadow-lift)] p-4 pr-6 flex items-center gap-3">
-                <span className="icon-tile !w-11 !h-11 !rounded-xl"><i className="fas fa-user-check" /></span>
-                <span>
-                  <span className="block text-sm font-semibold text-plum-800">Profili verificati</span>
-                  <span className="block text-xs text-ink-soft">pronti a partire</span>
-                </span>
-              </div>
+              <img src="/img/ufficio_social.jpg" alt="Ufficio LBS — pagina social aziendale" className="relative w-full aspect-[4/5] object-cover rounded-lg" />
             </div>
           </div>
         </div>
@@ -177,12 +169,12 @@ const DatoriDiLavoro: React.FC = () => {
             <span className="eyebrow">Perché scegliere LBS</span>
             <h2 className="h-section text-plum-800 mt-4">Il partner che <span className="mark">fa la differenza</span></h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid-lines grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {BENEFIT_DATORI.map((b, i) => (
-              <div key={b.title} className={`reveal p-7 rounded-3xl ${i === 0 ? 'bg-sun-400 text-plum-800' : 'card card-hover'}`} style={{ transitionDelay: `${i * 60}ms` }}>
-                <span className={`icon-tile ${i === 0 ? '!bg-plum-800 !text-sun-400' : ''}`}><i className={`fas ${b.icon} text-lg`} /></span>
-                <h3 className="font-heading font-bold text-xl mt-6 text-plum-800">{b.title}</h3>
-                <p className={`leading-relaxed mt-2 text-[15px] ${i === 0 ? 'text-plum-800/75' : 'text-ink-soft'}`}>{b.desc}</p>
+              <div key={b.title} className="reveal p-7 sm:p-8" style={{ transitionDelay: `${i * 60}ms` }}>
+                <span className="icon-tile"><i className={`fas ${b.icon}`} /></span>
+                <h3 className="font-semibold text-lg mt-6 text-plum-800">{b.title}</h3>
+                <p className="leading-relaxed mt-2 text-[15px] text-ink-soft">{b.desc}</p>
               </div>
             ))}
           </div>
@@ -192,7 +184,7 @@ const DatoriDiLavoro: React.FC = () => {
       {/* ── FORM ──────────────────────────────────────────────────── */}
       <section id="form-datori" className="pb-20 md:pb-28">
         <div className="container-x">
-          <div className="rounded-[2.5rem] surface-plum p-6 sm:p-12 lg:p-14 grid grid-cols-1 lg:grid-cols-12 gap-10 overflow-hidden">
+          <div className="rounded-xl surface-plum p-6 sm:p-12 lg:p-14 grid grid-cols-1 lg:grid-cols-12 gap-10 overflow-hidden">
             <div className="lg:col-span-5 reveal">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="eyebrow eyebrow-light">Richiesta personale</span>
@@ -212,7 +204,7 @@ const DatoriDiLavoro: React.FC = () => {
               </ul>
             </div>
 
-            <form onSubmit={handleSubmit} className="lg:col-span-7 reveal bg-white rounded-3xl p-6 sm:p-9 relative">
+            <form onSubmit={handleSubmit} className="lg:col-span-7 reveal bg-white rounded-xl p-6 sm:p-9 relative">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
                   <label htmlFor="d-azienda" className="field-label">Nome azienda / impresa *</label>
@@ -257,7 +249,7 @@ const DatoriDiLavoro: React.FC = () => {
               </div>
 
               {formError && (
-                <div role="alert" className="mt-5 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-3">
+                <div role="alert" className="mt-5 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-3">
                   <i className="fas fa-exclamation-triangle" />{formError}
                 </div>
               )}
@@ -302,7 +294,7 @@ const DatoriDiLavoro: React.FC = () => {
         <div className="container-x">
           <div className="reveal card p-7 sm:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h2 className="font-heading font-bold text-2xl sm:text-3xl text-plum-800 tracking-tight">Hai già lavorato con noi? Siamo qui per te.</h2>
+              <h2 className="font-semibold text-2xl sm:text-3xl text-plum-800 tracking-tight">Hai già lavorato con noi? Siamo qui per te.</h2>
               <p className="text-ink-soft mt-2">Per assistenza diretta contattaci su WhatsApp o via email.</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 shrink-0">
@@ -325,8 +317,8 @@ const DatoriDiLavoro: React.FC = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="animate-pop-in w-full max-w-md bg-white rounded-[2rem] p-8 sm:p-10 text-center shadow-[var(--shadow-lift)]" onClick={e => e.stopPropagation()}>
-            <span className="mx-auto h-20 w-20 rounded-full bg-sun-100 text-plum-800 flex items-center justify-center text-3xl">
+          <div className="animate-pop-in w-full max-w-md bg-white rounded-xl p-8 sm:p-10 text-center shadow-[var(--shadow-lift)]" onClick={e => e.stopPropagation()}>
+            <span className="mx-auto h-20 w-20 rounded-md bg-sun-100 text-plum-800 flex items-center justify-center text-3xl">
               <i className="fas fa-building" />
             </span>
             <h3 className="h-display text-3xl text-plum-800 mt-6">Richiesta ricevuta!</h3>

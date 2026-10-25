@@ -8,7 +8,7 @@ const TerminiCondizioni: React.FC = () => {
       <div className="max-w-4xl mx-auto px-6">
 
         {/* Header */}
-        <div className="mb-12 rounded-[2rem] surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
+        <div className="mb-12 rounded-xl surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
           <div className="chip chip-sun mb-6">
             Informativa Legale
           </div>
@@ -24,7 +24,7 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">1</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">1</span>
               Informazioni sul Servizio
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -34,7 +34,7 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">2</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">2</span>
               Accettazione dei Termini
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -44,11 +44,11 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">3</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">3</span>
               Servizio per i Lavoratori — Modalità e Condizioni
             </h2>
             <div className="space-y-3 text-sm text-ink-soft leading-relaxed">
-              <div className="rounded-2xl bg-sun-100 border border-sun-300 p-4">
+              <div className="rounded-lg bg-sun-100 border border-sun-300 p-4">
                 <p className="text-plum-800 font-semibold flex items-start gap-3">
                   <i className="fas fa-handshake text-plum-600 mt-0.5" />
                   <span>Il servizio offerto da LBS ai lavoratori comprende <strong>orientamento professionale, supporto all'inserimento e assistenza continua</strong> durante tutte le fasi del percorso verso l'impiego in Germania.</span>
@@ -75,7 +75,7 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">4</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">4</span>
               Obblighi del Candidato
             </h2>
             <ul className="space-y-2 text-sm text-ink-soft">
@@ -98,7 +98,7 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">5</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">5</span>
               Limitazione di Responsabilità
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -108,7 +108,7 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">6</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">6</span>
               Proprietà Intellettuale
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -118,7 +118,7 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">7</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">7</span>
               Legge Applicabile e Foro Competente
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -128,7 +128,7 @@ const TerminiCondizioni: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">8</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">8</span>
               Modifiche ai Termini
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">

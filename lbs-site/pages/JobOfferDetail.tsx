@@ -233,7 +233,7 @@ const JobOfferDetail: React.FC = () => {
 
   if (notFound || !offerta) return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 px-5 pt-24 text-center">
-      <span className="icon-tile !w-16 !h-16 !rounded-2xl"><i className="fas fa-search text-2xl" /></span>
+      <span className="icon-tile !w-16 !h-16 !rounded-lg"><i className="fas fa-search text-2xl" /></span>
       <h1 className="h-display text-3xl sm:text-4xl text-plum-800">Offerta non trovata</h1>
       <p className="text-ink-soft">Questa offerta potrebbe essere scaduta o non esistere.</p>
       <Link to="/offerte" className="btn btn-lg btn-primary mt-2">
@@ -298,7 +298,7 @@ const JobOfferDetail: React.FC = () => {
           </div>
 
           {offerta.immagine_url && (
-            <div className="mt-8 rounded-[2rem] overflow-hidden h-56 sm:h-80 md:h-[26rem] shadow-[var(--shadow-lift)]">
+            <div className="mt-8 rounded-lg overflow-hidden h-56 sm:h-80 md:h-[26rem] border border-line">
               <img src={offerta.immagine_url} alt={offerta.titolo} className="w-full h-full object-cover" />
             </div>
           )}
@@ -310,7 +310,7 @@ const JobOfferDetail: React.FC = () => {
         <div className="lg:col-span-8 space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {facts.map(f => (
-              <div key={f.label} className="card !rounded-2xl p-4">
+              <div key={f.label} className="card !rounded-lg p-4">
                 <i className={`fas ${f.icon} text-plum-400`} />
                 <div className="text-xs text-ink-soft mt-2">{f.label}</div>
                 <div className="font-semibold text-plum-800 leading-snug">{f.value}</div>
@@ -318,7 +318,7 @@ const JobOfferDetail: React.FC = () => {
               </div>
             ))}
             {salaryText && (
-              <div className="rounded-2xl bg-sun-100 border border-sun-300 p-4">
+              <div className="rounded-lg bg-sun-100 border border-sun-300 p-4">
                 <i className="fas fa-euro-sign text-plum-800" />
                 <div className="text-xs text-plum-800/70 mt-2">Stipendio</div>
                 <div className="font-semibold text-plum-800 leading-snug">{salaryText}</div>
@@ -327,8 +327,8 @@ const JobOfferDetail: React.FC = () => {
           </div>
 
           <div className="card p-6 sm:p-9">
-            <h2 className="font-heading font-bold text-2xl text-plum-800 flex items-center gap-3">
-              <span className="icon-tile !w-10 !h-10 !rounded-xl"><i className="fas fa-align-left" /></span>
+            <h2 className="font-semibold text-2xl text-plum-800 flex items-center gap-3">
+              <span className="icon-tile !w-10 !h-10 !rounded-md"><i className="fas fa-align-left" /></span>
               Descrizione del lavoro
             </h2>
             <div className="mt-6 text-ink leading-relaxed text-[16px]">
@@ -340,8 +340,8 @@ const JobOfferDetail: React.FC = () => {
 
           {requisiti.length > 0 && (
             <div className="card p-6 sm:p-9">
-              <h2 className="font-heading font-bold text-2xl text-plum-800 flex items-center gap-3">
-                <span className="icon-tile !w-10 !h-10 !rounded-xl"><i className="fas fa-list-check" /></span>
+              <h2 className="font-semibold text-2xl text-plum-800 flex items-center gap-3">
+                <span className="icon-tile !w-10 !h-10 !rounded-md"><i className="fas fa-list-check" /></span>
                 Requisiti
               </h2>
               <ul className="mt-6 space-y-3">
@@ -362,7 +362,7 @@ const JobOfferDetail: React.FC = () => {
         <aside className="lg:col-span-4">
           <div className="lg:sticky lg:top-28 space-y-4">
             <div className="card p-6 sm:p-7">
-              <h3 className="font-heading font-bold text-xl text-plum-800">Ti interessa?</h3>
+              <h3 className="font-semibold text-xl text-plum-800">Ti interessa?</h3>
               <p className="text-sm text-ink-soft mt-1">Candidati in 1 minuto: ti contattiamo entro 24 ore.</p>
               <button type="button" onClick={() => setShowApply(true)} className="btn btn-lg btn-primary w-full mt-5">
                 <i className="fas fa-paper-plane" /> Candidati ora
@@ -373,7 +373,7 @@ const JobOfferDetail: React.FC = () => {
             </div>
 
             <div className="card p-6">
-              <h3 className="font-heading font-bold text-lg text-plum-800 flex items-center gap-2">
+              <h3 className="font-semibold text-lg text-plum-800 flex items-center gap-2">
                 <i className="fas fa-link text-plum-400 text-base" /> Condividi questo annuncio
               </h3>
               <p className="text-sm text-ink-soft mt-1 mb-4">Invia il link a chi potrebbe essere interessato.</p>
@@ -383,8 +383,8 @@ const JobOfferDetail: React.FC = () => {
               </button>
             </div>
 
-            <div className="rounded-3xl bg-wa/10 border border-wa/20 p-6">
-              <h3 className="font-heading font-bold text-lg text-plum-800 flex items-center gap-2">
+            <div className="rounded-xl bg-wa/10 border border-wa/20 p-6">
+              <h3 className="font-semibold text-lg text-plum-800 flex items-center gap-2">
                 <i className="fab fa-whatsapp text-[#128C4B]" /> Hai domande?
               </h3>
               <p className="text-sm text-ink-soft mt-1 mb-4">Scrivici su WhatsApp — risposta entro 24h.</p>
@@ -420,16 +420,16 @@ const JobOfferDetail: React.FC = () => {
           aria-labelledby="apply-title"
         >
           <div
-            className="animate-pop-in bg-white w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-[2rem] sm:rounded-[2rem] p-6 sm:p-8 relative shadow-[var(--shadow-lift)]"
+            className="animate-pop-in bg-white w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-xl sm:rounded-xl p-6 sm:p-8 relative shadow-[var(--shadow-lift)]"
             onClick={e => e.stopPropagation()}
           >
-            <button type="button" onClick={() => setShowApply(false)} aria-label="Chiudi" className="absolute top-4 right-4 h-11 w-11 rounded-full bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
+            <button type="button" onClick={() => setShowApply(false)} aria-label="Chiudi" className="absolute top-4 right-4 h-11 w-11 rounded-md bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
               <i className="fas fa-times" />
             </button>
             {applySent ? (
               <div className="text-center py-8">
-                <span className="mx-auto h-16 w-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl"><i className="fas fa-check" /></span>
-                <h3 className="font-heading font-bold text-2xl text-plum-800 mt-4">Candidatura inviata!</h3>
+                <span className="mx-auto h-16 w-16 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl"><i className="fas fa-check" /></span>
+                <h3 className="font-semibold text-2xl text-plum-800 mt-4">Candidatura inviata!</h3>
                 <p className="text-ink-soft mt-2 mb-6">Ti contatteremo entro 24 ore.</p>
                 <button type="button" onClick={() => { setShowApply(false); setApplySent(false); }} className="btn btn-primary">Chiudi</button>
               </div>
@@ -437,7 +437,7 @@ const JobOfferDetail: React.FC = () => {
               <>
                 <div className="mb-6 pr-12">
                   <span className="chip">Candidatura</span>
-                  <h2 id="apply-title" className="font-heading font-bold text-2xl text-plum-800 tracking-tight mt-3">{offerta.titolo}</h2>
+                  <h2 id="apply-title" className="font-semibold text-2xl text-plum-800 tracking-tight mt-3">{offerta.titolo}</h2>
                 </div>
                 <form onSubmit={handleApply} className="space-y-4">
                   <div>

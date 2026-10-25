@@ -311,56 +311,46 @@ const Home: React.FC = () => {
     <div className="flex flex-col relative overflow-hidden">
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="surface-plum pt-32 sm:pt-40 pb-28 sm:pb-36">
-        <div className="container-x grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+      <section className="surface-plum pt-32 sm:pt-40 pb-16 sm:pb-20">
+        <div className="container-x grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-end">
 
           <div className="lg:col-span-7">
-            <span className="chip chip-dark">
-              <span className="h-2 w-2 rounded-full bg-wa pulse-dot" />
-              Agenzia per italiani in Germania · 11 anni di esperienza
-            </span>
+            <span className="eyebrow eyebrow-light">Agenzia per italiani in Germania · 11 anni di esperienza</span>
 
-            <h1 className="h-display text-white text-[2.75rem] sm:text-6xl lg:text-7xl mt-6">
-              Lavoro in Germania,{' '}
-              <span className="text-sun-400">con casa</span> e assistenza{' '}
-              <span className="whitespace-nowrap">24/7.</span>
+            <h1 className="h-display text-white text-[2.5rem] sm:text-6xl lg:text-[4.25rem] mt-6">
+              Lavoro in Germania, con casa e assistenza <span className="text-sun-400 whitespace-nowrap">24/7.</span>
             </h1>
 
-            <p className="text-white/75 text-lg sm:text-xl leading-relaxed max-w-xl mt-6">
-              Trasformiamo la tua voglia di riscatto in un contratto di lavoro reale, alloggio sicuro e supporto continuo.{' '}
-              <span className="text-white font-medium">Assistenza continua, traduzioni e alloggio garantito.</span>
+            <p className="text-white/70 text-lg leading-relaxed max-w-xl mt-6">
+              Trasformiamo la tua voglia di riscatto in un contratto di lavoro reale, alloggio sicuro e supporto continuo.
+              Assistenza continua, traduzioni e alloggio garantito.
             </p>
 
             {/* RICERCA */}
-            <form
-              onSubmit={handleSearchSubmit}
-              role="search"
-              className="mt-9 max-w-2xl bg-white rounded-3xl sm:rounded-full p-2 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.6)] flex flex-col sm:flex-row gap-2"
-            >
-              <label className="relative flex-1">
+            <form onSubmit={handleSearchSubmit} role="search" className="mt-9 max-w-2xl grid grid-cols-1 sm:grid-cols-[1fr_12rem_auto] gap-2">
+              <label className="relative">
                 <span className="sr-only">Ruolo</span>
-                <i className="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
+                <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
                 <input
                   type="text"
                   value={searchRuolo}
                   onChange={e => setSearchRuolo(e.target.value)}
                   placeholder="Ruolo (es. Cuoco, Operaio)"
-                  className="w-full h-12 rounded-full pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
+                  className="field !border-transparent !pl-11 !min-h-[50px]"
                 />
               </label>
-              <span className="hidden sm:block w-px my-2 bg-line" />
-              <label className="relative sm:w-48">
+              <label className="relative">
                 <span className="sr-only">Città</span>
-                <i className="fas fa-map-marker-alt absolute left-5 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
+                <i className="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
                 <input
                   type="text"
                   value={searchCitta}
                   onChange={e => setSearchCitta(e.target.value)}
                   placeholder="Città"
-                  className="w-full h-12 rounded-full pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
+                  className="field !border-transparent !pl-11 !min-h-[50px]"
                 />
               </label>
-              <button type="submit" className="btn btn-accent h-12 !px-7">
+              <button type="submit" className="btn btn-lg btn-accent">
                 Cerca lavoro <i className="fas fa-arrow-right text-xs" />
               </button>
             </form>
@@ -372,10 +362,9 @@ const Home: React.FC = () => {
                   key={role}
                   type="button"
                   onClick={() => setSearchRuolo(role)}
-                  className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
-                    searchRuolo === role
-                      ? 'bg-sun-400 text-plum-800 border-sun-400'
-                      : 'bg-white/[0.06] text-white/80 border-white/15 hover:bg-white/15'
+                  aria-pressed={searchRuolo === role}
+                  className={`px-3 py-1.5 rounded-md text-sm border transition-colors cursor-pointer ${
+                    searchRuolo === role ? 'bg-sun-400 text-plum-800 border-sun-400' : 'text-white/75 border-white/20 hover:border-white/60 hover:text-white'
                   }`}
                 >
                   {role}
@@ -384,54 +373,33 @@ const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* FOTO + BADGE FLUTTUANTI */}
-          <div className="lg:col-span-5 relative max-w-md mx-auto lg:max-w-none w-full">
-            <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-sun-400/25 via-plum-400/20 to-transparent blur-2xl" />
-            <div className="relative rounded-[2rem] overflow-hidden ring-1 ring-white/15 shadow-2xl aspect-[4/5]">
-              <img
-                src="/img/salvatore_hero.jpg"
-                alt="Salvatore Cucuzza — Titolare LBS"
-                className="w-full h-full object-cover"
-                fetchPriority="high"
-              />
-              <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-plum-950/85 via-plum-950/30 to-transparent">
-                <div className="text-white font-heading font-bold text-lg">Salvatore Cucuzza</div>
-                <div className="text-white/70 text-sm">Titolare LBS · ti segue di persona</div>
-              </div>
-            </div>
-
-            <div className="floating absolute -left-4 sm:-left-10 top-10 bg-white rounded-2xl shadow-[var(--shadow-lift)] p-3.5 pr-5 flex items-center gap-3">
-              <span className="icon-tile !w-10 !h-10 !rounded-xl !bg-sun-100 !text-plum-800"><i className="fas fa-house-user" /></span>
+          {/* FOTO */}
+          <figure className="lg:col-span-5 max-w-md mx-auto lg:max-w-none w-full">
+            <img
+              src="/img/salvatore_hero.jpg"
+              alt="Salvatore Cucuzza — Titolare LBS"
+              className="w-full aspect-[4/5] object-cover rounded-lg"
+              fetchPriority="high"
+            />
+            <figcaption className="mt-4 flex items-center justify-between gap-4 border-t border-white/15 pt-4">
               <span>
-                <span className="block text-sm font-semibold text-plum-800">Alloggio pronto</span>
-                <span className="block text-xs text-ink-soft">già al tuo arrivo</span>
+                <span className="block text-white font-medium">Salvatore Cucuzza</span>
+                <span className="block text-white/55 text-sm">Titolare LBS · ti segue di persona</span>
               </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowWaModal(true)}
-              className="floating [animation-delay:-3s] absolute -right-3 sm:-right-8 bottom-24 bg-white rounded-2xl shadow-[var(--shadow-lift)] p-3.5 pr-5 flex items-center gap-3 text-left cursor-pointer hover:scale-[1.02] transition-transform"
-            >
-              <span className="icon-tile !w-10 !h-10 !rounded-xl !bg-wa/15 !text-[#128C4B]"><i className="fab fa-whatsapp text-lg" /></span>
-              <span>
-                <span className="block text-sm font-semibold text-plum-800">WhatsApp h24</span>
-                <span className="block text-xs text-ink-soft">rispondiamo subito</span>
-              </span>
-            </button>
-          </div>
+              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-sm btn-ghost-light shrink-0">
+                <i className="fab fa-whatsapp" /> WhatsApp h24
+              </button>
+            </figcaption>
+          </figure>
         </div>
 
         {/* NUMERI */}
         <div className="container-x mt-16 sm:mt-20">
-          <dl className="grid grid-cols-2 md:grid-cols-4 rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-sm divide-x divide-y md:divide-y-0 divide-white/10 overflow-hidden">
+          <dl className="grid-lines-dark grid-cols-2 md:grid-cols-4">
             {STATS.map(s => (
-              <div key={s.label} className="p-6 sm:p-7">
-                <dt className="sr-only">{s.label}</dt>
-                <dd>
-                  <span className="block font-heading font-bold text-4xl sm:text-5xl text-white tracking-tight">{s.value}</span>
-                  <span className="block text-sm text-white/55 mt-1">{s.label}</span>
-                </dd>
+              <div key={s.label} className="p-6 sm:p-7 flex flex-col-reverse">
+                <dt className="text-sm text-white/55">{s.label}</dt>
+                <dd className="font-semibold text-4xl sm:text-5xl text-white tracking-tight mt-1">{s.value}</dd>
               </div>
             ))}
           </dl>
@@ -439,22 +407,24 @@ const Home: React.FC = () => {
       </section>
 
       {/* ── 3 VANTAGGI ───────────────────────────────────────────────────── */}
-      <section className="relative z-10 -mt-14 sm:-mt-20">
-        <div className="container-x grid grid-cols-1 md:grid-cols-3 gap-5">
-          {VALUE_CARDS.map((c, i) => (
-            <div key={c.title} className="card card-hover p-7 sm:p-8 flex flex-col">
-              <div className="flex items-center justify-between mb-6">
-                <span className="icon-tile"><i className={`fas ${c.icon} text-lg`} /></span>
-                <span className="font-heading text-sm font-bold text-plum-200">0{i + 1}</span>
+      <section className="border-b border-line">
+        <div className="container-x py-16 md:py-20">
+          <div className="grid-lines grid-cols-1 md:grid-cols-3">
+            {VALUE_CARDS.map((c, i) => (
+              <div key={c.title} className="p-7 sm:p-9 flex flex-col">
+                <div className="flex items-center justify-between mb-8">
+                  <span className="icon-tile"><i className={`fas ${c.icon}`} /></span>
+                  <span className="text-sm font-medium text-plum-300 tabular-nums">0{i + 1}</span>
+                </div>
+                <h3 className="font-semibold text-xl text-plum-800 tracking-tight">{c.title}</h3>
+                <p className="text-ink-soft leading-relaxed mt-3 flex-1">{c.text}</p>
+                <div className="flex flex-wrap gap-2 mt-6">
+                  <span className="chip"><i className="fas fa-check text-[10px]" /> {c.tags[0]}</span>
+                  <span className="chip">{c.tags[1]}</span>
+                </div>
               </div>
-              <h3 className="font-heading font-bold text-2xl text-plum-800 tracking-tight">{c.title}</h3>
-              <p className="text-ink-soft leading-relaxed mt-3 flex-1">{c.text}</p>
-              <div className="flex flex-wrap gap-2 mt-6 pt-5 border-t border-line">
-                <span className="chip"><i className="fas fa-check text-[10px]" /> {c.tags[0]}</span>
-                <span className="chip chip-sun">{c.tags[1]}</span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
@@ -471,17 +441,15 @@ const Home: React.FC = () => {
             </Link>
           </SectionHeader>
 
-          <ol className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="hidden lg:block absolute top-11 left-[12%] right-[12%] h-px border-t-2 border-dashed border-plum-200" aria-hidden="true" />
+          <ol className="grid-lines grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {PROCESS_STEPS.map((step, i) => (
-              <li key={step.step} className="reveal relative card card-hover p-7 group" style={{ transitionDelay: `${i * 80}ms` }}>
-                <div className="flex items-center gap-4 mb-6">
-                  <span className="relative h-11 w-11 rounded-full bg-plum-600 text-white font-heading font-bold flex items-center justify-center ring-8 ring-paper group-hover:bg-sun-400 group-hover:text-plum-800 transition-colors">
-                    {step.step}
-                  </span>
-                  <i className={`fas ${step.icon} text-plum-300 text-xl`} />
+              <li key={step.step} className="reveal p-7 sm:p-8" style={{ transitionDelay: `${i * 60}ms` }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-plum-600 tabular-nums">{step.step}</span>
+                  <i className={`fas ${step.icon} text-plum-300`} />
                 </div>
-                <h3 className="font-heading font-bold text-xl text-plum-800 tracking-tight">{step.title}</h3>
+                <div className="h-px bg-line my-6" />
+                <h3 className="font-semibold text-lg text-plum-800 tracking-tight">{step.title}</h3>
                 <p className="text-ink-soft leading-relaxed mt-2 text-[15px]">{step.description}</p>
               </li>
             ))}
@@ -496,11 +464,11 @@ const Home: React.FC = () => {
             <div className="flex items-center gap-2 self-start md:self-auto">
               {offerte.length > 3 && (
                 <>
-                  <button type="button" onClick={() => scrollCarousel(-1)} aria-label="Precedente" className="h-12 w-12 rounded-full border border-line bg-white text-plum-800 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
-                    <i className="fas fa-arrow-left" />
+                  <button type="button" onClick={() => scrollCarousel(-1)} aria-label="Precedente" className="h-11 w-11 rounded-md border border-line bg-white text-plum-800 hover:border-plum-800 flex items-center justify-center cursor-pointer transition-colors">
+                    <i className="fas fa-arrow-left text-sm" />
                   </button>
-                  <button type="button" onClick={() => scrollCarousel(1)} aria-label="Successivo" className="h-12 w-12 rounded-full border border-line bg-white text-plum-800 hover:bg-plum-50 flex items-center justify-center cursor-pointer">
-                    <i className="fas fa-arrow-right" />
+                  <button type="button" onClick={() => scrollCarousel(1)} aria-label="Successivo" className="h-11 w-11 rounded-md border border-line bg-white text-plum-800 hover:border-plum-800 flex items-center justify-center cursor-pointer transition-colors">
+                    <i className="fas fa-arrow-right text-sm" />
                   </button>
                 </>
               )}
@@ -514,7 +482,7 @@ const Home: React.FC = () => {
         {offerte.length > 0 ? (
           <div
             ref={carouselRef}
-            className={`hide-scrollbar flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-6 pt-1 carousel-pad ${offerte.length <= 3 ? 'lg:justify-center' : ''}`}
+            className={`hide-scrollbar flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 carousel-pad ${offerte.length <= 3 ? 'lg:justify-center' : ''}`}
           >
             {offerte.map(o => {
               const stipendio = formatStipendio(o);
@@ -523,31 +491,30 @@ const Home: React.FC = () => {
                 <Link
                   key={o.id}
                   to={`/offerte/${o.slug || o.id}`}
-                  className="snap-start shrink-0 w-[300px] sm:w-[360px] lg:w-[380px] group card card-hover overflow-hidden flex flex-col"
+                  className="snap-start shrink-0 w-[300px] sm:w-[360px] lg:w-[370px] group card card-hover overflow-hidden flex flex-col"
                 >
-                  <div className="relative h-44 bg-plum-50 overflow-hidden">
+                  <div className="relative h-44 bg-plum-50 overflow-hidden border-b border-line">
                     {o.immagine_url ? (
-                      <img src={o.immagine_url} alt="" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <img src={o.immagine_url} alt="" loading="lazy" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full surface-tint flex items-center justify-center">
-                        <i className={`fas ${SETTORE_ICONS[o.settore] ?? 'fa-briefcase'} text-5xl text-plum-200`} />
+                      <div className="w-full h-full flex items-center justify-center">
+                        <i className={`fas ${SETTORE_ICONS[o.settore] ?? 'fa-briefcase'} text-4xl text-plum-200`} />
                       </div>
                     )}
-                    <div className="absolute top-3 left-3 right-3 flex justify-between gap-2">
-                      {o.in_evidenza ? <span className="chip chip-sun !shadow-sm"><i className="fas fa-star text-[10px]" /> In evidenza</span> : <span />}
-                      <span className="chip !bg-white !shadow-sm" style={{ color, borderColor: color + '33' }}>{o.contratto}</span>
-                    </div>
+                    {o.in_evidenza && (
+                      <span className="absolute top-3 left-3 chip chip-sun"><i className="fas fa-star text-[10px]" /> In evidenza</span>
+                    )}
                   </div>
 
                   <div className="p-6 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 text-sm text-ink-soft">
-                      <i className={`fas ${SETTORE_ICONS[o.settore] ?? 'fa-briefcase'} text-plum-400`} />
-                      <span className="truncate">{o.settore}</span>
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="text-ink-soft truncate">{o.settore}</span>
+                      <span className="font-medium shrink-0" style={{ color }}>{o.contratto}</span>
                     </div>
-                    <h3 className="font-heading font-bold text-xl text-plum-800 tracking-tight leading-snug mt-2 line-clamp-2">{o.titolo}</h3>
-                    {o.azienda && <p className="text-sm font-medium text-plum-600 mt-1">{o.azienda}</p>}
+                    <h3 className="font-semibold text-lg text-plum-800 tracking-tight leading-snug mt-2 line-clamp-2">{o.titolo}</h3>
+                    {o.azienda && <p className="text-sm text-plum-600 mt-1">{o.azienda}</p>}
                     <p className="flex items-center gap-2 text-sm text-ink-soft mt-3">
-                      <i className="fas fa-map-marker-alt text-plum-400" />
+                      <i className="fas fa-map-marker-alt text-plum-300 text-xs" />
                       {o.citta}{o.stato_germania ? `, ${o.stato_germania}` : ''}
                     </p>
                     <p className="text-[15px] text-ink-soft leading-relaxed line-clamp-2 mt-3 flex-1">{o.descrizione}</p>
@@ -555,14 +522,14 @@ const Home: React.FC = () => {
                     <div className="flex items-center justify-between pt-5 mt-5 border-t border-line">
                       {stipendio ? (
                         <div>
-                          <div className="font-heading font-bold text-lg text-plum-800">{stipendio}</div>
+                          <div className="font-semibold text-plum-800">{stipendio}</div>
                           <div className="text-xs text-ink-soft">al mese, {o.stipendio_tipo === 'netto' ? 'netti' : 'lordi'}</div>
                         </div>
                       ) : (
                         <span className="text-sm text-ink-soft">Stipendio da concordare</span>
                       )}
-                      <span className="h-11 w-11 rounded-full bg-sun-400 text-plum-800 flex items-center justify-center group-hover:translate-x-1 transition-transform" aria-hidden="true">
-                        <i className="fas fa-arrow-right" />
+                      <span className="text-sm font-medium text-plum-600 flex items-center gap-1.5 group-hover:gap-2.5 transition-all" aria-hidden="true">
+                        Dettagli <i className="fas fa-arrow-right text-xs" />
                       </span>
                     </div>
                   </div>
@@ -581,33 +548,30 @@ const Home: React.FC = () => {
       </section>
 
       {/* ── PERCHÉ LA GERMANIA ───────────────────────────────────────────── */}
-      <section className="section surface-tint">
+      <section className="section surface-tint !border-y">
         <div className="container-x">
           <SectionHeader
             eyebrow="Perché scegliere la Germania"
             title={<>Non è solo un lavoro, è <span className="mark">un nuovo futuro.</span></>}
             lead="Scopri i vantaggi di costruire la tua carriera in uno dei paesi più forti d'Europa."
           />
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
+          <div className="grid-lines grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {WHY_GERMANY.map((item, i) => (
-              <div
-                key={item.title}
-                className={`reveal rounded-3xl p-7 sm:p-9 flex flex-col ${
-                  i === 0
-                    ? 'md:col-span-3 bg-plum-800 text-white'
-                    : i === 1
-                      ? 'md:col-span-3 bg-sun-400 text-plum-800'
-                      : 'md:col-span-2 card'
-                }`}
-                style={{ transitionDelay: `${i * 70}ms` }}
-              >
-                <span className={`icon-tile ${i === 0 ? '!bg-white/10 !text-sun-400' : i === 1 ? '!bg-plum-800 !text-sun-400' : ''}`}>
-                  <i className={`fas ${item.icon} text-lg`} />
-                </span>
-                <h3 className={`font-heading font-bold tracking-tight mt-8 ${i < 2 ? 'text-3xl' : 'text-xl text-plum-800'}`}>{item.title}</h3>
-                <p className={`leading-relaxed mt-3 ${i === 0 ? 'text-white/70' : i === 1 ? 'text-plum-800/75' : 'text-ink-soft'}`}>{item.description}</p>
+              <div key={item.title} className="reveal p-7 sm:p-9" style={{ transitionDelay: `${i * 50}ms` }}>
+                <span className="icon-tile"><i className={`fas ${item.icon}`} /></span>
+                <h3 className="font-semibold text-lg text-plum-800 tracking-tight mt-7">{item.title}</h3>
+                <p className="text-ink-soft leading-relaxed mt-2 text-[15px]">{item.description}</p>
               </div>
             ))}
+            <Link to="/contatti" className="group p-7 sm:p-9 flex flex-col justify-between !bg-plum-800 text-white">
+              <span className="text-sm text-white/60">Hai domande?</span>
+              <span className="mt-10">
+                <span className="block font-semibold text-lg tracking-tight">Parla con un consulente</span>
+                <span className="mt-2 inline-flex items-center gap-2 text-sm text-sun-400">
+                  Consulenza gratuita <i className="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform" />
+                </span>
+              </span>
+            </Link>
           </div>
         </div>
       </section>
@@ -623,7 +587,7 @@ const Home: React.FC = () => {
           />
 
           <div className="reveal flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div role="tablist" aria-label="Scegli i video" className="inline-flex p-1.5 rounded-full bg-white/[0.06] border border-white/10 self-start">
+            <div role="tablist" aria-label="Scegli i video" className="flex gap-6 border-b border-white/15 self-start">
               {VIDEO_GROUPS.map(g => (
                 <button
                   key={g.key}
@@ -631,9 +595,7 @@ const Home: React.FC = () => {
                   role="tab"
                   aria-selected={videoTab === g.key}
                   onClick={() => setVideoTab(g.key)}
-                  className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-                    videoTab === g.key ? 'bg-sun-400 text-plum-800' : 'text-white/70 hover:text-white'
-                  }`}
+                  className={`relative -mb-px inline-flex items-center gap-2 pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${ videoTab === g.key ? 'text-white border-sun-400' : 'text-white/60 border-transparent hover:text-white' }`}
                 >
                   <i className={`fas ${g.icon}`} /> {g.label}
                 </button>
@@ -651,7 +613,7 @@ const Home: React.FC = () => {
             {activeVideos.videos.map(v => (
               <article key={v.title} className="card-dark p-4 sm:p-5 flex flex-col">
                 {v.youtubeId ? (
-                  <div className="aspect-video rounded-2xl overflow-hidden bg-black">
+                  <div className="aspect-video rounded-lg overflow-hidden bg-black">
                     <iframe
                       className="w-full h-full"
                       src={`https://www.youtube-nocookie.com/embed/${v.youtubeId}`}
@@ -662,8 +624,8 @@ const Home: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-video rounded-2xl border border-dashed border-white/20 bg-gradient-to-br from-plum-700/40 to-plum-950/60 flex flex-col items-center justify-center text-center p-6">
-                    <span className="h-16 w-16 rounded-full bg-white/10 flex items-center justify-center text-sun-400 text-xl">
+                  <div className="aspect-video rounded-lg border border-dashed border-white/20  flex flex-col items-center justify-center text-center p-6">
+                    <span className="h-14 w-14 rounded-md border border-white/20 flex items-center justify-center text-sun-400 text-lg">
                       <i className="fas fa-film" />
                     </span>
                     <span className="chip chip-sun mt-4">Prossimamente</span>
@@ -683,7 +645,7 @@ const Home: React.FC = () => {
                       </a>
                     )}
                   </div>
-                  <h3 className="font-heading font-bold text-xl sm:text-2xl text-white tracking-tight leading-snug">{v.title}</h3>
+                  <h3 className="font-semibold text-xl sm:text-2xl text-white tracking-tight leading-snug">{v.title}</h3>
                   <p className="text-white/60 leading-relaxed mt-2">{v.text}</p>
                 </div>
               </article>
@@ -704,14 +666,12 @@ const Home: React.FC = () => {
             {GALLERY.map((item, i) => (
               <figure
                 key={item.img}
-                className={`reveal relative group overflow-hidden rounded-3xl ${
-                  i === 0 ? 'col-span-2 row-span-2 aspect-square md:aspect-auto' : i === 3 ? 'col-span-2 aspect-[2/1] md:aspect-auto' : 'aspect-square md:aspect-auto'
-                }`}
+                className={`reveal relative group overflow-hidden rounded-xl ${ i === 0 ? 'col-span-2 row-span-2 aspect-square md:aspect-auto' : i === 3 ? 'col-span-2 aspect-[2/1] md:aspect-auto' : 'aspect-square md:aspect-auto' }`}
               >
                 <img src={item.img} alt={item.caption} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <figcaption className="absolute inset-x-0 bottom-0 p-4 sm:p-6 bg-gradient-to-t from-plum-950/80 via-plum-950/20 to-transparent">
                   <span className="chip chip-sun !text-[11px]">{item.tag}</span>
-                  <span className="block text-white font-heading font-bold text-base sm:text-lg mt-2">{item.caption}</span>
+                  <span className="block text-white font-semibold text-base sm:text-lg mt-2">{item.caption}</span>
                 </figcaption>
               </figure>
             ))}
@@ -720,31 +680,25 @@ const Home: React.FC = () => {
       </section>
 
       {/* ── TESTIMONIANZE ────────────────────────────────────────────────── */}
-      <section className="pb-20 md:pb-28">
+      <section className="section border-t border-line">
         <div className="container-x">
-          <div className="rounded-[2.5rem] bg-plum-800 text-white px-6 py-14 sm:px-12 sm:py-20 relative overflow-hidden">
-            <i className="fas fa-quote-right absolute -right-4 -top-6 text-[14rem] text-white/[0.04]" aria-hidden="true" />
-            <div className="relative text-center max-w-2xl mx-auto mb-12 reveal">
-              <span className="eyebrow eyebrow-light">Testimonianze</span>
-              <h2 className="h-section text-white mt-4">Chi ce l'ha fatta. <span className="text-sun-400">Come te.</span></h2>
-            </div>
-            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-5">
-              {TESTIMONIALS.map(t => (
-                <figure key={t.id} className="reveal card-dark p-7 flex flex-col">
-                  <div className="flex gap-1 text-sun-400 text-sm" aria-label="5 stelle su 5">
-                    {[...Array(5)].map((_, i) => <i key={i} className="fas fa-star" />)}
-                  </div>
-                  <blockquote className="text-white/90 text-lg leading-relaxed mt-5 flex-1">“{t.content}”</blockquote>
-                  <figcaption className="flex items-center gap-3 mt-7 pt-6 border-t border-white/10">
-                    <span className="h-11 w-11 rounded-full bg-sun-400 text-plum-800 font-heading font-bold flex items-center justify-center">{t.initial}</span>
-                    <span>
-                      <span className="block font-semibold">{t.name}</span>
-                      <span className="block text-sm text-white/55">{t.role}</span>
-                    </span>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
+          <SectionHeader eyebrow="Testimonianze" title={<>Chi ce l'ha fatta. <span className="mark">Come te.</span></>} />
+          <div className="grid-lines grid-cols-1 md:grid-cols-3">
+            {TESTIMONIALS.map(t => (
+              <figure key={t.id} className="reveal p-7 sm:p-9 flex flex-col">
+                <div className="flex gap-1 text-sun-500 text-xs" aria-label="5 stelle su 5">
+                  {[...Array(5)].map((_, i) => <i key={i} className="fas fa-star" />)}
+                </div>
+                <blockquote className="text-ink text-lg leading-relaxed mt-5 flex-1">“{t.content}”</blockquote>
+                <figcaption className="flex items-center gap-3 mt-8 pt-6 border-t border-line">
+                  <span className="h-10 w-10 rounded-md border border-line text-plum-700 font-semibold flex items-center justify-center">{t.initial}</span>
+                  <span>
+                    <span className="block font-medium text-plum-800">{t.name}</span>
+                    <span className="block text-sm text-ink-soft">{t.role}</span>
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
@@ -776,10 +730,10 @@ const Home: React.FC = () => {
             </ul>
 
             {/* Sei un datore di lavoro? */}
-            <div className="mt-10 rounded-3xl surface-plum p-6 flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start gap-4 overflow-hidden">
+            <div className="mt-10 rounded-xl surface-plum p-6 flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start gap-4 overflow-hidden">
               <span className="icon-tile !bg-sun-400 !text-plum-800"><i className="fas fa-building" /></span>
               <div className="flex-1">
-                <div className="font-heading font-bold text-lg">Sei un datore di lavoro?</div>
+                <div className="font-semibold text-lg">Sei un datore di lavoro?</div>
                 <div className="text-white/65 text-sm">Stai cercando lavoratori qualificati? Abbiamo quello che ti serve.</div>
               </div>
               <Link to="/datori-di-lavoro" className="btn btn-sm btn-accent self-start sm:self-auto">
@@ -828,7 +782,7 @@ const Home: React.FC = () => {
             </div>
 
             {formError && (
-              <div role="alert" className="mt-5 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-3">
+              <div role="alert" className="mt-5 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-3">
                 <i className="fas fa-exclamation-triangle" />
                 {formError}
               </div>
@@ -879,8 +833,8 @@ const Home: React.FC = () => {
             role="dialog"
             aria-modal="true"
           >
-            <div className="animate-pop-in w-full max-w-md bg-white rounded-[2rem] p-8 sm:p-10 text-center shadow-[var(--shadow-lift)]" onClick={e => e.stopPropagation()}>
-              <span className="mx-auto h-20 w-20 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl">
+            <div className="animate-pop-in w-full max-w-md bg-white rounded-xl p-8 sm:p-10 text-center shadow-[var(--shadow-lift)]" onClick={e => e.stopPropagation()}>
+              <span className="mx-auto h-20 w-20 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl">
                 <i className="fas fa-check" />
               </span>
               <h3 className="h-display text-3xl text-plum-800 mt-6">Candidatura ricevuta!</h3>
@@ -905,10 +859,10 @@ const Home: React.FC = () => {
         <div className="container-x">
           <div className="reveal card p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
             <div className="lg:col-span-5 flex items-start gap-4">
-              <span className="icon-tile !w-14 !h-14 !rounded-2xl !bg-plum-600 !text-white"><i className="fas fa-robot text-xl" /></span>
+              <span className="icon-tile !w-14 !h-14 !rounded-lg !bg-plum-600 !text-white"><i className="fas fa-robot text-xl" /></span>
               <div>
                 <span className="eyebrow">Supporto AI</span>
-                <h2 className="font-heading font-bold text-2xl sm:text-3xl text-plum-800 tracking-tight mt-2">
+                <h2 className="font-semibold text-2xl sm:text-3xl text-plum-800 tracking-tight mt-2">
                   Hai dubbi? Chiedi alla nostra AI
                 </h2>
               </div>
@@ -921,7 +875,7 @@ const Home: React.FC = () => {
                   value={aiInput}
                   onChange={(e) => setAiInput(e.target.value)}
                   placeholder="Es: Di quali documenti ho bisogno?"
-                  className="field !rounded-full !px-6 !min-h-[52px]"
+                  className="field !rounded-md !px-6 !min-h-[52px]"
                 />
               </label>
               <button type="submit" disabled={isAiLoading} className="btn btn-lg btn-primary">
@@ -939,14 +893,14 @@ const Home: React.FC = () => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <span className="icon-tile !bg-plum-600 !text-white"><i className="fas fa-robot" /></span>
-              <h3 className="font-heading font-bold text-xl text-plum-800">LBS Assistant</h3>
+              <h3 className="font-semibold text-xl text-plum-800">LBS Assistant</h3>
             </div>
-            <button type="button" onClick={() => setIsDrawerOpen(false)} aria-label="Chiudi" className="h-11 w-11 rounded-full bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
+            <button type="button" onClick={() => setIsDrawerOpen(false)} aria-label="Chiudi" className="h-11 w-11 rounded-md bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
               <i className="fas fa-times" />
             </button>
           </div>
           <div className="flex-grow overflow-y-auto space-y-6 pr-1">
-            <div className="rounded-2xl bg-plum-50 p-5">
+            <div className="rounded-lg bg-plum-50 p-5">
               <p className="text-xs font-semibold text-plum-600 uppercase tracking-[0.14em] mb-2">La tua domanda</p>
               <p className="text-plum-800 font-semibold text-lg leading-snug">{aiInput}</p>
             </div>

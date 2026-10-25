@@ -8,7 +8,7 @@ const NoteLegali: React.FC = () => {
       <div className="max-w-4xl mx-auto px-6">
 
         {/* Header */}
-        <div className="mb-12 rounded-[2rem] surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
+        <div className="mb-12 rounded-xl surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
           <div className="chip chip-sun mb-6">
             Informativa Legale
           </div>
@@ -24,7 +24,7 @@ const NoteLegali: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">1</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">1</span>
               Ragione Sociale e Sede Legale
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -50,7 +50,7 @@ const NoteLegali: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">2</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">2</span>
               Responsabile del Sito
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -61,7 +61,7 @@ const NoteLegali: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">3</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">3</span>
               Proprietà Intellettuale e Copyright
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -72,7 +72,7 @@ const NoteLegali: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">4</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">4</span>
               Disclaimer e Limitazioni
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -82,7 +82,7 @@ const NoteLegali: React.FC = () => {
 
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">5</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">5</span>
               Legge Applicabile
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">

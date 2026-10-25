@@ -8,7 +8,7 @@ const PrivacyPolicy: React.FC = () => {
       <div className="max-w-4xl mx-auto px-6">
 
         {/* Header */}
-        <div className="mb-12 rounded-[2rem] surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
+        <div className="mb-12 rounded-xl surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
           <div className="chip chip-sun mb-6">
             Informativa Legale
           </div>
@@ -26,7 +26,7 @@ const PrivacyPolicy: React.FC = () => {
           {/* 1 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">1</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">1</span>
               Titolare del Trattamento
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -40,23 +40,23 @@ const PrivacyPolicy: React.FC = () => {
           {/* 2 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">2</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">2</span>
               Dati Raccolti e Finalità
             </h2>
             <div className="space-y-4 text-ink-soft text-sm leading-relaxed">
-              <div className="rounded-2xl bg-plum-50 border-l-4 border-plum-400 p-4">
+              <div className="rounded-lg bg-plum-50 border-l-4 border-plum-400 p-4">
                 <strong className="text-plum-800 uppercase text-xs tracking-widest">A) Modulo di Candidatura (Lavoratori)</strong><br />
                 <span>Dati raccolti: nome, cognome, email, telefono, settore lavorativo, messaggio.</span><br />
                 <span>Finalità: valutare la candidatura e contattare il candidato per opportunità lavorative in Germania.</span><br />
                 <span>Base giuridica: esecuzione di misure precontrattuali (Art. 6 par. 1 lett. b GDPR).</span>
               </div>
-              <div className="rounded-2xl bg-plum-50 border-l-4 border-plum-400 p-4">
+              <div className="rounded-lg bg-plum-50 border-l-4 border-plum-400 p-4">
                 <strong className="text-plum-800 uppercase text-xs tracking-widest">B) Modulo Richiesta Datori di Lavoro</strong><br />
                 <span>Dati raccolti: nome azienda, referente, email, telefono, settore, numero lavoratori richiesti, messaggio.</span><br />
                 <span>Finalità: fornire lavoratori qualificati e gestire la relazione commerciale.</span><br />
                 <span>Base giuridica: esecuzione di misure precontrattuali (Art. 6 par. 1 lett. b GDPR).</span>
               </div>
-              <div className="rounded-2xl bg-plum-50 border-l-4 border-plum-400 p-4">
+              <div className="rounded-lg bg-plum-50 border-l-4 border-plum-400 p-4">
                 <strong className="text-plum-800 uppercase text-xs tracking-widest">C) Dati di Navigazione (Cookie Analitici)</strong><br />
                 <span>Con il tuo consenso, raccogliamo dati anonimi di navigazione tramite Google Analytics (G-434XX8P8NY): pagine visitate, durata della sessione, provenienza geografica, dispositivo utilizzato. Gli IP sono anonimizzati.</span><br />
                 <span>Base giuridica: consenso dell'interessato (Art. 6 par. 1 lett. a GDPR).</span>
@@ -67,7 +67,7 @@ const PrivacyPolicy: React.FC = () => {
           {/* 3 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">3</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">3</span>
               Conservazione dei Dati
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -78,7 +78,7 @@ const PrivacyPolicy: React.FC = () => {
           {/* 4 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">4</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">4</span>
               Destinatari dei Dati
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm mb-3">
@@ -103,7 +103,7 @@ const PrivacyPolicy: React.FC = () => {
           {/* 5 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">5</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">5</span>
               I Tuoi Diritti (GDPR Art. 15–22)
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -134,7 +134,7 @@ const PrivacyPolicy: React.FC = () => {
           {/* 6 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">6</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">6</span>
               Trasferimento Dati Extra-UE
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -145,7 +145,7 @@ const PrivacyPolicy: React.FC = () => {
           {/* 7 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">7</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">7</span>
               Sicurezza dei Dati
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -156,7 +156,7 @@ const PrivacyPolicy: React.FC = () => {
           {/* 8 */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">8</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">8</span>
               Modifiche alla Privacy Policy
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">

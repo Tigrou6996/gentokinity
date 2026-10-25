@@ -33,7 +33,7 @@ const CookiePolicy: React.FC = () => {
       <div className="max-w-4xl mx-auto px-6">
 
         {/* Header */}
-        <div className="mb-12 rounded-[2rem] surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
+        <div className="mb-12 rounded-xl surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
           <div className="chip chip-sun mb-6">
             Informativa Legale
           </div>
@@ -50,7 +50,7 @@ const CookiePolicy: React.FC = () => {
           {/* Cosa sono i cookie */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">1</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">1</span>
               Cosa Sono i Cookie
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm">
@@ -61,25 +61,25 @@ const CookiePolicy: React.FC = () => {
           {/* Tabella cookie */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">2</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">2</span>
               Cookie Utilizzati da Questo Sito
             </h2>
             <div className="space-y-8">
               {cookies.map((cat, ci) => (
                 <div key={ci}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm" style={{ background: cat.color }}>
+                    <div className="w-8 h-8 rounded-md flex items-center justify-center text-white text-sm" style={{ background: cat.color }}>
                       <i className={`fas ${cat.icon}`} />
                     </div>
                     <div>
                       <span className="font-semibold text-plum-800 uppercase tracking-tight text-sm">{cat.category}</span>
                       {cat.required
-                        ? <span className="ml-2 text-[10px] font-semibold text-white bg-[#25D366] px-2 py-0.5 uppercase tracking-widest rounded-full">Sempre Attivi</span>
-                        : <span className="ml-2 text-[10px] font-semibold text-white bg-plum-600 px-2 py-0.5 uppercase tracking-widest rounded-full">Solo con Consenso</span>
+                        ? <span className="ml-2 text-[10px] font-semibold text-white bg-[#25D366] px-2 py-0.5 uppercase tracking-widest rounded-md">Sempre Attivi</span>
+                        : <span className="ml-2 text-[10px] font-semibold text-white bg-plum-600 px-2 py-0.5 uppercase tracking-widest rounded-md">Solo con Consenso</span>
                       }
                     </div>
                   </div>
-                  <div className="overflow-x-auto rounded-2xl border border-line">
+                  <div className="overflow-x-auto rounded-lg border border-line">
                     <table className="w-full text-xs border-collapse">
                       <thead>
                         <tr className="bg-plum-800 text-white">
@@ -111,7 +111,7 @@ const CookiePolicy: React.FC = () => {
           {/* Google Analytics */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">3</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">3</span>
               Google Analytics
             </h2>
             <p className="text-ink-soft leading-relaxed text-sm mb-4">
@@ -141,7 +141,7 @@ const CookiePolicy: React.FC = () => {
           {/* Come gestire i cookie */}
           <section className="card p-6 sm:p-8">
             <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-plum-800 mb-4 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-plum-600 text-white flex items-center justify-center font-heading font-bold text-sm flex-shrink-0">4</span>
+              <span className="w-8 h-8 rounded-md bg-plum-600 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">4</span>
               Come Gestire o Revocare il Consenso
             </h2>
             <p className="text-ink-soft text-sm mb-4 leading-relaxed">
@@ -161,7 +161,7 @@ const CookiePolicy: React.FC = () => {
                 </a>
               ))}
             </div>
-            <div className="mt-4 rounded-2xl bg-sun-100 border border-sun-300 p-4">
+            <div className="mt-4 rounded-lg bg-sun-100 border border-sun-300 p-4">
               <p className="text-sm font-semibold text-plum-800 flex items-start gap-3">
                 <i className="fas fa-info-circle text-yellow-500 mt-0.5" />
                 <span>Per revocare il consenso sul nostro sito: cancella <strong>lbs_cookie_consent</strong> dal localStorage del browser (Strumenti Sviluppatore → Application → Local Storage). Il banner riapparirà alla visita successiva.</span>

@@ -57,13 +57,13 @@ const CookieBanner: React.FC = () => {
       aria-label="Consenso cookie"
       className="fixed z-[9998] bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-md animate-pop-in"
     >
-      <div className="bg-white rounded-3xl border border-line shadow-[var(--shadow-lift)] p-5 sm:p-6">
+      <div className="bg-white rounded-xl border border-line shadow-[var(--shadow-lift)] p-5 sm:p-6">
         <div className="flex items-start gap-3 mb-3">
-          <div className="icon-tile !w-10 !h-10 !rounded-xl !bg-sun-100 !text-plum-800">
+          <div className="icon-tile !w-10 !h-10 !rounded-md !bg-sun-100 !text-plum-800">
             <i className="fas fa-cookie-bite" />
           </div>
           <div>
-            <div className="font-heading font-bold text-plum-800 text-lg leading-tight">Usiamo i cookie</div>
+            <div className="font-semibold text-plum-800 text-lg leading-tight">Usiamo i cookie</div>
             <p className="text-sm text-ink-soft leading-relaxed mt-1">
               Cookie tecnici necessari e, con il tuo consenso, Google Analytics per capire come
               viene usato il sito. I tuoi dati non vengono venduti a terzi.
@@ -82,7 +82,7 @@ const CookieBanner: React.FC = () => {
         </button>
 
         {showDetails && (
-          <div className="rounded-2xl bg-plum-50 p-4 mb-4 text-xs text-ink-soft leading-relaxed space-y-2">
+          <div className="rounded-lg bg-plum-50 p-4 mb-4 text-xs text-ink-soft leading-relaxed space-y-2">
             <div>
               <strong className="text-plum-800">Cookie tecnici (sempre attivi)</strong><br />
               Necessari per il corretto funzionamento del sito (sessione, sicurezza, preferenze).

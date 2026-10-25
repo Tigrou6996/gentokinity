@@ -32,25 +32,20 @@ const Footer: React.FC = () => {
       <WhatsAppModal isOpen={showWaModal} onClose={() => setShowWaModal(false)} />
 
       {/* CTA */}
-      <div className="container-x pt-20 sm:pt-24">
-        <div className="relative rounded-[2rem] bg-sun-400 text-plum-800 px-6 py-10 sm:px-12 sm:py-14 overflow-hidden">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full border-[28px] border-plum-800/[0.07]" />
-          <div className="pointer-events-none absolute right-24 -bottom-24 h-48 w-48 rounded-full bg-white/30 blur-2xl" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="max-w-2xl">
-              <h2 className="h-display text-3xl sm:text-5xl">Il tuo nuovo lavoro in Germania inizia con un messaggio.</h2>
-              <p className="mt-3 text-plum-800/75 text-base sm:text-lg">
-                Consulenza gratuita, nessun anticipo. Ti richiamiamo entro 24 ore.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-dark">
-                <i className="fab fa-whatsapp text-lg" /> Scrivici su WhatsApp
-              </button>
-              <a href="/#candidatura" className="btn btn-lg bg-white/70 hover:bg-white text-plum-800">
-                Candidati gratis <i className="fas fa-arrow-right text-xs" />
-              </a>
-            </div>
+      <div className="container-x">
+        <div className="py-16 sm:py-20 border-b border-white/15 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="max-w-2xl">
+            <span className="eyebrow eyebrow-light">Consulenza gratuita</span>
+            <h2 className="h-section text-white mt-4">Il tuo nuovo lavoro in Germania inizia con un messaggio.</h2>
+            <p className="mt-3 text-white/60 text-lg">Nessun anticipo. Ti richiamiamo entro 24 ore.</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+            <a href="/#candidatura" className="btn btn-lg btn-accent">
+              Candidati gratis <i className="fas fa-arrow-right text-xs" />
+            </a>
+            <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-ghost-light">
+              <i className="fab fa-whatsapp text-lg" /> Scrivici su WhatsApp
+            </button>
           </div>
         </div>
       </div>
@@ -61,7 +56,7 @@ const Footer: React.FC = () => {
           <Link to="/" className="inline-flex items-center gap-3">
             <img src={logoLBS} alt="LBS Lavoro Business e Servizi in Germania" className="h-12 w-12" width={48} height={48} />
             <span>
-              <span className="block font-heading font-bold text-lg leading-tight">LBS Work</span>
+              <span className="block font-semibold text-lg leading-tight">LBS Work</span>
               <span className="block text-xs text-white/55">Lavoro Business e Servizi in Germania</span>
             </span>
           </Link>
@@ -77,7 +72,7 @@ const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={s.label}
-                className="h-11 w-11 rounded-full bg-white/[0.07] border border-white/10 flex items-center justify-center hover:bg-sun-400 hover:text-plum-800 hover:border-sun-400 transition-colors"
+                className="h-10 w-10 rounded-md border border-white/20 flex items-center justify-center hover:border-white transition-colors"
               >
                 <i className={`fab ${s.icon} text-sm`} />
               </a>
@@ -120,10 +115,10 @@ const Footer: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowWaModal(true)}
-            className="mt-6 w-full text-left rounded-2xl bg-white/[0.06] border border-white/10 p-4 hover:bg-white/[0.1] transition-colors cursor-pointer"
+            className="mt-6 w-full text-left rounded-md border border-white/15 p-4 hover:border-white/40 transition-colors cursor-pointer"
           >
             <span className="flex items-center gap-2 text-sm font-semibold">
-              <span className="h-2 w-2 rounded-full bg-wa pulse-dot" /> WhatsApp h24
+              <span className="h-2 w-2 rounded-full bg-wa" /> WhatsApp h24
             </span>
             <span className="block text-xs text-white/55 mt-1">Disponibili sia al numero tedesco che italiano</span>
           </button>

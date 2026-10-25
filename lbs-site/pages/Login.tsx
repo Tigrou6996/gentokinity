@@ -328,7 +328,7 @@ const Login: React.FC = () => {
         <Link to="/" className="flex items-center gap-3 self-start">
           <img src={logoLBS} alt="" className="h-11 w-11" width={44} height={44} />
           <span>
-            <span className="block font-heading font-bold text-lg leading-tight text-white">LBS Work</span>
+            <span className="block font-semibold text-lg leading-tight text-white">LBS Work</span>
             <span className="block text-xs text-white/55">Lavoro &amp; servizi in Germania</span>
           </span>
         </Link>
@@ -355,11 +355,11 @@ const Login: React.FC = () => {
         <div className="w-full max-w-[440px]">
           <Link to="/" className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
             <img src={logoLBS} alt="" className="h-11 w-11" width={44} height={44} />
-            <span className="font-heading font-bold text-lg text-plum-800">LBS Work</span>
+            <span className="font-semibold text-lg text-plum-800">LBS Work</span>
           </Link>
 
           <div className="text-center mb-8">
-            <span className="mx-auto icon-tile !w-14 !h-14 !rounded-2xl !bg-plum-600 !text-white">
+            <span className="mx-auto icon-tile !w-14 !h-14 !rounded-lg !bg-plum-600 !text-white">
               <i className={`fas ${mode === 'forgot' ? 'fa-key' : 'fa-shield-alt'} text-xl`} />
             </span>
             <h1 className="h-display text-plum-800 text-3xl sm:text-4xl mt-5">{title}</h1>
@@ -367,7 +367,7 @@ const Login: React.FC = () => {
           </div>
 
           {mode !== 'forgot' && (
-            <div role="tablist" aria-label="Accedi o registrati" className="grid grid-cols-2 gap-1 p-1 rounded-full bg-plum-100/60 mb-5">
+            <div role="tablist" aria-label="Accedi o registrati" className="grid grid-cols-2 gap-1 p-1 rounded-md bg-plum-100/60 mb-5">
               {(['login', 'register'] as ('login' | 'register')[]).map(m => (
                 <button
                   key={m}
@@ -375,9 +375,7 @@ const Login: React.FC = () => {
                   role="tab"
                   aria-selected={mode === m}
                   onClick={() => switchMode(m)}
-                  className={`min-h-[44px] rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                    mode === m ? 'bg-white text-plum-800 shadow-sm' : 'text-ink-soft hover:text-plum-800'
-                  }`}
+                  className={`min-h-[44px] rounded-md text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer ${ mode === m ? 'bg-white text-plum-800 shadow-sm' : 'text-ink-soft hover:text-plum-800' }`}
                 >
                   <i className={`fas ${m === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'} text-xs`} />
                   {m === 'login' ? 'Accedi' : 'Registrati'}
@@ -556,21 +554,21 @@ const Login: React.FC = () => {
           aria-modal="true"
           aria-labelledby="auth-modal-title"
         >
-          <div className="animate-pop-in relative w-full max-w-[460px] bg-white rounded-[2rem] p-7 sm:p-8 shadow-[var(--shadow-lift)]">
-            <button type="button" onClick={authModal.onSecondaryClick} aria-label="Chiudi" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
+          <div className="animate-pop-in relative w-full max-w-[460px] bg-white rounded-xl p-7 sm:p-8 shadow-[var(--shadow-lift)]">
+            <button type="button" onClick={authModal.onSecondaryClick} aria-label="Chiudi" className="absolute top-4 right-4 h-10 w-10 rounded-md bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center cursor-pointer">
               <i className="fas fa-times" />
             </button>
             <span className={`chip ${modalTone.chip}`}>{authModal.badge}</span>
             <div className="flex items-center gap-4 mt-4 mb-4">
-              <span className={`h-14 w-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${modalTone.tile}`}>
+              <span className={`h-14 w-14 rounded-lg flex items-center justify-center text-2xl shrink-0 ${modalTone.tile}`}>
                 <i className={`fas ${modalTone.icon}`} />
               </span>
               <div className="min-w-0">
-                <h3 id="auth-modal-title" className="font-heading font-bold text-xl text-plum-800 m-0">{authModal.title}</h3>
+                <h3 id="auth-modal-title" className="font-semibold text-xl text-plum-800 m-0">{authModal.title}</h3>
                 {authModal.email && <span className="text-sm text-ink-soft break-all">{authModal.email}</span>}
               </div>
             </div>
-            <p className="rounded-2xl bg-plum-50 p-4 text-sm text-ink leading-relaxed mb-6">{authModal.message}</p>
+            <p className="rounded-lg bg-plum-50 p-4 text-sm text-ink leading-relaxed mb-6">{authModal.message}</p>
             <div className="flex flex-wrap gap-3">
               <button type="button" onClick={authModal.onSecondaryClick} className="btn btn-outline flex-1 min-w-[130px]">
                 {authModal.secondaryButtonText}
@@ -603,14 +601,14 @@ const IconField: React.FC<{ icon: string; label: string; id: string; iconClass?:
 );
 
 const SuccessBox: React.FC<{ message: string }> = ({ message }) => (
-  <div role="status" className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
+  <div role="status" className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
     <i className="fas fa-check-circle text-emerald-600 shrink-0" />
     <span className="text-emerald-800 font-medium text-sm">{message}</span>
   </div>
 );
 
 const ErrorBox: React.FC<{ message: string }> = ({ message }) => (
-  <div role="alert" className="rounded-2xl bg-red-50 border border-red-200 p-4 flex items-center gap-3">
+  <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-center gap-3">
     <i className="fas fa-exclamation-triangle text-red-600 shrink-0" />
     <span className="text-red-700 font-medium text-sm">{message}</span>
   </div>
@@ -621,7 +619,7 @@ const EyeToggle: React.FC<{ show: boolean; onToggle: () => void }> = ({ show, on
     type="button"
     onClick={onToggle}
     aria-label={show ? 'Nascondi password' : 'Mostra password'}
-    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer"
+    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-md text-plum-400 hover:text-plum-700 hover:bg-plum-50 flex items-center justify-center cursor-pointer"
   >
     <i className={`fas ${show ? 'fa-eye-slash' : 'fa-eye'}`} />
   </button>

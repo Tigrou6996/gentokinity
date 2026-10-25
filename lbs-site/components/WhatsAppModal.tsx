@@ -43,16 +43,15 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({ isOpen, onClose })
       aria-labelledby="wa-modal-title"
     >
       <div
-        className="animate-pop-in relative w-full sm:max-w-2xl bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-[var(--shadow-lift)] p-6 sm:p-10 max-h-[92dvh] overflow-y-auto"
+        className="animate-pop-in relative w-full sm:max-w-2xl bg-white rounded-t-xl sm:rounded-xl shadow-[var(--shadow-lift)] p-6 sm:p-10 max-h-[92dvh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-wa/15 blur-3xl" />
 
         <button
           type="button"
           onClick={onClose}
           aria-label="Chiudi"
-          className="absolute top-4 right-4 h-11 w-11 rounded-full bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center transition-colors cursor-pointer"
+          className="absolute top-4 right-4 h-11 w-11 rounded-md bg-plum-50 text-plum-800 hover:bg-plum-100 flex items-center justify-center transition-colors cursor-pointer"
         >
           <i className="fas fa-times" />
         </button>
@@ -73,7 +72,7 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({ isOpen, onClose })
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-3xl leading-none" aria-hidden="true">{c.flag}</span>
                 <div>
-                  <h3 className="font-heading font-bold text-lg text-plum-800 leading-tight">{c.title}</h3>
+                  <h3 className="font-semibold text-lg text-plum-800 leading-tight">{c.title}</h3>
                   <span className="text-xs font-semibold text-plum-600">{c.tag}</span>
                 </div>
               </div>

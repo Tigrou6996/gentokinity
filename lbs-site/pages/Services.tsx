@@ -28,22 +28,22 @@ const Services: React.FC = () => {
 
       {/* SERVIZI */}
       <section className="section !pt-16">
-        <div className="container-x grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="container-x"><div className="grid-lines grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map((s, idx) => (
             <article
               key={s.id}
-              className={`reveal card card-hover p-7 sm:p-9 flex flex-col ${idx === 0 ? 'lg:col-span-2 lg:flex-row lg:items-center lg:gap-10' : ''}`}
+              className="reveal p-7 sm:p-9 flex flex-col"
               style={{ transitionDelay: `${idx * 60}ms` }}
             >
-              <div className={idx === 0 ? 'lg:flex-1' : ''}>
-                <span className="icon-tile !w-14 !h-14 !rounded-2xl"><i className={`fas ${s.icon} text-xl`} /></span>
-                <h2 className="font-heading font-bold text-2xl text-plum-800 tracking-tight mt-7">{s.title}</h2>
+              <div>
+                <span className="icon-tile"><i className={`fas ${s.icon}`} /></span>
+                <h2 className="font-semibold text-xl text-plum-800 tracking-tight mt-7">{s.title}</h2>
                 <p className="text-ink-soft leading-relaxed mt-3">{s.description}</p>
               </div>
-              <ul className={`space-y-2.5 ${idx === 0 ? 'mt-7 lg:mt-0 lg:w-80 lg:rounded-2xl lg:bg-plum-50 lg:p-6' : 'mt-7 pt-6 border-t border-line'}`}>
+              <ul className="space-y-2.5 mt-auto pt-6 border-t border-line">
                 {s.features.map(f => (
                   <li key={f} className="flex items-start gap-3 text-[15px] text-ink">
-                    <span className="mt-0.5 h-5 w-5 rounded-full bg-sun-400 text-plum-800 flex items-center justify-center text-[9px] shrink-0">
+                    <span className="mt-1 text-plum-600 text-xs shrink-0">
                       <i className="fas fa-check" />
                     </span>
                     {f}
@@ -52,29 +52,36 @@ const Services: React.FC = () => {
               </ul>
             </article>
           ))}
+            <div className="p-7 sm:p-9 flex flex-col justify-between bg-plum-50!">
+              <span className="text-sm text-ink-soft">Non sai da dove iniziare?</span>
+              <Link to="/contatti" className="group mt-10 font-semibold text-lg text-plum-800 flex items-center gap-2">
+                Parla con un consulente <i className="fas fa-arrow-right text-sm text-plum-600 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* IN PIÙ */}
       <section className="pb-24 md:pb-32">
         <div className="container-x">
-          <div className="rounded-[2.5rem] surface-plum px-6 py-14 sm:px-12 sm:py-16 overflow-hidden">
+          <div className="rounded-lg surface-plum px-6 py-14 sm:px-12 sm:py-16 overflow-hidden">
             <div className="max-w-2xl mb-12 reveal">
               <span className="eyebrow eyebrow-light">Sempre inclusi</span>
               <h2 className="h-section text-white mt-4">Un unico punto di riferimento, dall'Italia alla Germania.</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid-lines-dark grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {EXTRA.map(item => (
-                <div key={item.title} className="reveal card-dark p-6">
-                  <span className="icon-tile !bg-sun-400 !text-plum-800"><i className={`fas ${item.icon}`} /></span>
-                  <h3 className="font-heading font-bold text-xl text-white mt-6">{item.title}</h3>
+                <div key={item.title} className="reveal p-6 sm:p-7">
+                  <span className="icon-tile !bg-transparent !border-white/20 !text-sun-400"><i className={`fas ${item.icon}`} /></span>
+                  <h3 className="font-semibold text-lg text-white mt-6">{item.title}</h3>
                   <p className="text-white/65 leading-relaxed mt-2 text-[15px]">{item.desc}</p>
                 </div>
               ))}
             </div>
             <div className="mt-12 pt-10 border-t border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <h3 className="font-heading font-bold text-2xl text-white">Vuoi sapere qual è il servizio giusto per te?</h3>
+                <h3 className="font-semibold text-2xl text-white">Vuoi sapere qual è il servizio giusto per te?</h3>
                 <p className="text-white/60 mt-1">Chiamaci o scrivi su WhatsApp. In meno di 24 ore ti diciamo cosa possiamo fare per te.</p>
               </div>
               <Link to="/contatti" className="btn btn-lg btn-accent shrink-0">Contattaci gratis <i className="fas fa-arrow-right text-xs" /></Link>
