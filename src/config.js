@@ -223,7 +223,7 @@ module.exports = {
     get licenseToken() { return _lastActiveToken; },
     set licenseToken(val) { _lastActiveToken = val; },
 
-    mongodbUri: process.env.MONGODB_URI || 'mongodb+srv://tigrou:v5HsbHa0dsNN5ENZ@tigroubot.roazyat.mongodb.net/gentok',
+    mongodbUri: process.env.MONGODB_URI || '',
     sessionId: null, proxyUrl: null,
     remoteServerUrl: process.env.REMOTE_SERVER || 'https://tiktok.gentok.fr',
     remoteDashboardUrl: process.env.DASHBOARD_URL || 'https://tiktok.gentok.fr',
