@@ -49,3 +49,8 @@ lbs-video/guida/*_seg*.mp4
 lbs-video/guida/*_silent.mp4
 lbs-video/guida/*.pcm
 lbs-video/guida/*_segs.txt
+obs-stinger/check/
+obs-stinger/out/*.mov
+obs-stinger/out/*_audio.wav
+obs-stinger/out/*_seg*
+obs-stinger/out/*.pcm
