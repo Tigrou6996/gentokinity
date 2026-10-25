@@ -324,7 +324,7 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-paper grid grid-cols-1 lg:grid-cols-2">
       {/* PANNELLO MARCHIO (desktop) */}
-      <aside className="hidden lg:flex surface-plum flex-col justify-between p-12 xl:p-16">
+      <aside className="hidden lg:flex surface-brand flex-col justify-between p-12 xl:p-16">
         <Link to="/" className="flex items-center gap-3 self-start">
           <img src={logoLBS} alt="" className="h-11 w-11" width={44} height={44} />
           <span>
@@ -333,7 +333,7 @@ const Login: React.FC = () => {
           </span>
         </Link>
         <div className="max-w-md">
-          <h2 className="h-display text-white text-5xl">La tua nuova vita in Germania, <span className="text-sun-400">a portata di clic.</span></h2>
+          <h2 className="h-display text-white text-5xl">La tua nuova vita in Germania, <span className="sticker">a portata di clic.</span></h2>
           <ul className="mt-10 space-y-4 text-white/80">
             {[
               { icon: 'fa-paper-plane', t: 'Candidati alle offerte con un clic' },
@@ -341,7 +341,7 @@ const Login: React.FC = () => {
               { icon: 'fa-headset', t: 'Assistenza 24/7, sempre in italiano' },
             ].map(i => (
               <li key={i.t} className="flex items-center gap-3">
-                <span className="h-10 w-10 rounded-xl bg-white/10 text-sun-400 flex items-center justify-center"><i className={`fas ${i.icon}`} /></span>
+                <span className="h-10 w-10 rounded-xl bg-white/15 text-white flex items-center justify-center"><i className={`fas ${i.icon}`} /></span>
                 {i.t}
               </li>
             ))}

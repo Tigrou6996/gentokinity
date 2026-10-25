@@ -223,7 +223,7 @@ export const Candidati: React.FC = () => {
               </ul>
 
               <figure className="card p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                <img src="/img/salvatore_hero.jpg" alt="Salvatore Cucuzza - LBS Business" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full ring-4 ring-sun-400 shrink-0" />
+                <img src="/img/salvatore_hero.jpg" alt="Salvatore Cucuzza - LBS Business" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full ring-4 ring-plum-200 shrink-0" />
                 <div className="text-center sm:text-left">
                   <blockquote className="font-heading text-lg text-plum-800 leading-snug">
                     “Sappiamo quanto sia delicato trasferirsi all'estero. Noi di LBS ti accompagniamo personalmente dal primo colloquio fino alla firma del contratto in Germania. Non sarai mai solo.”

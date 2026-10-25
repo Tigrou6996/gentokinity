@@ -55,43 +55,37 @@ const Navbar: React.FC = () => {
 
   const isActive = (path: string) => (path === '/' ? pathname === '/' : pathname.startsWith(path));
 
-  // Trasparente solo sulla home non scrollata (hero scuro); altrove barra chiara
-  const onHero = !isScrolled && pathname === '/' && !isMobileMenuOpen;
-
   return (
     <>
-      <header
-        className={`fixed top-0 inset-x-0 z-[60] border-b transition-colors duration-300 ${
-          onHero ? 'bg-transparent border-white/15' : 'bg-white/95 backdrop-blur border-line'
-        }`}
-      >
-        <nav aria-label="Navigazione principale" className="container-x relative h-16 flex items-center justify-between gap-6">
+      {/* Barra bianca flottante con angoli arrotondati (stile Payop) */}
+      <header className="fixed top-0 inset-x-0 z-[60] px-3 sm:px-4 pt-3">
+        <nav
+          aria-label="Navigazione principale"
+          className={`relative mx-auto max-w-[76rem] h-16 flex items-center justify-between gap-4 rounded-2xl bg-white/95 backdrop-blur-xl border border-line pl-3 pr-2.5 transition-shadow duration-300 ${
+            isScrolled || isMobileMenuOpen ? 'shadow-[var(--shadow-lift)]' : 'shadow-[var(--shadow-soft)]'
+          }`}
+        >
           {/* LOGO */}
           <Link to="/" className="flex items-center gap-2.5" aria-label="LBS — Home">
-            <img src={logoLBS} alt="" className="h-9 w-9 flex-shrink-0" width={36} height={36} />
+            <img src={logoLBS} alt="" className="h-10 w-10 flex-shrink-0" width={40} height={40} />
             <span className="leading-none">
-              <span className={`block font-semibold text-[15px] tracking-tight ${onHero ? 'text-white' : 'text-plum-800'}`}>
-                LBS Work
-              </span>
-              <span className={`hidden sm:block text-[11px] font-medium mt-0.5 ${onHero ? 'text-white/60' : 'text-ink-soft'}`}>
-                Lavoro &amp; servizi in Germania
-              </span>
+              <span className="block font-semibold text-[16px] tracking-tight text-plum-900">LBS Work</span>
+              <span className="hidden sm:block text-[11px] font-medium mt-0.5 text-ink-soft">Lavoro &amp; servizi in Germania</span>
             </span>
           </Link>
 
           {/* DESKTOP NAV */}
-          <ul className="hidden lg:flex items-stretch self-stretch gap-7">
+          <ul className="hidden lg:flex items-center gap-1">
             {navLinks.map(link => (
-              <li key={link.path} className="flex">
+              <li key={link.path}>
                 <Link
                   to={link.path}
                   aria-current={isActive(link.path) ? 'page' : undefined}
-                  className={`relative inline-flex items-center text-sm font-medium transition-colors ${ onHero ? isActive(link.path) ? 'text-white' : 'text-white/70 hover:text-white' : isActive(link.path) ? 'text-plum-800' : 'text-ink-soft hover:text-plum-800' }`}
+                  className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive(link.path) ? 'text-plum-700 bg-plum-50' : 'text-ink-soft hover:text-plum-900 hover:bg-plum-50/70'
+                  }`}
                 >
                   {link.label}
-                  {isActive(link.path) && (
-                    <span className={`absolute inset-x-0 -bottom-px h-0.5 ${onHero ? 'bg-sun-400' : 'bg-plum-600'}`} />
-                  )}
                 </Link>
               </li>
             ))}
@@ -101,11 +95,8 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-2">
             {session ? (
               <>
-                <Link
-                  to={isAdmin ? '/admin' : '/dashboard'}
-                  className={`btn btn-sm ${onHero ? 'btn-ghost-light' : 'btn-outline'}`}
-                >
-                  <i className="fas fa-user-circle" />
+                <Link to={isAdmin ? '/admin' : '/dashboard'} className="btn btn-sm btn-outline">
+                  <i className="fas fa-user-circle text-plum-500" />
                   {isAdmin ? 'Pannello admin' : 'Area personale'}
                 </Link>
                 <button
@@ -113,7 +104,7 @@ const Navbar: React.FC = () => {
                   onClick={handleLogout}
                   disabled={isLoggingOut}
                   aria-label="Esci"
-                  className={`btn btn-sm !px-3 ${onHero ? 'btn-ghost-light' : 'btn-outline'}`}
+                  className="btn btn-sm btn-dark !px-3"
                 >
                   <i className={`fas ${isLoggingOut ? 'fa-spinner fa-spin' : 'fa-sign-out-alt'}`} />
                   <span className="hidden xl:inline">Esci</span>
@@ -121,15 +112,8 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className={`btn btn-sm !bg-transparent ${onHero ? 'text-white/85 hover:text-white' : 'text-plum-800 hover:text-plum-600'}`}
-                >
-                  Accedi
-                </Link>
-                <Link to="/contatti" className="btn btn-sm btn-accent">
-                  Candidati ora <i className="fas fa-arrow-right text-[11px]" />
-                </Link>
+                <Link to="/login" className="btn btn-sm btn-outline">Accedi</Link>
+                <Link to="/contatti" className="btn btn-sm btn-accent">Candidati ora</Link>
               </>
             )}
           </div>
@@ -137,7 +121,7 @@ const Navbar: React.FC = () => {
           {/* MOBILE */}
           <div className="flex md:hidden items-center gap-2">
             {!session && (
-              <Link to="/contatti" className="btn btn-sm btn-accent !px-4">Candidati</Link>
+              <Link to="/contatti" className="btn btn-sm btn-accent !px-3.5">Candidati</Link>
             )}
             <button
               type="button"
@@ -145,20 +129,20 @@ const Navbar: React.FC = () => {
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMobileMenuOpen ? 'Chiudi menu' : 'Apri menu'}
-              className={`h-11 w-11 rounded-md border flex items-center justify-center transition-colors cursor-pointer ${ onHero ? 'border-white/25 text-white' : 'border-line text-plum-800' }`}
+              className="h-11 w-11 rounded-xl border border-line text-plum-900 flex items-center justify-center cursor-pointer"
             >
               <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`} />
             </button>
           </div>
 
           {/* TABLET: link compatti sotto lg */}
-          <div className={`hidden md:flex lg:hidden absolute left-0 right-0 top-full justify-center border-t border-b ${onHero ? 'border-white/15' : 'bg-white/95 border-line'}`}>
-            <ul className="flex gap-6 h-11 items-center">
+          <div className="hidden md:flex lg:hidden absolute left-0 right-0 top-full mt-2 justify-center">
+            <ul className="flex gap-1 rounded-xl bg-white/95 backdrop-blur border border-line shadow-[var(--shadow-soft)] p-1">
               {navLinks.map(link => (
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className={`inline-flex text-[13px] font-medium ${ onHero ? isActive(link.path) ? 'text-white' : 'text-white/70' : isActive(link.path) ? 'text-plum-600' : 'text-ink-soft' }`}
+                    className={`inline-flex px-3 py-1.5 rounded-lg text-[13px] font-medium ${isActive(link.path) ? 'text-plum-700 bg-plum-50' : 'text-ink-soft'}`}
                   >
                     {link.label}
                   </Link>

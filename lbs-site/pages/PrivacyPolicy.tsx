@@ -8,12 +8,12 @@ const PrivacyPolicy: React.FC = () => {
       <div className="max-w-4xl mx-auto px-6">
 
         {/* Header */}
-        <div className="mb-12 rounded-xl surface-plum p-8 sm:p-12 md:p-16 overflow-hidden">
+        <div className="mb-12 rounded-[2rem] surface-brand p-8 sm:p-12 md:p-16 overflow-hidden">
           <div className="chip chip-sun mb-6">
             Informativa Legale
           </div>
           <h1 className="h-display text-4xl md:text-6xl text-white mb-4">
-            Privacy<br /><span className="text-sun-400">Policy</span>
+            Privacy<br /><span className="sticker">Policy</span>
           </h1>
           <p className="text-white/65 text-sm">
             Ultimo aggiornamento: {lastUpdate} — Ai sensi del GDPR (Reg. UE 2016/679)

@@ -232,90 +232,91 @@ const JobOffers: React.FC = () => {
   return (
     <div className="overflow-x-hidden">
 
-      {/* HEADER + RICERCA */}
-      <section className="surface-tint pt-32 sm:pt-40 pb-14">
-        <div className="container-x">
-          <div className="max-w-3xl">
-            <span className="eyebrow">Posizioni aperte in Germania</span>
-            <h1 className="h-display text-plum-800 text-[2.6rem] sm:text-6xl lg:text-[4.25rem] mt-5">
-              Offerte di <span className="mark">lavoro</span>
-            </h1>
-            <p className="lead mt-5">
-              Tutte le posizioni disponibili nelle nostre aziende partner in Germania.{' '}
-              <strong className="text-plum-800 font-semibold">Candidati subito online.</strong>
-            </p>
-          </div>
+      {/* HEADER + RICERCA: pannello viola con ricerca in evidenza (stile Payop) */}
+      <section className="pt-[6.25rem] px-2 sm:px-4">
+        <div className="surface-brand rounded-[2rem] sm:rounded-[2.5rem] max-w-[80rem] mx-auto px-5 sm:px-12 lg:px-16 pt-14 sm:pt-20 pb-12 sm:pb-16 text-center">
+          <span className="eyebrow eyebrow-light">Posizioni aperte in Germania</span>
+          <h1 className="h-display text-white text-[2.5rem] sm:text-6xl lg:text-[4.25rem] mt-6">
+            Offerte di <span className="sticker">lavoro</span>
+          </h1>
+          <p className="text-white/80 text-lg leading-relaxed mt-6 max-w-2xl mx-auto">
+            Tutte le posizioni disponibili nelle nostre aziende partner in Germania.{' '}
+            <strong className="text-white font-semibold">Candidati subito online.</strong>
+          </p>
 
           <form
             onSubmit={handlePageSearchSubmit}
             role="search"
-            className="mt-9 bg-white rounded-xl sm:rounded-lg border border-line p-2 shadow-[var(--shadow-soft)] flex flex-col sm:flex-row gap-2 max-w-4xl"
+            className="mt-9 mx-auto max-w-3xl rounded-2xl bg-white p-2 ring-8 ring-white/10 shadow-[0_24px_48px_-24px_rgba(0,0,0,0.55)] grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 text-left"
           >
-            <label className="relative flex-1">
+            <label className="relative">
               <span className="sr-only">Ruolo</span>
-              <i className="fas fa-user-tie absolute left-5 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
+              <i className="fas fa-user-tie absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
               <input
                 type="text"
                 value={inputRuolo}
                 onChange={e => setInputRuolo(e.target.value)}
                 placeholder="Ruolo (es. Cuoco, Operaio)"
-                className="w-full h-12 rounded-md pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
+                className="w-full h-12 rounded-xl pl-11 pr-3 text-ink placeholder:text-ink-soft/60 outline-none bg-plum-50/60 focus:bg-plum-50"
               />
             </label>
-            <span className="hidden sm:block w-px my-2 bg-line" />
-            <label className="relative flex-1">
+            <label className="relative">
               <span className="sr-only">Città</span>
-              <i className="fas fa-map-marker-alt absolute left-5 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
+              <i className="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
               <input
                 type="text"
                 value={inputCitta}
                 onChange={e => setInputCitta(e.target.value)}
                 placeholder="Città (es. Berlino, Monaco)"
-                className="w-full h-12 rounded-md pl-12 pr-4 text-ink font-medium placeholder:text-ink-soft/60 outline-none focus:bg-plum-50"
+                className="w-full h-12 rounded-xl pl-11 pr-3 text-ink placeholder:text-ink-soft/60 outline-none bg-plum-50/60 focus:bg-plum-50"
               />
             </label>
-            <button type="submit" className="btn btn-primary h-12 !px-7">
+            <button type="submit" className="btn btn-dark h-12 !px-6">
               <i className="fas fa-search text-sm" /> Cerca
             </button>
           </form>
 
           {hasActiveSearch && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-ink-soft">Ricerca attiva:</span>
-              {queryRuolo && <span className="chip chip-sun">Ruolo: {queryRuolo}</span>}
-              {queryCitta && <span className="chip chip-sun">Città: {queryCitta}</span>}
-              <button type="button" onClick={clearSearch} className="ml-1 font-semibold text-plum-600 hover:text-plum-800 flex items-center gap-1.5 cursor-pointer">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm">
+              <span className="text-white/70">Ricerca attiva:</span>
+              {queryRuolo && <span className="chip chip-dark">Ruolo: {queryRuolo}</span>}
+              {queryCitta && <span className="chip chip-dark">Città: {queryCitta}</span>}
+              <button type="button" onClick={clearSearch} className="ml-1 font-semibold text-white hover:text-white/80 flex items-center gap-1.5 cursor-pointer">
                 <i className="fas fa-times-circle" /> Cancella filtri
               </button>
             </div>
           )}
-
-          {/* FILTRI SETTORE */}
-          <div className="mt-8 -mx-5 px-5 sm:mx-0 sm:px-0 overflow-x-auto hide-scrollbar">
-            <div className="flex sm:flex-wrap gap-2 w-max sm:w-auto">
-              {SETTORI_FILTRO.map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setFiltroSettore(s)}
-                  aria-pressed={filtroSettore === s}
-                  className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border transition-colors cursor-pointer ${ filtroSettore === s ? 'bg-plum-800 text-white border-plum-800' : 'bg-white text-ink-soft border-line hover:border-plum-300 hover:text-plum-800' }`}
-                >
-                  {s !== 'Tutti' && <i className={`fas ${SETTORE_ICONS[s] ?? 'fa-briefcase'} text-xs opacity-70`} />}
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
+
+      {/* FILTRI SETTORE */}
+      <div className="container-x mt-8">
+        <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto hide-scrollbar">
+          <div className="flex sm:flex-wrap sm:justify-center gap-2 w-max sm:w-auto">
+            {SETTORI_FILTRO.map(s => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setFiltroSettore(s)}
+                aria-pressed={filtroSettore === s}
+                className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
+                  filtroSettore === s ? 'bg-plum-900 text-white border-plum-900' : 'bg-white text-ink-soft border-line hover:border-plum-300 hover:text-plum-900'
+                }`}
+              >
+                {s !== 'Tutti' && <i className={`fas ${SETTORE_ICONS[s] ?? 'fa-briefcase'} text-xs opacity-70`} />}
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <section className="pt-12 pb-20 md:pb-28">
         <div className="container-x">
 
           {/* FALLBACK QUANDO NON CI SONO RISULTATI ESATTI */}
           {isFallback && (
-            <div className="reveal rounded-lg border border-line border-l-4 border-l-sun-400 bg-white text-plum-800 p-7 sm:p-10 mb-12 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="reveal rounded-lg border border-line border-l-4 border-l-plum-400 bg-white text-plum-800 p-7 sm:p-10 mb-12 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
               <div className="max-w-3xl">
                 <span className="chip !bg-plum-800 !text-white !border-plum-800"><i className="fas fa-search text-[10px]" /> Nessun risultato diretto</span>
                 <h2 className="font-semibold text-2xl sm:text-3xl tracking-tight mt-4 leading-snug">
@@ -427,8 +428,8 @@ const JobOffers: React.FC = () => {
           )}
 
           {/* CTA */}
-          <div className="reveal mt-16 rounded-xl surface-plum px-6 py-12 sm:px-12 sm:py-16 text-center overflow-hidden">
-            <h2 className="h-section text-white">Non trovi quello che cerchi? <span className="text-sun-400">Candidati comunque.</span></h2>
+          <div className="reveal mt-16 rounded-[2rem] surface-brand px-6 py-12 sm:px-12 sm:py-16 text-center overflow-hidden">
+            <h2 className="h-section text-white">Non trovi quello che cerchi? <span className="sticker">Candidati comunque</span></h2>
             <p className="text-white/70 text-lg mt-4 max-w-2xl mx-auto">
               Riceviamo nuove offerte ogni settimana. Inviaci il tuo profilo e ti contatteremo appena arriva qualcosa di adatto.
             </p>

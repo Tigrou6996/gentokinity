@@ -2,112 +2,117 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
 
 /* Il sito usa solo il tema chiaro (vedi ThemeContext); .dark resta per compatibilità */
 @custom-variant dark (&:is(.dark, .dark *));
 
-/* ─── Design system: Minimalism & Swiss Style (ui-ux-pro-max) ───────────────
-   Lineare, aziendale, minimal: griglia, linee da 1px, niente ombre né
-   sfumature decorative, un solo accento (giallo). Colori del marchio LBS.
-   Riferimento completo: design-system/lbs-work/MASTER.md */
+/* ─── Design system LBS · ispirato a Payop (Behance) + stile del logo ───────
+   Viola del logo #5E2D64, anello bianco del logo → parole "adesivo" con
+   contorno bianco, forme circolari concentriche, pannelli arrotondati con
+   sfumatura e cielo stellato, card bento con tinte tenui, carattere Geist.
+   Riferimento: design-system/lbs-work/MASTER.md */
 @theme {
-  --color-plum-950: #160A1A;
+  --color-plum-950: #1A0B1E;
   --color-plum-900: #24112A;
   --color-plum-800: #3D2045;
-  --color-plum-700: #553060;
-  --color-plum-600: #6E4274;
-  --color-plum-500: #84588B;
-  --color-plum-400: #9B6FA3;
-  --color-plum-300: #BFA0C5;
-  --color-plum-200: #DCCCE0;
-  --color-plum-100: #EEE7F0;
-  --color-plum-50: #F8F6F9;
+  --color-plum-700: #5E2D64; /* viola del logo */
+  --color-plum-600: #6E3A75;
+  --color-plum-500: #8A5592;
+  --color-plum-400: #A77BAE;
+  --color-plum-300: #C8A9CD;
+  --color-plum-200: #E2D2E5;
+  --color-plum-100: #F1E8F3;
+  --color-plum-50: #F8F3F9;
 
   --color-sun-500: #F5CE00;
   --color-sun-400: #FFDF20;
   --color-sun-300: #FFE95C;
-  --color-sun-100: #FFF8CF;
+  --color-sun-100: #FFF6CC;
 
-  --color-ink: #1F1424;
-  --color-ink-soft: #5B4F60;
+  --color-mint-600: #11865A;
+  --color-mint-100: #E3F6EC;
+  --color-lilac-600: #7B4FD6;
+  --color-lilac-100: #EFE9FC;
+
+  --color-ink: #1A0B1E;
+  --color-ink-soft: #5F5466;
   --color-paper: #FFFFFF;
-  --color-line: #E7E1EA;
+  --color-line: #ECE6EE;
   --color-wa: #25D366;
 
-  /* Ombre solo per elementi sovrapposti (modali, menu) */
-  --shadow-soft: none;
-  --shadow-lift: 0 1px 2px rgb(31 20 36 / 0.06), 0 12px 32px -12px rgb(31 20 36 / 0.22);
-  --shadow-glow: none;
+  --shadow-soft: 0 1px 2px rgb(36 17 42 / 0.05), 0 10px 30px -14px rgb(36 17 42 / 0.18);
+  --shadow-lift: 0 2px 6px rgb(36 17 42 / 0.06), 0 26px 50px -22px rgb(36 17 42 / 0.35);
+  --shadow-glow: 0 18px 44px -18px rgb(94 45 100 / 0.65);
 
-  --ease-out-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Classi legacy ancora usate da alcune pagine */
-  --color-primary: #6E4274;
-  --color-secondary: #9B6FA3;
+  --color-primary: #5E2D64;
+  --color-secondary: #A77BAE;
   --color-accent: #FFFFFF;
-  --color-dark: #3D2045;
+  --color-dark: #24112A;
 }
 
 :root {
-  --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-heading: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --primary: #6E4274;
+  --font-inter: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --primary: #5E2D64;
   --secondary: oklch(0.97 0 0);
-  --dark: #3D2045;
+  --dark: #24112A;
 
   /* Variabili usate dagli stili inline di login e dashboard */
   --bg-color: #FFFFFF;
-  --text-color: #1F1424;
-  --text-muted: #5B4F60;
+  --text-color: #1A0B1E;
+  --text-muted: #5F5466;
   --card-bg: #ffffff;
-  --line: #E7E1EA;
-  --comic-border-color: #E7E1EA;
+  --line: #ECE6EE;
+  --comic-border-color: #ECE6EE;
   --comic-shadow-color: transparent;
-  --comic-title-color: #3D2045;
+  --comic-title-color: #24112A;
   --comic-title-stroke: transparent;
   --comic-border: 1px solid var(--comic-border-color);
-  --comic-shadow: none;
+  --comic-shadow: var(--shadow-soft);
 
   --background: #FFFFFF;
-  --foreground: #1F1424;
+  --foreground: #1A0B1E;
   --card: #ffffff;
-  --card-foreground: #1F1424;
+  --card-foreground: #1A0B1E;
   --popover: #ffffff;
-  --popover-foreground: #1F1424;
+  --popover-foreground: #1A0B1E;
   --primary-foreground: #ffffff;
-  --secondary-foreground: #3D2045;
-  --muted: #F8F6F9;
-  --muted-foreground: #5B4F60;
-  --accent: #F8F6F9;
-  --accent-foreground: #3D2045;
+  --secondary-foreground: #24112A;
+  --muted: #F8F3F9;
+  --muted-foreground: #5F5466;
+  --accent: #F8F3F9;
+  --accent-foreground: #24112A;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #E7E1EA;
-  --input: #DDD5E0;
-  --ring: #6E4274;
-  --chart-1: #6E4274;
-  --chart-2: #9B6FA3;
+  --border: #ECE6EE;
+  --input: #E2D9E5;
+  --ring: #5E2D64;
+  --chart-1: #5E2D64;
+  --chart-2: #A77BAE;
   --chart-3: #FFDF20;
-  --chart-4: #3D2045;
-  --chart-5: #BFA0C5;
-  --radius: 0.375rem;
+  --chart-4: #24112A;
+  --chart-5: #C8A9CD;
+  --radius: 0.625rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #1F1424;
-  --sidebar-primary: #6E4274;
+  --sidebar-foreground: #1A0B1E;
+  --sidebar-primary: #5E2D64;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #F8F6F9;
-  --sidebar-accent-foreground: #3D2045;
-  --sidebar-border: #E7E1EA;
-  --sidebar-ring: #6E4274;
+  --sidebar-accent: #F8F3F9;
+  --sidebar-accent-foreground: #24112A;
+  --sidebar-border: #ECE6EE;
+  --sidebar-ring: #5E2D64;
 }
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 88px;
+  scroll-padding-top: 104px;
 }
 
 body {
   font-family: var(--font-inter);
-  font-feature-settings: "cv11", "ss01";
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -118,8 +123,8 @@ body {
 }
 
 ::selection {
-  background: #FFDF20;
-  color: #3D2045;
+  background: #5E2D64;
+  color: #fff;
 }
 
 h1, h2, h3, h4, .font-heading, .font-display {
@@ -127,85 +132,106 @@ h1, h2, h3, h4, .font-heading, .font-display {
 }
 
 :focus-visible {
-  outline: 2px solid #6E4274;
-  outline-offset: 2px;
+  outline: 2px solid #8A5592;
+  outline-offset: 3px;
 }
 
 /* ─── Layout ──────────────────────────────────────────────────────────────── */
 .container-x {
   width: 100%;
-  max-width: 76rem;
+  max-width: 78rem;
   margin-inline: auto;
-  padding-inline: 1.25rem;
+  padding-inline: 1rem;
 }
-@media (min-width: 640px) { .container-x { padding-inline: 2rem; } }
+@media (min-width: 640px) { .container-x { padding-inline: 1.5rem; } }
 
 .section { padding-block: 5rem; }
 @media (min-width: 768px) { .section { padding-block: 7rem; } }
 
-/* Griglia "a linee": celle separate da 1px, tipica dello stile svizzero */
+/* Griglia di card (era la griglia "a linee"): card bianche con angoli morbidi */
 .grid-lines {
   display: grid;
-  gap: 1px;
-  background: var(--color-line);
-  border: 1px solid var(--color-line);
-  border-radius: 8px;
-  overflow: hidden;
+  gap: 1rem;
 }
-.grid-lines > * { background: #fff; }
+.grid-lines > * {
+  background: #fff;
+  border: 1px solid #ECE6EE;
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-soft);
+}
 .grid-lines-dark {
   display: grid;
-  gap: 1px;
-  background: rgb(255 255 255 / 0.12);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: 8px;
-  overflow: hidden;
+  gap: 1rem;
 }
-.grid-lines-dark > * { background: #3D2045; }
+.grid-lines-dark > * {
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(6px);
+}
 
 /* ─── Tipografia ──────────────────────────────────────────────────────────── */
+/* Etichetta a pillola (es. "MERCHANT SERVICES" in Payop) */
 .eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: #F1E8F3;
   font-family: var(--font-inter);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #6E4274;
+  color: #5E2D64;
 }
-.eyebrow::before {
-  content: "";
-  width: 1.25rem;
-  height: 1px;
-  background: currentColor;
+.eyebrow-light {
+  background: rgb(255 255 255 / 0.14);
+  color: #fff;
 }
-.eyebrow-light { color: #FFDF20; }
 
 .h-display {
   font-family: var(--font-heading);
   font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
 }
 .h-section {
   font-family: var(--font-heading);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  font-size: clamp(1.875rem, 3.6vw, 2.75rem);
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+  font-size: clamp(2rem, 4.2vw, 3.4rem);
 }
 .lead {
   font-size: 1.0625rem;
   line-height: 1.65;
-  color: #5B4F60;
+  color: #5F5466;
 }
 @media (min-width: 768px) { .lead { font-size: 1.125rem; } }
 
-/* Parola chiave: solo colore, nessun evidenziatore */
-.mark { color: #6E4274; }
-.mark-dark { color: #FFDF20; }
+/* Parola "adesivo": testo corsivo con contorno bianco come l'anello del logo */
+.mark,
+.sticker {
+  display: inline-block;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: #6E3A75;
+  padding: 0 0.12em;
+  transform: rotate(-3deg);
+  text-shadow:
+    0.06em 0 0 #fff, -0.06em 0 0 #fff, 0 0.06em 0 #fff, 0 -0.06em 0 #fff,
+    0.045em 0.045em 0 #fff, -0.045em 0.045em 0 #fff, 0.045em -0.045em 0 #fff, -0.045em -0.045em 0 #fff,
+    0 0.18em 0.35em rgb(36 17 42 / 0.28);
+}
+/* Su sfondo viola: testo scuro con contorno bianco */
+.surface-brand .mark, .surface-brand .sticker,
+.surface-plum .mark, .surface-plum .sticker,
+.mark-dark {
+  color: #24112A;
+}
 
 /* ─── Bottoni ─────────────────────────────────────────────────────────────── */
 .btn {
@@ -214,8 +240,8 @@ h1, h2, h3, h4, .font-heading, .font-display {
   justify-content: center;
   gap: 0.5rem;
   min-height: 44px;
-  padding: 0.625rem 1.125rem;
-  border-radius: 6px;
+  padding: 0.65rem 1.2rem;
+  border-radius: 0.75rem;
   font-family: var(--font-inter);
   font-weight: 500;
   font-size: 0.9375rem;
@@ -223,67 +249,121 @@ h1, h2, h3, h4, .font-heading, .font-display {
   white-space: nowrap;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s var(--ease-out-soft), background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.btn:active { transform: translateY(1px); }
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(0.98); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.btn-lg { min-height: 50px; padding: 0.8rem 1.5rem; font-size: 1rem; }
-.btn-sm { min-height: 38px; padding: 0.45rem 0.9rem; font-size: 0.875rem; }
+.btn-lg { min-height: 52px; padding: 0.9rem 1.6rem; font-size: 1rem; border-radius: 0.875rem; }
+.btn-sm { min-height: 38px; padding: 0.45rem 0.95rem; font-size: 0.875rem; border-radius: 0.65rem; }
 
-.btn-primary { background: #6E4274; color: #fff; }
-.btn-primary:hover { background: #3D2045; }
-.btn-accent { background: #FFDF20; color: #3D2045; }
-.btn-accent:hover { background: #F5CE00; }
-.btn-dark { background: #3D2045; color: #fff; }
-.btn-dark:hover { background: #24112A; }
-.btn-outline { background: #fff; color: #3D2045; border-color: #DDD5E0; }
-.btn-outline:hover { border-color: #3D2045; }
-.btn-ghost-light { background: transparent; color: #fff; border-color: rgb(255 255 255 / 0.3); }
-.btn-ghost-light:hover { border-color: #fff; background: rgb(255 255 255 / 0.06); }
-.btn-wa { background: #25D366; color: #fff; }
-.btn-wa:hover { background: #1DB954; }
+.btn-primary { background: #5E2D64; color: #fff; box-shadow: var(--shadow-glow); }
+.btn-primary:hover { background: #4A2350; }
+/* Azione principale: scura su sfondo chiaro (come "Open an Account"), bianca su sfondo viola */
+.btn-accent { background: #24112A; color: #fff; box-shadow: 0 10px 24px -12px rgb(36 17 42 / 0.6); }
+.btn-accent:hover { background: #3D2045; }
+.surface-brand .btn-accent, .surface-plum .btn-accent { background: #fff; color: #24112A; box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.45); }
+.surface-brand .btn-accent:hover, .surface-plum .btn-accent:hover { background: #F8F3F9; }
+.btn-dark { background: #24112A; color: #fff; }
+.btn-dark:hover { background: #3D2045; }
+.btn-outline { background: #fff; color: #24112A; border-color: #E2D9E5; box-shadow: 0 1px 2px rgb(36 17 42 / 0.05); }
+.btn-outline:hover { border-color: #C8A9CD; }
+.btn-ghost-light { background: #24112A; color: #fff; border-color: rgb(255 255 255 / 0.12); }
+.btn-ghost-light:hover { background: #1A0B1E; }
+.btn-wa { background: #25D366; color: #fff; box-shadow: 0 12px 28px -14px rgb(37 211 102 / 0.8); }
+.btn-wa:hover { background: #1DBF5B; }
 
 /* ─── Card ────────────────────────────────────────────────────────────────── */
 .card {
   background: #fff;
-  border: 1px solid #E7E1EA;
-  border-radius: 8px;
+  border: 1px solid #ECE6EE;
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-soft);
 }
-.card-hover { transition: border-color 0.2s ease, background-color 0.2s ease; }
-.card-hover:hover { border-color: #3D2045; }
+.card-hover { transition: transform 0.3s var(--ease-out-soft), box-shadow 0.3s var(--ease-out-soft); }
+.card-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
 .card-dark {
-  background: transparent;
+  background: rgb(255 255 255 / 0.08);
   border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: 8px;
+  border-radius: 1.25rem;
+}
+
+/* Card bento con tinte tenui (come le card Checkout / Fraud / Payouts di Payop) */
+.bento { border-radius: 1.5rem; padding: 1.75rem; position: relative; overflow: hidden; border: 1px solid transparent; }
+@media (min-width: 640px) { .bento { padding: 2.25rem; } }
+.bento-plum { background: #F5EEF7; border-color: #EBDDEE; }
+.bento-sun { background: #FFF8DE; border-color: #F6EAB5; }
+.bento-mint { background: #EAF8F0; border-color: #D3EFDF; }
+.bento-lilac { background: #F2EDFC; border-color: #E4DBF8; }
+.bento-label { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.bento-plum .bento-label { color: #5E2D64; }
+.bento-sun .bento-label { color: #8A6A00; }
+.bento-mint .bento-label { color: #11865A; }
+.bento-lilac .bento-label { color: #7B4FD6; }
+
+/* Cerchi concentrici con icona "adesivo" al centro: riprende il cerchio del logo */
+.rings {
+  position: relative;
+  width: 11rem;
+  height: 11rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: currentColor;
+  --ring: rgb(255 255 255 / 0.55);
+  box-shadow: 0 0 0 14px color-mix(in srgb, currentColor 22%, transparent), 0 0 0 28px color-mix(in srgb, currentColor 12%, transparent);
+}
+.rings > span {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1.25rem;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+  box-shadow: 0 12px 24px -10px rgb(0 0 0 / 0.35);
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 4px;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.3;
-  background: #F8F6F9;
-  color: #553060;
-  border: 1px solid #E7E1EA;
+  background: #F8F3F9;
+  color: #5E2D64;
+  border: 1px solid #ECE0EF;
 }
-.chip-sun { background: #FFF8CF; color: #3D2045; border-color: #F5E27A; }
-.chip-dark { background: transparent; color: rgb(255 255 255 / 0.85); border-color: rgb(255 255 255 / 0.2); }
+.chip-sun { background: #FFF6CC; color: #5C4600; border-color: #F3E39A; }
+.chip-dark { background: rgb(255 255 255 / 0.12); color: #fff; border-color: rgb(255 255 255 / 0.18); }
 
+/* Icona in riquadro tinto (come le categorie FAQ di Payop) */
 .icon-tile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: 6px;
-  border: 1px solid #E7E1EA;
-  background: #fff;
-  color: #6E4274;
+  border-radius: 0.85rem;
+  background: #F1E8F3;
+  color: #5E2D64;
   flex-shrink: 0;
+}
+
+/* Adesivo flottante (icone bianche con contorno e ombra, come in Payop) */
+.float-sticker {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1.1rem;
+  background: #fff;
+  border: 4px solid #fff;
+  box-shadow: 0 16px 30px -12px rgb(0 0 0 / 0.45);
+  font-size: 1.5rem;
 }
 
 /* ─── Campi form ──────────────────────────────────────────────────────────── */
@@ -291,57 +371,98 @@ h1, h2, h3, h4, .font-heading, .font-display {
   display: block;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #3D2045;
-  margin-bottom: 0.375rem;
+  color: #24112A;
+  margin-bottom: 0.4rem;
 }
 .field {
   width: 100%;
-  min-height: 46px;
-  padding: 0.65rem 0.875rem;
-  border-radius: 6px;
-  border: 1px solid #DDD5E0;
+  min-height: 48px;
+  padding: 0.7rem 0.95rem;
+  border-radius: 0.8rem;
+  border: 1px solid #E2D9E5;
   background: #fff;
-  color: #1F1424;
+  color: #1A0B1E;
   font-size: 1rem;
   outline: none;
+  box-shadow: 0 1px 2px rgb(36 17 42 / 0.04);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.field::placeholder { color: #9A8F9E; }
-.field:hover { border-color: #BFA0C5; }
+.field::placeholder { color: #9A8EA0; }
+.field:hover { border-color: #C8A9CD; }
 .field:focus {
-  border-color: #6E4274;
-  box-shadow: 0 0 0 3px rgb(110 66 116 / 0.15);
+  border-color: #8A5592;
+  box-shadow: 0 0 0 4px rgb(138 85 146 / 0.18);
 }
 select.field {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' viewBox='0 0 12 8'%3E%3Cpath stroke='%236E4274' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.6' d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' viewBox='0 0 12 8'%3E%3Cpath stroke='%235E2D64' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.6' d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.875rem center;
+  background-position: right 0.95rem center;
   padding-right: 2.5rem;
 }
 textarea.field { min-height: 120px; resize: vertical; }
 
 /* ─── Superfici ───────────────────────────────────────────────────────────── */
-/* Prugna piatta, senza gradienti */
+/* Cielo stellato leggero (puntini come nei pannelli Payop) */
+.stars {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgb(255 255 255 / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 72% 12%, rgb(255 255 255 / 0.45), transparent 60%),
+    radial-gradient(1.5px 1.5px at 38% 64%, rgb(255 255 255 / 0.4), transparent 60%),
+    radial-gradient(1px 1px at 86% 72%, rgb(255 255 255 / 0.5), transparent 60%),
+    radial-gradient(1px 1px at 22% 86%, rgb(255 255 255 / 0.35), transparent 60%),
+    radial-gradient(1px 1px at 58% 34%, rgb(255 255 255 / 0.35), transparent 60%);
+  background-size: 260px 260px;
+}
+
+/* Pannello del marchio: viola del logo in sfumatura, angoli molto arrotondati */
+.surface-brand {
+  position: relative;
+  color: #fff;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgb(167 123 174 / 0.55), transparent 55%),
+    linear-gradient(160deg, #7A4381 0%, #5E2D64 45%, #45204B 100%);
+  overflow: hidden;
+  isolation: isolate;
+}
+.surface-brand::before,
+.surface-plum::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgb(255 255 255 / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 72% 12%, rgb(255 255 255 / 0.45), transparent 60%),
+    radial-gradient(1.5px 1.5px at 38% 64%, rgb(255 255 255 / 0.35), transparent 60%),
+    radial-gradient(1px 1px at 86% 72%, rgb(255 255 255 / 0.5), transparent 60%),
+    radial-gradient(1px 1px at 22% 86%, rgb(255 255 255 / 0.3), transparent 60%),
+    radial-gradient(1px 1px at 58% 34%, rgb(255 255 255 / 0.3), transparent 60%);
+  background-size: 260px 260px;
+}
+
+/* Sezione scura (come le sezioni blu notte di Payop), con stelle */
 .surface-plum {
   position: relative;
   color: #fff;
-  background: #3D2045;
+  background:
+    radial-gradient(900px 500px at 50% -20%, rgb(94 45 100 / 0.75), transparent 60%),
+    #1E0D23;
+  isolation: isolate;
 }
-.surface-plum > * { position: relative; z-index: 1; }
 
-/* Superficie tenue con linea di separazione */
+/* Superficie tenue */
 .surface-tint {
-  background: #F8F6F9;
-  border-bottom: 1px solid #E7E1EA;
+  background: #F7F4F8;
 }
 
 /* Carosello a tutta larghezza allineato al contenitore */
 .carousel-pad {
-  padding-inline: max(1.25rem, calc((100vw - 76rem) / 2 + 2rem));
-  scroll-padding-inline: max(1.25rem, calc((100vw - 76rem) / 2 + 2rem));
+  padding-inline: max(1rem, calc((100vw - 78rem) / 2 + 1.5rem));
+  scroll-padding-inline: max(1rem, calc((100vw - 78rem) / 2 + 1.5rem));
 }
-@media (max-width: 639px) { .carousel-pad { padding-inline: 1.25rem; scroll-padding-inline: 1.25rem; } }
+@media (max-width: 639px) { .carousel-pad { padding-inline: 1rem; scroll-padding-inline: 1rem; } }
 
 .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -349,52 +470,58 @@ textarea.field { min-height: 120px; resize: vertical; }
 /* ─── Classi legacy, riallineate al nuovo stile ───────────────────────────── */
 .comic-card {
   border: 1px solid var(--line);
-  box-shadow: none;
-  border-radius: 8px;
+  box-shadow: var(--shadow-soft);
+  border-radius: 1.25rem;
   background: var(--card-bg);
   color: var(--text-color);
-  transition: border-color 0.2s ease;
+  transition: box-shadow 0.25s ease;
 }
 
 .comic-button,
 .comic-button-secondary {
   border: 1px solid var(--comic-border-color);
   box-shadow: none;
-  border-radius: 6px;
+  border-radius: 0.75rem;
   background: var(--card-bg);
   color: var(--text-color);
   font-weight: 500;
   letter-spacing: 0;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
 .comic-button-secondary { background: transparent; }
-.comic-button:active, .comic-button-secondary:active { transform: translateY(1px); }
+.comic-button:active, .comic-button-secondary:active { transform: scale(0.98); }
 
 .comic-title {
   font-family: var(--font-heading);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  color: #3D2045;
+  letter-spacing: -0.04em;
+  color: #24112A;
 }
 
-/* ─── Animazioni (sottili) ────────────────────────────────────────────────── */
+/* ─── Animazioni ──────────────────────────────────────────────────────────── */
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
 .animate-slide-in { animation: slideIn 0.3s ease-out; }
 
-@keyframes pop-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes floating {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50% { transform: translateY(-8px) rotate(var(--r, 0deg)); }
 }
-.animate-pop-in { animation: pop-in 0.25s var(--ease-out-soft) both; }
+.floating { animation: floating 6s ease-in-out infinite; }
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pop-in { animation: pop-in 0.35s var(--ease-out-soft) both; }
 
 .reveal {
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.4s var(--ease-out-soft), transform 0.4s var(--ease-out-soft);
+  transform: translateY(18px);
+  transition: opacity 0.6s var(--ease-out-soft), transform 0.6s var(--ease-out-soft);
 }
 .reveal.active { opacity: 1; transform: translateY(0); }
 
@@ -408,8 +535,7 @@ textarea.field { min-height: 120px; resize: vertical; }
   height: 100dvh;
   background: #fff;
   z-index: 100;
-  transition: right 0.35s var(--ease-out-soft);
-  border-left: 1px solid #E7E1EA;
+  transition: right 0.4s var(--ease-out-soft);
   box-shadow: var(--shadow-lift);
   color: var(--text-color);
 }
@@ -418,7 +544,8 @@ textarea.field { min-height: 120px; resize: vertical; }
 .ai-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(31 20 36 / 0.4);
+  background: rgb(26 11 30 / 0.45);
+  backdrop-filter: blur(4px);
   z-index: 90;
   opacity: 0;
   pointer-events: none;
@@ -442,7 +569,7 @@ html, body { overflow-x: hidden; }
 /* ─── Area utente e pannello admin ──────────────────────────────────────────
    Le dashboard usano stili inline: queste regole le allineano al nuovo design
    (angoli arrotondati, titoli non maiuscoli) senza toccarne la logica. */
-:root { --line-soft: #E7E1EA; }
+:root { --line-soft: #ECE6EE; }
 .dash h1, .dash h2, .dash h3 {
   text-transform: none !important;
   letter-spacing: -0.02em !important;
@@ -456,9 +583,9 @@ html, body { overflow-x: hidden; }
 .dash select,
 .dash textarea,
 .dash .comic-card {
-  border-radius: 6px;
+  border-radius: 12px;
 }
-.dash .comic-card { border-radius: 8px; }
+.dash .comic-card { border-radius: 18px; }
 .dash input:focus, .dash select:focus, .dash textarea:focus {
   outline: none;
   border-color: #9B6FA3 !important;
@@ -510,9 +637,9 @@ html, body { overflow-x: hidden; }
 }
 
 @theme inline {
-  --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

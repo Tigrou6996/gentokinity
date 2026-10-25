@@ -33,11 +33,11 @@ const Footer: React.FC = () => {
 
       {/* CTA */}
       <div className="container-x">
-        <div className="py-16 sm:py-20 border-b border-white/15 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+        <div className="surface-brand rounded-[2rem] mt-16 sm:mt-20 px-6 sm:px-12 py-12 sm:py-16 flex flex-col lg:flex-row lg:items-end justify-between gap-8 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.6)]">
           <div className="max-w-2xl">
             <span className="eyebrow eyebrow-light">Consulenza gratuita</span>
-            <h2 className="h-section text-white mt-4">Il tuo nuovo lavoro in Germania inizia con un messaggio.</h2>
-            <p className="mt-3 text-white/60 text-lg">Nessun anticipo. Ti richiamiamo entro 24 ore.</p>
+            <h2 className="h-section text-white mt-5">Il tuo nuovo lavoro inizia con un <span className="sticker">messaggio</span></h2>
+            <p className="mt-4 text-white/75 text-lg">Nessun anticipo. Ti richiamiamo entro 24 ore.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <a href="/#candidatura" className="btn btn-lg btn-accent">
@@ -62,7 +62,7 @@ const Footer: React.FC = () => {
           </Link>
           <p className="text-white/65 text-sm leading-relaxed mt-5 max-w-sm">
             La tua agenzia di riferimento per lavorare in Germania. 11 anni di esperienza, 350+ lavoratori collocati.{' '}
-            <span className="text-sun-400 font-medium">Contratti regolari, alloggio e assistenza 24/7.</span>
+            <span className="text-white font-medium">Contratti regolari, alloggio e assistenza 24/7.</span>
           </p>
           <div className="flex gap-2 mt-6">
             {SOCIAL.map(s => (
@@ -87,8 +87,8 @@ const Footer: React.FC = () => {
             {NAV.map(l => (
               <li key={l.to}><Link to={l.to} className="text-white/75 hover:text-white transition-colors">{l.label}</Link></li>
             ))}
-            <li><Link to="/datori-di-lavoro" className="text-sun-400 hover:text-sun-300 font-medium">Per le aziende</Link></li>
-            <li><a href="/#candidatura" className="text-sun-400 hover:text-sun-300 font-medium">Candidati gratis →</a></li>
+            <li><Link to="/datori-di-lavoro" className="text-white hover:text-plum-200 font-medium">Per le aziende</Link></li>
+            <li><a href="/#candidatura" className="text-white hover:text-plum-200 font-medium">Candidati gratis →</a></li>
           </ul>
         </div>
 
@@ -130,13 +130,13 @@ const Footer: React.FC = () => {
           <div className="space-y-5 text-sm">
             <div>
               <div className="flex items-center gap-2 font-medium text-white">
-                <i className="fas fa-map-marker-alt text-sun-400 text-xs" /> Sede operativa (Italia)
+                <i className="fas fa-map-marker-alt text-plum-300 text-xs" /> Sede operativa (Italia)
               </div>
               <p className="text-white/60 mt-1 leading-relaxed">Viale Vittorio Veneto, 335<br />95126 Catania (CT) — Italia</p>
             </div>
             <div>
               <div className="flex items-center gap-2 font-medium text-white">
-                <i className="fas fa-building text-sun-400 text-xs" /> Sede legale (Germania)
+                <i className="fas fa-building text-plum-300 text-xs" /> Sede legale (Germania)
               </div>
               <p className="text-white/60 mt-1 leading-relaxed">Henkelstraße 7<br />34127 Kassel — Germania</p>
               <span className="chip chip-dark mt-2 !text-[11px]">Non aperta al pubblico</span>

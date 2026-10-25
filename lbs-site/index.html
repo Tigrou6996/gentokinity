@@ -8,8 +8,7 @@
   <link rel="icon" type="image/png" href="/img/logo_LBS.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
-  <meta name="theme-color" content="#3D2045" />
+    <meta name="theme-color" content="#5E2D64" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/index.css">
 
@@ -93,36 +92,36 @@
   </script>
   <!-- Stile della versione statica (prima dell'avvio di React), allineato al design system -->
   <style>
-    .seo{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;color:#1F1424;background:#fff;line-height:1.6;min-height:100vh}
+    .seo{font-family:'Geist Variable',system-ui,-apple-system,'Segoe UI',sans-serif;color:#1F1424;background:#fff;line-height:1.6;min-height:100vh}
     .seo a{color:inherit}
     .seo-wrap{max-width:76rem;margin:0 auto;padding:0 20px}
-    .seo-nav{background:#3D2045;border-bottom:1px solid rgba(255,255,255,.15)}
+    .seo-nav{background:#fff;border-bottom:1px solid #ECE6EE}
     .seo-nav-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
-    .seo .seo-brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:600}
-    .seo-brand small{display:block;font-weight:400;font-size:11px;color:rgba(255,255,255,.6)}
+    .seo .seo-brand{display:flex;align-items:center;gap:10px;color:#24112A;text-decoration:none;font-weight:600}
+    .seo-brand small{display:block;font-weight:400;font-size:11px;color:#5F5466}
     .seo-links{display:flex;flex-wrap:wrap;align-items:center;gap:20px;font-size:14px}
-    .seo-links a{color:rgba(255,255,255,.75);text-decoration:none}
-    .seo-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 18px;border-radius:6px;font-weight:500;text-decoration:none;border:1px solid transparent}
-    .seo .seo-btn-accent{background:#FFDF20;color:#3D2045}
-    .seo .seo-btn-ghost{color:#fff;border-color:rgba(255,255,255,.3)}
-    .seo-hero{background:#3D2045;color:#fff;padding:64px 0}
+    .seo-links a{color:#5F5466;text-decoration:none}
+    .seo-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 18px;border-radius:12px;font-weight:500;text-decoration:none;border:1px solid transparent}
+    .seo .seo-btn-accent{background:#24112A;color:#fff}.seo-hero .seo-btn-accent{background:#fff;color:#24112A}
+    .seo .seo-btn-ghost{color:#fff;background:#24112A}
+    .seo-hero{background:linear-gradient(160deg,#7A4381 0%,#5E2D64 45%,#45204B 100%);color:#fff;padding:64px 0;margin:12px;border-radius:32px}
     .seo-hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:48px;align-items:end}
-    .seo-eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#FFDF20;margin:0}
+    .seo-eyebrow{display:inline-block;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#fff;margin:0}
     .seo h1{font-size:clamp(34px,5vw,64px);font-weight:600;letter-spacing:-.035em;line-height:1.05;margin:20px 0}
-    .seo h1 span{color:#FFDF20}
+    .seo h1 span{color:#24112A;font-style:italic;text-shadow:3px 0 #fff,-3px 0 #fff,0 3px #fff,0 -3px #fff,2px 2px #fff,-2px 2px #fff,2px -2px #fff,-2px -2px #fff}
     .seo-lead{color:rgba(255,255,255,.7);font-size:17px;max-width:36rem}
     .seo-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
-    .seo-photo{width:100%;max-width:440px;height:auto;border-radius:8px;justify-self:center}
-    .seo-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin:56px 0 0}
-    .seo-stats div{background:#3D2045;padding:22px;display:flex;flex-direction:column-reverse}
+    .seo-photo{width:100%;max-width:440px;height:auto;border-radius:28px;border:6px solid #fff;justify-self:center}
+    .seo-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin:56px 0 0}
+    .seo-stats div{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:22px;display:flex;flex-direction:column-reverse}
     .seo-stats dd{margin:0;font-size:40px;font-weight:600;letter-spacing:-.03em}
     .seo-stats dt{font-size:14px;color:rgba(255,255,255,.55)}
     .seo-section{padding-top:72px}
-    .seo h2{font-size:clamp(26px,3.4vw,40px);font-weight:600;letter-spacing:-.03em;color:#3D2045;margin:0 0 24px}
-    .seo h3{font-size:18px;font-weight:600;color:#3D2045;margin:0 0 8px}
+    .seo h2{font-size:clamp(26px,3.4vw,40px);font-weight:600;letter-spacing:-.03em;color:#24112A;margin:0 0 24px}
+    .seo h3{font-size:18px;font-weight:600;color:#24112A;margin:0 0 8px}
     .seo-muted{color:#5B4F60;margin:-12px 0 24px}
-    .seo-grid{display:grid;gap:1px;background:#E7E1EA;border:1px solid #E7E1EA;border-radius:8px;overflow:hidden}
-    .seo-grid>div{background:#fff;padding:28px}
+    .seo-grid{display:grid;gap:16px}
+    .seo-grid>div{background:#fff;padding:28px;border:1px solid #ECE6EE;border-radius:20px}
     .seo-grid p{color:#5B4F60;margin:0 0 8px}
     .seo-grid a{color:#6E4274}
     .seo-grid-2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
@@ -131,10 +130,10 @@
     .seo-list{color:#5B4F60;padding-left:20px}
     .seo-list li{margin-bottom:10px}
     .seo-list strong{color:#3D2045}
-    .seo-footer{background:#3D2045;margin-top:72px;padding:56px 0}
-    .seo .seo-grid-dark{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.12)}
-    .seo .seo-grid-dark>div{background:#3D2045}
-    .seo .seo-grid-dark h3{color:#FFDF20}
+    .seo-footer{background:#1E0D23;margin-top:72px;padding:56px 0}
+    
+    .seo .seo-grid-dark>div{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+    .seo .seo-grid-dark h3{color:#fff}
     .seo .seo-grid-dark p{color:rgba(255,255,255,.75)}
     .seo .seo-grid-dark a{color:#fff}
   </style>

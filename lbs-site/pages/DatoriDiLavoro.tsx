@@ -124,25 +124,25 @@ const DatoriDiLavoro: React.FC = () => {
     <div className="flex flex-col relative overflow-hidden">
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
-      <section className="surface-plum pt-32 sm:pt-40 pb-20 sm:pb-28">
-        <div className="container-x grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section className="pt-[6.25rem] px-2 sm:px-4">
+        <div className="surface-brand rounded-[2rem] sm:rounded-[2.5rem] max-w-[80rem] mx-auto px-5 sm:px-12 lg:px-16 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="chip chip-dark"><i className="fas fa-building text-sun-400" /> Per aziende e imprese</span>
+              <span className="chip chip-dark"><i className="fas fa-building" /> Per aziende e imprese</span>
               <span className="chip !bg-wa/15 !text-[#7CF0A9] !border-wa/25"><i className="fas fa-check-circle" /> Servizio 100% gratis</span>
             </div>
             <h1 className="h-display text-white text-[2.6rem] sm:text-6xl lg:text-7xl mt-6">
-              Trovare lavoratori <span className="text-sun-400">qualificati</span>, 100% gratis.
+              Trovare lavoratori <span className="sticker">qualificati</span>, 100% gratis.
             </h1>
             <p className="text-white/75 text-lg leading-relaxed max-w-2xl mt-6">
               LBS ti mette in contatto con lavoratori italiani selezionati, pronti a operare in Germania.{' '}
               <span className="text-white font-medium">Il nostro servizio di ricerca e selezione è 100% gratuito per i datori di lavoro</span>: zero commissioni di agenzia, nessun costo anticipato o nascosto. Gestiamo burocrazia, visti e supporto con precisione e professionalità. Tu ti concentri sul lavoro.
             </p>
 
-            <div className="mt-8 max-w-xl rounded-xl bg-white/[0.06] border border-sun-400/40 p-4 flex items-center gap-4">
-              <span className="h-14 w-14 rounded-lg bg-sun-400 text-plum-800 font-semibold text-2xl flex items-center justify-center shrink-0">0€</span>
+            <div className="mt-8 max-w-xl rounded-xl bg-white/10 border border-white/20 p-4 flex items-center gap-4">
+              <span className="h-14 w-14 rounded-xl bg-white text-plum-800 font-semibold text-2xl flex items-center justify-center shrink-0">0€</span>
               <span className="text-sm text-white/75">
-                <span className="block font-semibold text-sun-400">Nessuna commissione per la tua impresa</span>
+                <span className="block font-semibold text-white">Nessuna commissione per la tua impresa</span>
                 La ricerca, preselezione e presentazione dei candidati è al 100% gratuita per i datori di lavoro.
               </span>
             </div>
@@ -184,7 +184,7 @@ const DatoriDiLavoro: React.FC = () => {
       {/* ── FORM ──────────────────────────────────────────────────── */}
       <section id="form-datori" className="pb-20 md:pb-28">
         <div className="container-x">
-          <div className="rounded-xl surface-plum p-6 sm:p-12 lg:p-14 grid grid-cols-1 lg:grid-cols-12 gap-10 overflow-hidden">
+          <div className="rounded-[2rem] surface-brand p-6 sm:p-12 lg:p-14 grid grid-cols-1 lg:grid-cols-12 gap-10 overflow-hidden">
             <div className="lg:col-span-5 reveal">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="eyebrow eyebrow-light">Richiesta personale</span>
@@ -197,7 +197,7 @@ const DatoriDiLavoro: React.FC = () => {
               <ul className="mt-8 space-y-3 text-white/80">
                 {['Nessun costo per la tua azienda', 'Risposta entro 24 ore', 'Nessuno spam'].map(t => (
                   <li key={t} className="flex items-center gap-3">
-                    <span className="h-6 w-6 rounded-full bg-sun-400 text-plum-800 flex items-center justify-center text-[10px]"><i className="fas fa-check" /></span>
+                    <span className="h-6 w-6 rounded-full bg-white text-plum-700 flex items-center justify-center text-[10px]"><i className="fas fa-check" /></span>
                     {t}
                   </li>
                 ))}

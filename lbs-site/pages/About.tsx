@@ -33,7 +33,7 @@ const About: React.FC = () => {
       <PageHero
         eyebrow="La nostra storia"
         title={<>LBS: nati per <span className="mark">portarti lì.</span></>}
-        lead={<>LBS — <strong className="text-plum-800 font-semibold">Lavoro Business e Servizi in Germania</strong> — nasce con una missione chiara: portare lavoratori italiani in Germania con professionalità, serietà e assistenza 24/7 durante il viaggio, traduzioni incluse.</>}
+        lead={<>LBS — <strong className="text-white font-semibold">Lavoro Business e Servizi in Germania</strong> — nasce con una missione chiara: portare lavoratori italiani in Germania con professionalità, serietà e assistenza 24/7 durante il viaggio, traduzioni incluse.</>}
         actions={
           <>
             <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-lg btn-wa">
@@ -80,7 +80,7 @@ const About: React.FC = () => {
           <div className="relative reveal">
             <img src="/img/ufficio_reception.jpg" alt="Sala consulenze LBS" loading="lazy" className="w-full aspect-square object-cover rounded-lg" />
             <div className="absolute -bottom-6 left-6 sm:-left-6 bg-plum-800 text-white rounded-lg p-6">
-              <div className="font-semibold text-4xl tracking-tight text-sun-400">1000+</div>
+              <div className="font-semibold text-4xl tracking-tight text-white">1000+</div>
               <div className="text-sm text-white/70">Storie di successo</div>
             </div>
           </div>
@@ -103,7 +103,7 @@ const About: React.FC = () => {
           <div className="reveal lg:col-span-7 order-1 lg:order-2">
             <span className="eyebrow">Il titolare</span>
             <h2 className="h-section text-plum-800 mt-4">Salvatore Cucuzza</h2>
-            <blockquote className="mt-6 border-l-4 border-sun-400 pl-5 font-heading text-xl sm:text-2xl text-plum-700 leading-snug">
+            <blockquote className="mt-6 border-l-4 border-plum-300 pl-5 font-heading text-xl sm:text-2xl text-plum-700 leading-snug">
               Un ponte sicuro e affidabile tra i lavoratori italiani e le aziende tedesche.
             </blockquote>
             <p className="lead mt-6">

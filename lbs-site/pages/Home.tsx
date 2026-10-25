@@ -150,7 +150,7 @@ const SectionHeader: React.FC<{ eyebrow: string; title: React.ReactNode; lead?: 
   <div className="reveal flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 md:mb-16">
     <div className="max-w-2xl">
       <span className={`eyebrow ${light ? 'eyebrow-light' : ''}`}>{eyebrow}</span>
-      <h2 className={`h-section mt-4 ${light ? 'text-white' : 'text-plum-800'}`}>{title}</h2>
+      <h2 className={`h-section mt-5 ${light ? 'text-white' : 'text-plum-900'}`}>{title}</h2>
       {lead && <p className={`lead mt-4 ${light ? '!text-white/65' : ''}`}>{lead}</p>}
     </div>
     {children}
@@ -310,150 +310,169 @@ const Home: React.FC = () => {
   return (
     <div className="flex flex-col relative overflow-hidden">
 
-      {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="surface-plum pt-32 sm:pt-40 pb-16 sm:pb-20">
-        <div className="container-x grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-end">
+      {/* ── HERO: pannello viola arrotondato (stile Payop, viola del logo) ── */}
+      <section className="pt-[6.25rem] px-2 sm:px-4">
+        <div className="surface-brand rounded-[2rem] sm:rounded-[2.5rem] max-w-[80rem] mx-auto px-5 sm:px-12 lg:px-16 pt-12 sm:pt-20 pb-8 sm:pb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+            <div className="lg:col-span-7">
+              <span className="eyebrow eyebrow-light">Agenzia per italiani in Germania</span>
 
-          <div className="lg:col-span-7">
-            <span className="eyebrow eyebrow-light">Agenzia per italiani in Germania · 11 anni di esperienza</span>
+              <h1 className="h-display text-white text-[2.6rem] sm:text-6xl lg:text-[4.4rem] mt-6">
+                Lavoro in Germania con casa e assistenza <span className="sticker">24/7</span>
+              </h1>
 
-            <h1 className="h-display text-white text-[2.5rem] sm:text-6xl lg:text-[4.25rem] mt-6">
-              Lavoro in Germania, con casa e assistenza <span className="text-sun-400 whitespace-nowrap">24/7.</span>
-            </h1>
+              <p className="text-white/80 text-lg leading-relaxed max-w-xl mt-6">
+                Trasformiamo la tua voglia di riscatto in un contratto di lavoro reale, alloggio sicuro e supporto continuo.
+                Assistenza continua, traduzioni e alloggio garantito.
+              </p>
 
-            <p className="text-white/70 text-lg leading-relaxed max-w-xl mt-6">
-              Trasformiamo la tua voglia di riscatto in un contratto di lavoro reale, alloggio sicuro e supporto continuo.
-              Assistenza continua, traduzioni e alloggio garantito.
-            </p>
-
-            {/* RICERCA */}
-            <form onSubmit={handleSearchSubmit} role="search" className="mt-9 max-w-2xl grid grid-cols-1 sm:grid-cols-[1fr_12rem_auto] gap-2">
-              <label className="relative">
-                <span className="sr-only">Ruolo</span>
-                <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
-                <input
-                  type="text"
-                  value={searchRuolo}
-                  onChange={e => setSearchRuolo(e.target.value)}
-                  placeholder="Ruolo (es. Cuoco, Operaio)"
-                  className="field !border-transparent !pl-11 !min-h-[50px]"
-                />
-              </label>
-              <label className="relative">
-                <span className="sr-only">Città</span>
-                <i className="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
-                <input
-                  type="text"
-                  value={searchCitta}
-                  onChange={e => setSearchCitta(e.target.value)}
-                  placeholder="Città"
-                  className="field !border-transparent !pl-11 !min-h-[50px]"
-                />
-              </label>
-              <button type="submit" className="btn btn-lg btn-accent">
-                Cerca lavoro <i className="fas fa-arrow-right text-xs" />
-              </button>
-            </form>
-
-            <div className="flex flex-wrap items-center gap-2 mt-5">
-              <span className="text-white/50 text-sm mr-1">Ricerche rapide:</span>
-              {QUICK_ROLES.map(role => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => setSearchRuolo(role)}
-                  aria-pressed={searchRuolo === role}
-                  className={`px-3 py-1.5 rounded-md text-sm border transition-colors cursor-pointer ${
-                    searchRuolo === role ? 'bg-sun-400 text-plum-800 border-sun-400' : 'text-white/75 border-white/20 hover:border-white/60 hover:text-white'
-                  }`}
-                >
-                  {role}
+              {/* RICERCA */}
+              <form
+                onSubmit={handleSearchSubmit}
+                role="search"
+                className="mt-9 max-w-2xl rounded-2xl bg-white p-2 ring-8 ring-white/10 shadow-[0_24px_48px_-24px_rgba(0,0,0,0.55)] grid grid-cols-1 sm:grid-cols-[1fr_11rem_auto] gap-2"
+              >
+                <label className="relative">
+                  <span className="sr-only">Ruolo</span>
+                  <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
+                  <input
+                    type="text"
+                    value={searchRuolo}
+                    onChange={e => setSearchRuolo(e.target.value)}
+                    placeholder="Ruolo (es. Cuoco, Operaio)"
+                    className="w-full h-12 rounded-xl pl-11 pr-3 text-ink placeholder:text-ink-soft/60 outline-none bg-plum-50/60 focus:bg-plum-50"
+                  />
+                </label>
+                <label className="relative">
+                  <span className="sr-only">Città</span>
+                  <i className="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-plum-400 text-sm" />
+                  <input
+                    type="text"
+                    value={searchCitta}
+                    onChange={e => setSearchCitta(e.target.value)}
+                    placeholder="Città"
+                    className="w-full h-12 rounded-xl pl-11 pr-3 text-ink placeholder:text-ink-soft/60 outline-none bg-plum-50/60 focus:bg-plum-50"
+                  />
+                </label>
+                <button type="submit" className="btn btn-dark h-12 !px-6">
+                  Cerca lavoro <i className="fas fa-arrow-right text-xs" />
                 </button>
-              ))}
+              </form>
+
+              <div className="flex flex-wrap items-center gap-2 mt-5">
+                <span className="text-white/60 text-sm mr-1">Ricerche rapide:</span>
+                {QUICK_ROLES.map(role => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setSearchRuolo(role)}
+                    aria-pressed={searchRuolo === role}
+                    className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                      searchRuolo === role ? 'bg-white text-plum-800' : 'bg-white/12 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* FOTO con anello bianco (come il logo) e adesivi flottanti */}
+            <div className="lg:col-span-5 relative max-w-sm sm:max-w-md mx-auto w-full py-6">
+              <div className="relative rounded-[1.75rem] border-[6px] border-white shadow-[0_30px_60px_-25px_rgba(0,0,0,0.6)] overflow-hidden rotate-[2deg]">
+                <img
+                  src="/img/salvatore_hero.jpg"
+                  alt="Salvatore Cucuzza — Titolare LBS"
+                  className="w-full aspect-[4/5] object-cover"
+                  fetchPriority="high"
+                />
+              </div>
+              <span className="float-sticker floating absolute -left-3 sm:-left-8 top-8 text-plum-700 [--r:-8deg]" aria-hidden="true"><i className="fas fa-house-chimney" /></span>
+              <span className="float-sticker floating [animation-delay:-2s] absolute -right-2 sm:-right-6 top-1/3 text-mint-600 [--r:10deg]" aria-hidden="true"><i className="fas fa-shield-halved" /></span>
+              <span className="float-sticker floating [animation-delay:-4s] absolute left-6 -bottom-1 text-lilac-600 [--r:6deg]" aria-hidden="true"><i className="fas fa-plane" /></span>
+              <button
+                type="button"
+                onClick={() => setShowWaModal(true)}
+                className="absolute -right-2 sm:-right-4 bottom-10 bg-white rounded-2xl shadow-[var(--shadow-lift)] p-3 pr-4 flex items-center gap-3 text-left cursor-pointer hover:-translate-y-0.5 transition-transform"
+              >
+                <span className="icon-tile !bg-mint-100 !text-mint-600"><i className="fab fa-whatsapp text-lg" /></span>
+                <span>
+                  <span className="block text-sm font-semibold text-plum-900">Salvatore Cucuzza</span>
+                  <span className="block text-xs text-ink-soft">Titolare · WhatsApp h24</span>
+                </span>
+              </button>
             </div>
           </div>
 
-          {/* FOTO */}
-          <figure className="lg:col-span-5 max-w-md mx-auto lg:max-w-none w-full">
-            <img
-              src="/img/salvatore_hero.jpg"
-              alt="Salvatore Cucuzza — Titolare LBS"
-              className="w-full aspect-[4/5] object-cover rounded-lg"
-              fetchPriority="high"
-            />
-            <figcaption className="mt-4 flex items-center justify-between gap-4 border-t border-white/15 pt-4">
-              <span>
-                <span className="block text-white font-medium">Salvatore Cucuzza</span>
-                <span className="block text-white/55 text-sm">Titolare LBS · ti segue di persona</span>
-              </span>
-              <button type="button" onClick={() => setShowWaModal(true)} className="btn btn-sm btn-ghost-light shrink-0">
-                <i className="fab fa-whatsapp" /> WhatsApp h24
-              </button>
-            </figcaption>
-          </figure>
-        </div>
-
-        {/* NUMERI */}
-        <div className="container-x mt-16 sm:mt-20">
-          <dl className="grid-lines-dark grid-cols-2 md:grid-cols-4">
+          {/* NUMERI */}
+          <dl className="grid-lines-dark grid-cols-2 md:grid-cols-4 mt-12 sm:mt-16">
             {STATS.map(s => (
-              <div key={s.label} className="p-6 sm:p-7 flex flex-col-reverse">
-                <dt className="text-sm text-white/55">{s.label}</dt>
-                <dd className="font-semibold text-4xl sm:text-5xl text-white tracking-tight mt-1">{s.value}</dd>
+              <div key={s.label} className="p-5 sm:p-6 flex flex-col-reverse">
+                <dt className="text-sm text-white/65">{s.label}</dt>
+                <dd className="font-semibold text-4xl sm:text-5xl text-white tracking-tight">{s.value}</dd>
               </div>
             ))}
           </dl>
         </div>
       </section>
 
-      {/* ── 3 VANTAGGI ───────────────────────────────────────────────────── */}
-      <section className="border-b border-line">
-        <div className="container-x py-16 md:py-20">
-          <div className="grid-lines grid-cols-1 md:grid-cols-3">
-            {VALUE_CARDS.map((c, i) => (
-              <div key={c.title} className="p-7 sm:p-9 flex flex-col">
-                <div className="flex items-center justify-between mb-8">
-                  <span className="icon-tile"><i className={`fas ${c.icon}`} /></span>
-                  <span className="text-sm font-medium text-plum-300 tabular-nums">0{i + 1}</span>
+      {/* ── 3 VANTAGGI: card bento colorate ──────────────────────────────── */}
+      <section className="section !pb-10">
+        <div className="container-x">
+          <div className="text-center max-w-2xl mx-auto mb-12 reveal">
+            <span className="eyebrow">Perché LBS</span>
+            <h2 className="h-section text-plum-900 mt-5">Tutto quello che serve, <span className="mark">in un'unica</span> agenzia</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {VALUE_CARDS.map((c, i) => {
+              const tone = ['bento-plum', 'bento-sun', 'bento-mint'][i];
+              const ring = ['text-plum-700', 'text-sun-500', 'text-mint-600'][i];
+              return (
+                <div key={c.title} className={`reveal bento ${tone} flex flex-col min-h-[26rem]`} style={{ transitionDelay: `${i * 70}ms` }}>
+                  <span className="bento-label"><i className={`fas ${c.icon}`} /> {c.tags[0]}</span>
+                  <h3 className="font-semibold text-2xl text-plum-900 tracking-tight mt-4">{c.title}</h3>
+                  <p className="text-ink-soft leading-relaxed mt-3">{c.text}</p>
+                  <div className="mt-auto pt-10 flex items-end justify-between gap-4">
+                    <span className="chip !bg-white">{c.tags[1]}</span>
+                    <span className={`rings ${ring} !w-28 !h-28 -mr-2 -mb-2`} aria-hidden="true">
+                      <span className={`${ring} !w-14 !h-14 !text-xl`}><i className={`fas ${c.icon}`} /></span>
+                    </span>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-xl text-plum-800 tracking-tight">{c.title}</h3>
-                <p className="text-ink-soft leading-relaxed mt-3 flex-1">{c.text}</p>
-                <div className="flex flex-wrap gap-2 mt-6">
-                  <span className="chip"><i className="fas fa-check text-[10px]" /> {c.tags[0]}</span>
-                  <span className="chip">{c.tags[1]}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ── COME FUNZIONA ────────────────────────────────────────────────── */}
-      <section className="section">
+      <section className="section !pt-16">
         <div className="container-x">
-          <SectionHeader
-            eyebrow="Come funziona"
-            title={<>4 passi verso <span className="mark">la Germania</span></>}
-            lead="Un percorso chiaro e testato per trovare il tuo lavoro ideale, senza sorprese e con tutto il supporto necessario."
-          >
-            <Link to="/servizi" className="btn btn-outline self-start md:self-auto">
-              Tutti i servizi <i className="fas fa-arrow-right text-xs" />
-            </Link>
-          </SectionHeader>
+          <div className="text-center max-w-2xl mx-auto mb-12 reveal">
+            <span className="eyebrow">Come funziona</span>
+            <h2 className="h-section text-plum-900 mt-5">Parti in soli <span className="mark">4</span> passi</h2>
+            <p className="lead mt-4">Un percorso chiaro e testato per trovare il tuo lavoro ideale, senza sorprese e con tutto il supporto necessario.</p>
+          </div>
 
-          <ol className="grid-lines grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PROCESS_STEPS.map((step, i) => (
-              <li key={step.step} className="reveal p-7 sm:p-8" style={{ transitionDelay: `${i * 60}ms` }}>
+              <li
+                key={step.step}
+                className={`reveal rounded-[1.5rem] p-7 flex flex-col ${i === 0 ? 'surface-brand' : 'card'}`}
+                style={{ transitionDelay: `${i * 60}ms` }}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-plum-600 tabular-nums">{step.step}</span>
-                  <i className={`fas ${step.icon} text-plum-300`} />
+                  <span className={`icon-tile ${i === 0 ? '!bg-white/15 !text-white' : ''}`}><i className={`fas ${step.icon}`} /></span>
+                  <span className={`text-sm font-semibold tabular-nums ${i === 0 ? 'text-white/70' : 'text-plum-300'}`}>{step.step}</span>
                 </div>
-                <div className="h-px bg-line my-6" />
-                <h3 className="font-semibold text-lg text-plum-800 tracking-tight">{step.title}</h3>
-                <p className="text-ink-soft leading-relaxed mt-2 text-[15px]">{step.description}</p>
+                <h3 className={`font-semibold text-xl tracking-tight mt-10 ${i === 0 ? 'text-white' : 'text-plum-900'}`}>{step.title}</h3>
+                <p className={`leading-relaxed mt-2 text-[15px] ${i === 0 ? 'text-white/75' : 'text-ink-soft'}`}>{step.description}</p>
               </li>
             ))}
           </ol>
+          <div className="text-center mt-10">
+            <Link to="/servizi" className="btn btn-outline">Tutti i servizi <i className="fas fa-arrow-right text-xs" /></Link>
+          </div>
         </div>
       </section>
 
@@ -548,7 +567,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* ── PERCHÉ LA GERMANIA ───────────────────────────────────────────── */}
-      <section className="section surface-tint !border-y">
+      <section className="section surface-tint">
         <div className="container-x">
           <SectionHeader
             eyebrow="Perché scegliere la Germania"
@@ -563,11 +582,11 @@ const Home: React.FC = () => {
                 <p className="text-ink-soft leading-relaxed mt-2 text-[15px]">{item.description}</p>
               </div>
             ))}
-            <Link to="/contatti" className="group p-7 sm:p-9 flex flex-col justify-between !bg-plum-800 text-white">
+            <Link to="/contatti" className="group p-7 sm:p-9 flex flex-col justify-between surface-brand !border-transparent">
               <span className="text-sm text-white/60">Hai domande?</span>
               <span className="mt-10">
                 <span className="block font-semibold text-lg tracking-tight">Parla con un consulente</span>
-                <span className="mt-2 inline-flex items-center gap-2 text-sm text-sun-400">
+                <span className="mt-2 inline-flex items-center gap-2 text-sm text-white/85">
                   Consulenza gratuita <i className="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform" />
                 </span>
               </span>
@@ -595,7 +614,7 @@ const Home: React.FC = () => {
                   role="tab"
                   aria-selected={videoTab === g.key}
                   onClick={() => setVideoTab(g.key)}
-                  className={`relative -mb-px inline-flex items-center gap-2 pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${ videoTab === g.key ? 'text-white border-sun-400' : 'text-white/60 border-transparent hover:text-white' }`}
+                  className={`relative -mb-px inline-flex items-center gap-2 pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${ videoTab === g.key ? 'text-white border-white' : 'text-white/60 border-transparent hover:text-white' }`}
                 >
                   <i className={`fas ${g.icon}`} /> {g.label}
                 </button>
@@ -625,7 +644,7 @@ const Home: React.FC = () => {
                   </div>
                 ) : (
                   <div className="aspect-video rounded-lg border border-dashed border-white/20  flex flex-col items-center justify-center text-center p-6">
-                    <span className="h-14 w-14 rounded-md border border-white/20 flex items-center justify-center text-sun-400 text-lg">
+                    <span className="h-14 w-14 rounded-md border border-white/20 flex items-center justify-center text-white text-lg">
                       <i className="fas fa-film" />
                     </span>
                     <span className="chip chip-sun mt-4">Prossimamente</span>
@@ -640,7 +659,7 @@ const Home: React.FC = () => {
                       <span className="chip chip-dark">In arrivo</span>
                     )}
                     {v.youtubeId && (
-                      <a href={`https://www.youtube.com/watch?v=${v.youtubeId}`} target="_blank" rel="noopener noreferrer" className="text-sm text-white/55 hover:text-sun-400 flex items-center gap-1.5">
+                      <a href={`https://www.youtube.com/watch?v=${v.youtubeId}`} target="_blank" rel="noopener noreferrer" className="text-sm text-white/55 hover:text-white flex items-center gap-1.5">
                         Apri su YouTube <i className="fas fa-external-link-alt text-[10px]" />
                       </a>
                     )}
@@ -730,8 +749,8 @@ const Home: React.FC = () => {
             </ul>
 
             {/* Sei un datore di lavoro? */}
-            <div className="mt-10 rounded-xl surface-plum p-6 flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start gap-4 overflow-hidden">
-              <span className="icon-tile !bg-sun-400 !text-plum-800"><i className="fas fa-building" /></span>
+            <div className="mt-10 rounded-[2rem] surface-brand p-6 flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start gap-4 overflow-hidden">
+              <span className="icon-tile !bg-white !text-plum-700"><i className="fas fa-building" /></span>
               <div className="flex-1">
                 <div className="font-semibold text-lg">Sei un datore di lavoro?</div>
                 <div className="text-white/65 text-sm">Stai cercando lavoratori qualificati? Abbiamo quello che ti serve.</div>

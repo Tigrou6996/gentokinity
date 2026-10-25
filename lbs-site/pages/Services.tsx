@@ -17,10 +17,10 @@ const Services: React.FC = () => {
       <PageHero
         eyebrow="Cosa facciamo"
         title={<>I nostri <span className="mark">servizi</span></>}
-        lead={<><strong className="text-plum-800 font-semibold">Ti guidiamo con professionalità e trasparenza.</strong> Dalla selezione del lavoro ideale al contratto ufficiale, dall'alloggio all'assistenza continua in ogni momento.</>}
+        lead={<><strong className="text-white font-semibold">Ti guidiamo con professionalità e trasparenza.</strong> Dalla selezione del lavoro ideale al contratto ufficiale, dall'alloggio all'assistenza continua in ogni momento.</>}
         actions={
           <>
-            <Link to="/contatti" className="btn btn-lg btn-primary">Contattaci gratis <i className="fas fa-arrow-right text-xs" /></Link>
+            <Link to="/contatti" className="btn btn-lg btn-accent">Contattaci gratis <i className="fas fa-arrow-right text-xs" /></Link>
             <Link to="/offerte" className="btn btn-lg btn-outline">Vedi le offerte</Link>
           </>
         }
@@ -65,7 +65,7 @@ const Services: React.FC = () => {
       {/* IN PIÙ */}
       <section className="pb-24 md:pb-32">
         <div className="container-x">
-          <div className="rounded-lg surface-plum px-6 py-14 sm:px-12 sm:py-16 overflow-hidden">
+          <div className="rounded-[2rem] surface-brand px-6 py-14 sm:px-12 sm:py-16 overflow-hidden">
             <div className="max-w-2xl mb-12 reveal">
               <span className="eyebrow eyebrow-light">Sempre inclusi</span>
               <h2 className="h-section text-white mt-4">Un unico punto di riferimento, dall'Italia alla Germania.</h2>
@@ -73,7 +73,7 @@ const Services: React.FC = () => {
             <div className="grid-lines-dark grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {EXTRA.map(item => (
                 <div key={item.title} className="reveal p-6 sm:p-7">
-                  <span className="icon-tile !bg-transparent !border-white/20 !text-sun-400"><i className={`fas ${item.icon}`} /></span>
+                  <span className="icon-tile !bg-transparent !border-white/20 !text-white"><i className={`fas ${item.icon}`} /></span>
                   <h3 className="font-semibold text-lg text-white mt-6">{item.title}</h3>
                   <p className="text-white/65 leading-relaxed mt-2 text-[15px]">{item.desc}</p>
                 </div>
