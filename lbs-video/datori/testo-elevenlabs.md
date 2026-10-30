@@ -26,7 +26,7 @@ Due: insieme definiamo il profilo che cercate, quante persone vi servono, lo sti
 Tre: selezioniamo i candidati, e ve li presentiamo per il colloquio.
 Quattro: organizziamo la partenza e l'arrivo... [short pause] e restiamo accanto al lavoratore anche dopo.
 
-[warmly] Scriveteci. [short pause] Sul sito elle bi esse work punto com, [short pause] su WhatsApp al numero tedesco: più quarantanove, quindici settantatré, novanta trentasette, ottocentottantacinque. [short pause] Oppure via email, a info chiocciola elle bi esse work punto com.
+[warmly] Scriveteci. [short pause] Sul sito elle bi esse work punto com, [short pause] oppure su WhatsApp. [short pause] Numero tedesco: più quarantanove, uno cinque sette tre, nove zero tre sette, otto otto cinque. [short pause] Numero italiano: più trentanove, tre cinque uno, otto otto uno, otto tre nove uno. [short pause] Oppure via email, a info chiocciola elle bi esse work punto com.
 
 [confident] LBS. [short pause] Voi pensate al lavoro. [pause] [warmly] Al resto, pensiamo noi.
 ```
