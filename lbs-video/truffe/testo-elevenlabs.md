@@ -5,7 +5,7 @@ Modello: **Eleven v3**. Durata stimata: 40–45 secondi. Voce consigliata: giova
 ```
 [serious] Se un'offerta di lavoro in Germania ti chiede una di queste tre cose... [short pause] [whispers] scappa.
 
-[confident] Red flag numero uno. [short pause] "Mandaci duecento euro per la pratica." [short pause] [sarcastic] Certo, come no. [short pause] Un lavoro vero non si paga. Mai.
+[confident] Red flag numero uno. [short pause] "Mandaci duecento euro per la pratica." [short pause] [sarcastic] Certo, come no. [short pause] Chi ti offre un lavoro ti paga... [short pause] non il contrario.
 
 Red flag numero due. [short pause] Niente contratto tedesco, niente busta paga. [short pause] "Tranquillo, ti paghiamo a mano." [short pause] No, grazie.
 
