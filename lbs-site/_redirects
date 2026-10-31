@@ -1,0 +1,8 @@
+/* ─── SPA fallback: tutte le route → index.html ─── */
+/*     altrimenti React Router dà 404 su refresh     */
+/* ─────────────────────────────────────────────────── */
+/* ! IMPORTANTE: questo file viene copiato in dist/   */
+/*   dal vite.config.ts (public folder)               */
+
+/* Default SPA redirect */
+/*  /                 index.html    200  */

@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LBS Guida Collaboratori</title>
+<style>
+@font-face{font-family:PJS;src:url(data:font/woff2;base64,{{PJS}}) format('woff2');font-weight:200 800}
+@font-face{font-family:INT;src:url(data:font/woff2;base64,{{INTER}}) format('woff2');font-weight:100 900}
+:root{--p:#5e2d61;--l:#dab6fc;--d:#30103d;--g:#2fbf6b;--r:#ff5a6e;--y:#ffc542}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;overflow:hidden;height:100%}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:#5e2d61;transform-origin:0 0;font-family:INT}
+#bg{position:absolute;left:0;top:0}
+#glow{position:absolute;left:-200px;top:-150px}
+.layer{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:960px 560px}
+.a{position:absolute;white-space:nowrap}
+.ctr{transform:translate(-50%,-50%)}
+.h1{font-family:PJS;font-weight:800;letter-spacing:-.02em;line-height:1.05;color:#fff}
+.lbl{font-family:INT;font-weight:800;text-transform:uppercase;letter-spacing:.2em}
+.li{color:var(--l)}
+.mask{display:inline-block;overflow:hidden;vertical-align:top;padding:.16em .04em .1em;margin:-.16em -.04em -.1em}
+.mi{display:inline-block}
+.card{position:absolute;border-radius:28px;background:#fff;box-shadow:0 24px 50px rgba(25,4,35,.38);color:#30103d}
+.cc{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)}
+.pill{position:absolute;padding:14px 28px;border-radius:999px;background:#fff;color:var(--p);font:800 26px/1 INT;letter-spacing:.04em;box-shadow:0 12px 26px rgba(25,4,35,.3);display:flex;align-items:center;gap:12px;white-space:nowrap}
+.hl{position:relative;display:inline-block}
+.hl>i{position:absolute;left:-.12em;right:-.12em;top:.04em;bottom:-.02em;background:var(--l);transform-origin:0 50%;transform:scaleX(0);border-radius:.12em}
+.hl>b{position:relative;font-weight:inherit}
+.row{position:absolute;left:0;width:100%;display:flex;align-items:center;gap:22px;padding:0 34px}
+.av{flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.btn{flex:none;margin-left:auto;padding:14px 26px;border-radius:12px;font:800 24px/1 INT;display:flex;align-items:center;gap:10px}
+.bub{position:absolute;padding:18px 24px;border-radius:24px;font:600 26px/1.35 INT;white-space:nowrap}
+.fld{position:absolute;left:44px;right:44px;height:92px;border-radius:16px;border:3px solid #ece4f1;background:#faf7fc;display:flex;align-items:center;padding:0 26px;font:600 32px INT;color:#30103d}
+.flb{position:absolute;left:46px;font:800 20px INT;letter-spacing:.14em;text-transform:uppercase;color:#9a83a6}
+.caret{display:inline-block;width:3px;height:1.05em;background:#5e2d61;margin-left:3px;vertical-align:-.15em}
+.chk{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#2fbf6b;box-shadow:0 10px 24px rgba(20,90,50,.35);transform:translate(-50%,-50%)}
+.no{background:#ff5a6e;box-shadow:0 10px 24px rgba(120,20,40,.35)}
+.wbar{position:absolute;top:-140px;width:4400px;height:1360px;transform-origin:0 0;visibility:hidden}
+#hud{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+.tab{display:flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;font:700 19px/1 INT;color:#fff;background:rgba(255,255,255,.1);white-space:nowrap}
+.tab b{display:flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:rgba(255,255,255,.18);font:800 16px INT}
+#grain{position:absolute;inset:0;opacity:.045;mix-blend-mode:overlay;background-size:256px 256px;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 55%,rgba(20,0,30,.3) 100%);pointer-events:none}
+#fade{position:absolute;inset:0;background:#000;opacity:0}
+#ctl{position:fixed;left:0;right:0;bottom:0;display:flex;gap:12px;padding:10px 16px;background:#000c;color:#fff;font:14px sans-serif;align-items:center}
+#ctl input{flex:1}
+body.render #ctl{display:none}
+svg{overflow:visible}
+</style></head><body>
+<div id="stage">
+  <canvas id="bg" width="1920" height="1080"></canvas>
+  <canvas id="glow" width="2320" height="1380"></canvas>
+  <div id="scenes"></div>
+  <div id="hud"></div>
+  <div class="wbar" id="wb0" style="background:#dab6fc"></div>
+  <div class="wbar" id="wb1" style="background:#ffffff"></div>
+  <div class="wbar" id="wb2" style="background:#30103d"></div>
+  <div id="grain"></div><div id="vig"></div><div id="fade"></div>
+</div>
+<div id="ctl"><button id="pb">Play ▶</button><input id="sc" type="range" min="0" max="1000" value="0"><span id="tc"></span></div>
+<script>
+/* ===== LBS — "Guida per i collaboratori: annunci su Facebook" — 16:9 1920x1080, voce + musica 108 BPM (Fa maggiore) =====
+ Ritmo da guida, non da promo: ogni scena resta a schermo per tutta la frase che la spiega, e a ogni nuovo capitolo
+ la voce si ferma 1.8 s sulla scheda del capitolo (barra capitoli in alto, barra di avanzamento in basso).
+ τ = tempo della voce. Pause: 18.5 (cap. 1), 61.6 (cap. 2), 95.3 (cap. 3), 130.05 (cap. 4), 152.05 (cap. 5), 167.8 (riepilogo).
+ 0      intro: logo, "Ciao a tutti!"                    4.5   "passo dopo passo": 5 tappe
+ 8.2    il vostro lavoro: 3 card                        18.5  CAPITOLO 1 · Entrare nei gruppi giusti
+ 22.7   calendario: 2 volte al mese                     26.25 ricerca su Facebook: 6 parole, "Unisciti", gruppi non coerenti
+ 50.55  ATTENZIONE: il giorno dei gruppi non si pubblica
+ 61.6   CAPITOLO 2 · La pubblicazione                   63.45 settimana: almeno 3 volte
+ 69.9   copia e incolla il testo senza modifiche        77.15 regola d'oro: abbinamento annuncio -> gruppi
+ 95.3   CAPITOLO 3 · I contatti                         97.85 commento -> Messenger -> CV      105.6 scheda contatto
+ 114.95 rispondere solo con l'annuncio                  120   cittadinanza europea: sì / no
+ 130.05 CAPITOLO 4 · Cosa non fare                      133.05 costi/agenzia, insulti, scrivete a me
+ 152.05 CAPITOLO 5 · I compensi                         156   1 € per scheda, +20 € alla partenza
+ 167.8  riepilogo                                       181.1 saluti, logo */
+const W = 1920, H = 1080, O = 0.5;
+const RENDER = location.search.includes('render');
+if (RENDER) document.body.classList.add('render');
+
+// ---------- helpers ----------
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const eOut = x => (x = clamp(x), 1 - Math.pow(1 - x, 3));
+const eIn = x => (x = clamp(x), x * x * x);
+const expo = x => (x = clamp(x), x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const $ = id => document.getElementById(id);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function tf(el, { x = 0, y = 0, s = 1, r = 0, o, b = 0, c = false } = {}) {
+  let tr = (c ? 'translate(-50%,-50%) ' : '') + `translate(${x.toFixed(2)}px,${y.toFixed(2)}px)`;
+  if (s !== 1) tr += ` scale(${s.toFixed(4)})`;
+  if (r) tr += ` rotate(${r.toFixed(2)}deg)`;
+  el.style.transform = tr;
+  if (o !== undefined) { el.style.opacity = o; el.style.visibility = o <= 0.002 ? 'hidden' : 'visible'; }
+  el.style.filter = b > 0.08 ? `blur(${b.toFixed(2)}px)` : 'none';
+}
+const rise = (el, t, t0, { d = .6, dy = 40, c = false, x = 0 } = {}) => { const k = eOut(seg(t, t0, t0 + d)); tf(el, { x, y: (1 - k) * dy, o: k, b: (1 - k) * 6, c }); return k; };
+const pop = (el, t, t0, { c = false, from = .4, w = 13, z = .66, x = 0, y = 0, r0 = 0 } = {}) => { const k = spring(t - t0, w, z); tf(el, { x, y, s: Math.max(0, lerp(from, 1, k)), r: r0 * (1 - k), o: clamp((t - t0) * 6), c }); return k; };
+const slideIn = (el, t, t0, { dx = 120, d = .7, c = false } = {}) => { const k = expo(seg(t, t0, t0 + d)); tf(el, { x: (1 - k) * dx, o: clamp((t - t0) / .25), b: (1 - k) * 8, c }); return k; };
+function words(el, t, times, d = .6) {
+  $$('.mi', el).forEach((w, i) => {
+    const t0 = Array.isArray(times) ? times[Math.min(i, times.length - 1)] : times + i * .09;
+    w.style.transform = `translateY(${((1 - expo(seg(t, t0, t0 + d))) * 135).toFixed(2)}%)`;
+  });
+}
+const hl = (el, t, t0, d = .45) => { el.querySelector('i').style.transform = `scaleX(${eOut(seg(t, t0, t0 + d))})`; };
+const draw = (el, k) => { el.style.strokeDasharray = '100 100'; el.style.strokeDashoffset = (100 - 100 * clamp(k)).toFixed(2); el.style.opacity = k > .002 ? 1 : 0; };
+function typeTo(el, str, t, t0, t1, caret = true) {
+  const n = Math.round(str.length * seg(t, t0, t1));
+  const blink = caret && (t < t0 || t > t1 + .25 ? Math.floor(t * 2.4) % 2 === 0 : true);
+  el.innerHTML = esc(str.slice(0, n)) + (caret && t > t0 - .6 ? `<span class="caret" style="opacity:${blink ? 1 : 0}"></span>` : '');
+}
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const MW = s => s.split(' ').map(w => `<span class="mask"><span class="mi">${w}</span></span>`).join(' ');
+
+// ---------- icons (stroke, 24 grid) ----------
+const IC = {
+  mega: '<path d="M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  userPlus: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  chat: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>',
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  refresh: '<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  clip: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+  send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+  plane: '<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  euro: '<path d="M18 6.5A7 7 0 1 0 18 17.5"/><path d="M4 10h10M4 14h10"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  medal: '<circle cx="12" cy="15" r="6"/><path d="M8.2 10.4L5 2h4l3 6 3-6h4l-3.2 8.4"/>',
+  ban: '<circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/>',
+  helmet: '<path d="M2 18h20"/><path d="M4 18v-2a8 8 0 0 1 16 0v2"/><path d="M10 8.5V5h4v3.5"/>',
+  hat: '<path d="M6.5 13.5C3.4 13.4 3 8.6 6.4 8 6.9 4.3 11.7 3.1 13.6 5.8 16.6 4.6 20.6 7.3 18.5 10.9 18 12 17.5 13.5 17.5 13.5"/><path d="M6.5 13.5h11v5.6h-11z"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  arrow: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  check: '<path d="M20 6L9 17l-5-5"/>',
+  x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>',
+};
+const icon = (n, size = 24, col = '#fff', sw = 2.2) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${IC[n]}</svg>`;
+const CIRC = (id, x, y, size, inner, bg = '#fff', extra = '') => `<div class="cc" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${bg};${extra}">${inner}</div>`;
+const OK = (id, x, y, size = 64) => `<div class="chk" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px">${icon('check', size * .52, '#fff', 3.4)}</div>`;
+const NO = (id, x, y, size = 64) => `<div class="chk no" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px">${icon('x', size * .52, '#fff', 3.4)}</div>`;
+const LOGO = 'data:image/png;base64,{{LOGO}}';
+const EU = size => { let s = ''; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; s += `<path transform="translate(${50 + Math.sin(a) * 30},${50 - Math.cos(a) * 30}) scale(.32)" d="M0 -10 2.9 -4 9.5 -3.1 4.7 1.5 5.9 8.1 0 5 -5.9 8.1 -4.7 1.5 -9.5 -3.1 -2.9 -4z" fill="#ffcc00"/>`; } return `<svg width="${size}" height="${size}" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#003399"/>${s}</svg>`; };
+
+// ---------- time: voice τ -> video t, with a pause on every chapter card ----------
+const BRK = [[18.5, 1.8], [61.6, 1.8], [95.3, 1.8], [130.05, 1.8], [152.05, 1.8], [167.8, 1.0]].map(([c, h]) => ({ c, h }));
+const m = tau => tau + BRK.reduce((a, b) => a + (b.c < tau ? b.h : 0), 0);
+const S = tau => O + m(tau);                                  // when τ is seen/heard in the video
+const voT = tau => O + tau + BRK.reduce((a, b) => a + (b.c <= tau ? b.h : 0), 0);
+const TAU_END = 189.0, DUR = O + m(TAU_END) + .01;
+window.VIDEO = { w: W, h: H, duration: DUR };
+const SPEECH = [[0.0,0.92],[1.4,4.04],[4.58,18.3],[18.82,19.44],[19.88,20.46],[20.9,31.22],[31.96,35.44],[36.02,38.6],[39.08,39.74],[40.28,40.98],[41.48,42.76],[43.24,43.96],[44.42,50.14],[50.66,69.58],[69.98,86.08],[86.5,95.14],[95.54,151.92],[152.32,167.68],[168.14,186.14]];
+const CHAP = [[18.5, 'Entrare nei gruppi giusti', 'users'], [61.6, 'La pubblicazione', 'mega'], [95.3, 'I contatti', 'chat'], [130.05, 'Cosa non fare', 'ban'], [152.05, 'I compensi', 'euro']];
+const TABS = ['Gruppi', 'Pubblicazione', 'Contatti', 'Cosa non fare', 'Compensi'];
+
+// ---------- search scene data ----------
+const KW = [
+  { q: 'Lavoro in Germania', t0: 31.96, t1: 32.95, join: [33.94, 34.36], chk: 34.74, g: [['Lavoro in Germania – Offerte', '48.200'], ['Italiani al lavoro in Germania', '31.700'], ['Compro Vendo Usato', '12.900']] },
+  { q: 'Lavoro Germania Ristorazione', t0: 36.66, t1: 37.9, join: [38.5, 38.92], chk: 39.38, g: [['Lavoro Germania Ristorazione', '22.400'], ['Cuochi e camerieri in Germania', '15.100'], ['Ricette della nonna', '9.800']] },
+  { q: 'Lavoro edilizia Germania', t0: 41.48, t1: 42.3, join: [42.9, 43.3], chk: 43.6, g: [['Lavoro edilizia Germania', '27.600'], ['Muratori italiani in Germania', '11.300'], ['Calcio amatori', '6.400']] },
+  { q: 'Lavoro edilizia', t0: 46.24, t1: 46.7, join: [46.95], chk: 47.2, g: [['Lavoro edilizia', '64.000'], ['Lavoro edilizia Italia ed Europa', '40.200'], ['Animali smarriti', '5.100']] },
+  { q: 'Lavoro ristorazione', t0: 47.58, t1: 48.2, join: [48.45], chk: 48.7, g: [['Lavoro ristorazione', '58.900'], ['Lavoro ristorazione e hotel', '33.000'], ['Vacanze low cost', '18.300']] },
+  { q: 'Cerco lavoro', t0: 49.3, t1: 49.75, join: [49.98], chk: 50.2, g: [['Cerco lavoro', '120.000'], ['Cerco lavoro – Annunci', '75.400'], ['Meme divertenti', '210.000']] },
+];
+const AV = ['#5e2d61', '#8a4f8e', '#b9b0bd'];
+const WX = 110, WY = 190, ROW0 = 236, ROWH = 156;           // app window + result rows
+const btnPos = i => ({ x: WX + 1040 - 34 - 110, y: WY + ROW0 + i * ROWH + 62 });
+
+// ---------- scenes ----------
+const P = '#5e2d61', D = '#30103d', WH = '#f6f1f9';
+const HTML = {}, U = {};
+const SC = [
+  ['intro', 0, 4.5, P], ['steps', 4.5, 8.2, P], ['job', 8.2, 18.5, P], ['ch1', 18.5, 22.7, D], ['month', 22.7, 26.25, P], ['search', 26.25, 50.55, P],
+  ['warn', 50.55, 61.6, D], ['ch2', 61.6, 63.45, D], ['week', 63.45, 69.9, P], ['copy', 69.9, 77.15, P], ['gold', 77.15, 95.3, P], ['ch3', 95.3, 97.85, D],
+  ['msg', 97.85, 105.6, P], ['form', 105.6, 114.95, P], ['reply', 114.95, 120.0, P], ['eu', 120.0, 130.05, P], ['ch4', 130.05, 133.05, D], ['dont', 133.05, 152.05, D],
+  ['ch5', 152.05, 156.0, D], ['pay', 156.0, 167.8, P], ['recap', 167.8, 181.1, P], ['outro', 181.1, TAU_END + 1, P],
+].map(([id, a, b, bg]) => ({ id, a, b, bg }));
+
+// intro -------------------------------------------------------------------------------
+HTML.intro = `
+  <svg class="a" style="left:820px;top:200px" width="280" height="280" viewBox="0 0 280 280"><circle id="i_ring" cx="140" cy="140" r="132" fill="none" stroke="#dab6fc" stroke-width="6" pathLength="100" transform="rotate(-90 140 140)" stroke-linecap="round"/></svg>
+  <img class="a" id="i_logo" src="${LOGO}" style="left:850px;top:230px;width:220px;height:220px">
+  <div class="a ctr h1" id="i_t" style="left:960px;top:610px;font-size:130px">${MW('Ciao a tutti!')}</div>
+  <div class="pill ctr" id="i_p" style="left:960px;top:760px;font-size:30px">${icon('heart', 28, '#5e2d61', 2.6)} Grazie di collaborare con LBS</div>`;
+U.intro = t => {
+  draw($('i_ring'), ease(seg(t, S(.1), S(1.1)))); pop($('i_logo'), t, S(.3), { from: .2 });
+  words($('i_t'), t, [S(0), S(.4), S(.62)]); pop($('i_p'), t, S(1.4), { c: true, from: .6 });
+};
+// steps -------------------------------------------------------------------------------
+HTML.steps = `
+  <div class="a ctr lbl li" id="st_l" style="left:960px;top:300px;font-size:30px">Oggi vi spiego</div>
+  <div class="a ctr h1" id="st_t" style="left:960px;top:410px;font-size:118px">${MW('passo dopo passo')}</div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="st_line" d="M560 650 H1360" stroke="#dab6fc" stroke-width="6" stroke-linecap="round" fill="none"/></svg>
+  ${[0, 1, 2, 3, 4].map(i => CIRC('st_' + i, 560 + i * 200, 650, 104, `<span style="font:800 46px PJS;color:#5e2d61">${i + 1}</span>`)).join('')}
+  <div class="a ctr" id="st_s" style="left:960px;top:800px;font:600 46px INT;color:#fff">come funziona il <b style="color:#dab6fc">nostro lavoro</b></div>`;
+U.steps = t => {
+  rise($('st_l'), t, S(4.58), { c: true }); words($('st_t'), t, [S(5.36), S(5.78), S(6.06)]);
+  const ln = $('st_line'); ln.style.opacity = 1; ln.setAttribute('d', `M560 650 H${lerp(560, 1360, ease(seg(t, S(6.2), S(7.4))))}`);
+  for (let i = 0; i < 5; i++) pop($('st_' + i), t, S(6.3 + i * .26), { c: true, from: .2 });
+  rise($('st_s'), t, S(6.64), { c: true });
+};
+// job: the 3 tasks --------------------------------------------------------------------
+const JOB = [['mega', 'Pubblicare annunci', 'di lavoro su Facebook', 8.32], ['users', 'Nei gruppi giusti', 'in Germania', 10.66], ['chat', 'Gestire i contatti', 'che arrivano', 12.52]];
+HTML.job = `
+  <div class="a ctr lbl li" id="j_l" style="left:960px;top:205px;font-size:30px">Il vostro lavoro</div>
+  ${JOB.map(([ic, a, b], i) => `<div class="card" id="j_${i}" style="left:${195 + i * 530}px;top:290px;width:470px;height:460px">
+    <div class="cc" style="left:235px;top:140px;width:150px;height:150px;background:#5e2d61;transform:translate(-50%,-50%)">${icon(ic, 74, '#fff', 2)}</div>
+    <div class="cc" style="left:330px;top:78px;width:52px;height:52px;background:#dab6fc;font:800 26px PJS;color:#30103d">${i + 1}</div>
+    <div class="a ctr" style="left:235px;top:300px;font:800 44px PJS;color:#30103d">${a}</div>
+    <div class="a ctr" style="left:235px;top:362px;font:600 32px INT;color:#7d6787">${b}</div></div>`).join('')}
+  <div class="pill ctr" id="j_b" style="left:960px;top:870px;font:700 34px INT;padding:22px 38px;color:#30103d">${icon('info', 34, '#5e2d61', 2.6)} Seguite bene la guida: <span class="hl" id="j_hl"><i></i><b>ogni passaggio è importante</b></span></div>`;
+U.job = t => {
+  rise($('j_l'), t, S(8.32), { c: true });
+  JOB.forEach((j, i) => { const k = pop($('j_' + i), t, S(j[3]), { from: .55, y: 0 }); const up = ease(seg(t, S(14.3), S(15))); tf($('j_' + i), { s: Math.max(0, lerp(.55, 1, k)) * (1 - .08 * up), y: -40 * up, o: clamp((t - S(j[3])) * 6) }); });
+  pop($('j_b'), t, S(14.6), { c: true, from: .5 }); hl($('j_hl'), t, S(16.42));
+};
+// chapter cards -----------------------------------------------------------------------
+CHAP.forEach(([c, title, ic], i) => {
+  const id = 'ch' + (i + 1);
+  HTML[id] = `
+  <div class="a ctr" id="${id}_n" style="left:390px;top:540px;font:800 400px/1 PJS;color:transparent;-webkit-text-stroke:5px #dab6fc;letter-spacing:-.04em">0${i + 1}</div>
+  <div class="a lbl li" id="${id}_l" style="left:740px;top:395px;font-size:32px">Capitolo ${i + 1} di 5</div>
+  <div class="a h1" id="${id}_t" style="left:735px;top:450px;font-size:${title.length > 20 ? 92 : 112}px">${MW(title)}</div>
+  ${CIRC(id + '_i', 960 + 0, 760, 120, icon(ic, 58, '#30103d', 2.2), '#dab6fc', 'left:960px')}
+  <div class="a" id="${id}_u" style="left:740px;top:${title.length > 20 ? 580 : 600}px;width:560px;height:8px;border-radius:4px;background:#dab6fc;transform-origin:0 50%"></div>`;
+  U[id] = t => {
+    const t0 = S(c);
+    const k = expo(seg(t, t0 + .1, t0 + .9)); tf($(id + '_n'), { x: (1 - k) * -200, o: k, b: (1 - k) * 12, c: true, s: 1 + .03 * (t - t0) });
+    rise($(id + '_l'), t, t0 + .3); words($(id + '_t'), t, t0 + .45);
+    $(id + '_u').style.transform = `scaleX(${eOut(seg(t, t0 + .8, t0 + 1.4))})`;
+    pop($(id + '_i'), t, t0 + 1.0, { c: true, from: .2, x: 0 }); $(id + '_i').style.left = '800px'; $(id + '_i').style.top = (title.length > 20 ? 720 : 760) + 'px';
+  };
+});
+// month: twice a month ----------------------------------------------------------------
+HTML.month = `
+  <div class="card" id="mo_c" style="left:300px;top:230px;width:640px;height:640px;padding:0">
+    <div class="a" style="left:0;top:0;width:640px;height:110px;border-radius:28px 28px 0 0;background:#5e2d61"></div>
+    <div class="a ctr" style="left:320px;top:56px;font:800 38px PJS;color:#fff">${icon('cal', 36, '#dab6fc', 2.4)} &nbsp;Questo mese</div>
+    ${Array.from({ length: 35 }, (_, i) => `<div class="a ctr" id="mo_d${i}" style="left:${70 + (i % 7) * 83}px;top:${170 + Math.floor(i / 7) * 92}px;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 26px INT;color:${i < 30 ? '#30103d' : '#c9bdd0'}">${i < 30 ? i + 1 : i - 29}</div>`).join('')}
+  </div>
+  <div class="a lbl li" id="mo_l" style="left:1040px;top:360px;font-size:30px">Entrare nei gruppi</div>
+  <div class="a h1" id="mo_t" style="left:1035px;top:410px;font-size:110px">${MW('2 volte')}<br>${MW('al mese')}</div>
+  <div class="pill" id="mo_p" style="left:1040px;top:700px">${icon('refresh', 28, '#5e2d61', 2.6)} almeno</div>`;
+const MO = [[3, 24.92], [17, 25.1]];
+U.month = t => {
+  pop($('mo_c'), t, S(22.75), { from: .7 });
+  rise($('mo_l'), t, S(23.1)); words($('mo_t'), t, [S(24.92), S(25.1), S(25.36), S(25.58)]); pop($('mo_p'), t, S(24.48), { from: .5 });
+  MO.forEach(([d, tt]) => { const e = $('mo_d' + d), k = spring(t - S(tt), 14, .6); e.style.background = t > S(tt) ? '#5e2d61' : 'transparent'; e.style.color = t > S(tt) ? '#fff' : '#30103d'; e.style.transform = `translate(-50%,-50%) scale(${t > S(tt) ? lerp(.4, 1.15, k) : 1})`; e.style.boxShadow = t > S(tt) ? '0 0 0 8px rgba(218,182,252,.6)' : 'none'; });
+};
+// search: the Facebook group search ---------------------------------------------------
+HTML.search = `
+  <div class="card" id="se_w" style="left:${WX}px;top:${WY}px;width:1040px;height:760px;overflow:hidden">
+    <div class="a" style="left:0;top:0;width:1040px;height:120px;background:#fff;border-bottom:2px solid #eee6f2"></div>
+    <div class="a" id="se_bar" style="left:34px;top:28px;width:972px;height:66px;border-radius:33px;background:#f1ecf4;display:flex;align-items:center;gap:16px;padding:0 26px;font:600 32px INT;color:#30103d">${icon('search', 32, '#7d6787', 2.6)}<span id="se_q" style="white-space:nowrap"></span><span id="se_ph" style="color:#a493ad">Cerca su Facebook</span></div>
+    <div class="a lbl" id="se_tab" style="left:38px;top:150px;font-size:22px;color:#9a83a6">Gruppi</div>
+    ${[0, 1, 2].map(i => `<div class="row" id="se_r${i}" style="top:${ROW0 + i * ROWH}px;height:124px">
+      <div class="av" style="width:92px;height:92px;background:${AV[i]}">${icon('users', 44, '#fff', 2)}</div>
+      <div style="display:flex;flex-direction:column;gap:8px"><div id="se_n${i}" style="font:800 32px PJS;color:#30103d"></div><div id="se_m${i}" style="font:500 24px INT;color:#8d7a97"></div></div>
+      <div class="btn" id="se_b${i}" style="background:#5e2d61;color:#fff">${icon('userPlus', 26, '#fff', 2.6)}<span>Unisciti</span></div></div>`).join('')}
+  </div>
+  <div class="a" id="se_ring" style="left:${WX + 34}px;top:${WY + 28}px;width:972px;height:66px;border-radius:33px;border:5px solid #dab6fc"></div>
+  <div class="card" id="se_p" style="left:1210px;top:${WY}px;width:600px;height:760px">
+    <div class="a" style="left:40px;top:40px;font:800 36px PJS;color:#30103d">Parole da cercare</div>
+    <div class="a" style="left:40px;top:92px;font:600 24px INT;color:#8d7a97">una alla volta</div>
+    <div class="a lbl" id="se_h1" style="left:40px;top:160px;font-size:19px;color:#9a83a6">Gruppi specifici</div>
+    <div class="a lbl" id="se_h2" style="left:40px;top:470px;font-size:19px;color:#9a83a6">Gruppi generali</div>
+    ${KW.map((k, i) => `<div class="a" id="se_k${i}" style="left:24px;top:${(i < 3 ? 200 : 510) + (i % 3) * 82}px;width:552px;height:70px;border-radius:16px;display:flex;align-items:center;gap:18px;padding:0 16px;font:700 28px INT;color:#30103d">
+      <div class="av" id="se_c${i}" style="width:40px;height:40px;border:3px solid #d8cbe0"></div><span>${k.q}</span></div>`).join('')}
+  </div>
+  <svg class="a" id="se_cur" style="left:0;top:0" width="44" height="54" viewBox="0 0 22 27"><path d="M2 1.5v20.5l5.2-5 3.4 8 3.6-1.6-3.4-7.8h7.3z" fill="#fff" stroke="#30103d" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+const kwAt = t => { let i = -1; KW.forEach((k, j) => { if (t >= S(k.t0) - .45) i = j; }); return i; };
+U.search = t => {
+  slideIn($('se_w'), t, S(26.3), { dx: -160 });
+  slideIn($('se_p'), t, S(29.3), { dx: 160 });
+  const rk = seg(t, S(26.9), S(28.4)); $('se_ring').style.opacity = rk > 0 && rk < 1 ? Math.sin(rk * Math.PI) : 0; $('se_ring').style.transform = `scale(${1 + .03 * Math.sin(rk * Math.PI * 3)})`;
+  const i = kwAt(t), k = KW[Math.max(0, i)];
+  $('se_ph').style.display = i < 0 ? 'inline' : 'none';
+  if (i >= 0) typeTo($('se_q'), k.q, t, S(k.t0), S(k.t1)); else $('se_q').innerHTML = '';
+  const rt = i >= 0 ? S(k.t1) + .12 : 1e9;
+  $('se_tab').style.opacity = clamp((t - rt) * 4);
+  for (let r = 0; r < 3; r++) {
+    const row = $('se_r' + r), bad = r === 2, joined = i >= 0 && k.join[r] !== undefined && t > S(k.join[r]);
+    if (i >= 0) { $('se_n' + r).textContent = k.g[r][0]; $('se_m' + r).textContent = `Gruppo pubblico · ${k.g[r][1]} membri`; }
+    rise(row, t, rt + r * .07, { d: .4, dy: 30 }); if (t < rt) row.style.opacity = 0;
+    const b = $('se_b' + r);
+    if (bad) { b.style.background = '#ffe7ea'; b.style.color = '#d9364c'; b.innerHTML = icon('x', 24, '#d9364c', 3) + '<span>Non coerente</span>'; row.style.opacity = Math.min(+row.style.opacity, .55); }
+    else if (joined) { const q = spring(t - S(k.join[r]), 16, .55); b.style.background = '#e3f7ec'; b.style.color = '#1f9a52'; b.innerHTML = icon('check', 26, '#1f9a52', 3.2) + '<span>Iscritto</span>'; b.style.transform = `scale(${lerp(.8, 1, q)})`; }
+    else { b.style.background = '#5e2d61'; b.style.color = '#fff'; b.innerHTML = icon('userPlus', 26, '#fff', 2.6) + '<span>Unisciti</span>'; b.style.transform = 'none'; }
+  }
+  // checklist
+  KW.forEach((kk, j) => {
+    const it = $('se_k' + j), c = $('se_c' + j), cur = j === i && t < S(kk.chk) + .6, done = t > S(kk.chk);
+    rise(it, t, S(29.6) + j * .1, { d: .5, dy: 20 });
+    it.style.background = cur ? '#f3e8fd' : 'transparent';
+    if (done) { const q = spring(t - S(kk.chk), 16, .55); c.style.background = '#2fbf6b'; c.style.borderColor = '#2fbf6b'; c.innerHTML = icon('check', 24, '#fff', 3.4); c.style.transform = `scale(${lerp(.5, 1, q)})`; }
+    else { c.style.background = 'transparent'; c.style.borderColor = cur ? '#5e2d61' : '#d8cbe0'; c.innerHTML = ''; c.style.transform = 'none'; }
+  });
+  hlRow($('se_h2'), t, S(44.42));
+  // cursor: rests near the search bar, then clicks each "Unisciti"
+  let cx = WX + 700, cy = WY + 140, press = 0;
+  const keys = [[S(26.3), WX + 760, WY + 180], [S(27.4), WX + 520, WY + 62]];
+  KW.forEach(kk => kk.join.forEach((jt, r) => { const p = btnPos(r); keys.push([S(jt) - .32, p.x, p.y]); keys.push([S(jt) + .2, p.x, p.y]); }));
+  keys.push([S(kk_last()) + .5, WX + 560, WY + 62]);
+  for (let n = 1; n < keys.length; n++) { const [ta, xa, ya] = keys[n - 1], [tb2, xb, yb] = keys[n]; if (t <= ta) { if (n === 1) { cx = xa; cy = ya; } break; } const q = ease(seg(t, ta, tb2)); cx = lerp(xa, xb, q); cy = lerp(ya, yb, q); }
+  KW.forEach(kk => kk.join.forEach(jt => { const d = t - S(jt); if (d > -.08 && d < .16) press = 1; }));
+  tf($('se_cur'), { x: cx, y: cy, s: press ? .85 : 1, o: clamp((t - S(26.6)) * 3) });
+};
+const kk_last = () => KW[KW.length - 1].join[0];
+function hlRow(el, t, t0) { const k = seg(t, t0, t0 + .4); el.style.color = k > 0 ? '#5e2d61' : '#9a83a6'; el.style.transform = `scale(${1 + .15 * Math.sin(k * Math.PI)})`; el.style.transformOrigin = '0 50%'; }
+// warn: never post the day you add groups ---------------------------------------------
+HTML.warn = `
+  ${CIRC('w_ic', 960, 205, 120, icon('alert', 66, '#30103d', 2.2), '#ffc542')}
+  <div class="a ctr h1" id="w_t" style="left:960px;top:320px;font-size:78px">${MW('Attenzione! Regola fondamentale')}</div>
+  <div class="card" id="w_a" style="left:250px;top:420px;width:620px;height:430px">
+    <div class="a lbl" style="left:44px;top:44px;font-size:22px;color:#9a83a6">Il giorno in cui</div>
+    <div class="a" style="left:44px;top:84px;font:800 46px PJS">aggiungete gruppi</div>
+    ${CIRC('w_ai', 310, 250, 130, icon('userPlus', 62, '#fff', 2.2), '#5e2d61', 'transform:translate(-50%,-50%)')}
+    <div class="a ctr" id="w_as" style="left:310px;top:375px;padding:14px 26px;border-radius:14px;border:4px solid #ff5a6e;color:#ff5a6e;font:800 32px INT;letter-spacing:.06em">NON PUBBLICATE NULLA</div>
+  </div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="w_arr" d="M900 635 H1020" stroke="#dab6fc" stroke-width="8" stroke-linecap="round" pathLength="100" fill="none"/><path id="w_arh" d="M995 610 L1025 635 L995 660" stroke="#dab6fc" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+  <div class="card" id="w_b" style="left:1050px;top:420px;width:620px;height:430px">
+    <div class="a lbl" style="left:44px;top:44px;font-size:22px;color:#9a83a6">Nei giorni</div>
+    <div class="a" style="left:44px;top:84px;font:800 46px PJS">successivi</div>
+    ${CIRC('w_bi', 310, 250, 130, icon('mega', 62, '#fff', 2.2), '#5e2d61', 'transform:translate(-50%,-50%)')}
+    <div class="a ctr" id="w_bs" style="left:310px;top:375px;padding:14px 26px;border-radius:14px;border:4px solid #2fbf6b;color:#1f9a52;font:800 32px INT;letter-spacing:.06em">PUBBLICATE</div>
+  </div>
+  ${NO('w_no', 820, 470, 84)}${OK('w_ok', 1620, 470, 84)}
+  <div class="pill ctr" id="w_p" style="left:960px;top:935px;font-size:32px">${icon('check', 30, '#2fbf6b', 3.2)} Chiaro? Bene!</div>`;
+U.warn = t => {
+  pop($('w_ic'), t, S(50.66), { c: true, from: .2, r0: -20 }); words($('w_t'), t, [S(50.66), S(51.62), S(52.02)]);
+  pop($('w_a'), t, S(53.28), { from: .7 }); pop($('w_b'), t, S(57.32), { from: .7 });
+  const sk = spring(t - S(55.5), 15, .5); tf($('w_as'), { c: true, s: lerp(1.8, 1, sk), r: -4, o: clamp((t - S(55.5)) * 7) });
+  const sb = spring(t - S(58.48), 15, .5); tf($('w_bs'), { c: true, s: lerp(1.8, 1, sb), r: -4, o: clamp((t - S(58.48)) * 7) });
+  pop($('w_no'), t, S(56.5), { c: true, from: .2 }); pop($('w_ok'), t, S(58.9), { c: true, from: .2 });
+  draw($('w_arr'), ease(seg(t, S(57.0), S(57.5)))); $('w_arh').style.opacity = clamp((t - S(57.45)) * 5);
+  pop($('w_p'), t, S(60.32), { c: true, from: .5 });
+};
+// week: 3 times a week ----------------------------------------------------------------
+const DAYS = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
+const WK = { 0: 64.82, 2: 65.1, 4: 65.38 }, WK2 = { 1: 67.06, 5: 67.24 };
+HTML.week = `
+  <div class="a ctr lbl li" id="wk_l" style="left:960px;top:230px;font-size:30px">Pubblicate</div>
+  <div class="a ctr h1" id="wk_t" style="left:960px;top:330px;font-size:100px">${MW('almeno 3 volte a settimana')}</div>
+  ${DAYS.map((d, i) => `<div class="card" id="wk_${i}" style="left:${255 + i * 200}px;top:470px;width:180px;height:250px">
+    <div class="a ctr lbl" style="left:90px;top:48px;font-size:24px;color:#9a83a6">${d}</div>
+    <div class="cc" id="wk_i${i}" style="left:90px;top:150px;width:96px;height:96px;background:#f1ecf4;transform:translate(-50%,-50%)">${icon('mega', 46, '#5e2d61', 2.2)}</div></div>`).join('')}
+  <div class="pill ctr" id="wk_p1" style="left:720px;top:850px">${icon('arrow', 28, '#5e2d61', 2.8)} anche più spesso</div>
+  <div class="pill ctr" id="wk_p2" style="left:1220px;top:850px;background:#ff5a6e;color:#fff">${icon('ban', 28, '#fff', 2.8)} mai sotto le 3 volte</div>`;
+U.week = t => {
+  rise($('wk_l'), t, S(63.56), { c: true }); words($('wk_t'), t, [S(64.38), S(64.82), S(65.1), S(65.38), S(65.62)]);
+  for (let i = 0; i < 7; i++) {
+    rise($('wk_' + i), t, S(63.7) + i * .06, { d: .5, dy: 50 });
+    const ic = $('wk_i' + i), t1 = WK[i] ?? WK2[i], main = WK[i] !== undefined;
+    if (t1 !== undefined && t > S(t1)) { const q = spring(t - S(t1), 15, .55); ic.style.background = main ? '#5e2d61' : '#dab6fc'; ic.innerHTML = icon(main ? 'check' : 'mega', 46, main ? '#fff' : '#30103d', main ? 3.2 : 2.2); ic.style.transform = `translate(-50%,-50%) scale(${lerp(.5, 1, q)})`; $('wk_' + i).style.boxShadow = main ? '0 0 0 6px #dab6fc,0 24px 50px rgba(25,4,35,.38)' : ''; }
+    else { ic.style.background = '#f1ecf4'; ic.innerHTML = icon('mega', 46, '#c9bdd0', 2.2); ic.style.transform = 'translate(-50%,-50%)'; $('wk_' + i).style.boxShadow = ''; }
+  }
+  pop($('wk_p1'), t, S(66.46), { c: true, from: .5 }); pop($('wk_p2'), t, S(68.1), { c: true, from: .5 });
+};
+// copy & paste the ad as it is ---------------------------------------------------------
+const AD = ['CERCASI AIUTO CUOCO – GERMANIA', 'Stipendio: 2.200 € netti al mese', 'Alloggio incluso', 'Contratto tedesco regolare', 'Scrivici in privato per info!'];
+const adLines = (sz, col) => AD.map((l, i) => `<div style="font:${i ? 600 : 800} ${i ? sz : sz + 2}px/1.45 INT;color:${col}">${i ? '• ' : ''}${l}</div>`).join('');
+HTML.copy = `
+  <div class="card" id="cp_ph" style="left:200px;top:180px;width:560px;height:760px;border-radius:48px;background:#1d0b25;border:10px solid #120617">
+    <div class="a" style="left:0;top:0;width:540px;height:110px;border-radius:38px 38px 0 0;background:#2b1236"></div>
+    <img class="a" src="${LOGO}" style="left:30px;top:24px;width:62px;height:62px">
+    <div class="a" style="left:110px;top:28px;font:800 30px PJS;color:#fff">LBS</div><div class="a" style="left:110px;top:66px;font:600 20px INT;color:#b9a3c6">testo dell'annuncio</div>
+    <div class="bub" id="cp_b" style="left:28px;top:150px;width:470px;white-space:normal;background:#fff;border-radius:8px 28px 28px 28px">${adLines(23, '#30103d')}</div>
+    <div class="a" id="cp_sel" style="left:22px;top:144px;width:482px;height:276px;border-radius:12px;background:rgba(218,182,252,.45);border:3px solid #dab6fc"></div>
+    <div class="pill" id="cp_cp" style="left:150px;top:450px;font-size:26px">${icon('copy', 28, '#5e2d61', 2.6)} Copia</div>
+  </div>
+  <div class="card" id="cp_fb" style="left:1000px;top:200px;width:740px;height:620px">
+    <div class="a" style="left:40px;top:36px;font:800 36px PJS">Crea un post</div>
+    <div class="a" style="left:40px;top:86px;font:600 24px INT;color:#8d7a97">nel gruppo · Lavoro in Germania – Offerte</div>
+    <div class="a" style="left:40px;top:140px;width:660px;height:320px;border-radius:18px;background:#faf7fc;border:3px solid #ece4f1"></div>
+    <div class="a" id="cp_txt" style="left:66px;top:164px;white-space:normal;width:610px;overflow:hidden">${adLines(26, '#30103d')}</div>
+    <div class="a" id="cp_pub" style="left:40px;top:494px;width:660px;height:84px;border-radius:16px;background:#5e2d61;display:flex;align-items:center;justify-content:center;font:800 32px INT;color:#fff">Pubblica</div>
+  </div>
+  <div class="cc" id="cp_clip" style="left:0;top:0;width:110px;height:110px;background:#dab6fc;box-shadow:0 16px 30px rgba(25,4,35,.35)">${icon('clip', 54, '#30103d', 2.2)}</div>
+  <div class="pill ctr" id="cp_p" style="left:1370px;top:900px;font-size:30px">${icon('lock', 30, '#5e2d61', 2.6)} Esattamente così com'è: <span style="color:#ff5a6e">&nbsp;niente modifiche</span></div>`;
+U.copy = t => {
+  slideIn($('cp_ph'), t, S(69.95), { dx: -140 }); slideIn($('cp_fb'), t, S(70.2), { dx: 140 });
+  pop($('cp_b'), t, S(70.36), { from: .6 });
+  const sel = seg(t, S(72.2), S(72.5)); $('cp_sel').style.opacity = t > S(72.2) ? Math.min(1, sel * 2) : 0; $('cp_sel').style.transformOrigin = '0 0'; $('cp_sel').style.transform = `scaleY(${eOut(sel)})`;
+  pop($('cp_cp'), t, S(72.44), { from: .4 });
+  const f = ease(seg(t, S(72.7), S(73.3))), x = lerp(500, 1370, f), y = lerp(560, 390, f) - Math.sin(f * Math.PI) * 220;
+  tf($('cp_clip'), { x, y, s: .7 + .3 * Math.sin(f * Math.PI) + (t > S(73.3) ? -.7 * eOut(seg(t, S(73.3), S(73.55))) : 0), o: t > S(72.62) && t < S(73.6) ? 1 : 0, c: true, r: f * 360 * .1 });
+  const pk = eOut(seg(t, S(73.3), S(74.1))); $('cp_txt').style.height = (pk * 300) + 'px'; $('cp_txt').style.opacity = pk > 0 ? 1 : 0;
+  pop($('cp_p'), t, S(75.46), { c: true, from: .5 });
+};
+// gold rule: match ad and groups ------------------------------------------------------
+const GCARD = (id, x, y, ic, a, b, col = '#5e2d61', h = 150) => `<div class="card" id="${id}" style="left:${x}px;top:${y - h / 2}px;width:470px;height:${h}px">
+  ${CIRC(id + 'i', 82, h / 2, 96, icon(ic, 46, '#fff', 2.2), col, 'transform:translate(-50%,-50%)')}
+  <div class="a" style="left:150px;top:${h / 2 - 40}px;font:800 20px INT;letter-spacing:.16em;color:#9a83a6">${a}</div>
+  <div class="a" style="left:150px;top:${h / 2 - 10}px;font:800 38px PJS">${b}</div></div>`;
+const GL = [['g_l1', 'M720 420 H1180', 80.36, 81.6, '#dab6fc'], ['g_l2', 'M720 640 H1180', 83.9, 85.3, '#dab6fc'], ['g_l3', 'M720 440 C 950 460, 950 860, 1180 860', 90.64, 91.5, '#ffffff'], ['g_l4', 'M720 660 C 950 680, 950 870, 1180 870', 91.3, 92.3, '#ffffff'], ['g_x', 'M720 450 C 950 470, 950 620, 1180 620', 93.6, 94.3, '#ff5a6e']];
+HTML.gold = `
+  <div class="a ctr" id="g_h" style="left:960px;top:205px;display:flex;align-items:center;gap:24px">${CIRC('g_m', 0, 0, 100, icon('medal', 54, '#30103d', 2.2), '#ffc542', 'position:relative;transform:none')}<span class="h1" style="font-size:84px">La regola d'oro</span></div>
+  <div class="a lbl li" id="g_c1" style="left:250px;top:300px;font-size:24px">L'annuncio</div>
+  <div class="a lbl li" id="g_c2" style="left:1200px;top:300px;font-size:24px">Va pubblicato nei gruppi</div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080">${GL.map(([id, d, , , c]) => `<path id="${id}" d="${d}" stroke="${c}" stroke-width="7" stroke-linecap="round" fill="none" pathLength="100" ${id === 'g_x' ? 'stroke-dasharray="4 4"' : ''}/>`).join('')}</svg>
+  ${GCARD('g_a1', 250, 420, 'helmet', 'ANNUNCIO', 'Edilizia')}${GCARD('g_a2', 250, 640, 'hat', 'ANNUNCIO', 'Ristorazione')}
+  ${GCARD('g_b1', 1200, 420, 'users', 'SOLO NEI GRUPPI DI', 'Edilizia')}${GCARD('g_b2', 1200, 640, 'users', 'SOLO NEI GRUPPI DI', 'Ristorazione')}
+  <div class="card" id="g_b3" style="left:1200px;top:790px;width:470px;height:180px;background:#dab6fc">
+    <div class="a" style="left:34px;top:26px;font:800 20px INT;letter-spacing:.16em;color:#5e2d61">GRUPPI GENERICI</div>
+    <div class="a" style="left:34px;top:58px;font:800 34px PJS">Qualsiasi annuncio</div>
+    <div class="a" id="g_t1" style="left:34px;top:112px;padding:10px 18px;border-radius:12px;background:#fff;font:700 22px INT">Cerco lavoro</div>
+    <div class="a" id="g_t2" style="left:212px;top:112px;padding:10px 18px;border-radius:12px;background:#fff;font:700 22px INT">Lavoro in Germania</div></div>
+  ${OK('g_ok1', 950, 420, 60)}${OK('g_ok2', 950, 640, 60)}${NO('g_no', 950, 548, 70)}
+  <div class="pill ctr" id="g_p" style="left:700px;top:960px;background:#ff5a6e;color:#fff;font-size:28px">${icon('alert', 28, '#fff', 2.6)} Non sbagliate l'abbinamento</div>`;
+U.gold = t => {
+  rise($('g_h'), t, S(77.5), { c: true }); pop($('g_m'), t, S(77.96), { from: .2, r0: -30 });
+  rise($('g_c1'), t, S(79.0)); rise($('g_c2'), t, S(80.3));
+  slideIn($('g_a1'), t, S(79.06), { dx: -120 }); slideIn($('g_b1'), t, S(80.62), { dx: 120 });
+  slideIn($('g_a2'), t, S(82.54), { dx: -120 }); slideIn($('g_b2'), t, S(84.28), { dx: 120 });
+  slideIn($('g_b3'), t, S(86.5), { dx: 120 }); pop($('g_t1'), t, S(87.92), { from: .4 }); pop($('g_t2'), t, S(89.24), { from: .4 });
+  GL.forEach(([id, , a, b]) => draw($(id), ease(seg(t, S(a), S(b)))));
+  pop($('g_ok1'), t, S(81.72), { c: true, from: .2 }); pop($('g_ok2'), t, S(85.38), { c: true, from: .2 }); pop($('g_no'), t, S(94.36), { c: true, from: .2 });
+  pop($('g_p'), t, S(93.5), { c: true, from: .5 });
+};
+// messenger + CV ----------------------------------------------------------------------
+HTML.msg = `
+  <div class="card" id="ms_post" style="left:160px;top:250px;width:660px;height:600px">
+    <div class="av" style="position:absolute;left:36px;top:34px;width:70px;height:70px;background:#5e2d61">${icon('users', 34, '#fff', 2)}</div>
+    <div class="a" style="left:124px;top:38px;font:800 28px PJS">Lavoro in Germania – Offerte</div><div class="a" style="left:124px;top:78px;font:600 21px INT;color:#8d7a97">Il vostro annuncio</div>
+    <div class="a" style="left:36px;top:132px;width:588px;height:180px;border-radius:16px;background:#f6f1f9;padding:22px 26px;white-space:normal">${adLines(21, '#5e4a68').split('</div>').slice(0, 3).join('</div>')}</div></div>
+    <div class="a" style="left:36px;top:340px;width:588px;height:2px;background:#eee6f2"></div>
+    <div class="a" id="ms_c1" style="left:36px;top:372px;display:flex;gap:16px;align-items:flex-start"><div class="av" style="width:58px;height:58px;background:#b9b0bd">${icon('user', 30, '#fff', 2.2)}</div><div style="padding:14px 22px;border-radius:22px;background:#f1ecf4;font:600 26px/1.3 INT"><b style="font-weight:800">Marco R.</b><br>Info, sono interessato!</div></div>
+    <div class="a" id="ms_c2" style="left:110px;top:500px;display:flex;gap:16px;align-items:flex-start"><img src="${LOGO}" style="width:50px;height:50px;border-radius:50%"><div style="padding:14px 22px;border-radius:22px;background:#f3e8fd;font:600 24px/1.3 INT">Ti ho scritto in privato!</div></div>
+  </div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="ms_arr" d="M760 520 C 900 380, 1000 380, 1090 470" stroke="#dab6fc" stroke-width="7" stroke-linecap="round" fill="none" pathLength="100" stroke-dasharray="3 3"/></svg>
+  <div class="card" id="ms_ch" style="left:1100px;top:250px;width:660px;height:640px;overflow:hidden">
+    <div class="a" style="left:0;top:0;width:660px;height:110px;background:#5e2d61"></div>
+    <div class="av" style="position:absolute;left:30px;top:22px;width:66px;height:66px;background:#b9b0bd">${icon('user', 34, '#fff', 2.2)}</div>
+    <div class="a" style="left:116px;top:26px;font:800 30px PJS;color:#fff">Marco R.</div><div class="a" style="left:116px;top:66px;font:600 21px INT;color:#dab6fc">Messenger · chat privata</div>
+    <div class="bub" id="ms_b1" style="right:28px;top:140px;background:#5e2d61;color:#fff;border-radius:24px 24px 6px 24px">Ciao Marco! Ti scrivo qui</div>
+    <div class="bub" id="ms_b2" style="right:28px;top:226px;background:#5e2d61;color:#fff;border-radius:24px 24px 6px 24px">Mi mandi il tuo CV?</div>
+    <div class="bub" id="ms_f" style="left:28px;top:320px;background:#f1ecf4;color:#30103d;display:flex;align-items:center;gap:16px;border-radius:24px 24px 24px 6px">${CIRC('ms_fi', 0, 0, 64, icon('doc', 34, '#fff', 2.2), '#5e2d61', 'position:relative;transform:none')}<div><b style="font:800 26px INT">CV_Marco.pdf</b><br><span style="font:600 20px INT;color:#8d7a97">Documento PDF</span></div></div>
+    <div class="a" id="ms_ok" style="left:28px;top:470px;width:604px;padding:18px 24px;border-radius:18px;background:#e3f7ec;color:#1f9a52;font:700 26px/1.35 INT;white-space:normal;display:flex;gap:14px;align-items:center">${icon('check', 34, '#1f9a52', 3.2)}<span>Niente CV? Va bene lo stesso:<br>raccogliete i dati del contatto</span></div>
+  </div>
+  <div class="pill ctr" id="ms_goal" style="left:960px;top:180px;font-size:28px">${icon('target', 30, '#5e2d61', 2.6)} Obiettivo: chat su Messenger + CV</div>`;
+U.msg = t => {
+  slideIn($('ms_post'), t, S(97.85), { dx: -120 }); pop($('ms_c1'), t, S(97.95), { from: .5 });
+  pop($('ms_goal'), t, S(98.26), { c: true, from: .5 });
+  draw($('ms_arr'), ease(seg(t, S(99.4), S(100.5)))); slideIn($('ms_ch'), t, S(100.3), { dx: 120 }); pop($('ms_c2'), t, S(100.66), { from: .5 });
+  pop($('ms_b1'), t, S(100.88), { from: .5 }); pop($('ms_b2'), t, S(101.72), { from: .5 }); pop($('ms_f'), t, S(102.72), { from: .4 });
+  const g = seg(t, S(103.5), S(104.0)); $('ms_f').style.filter = g > 0 ? `grayscale(${g})` : 'none'; if (g > 0) $('ms_f').style.opacity = 1 - .55 * g;
+  pop($('ms_ok'), t, S(104.54), { from: .6 });
+};
+// contact form ------------------------------------------------------------------------
+const FF = [['Nome e cognome', 'Marco Rossi', 106.28, 107.0], ['Cosa sa fare · esperienza', 'Aiuto cuoco · 3 anni di esperienza', 107.66, 109.5], ['Numero di telefono', '+39 3•• ••• ••••', 111.2, 112.0]];
+HTML.form = `
+  <div class="card" id="fm_c" style="left:460px;top:170px;width:1000px;height:740px">
+    <div class="a" style="left:44px;top:40px;display:flex;align-items:center;gap:20px">${CIRC('fm_i', 0, 0, 80, icon('user', 40, '#fff', 2.2), '#5e2d61', 'position:relative;transform:none')}<div><div style="font:800 42px PJS">Scheda contatto</div><div style="font:600 22px INT;color:#8d7a97">da chiedere a ogni candidato</div></div></div>
+    ${FF.map(([l], i) => `<div class="flb" style="top:${180 + i * 170}px">${l}</div><div class="fld" id="fm_f${i}" style="top:${214 + i * 170}px"><span id="fm_v${i}"></span></div>`).join('')}
+  </div>
+  <div class="a ctr" id="fm_star" style="left:1600px;top:${170 + 214 + 2 * 170 + 46}px;display:flex;align-items:center;gap:10px;padding:14px 22px;border-radius:14px;background:#ffc542;color:#30103d;font:800 24px INT;letter-spacing:.1em;box-shadow:0 12px 26px rgba(25,4,35,.3)">${icon('star', 28, '#30103d', 2.6)} FONDAMENTALE</div>`;
+U.form = t => {
+  pop($('fm_c'), t, S(105.62), { from: .8 });
+  FF.forEach(([, v, a, b], i) => { const act = t > S(a) - .3; $('fm_f' + i).style.borderColor = act ? (i === 2 && t > S(112.76) ? '#ffc542' : '#dab6fc') : '#ece4f1'; typeTo($('fm_v' + i), v, t, S(a), S(b), t < S(b) + .5 && act); if (!act) $('fm_v' + i).innerHTML = ''; });
+  const pk = t > S(112.76) ? Math.sin(seg(t, S(112.76), S(113.6)) * Math.PI) : 0; $('fm_f2').style.boxShadow = `0 0 0 ${pk * 14}px rgba(255,197,66,.45)`;
+  pop($('fm_star'), t, S(113.62), { c: true, from: .3, r0: -12 });
+};
+// answer only with the ad -------------------------------------------------------------
+HTML.reply = `
+  <div class="a ctr h1" id="rp_t" style="left:960px;top:220px;font-size:72px">${MW("Rispondete solo con l'annuncio")}</div>
+  <div class="card" id="rp_ad" style="left:200px;top:330px;width:620px;height:430px;padding:40px 44px;white-space:normal">${adLines(28, '#30103d')}</div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="rp_arr" d="M850 545 H1060" stroke="#dab6fc" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/><path id="rp_arh" d="M1035 520 L1065 545 L1035 570" stroke="#dab6fc" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+  <div class="bub" id="rp_b" style="left:1100px;top:400px;background:#fff;color:#30103d;border-radius:28px 28px 28px 6px;font-size:30px;white-space:normal;width:620px">Lo stipendio è di 2.200 € netti al mese, con alloggio incluso.</div>
+  <div class="bub" id="rp_x" style="left:1100px;top:610px;background:rgba(255,255,255,.14);color:#fff;border-radius:28px 28px 28px 6px;font-size:30px;white-space:normal;width:620px"><span style="position:relative">Forse ci sono anche dei bonus, credo…<i id="rp_st" style="position:absolute;left:-6px;right:-6px;top:50%;height:5px;background:#ff5a6e;transform-origin:0 50%"></i></span></div>
+  ${NO('rp_no', 1750, 655, 76)}
+  <div class="pill ctr" id="rp_p" style="left:1410px;top:850px;background:#ff5a6e;color:#fff;font-size:30px">${icon('ban', 30, '#fff', 2.8)} Non inventate nulla</div>`;
+U.reply = t => {
+  words($('rp_t'), t, S(115.04)); slideIn($('rp_ad'), t, S(115.2), { dx: -120 });
+  const hlk = seg(t, S(116.32), S(117.2)); $('rp_ad').style.boxShadow = `0 0 0 ${8 * Math.sin(hlk * Math.PI)}px #dab6fc,0 24px 50px rgba(25,4,35,.38)`;
+  draw($('rp_arr'), ease(seg(t, S(116.5), S(117.1)))); $('rp_arh').style.opacity = clamp((t - S(117.05)) * 5);
+  pop($('rp_b'), t, S(117.2), { from: .6 });
+  pop($('rp_x'), t, S(118.42), { from: .6 }); $('rp_st').style.transform = `scaleX(${eOut(seg(t, S(118.9), S(119.3)))})`; pop($('rp_no'), t, S(119.3), { c: true, from: .2 });
+  pop($('rp_p'), t, S(118.7), { c: true, from: .5 });
+};
+// EU citizenship flow -----------------------------------------------------------------
+HTML.eu = `
+  <svg class="a" style="left:0;top:0" width="1920" height="1080">
+    <path id="eu_a1" d="M560 540 H700" stroke="#dab6fc" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/>
+    <path id="eu_a2" d="M1180 500 C 1260 500, 1260 330, 1340 330" stroke="#2fbf6b" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/>
+    <path id="eu_a3" d="M1180 580 C 1260 580, 1260 760, 1340 760" stroke="#ff5a6e" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/></svg>
+  <div class="card" id="eu_n1" style="left:120px;top:430px;width:440px;height:220px">
+    ${CIRC('eu_i1', 220, 76, 96, icon('globe', 48, '#fff', 2), '#5e2d61', 'transform:translate(-50%,-50%)')}
+    <div class="a ctr" style="left:220px;top:162px;font:800 36px PJS">Candidato straniero</div></div>
+  <div class="card" id="eu_q" style="left:700px;top:380px;width:480px;height:320px">
+    <div class="a ctr" style="left:240px;top:100px">${EU(120)}</div>
+    <div class="a ctr" style="left:240px;top:215px;font:800 36px PJS">Ha la cittadinanza</div><div class="a ctr" style="left:240px;top:262px;font:800 36px PJS">europea?</div></div>
+  <div class="a lbl" id="eu_y" style="left:1238px;top:372px;font-size:26px;color:#2fbf6b">SÌ</div>
+  <div class="a lbl" id="eu_nn" style="left:1230px;top:680px;font-size:26px;color:#ff8a98">NO</div>
+  <div class="card" id="eu_ok" style="left:1340px;top:250px;width:460px;height:160px">
+    ${CIRC('eu_oki', 80, 80, 92, icon('check', 50, '#fff', 3.2), '#2fbf6b', 'transform:translate(-50%,-50%)')}
+    <div class="a" style="left:150px;top:44px;font:800 40px PJS">Procedete</div><div class="a" style="left:150px;top:94px;font:600 22px INT;color:#8d7a97">come per tutti i contatti</div></div>
+  <div class="card" id="eu_no" style="left:1340px;top:620px;width:460px;height:310px">
+    ${CIRC('eu_noi', 80, 76, 92, icon('heart', 44, '#fff', 2.4), '#ff5a6e', 'transform:translate(-50%,-50%)')}
+    <div class="a" style="left:150px;top:40px;font:800 34px PJS">Rispondete</div><div class="a" style="left:150px;top:84px;font:800 34px PJS">gentilmente</div>
+    <div class="bub" id="eu_b" style="left:30px;top:150px;width:400px;white-space:normal;background:#f1ecf4;font-size:23px;padding:14px 20px">“Purtroppo non possiamo aiutarti. Grazie e in bocca al lupo!”</div></div>`;
+U.eu = t => {
+  pop($('eu_n1'), t, S(120.3), { from: .6 }); draw($('eu_a1'), ease(seg(t, S(121.3), S(121.8))));
+  pop($('eu_q'), t, S(121.8), { from: .6 });
+  draw($('eu_a2'), ease(seg(t, S(124.12), S(124.7)))); rise($('eu_y'), t, S(124.3)); pop($('eu_ok'), t, S(124.7), { from: .6 });
+  draw($('eu_a3'), ease(seg(t, S(125.7), S(126.3)))); rise($('eu_nn'), t, S(125.9)); pop($('eu_no'), t, S(126.4), { from: .6 }); pop($('eu_b'), t, S(127.96), { from: .5 });
+};
+// don'ts ------------------------------------------------------------------------------
+const DT = [['euro', 'Vi chiedono quanto costa', "o se siete un'agenzia", 133.24, 'Non rispondete', 137.36, false],
+  ['alert', 'Insulti o provocazioni', 'anche da altre agenzie', 138.6, 'Mai a tono, non insultate', 142.58, false],
+  ['send', 'Scrivete subito a me', 'e raccontatemi cosa è successo', 145.88, 'Vi dico io come comportarvi', 148.84, true]];
+HTML.dont = `
+  ${DT.map(([ic, a, b, , act, , good], i) => `
+  <div class="card" id="dt_s${i}" style="left:150px;top:${200 + i * 250}px;width:880px;height:200px">
+    ${CIRC('dt_i' + i, 100, 100, 112, icon(ic, 54, '#fff', 2.2), good ? '#5e2d61' : '#30103d', 'transform:translate(-50%,-50%)')}
+    <div class="a" style="left:190px;top:50px;font:800 42px PJS">${a}</div><div class="a" style="left:190px;top:110px;font:600 30px INT;color:#7d6787">${b}</div></div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="dt_a${i}" d="M1050 ${300 + i * 250} H1150" stroke="#dab6fc" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/></svg>
+  <div class="a" id="dt_r${i}" style="left:1180px;top:${240 + i * 250}px;width:640px;height:120px;border-radius:24px;background:${good ? '#2fbf6b' : '#ff5a6e'};display:flex;align-items:center;gap:18px;padding:0 30px;font:800 33px PJS;color:#fff;box-shadow:0 18px 36px rgba(0,0,0,.3)">${icon(good ? 'check' : 'x', 44, '#fff', 3.2)}${act}</div>`).join('')}`;
+U.dont = t => DT.forEach(([, , , a, , b], i) => { slideIn($('dt_s' + i), t, S(a), { dx: -120 }); draw($('dt_a' + i), ease(seg(t, S(b) - .5, S(b) - .1))); pop($('dt_r' + i), t, S(b), { from: .5 }); });
+// pay ---------------------------------------------------------------------------------
+HTML.pay = `
+  <div class="card" id="py_a" style="left:200px;top:220px;width:700px;height:620px">
+    <div class="a ctr" id="py_av" style="left:350px;top:190px;font:800 210px/1 PJS;color:#5e2d61">1 €</div>
+    <div class="a ctr" style="left:350px;top:350px;font:800 40px PJS">per ogni CV o scheda</div><div class="a ctr" style="left:350px;top:402px;font:800 40px PJS">contatto completa</div>
+    <div class="a ctr" id="py_s" style="left:350px;top:520px;display:flex;align-items:center;gap:14px;padding:16px 26px;border-radius:16px;background:#f3e8fd;font:700 28px INT">${icon('send', 30, '#5e2d61', 2.4)} inviata a me in privato</div></div>
+  <div class="card" id="py_b" style="left:1020px;top:220px;width:700px;height:620px;overflow:hidden">
+    <div class="a ctr" id="py_bv" style="left:350px;top:190px;font:800 210px/1 PJS;color:#2fbf6b">+20 €</div>
+    <div class="a ctr" style="left:350px;top:350px;font:800 40px PJS">extra se la persona</div><div class="a ctr" style="left:350px;top:402px;font:800 40px PJS">parte per il lavoro</div>
+    <div class="a" id="py_pl" style="left:0;top:470px">${icon('plane', 64, '#5e2d61', 2)}</div></div>
+  <div class="a ctr" id="py_st" style="left:1370px;top:770px;padding:18px 30px;border:6px solid #5e2d61;border-radius:18px;color:#5e2d61;background:rgba(255,255,255,.92);font:800 30px INT;letter-spacing:.08em;text-align:center;line-height:1.25">CONFERMA DI PARTENZA<br><span style="font-size:24px">la do io (LBS)</span></div>
+  ${[0, 1, 2, 3, 4].map(i => CIRC('py_c' + i, 0, 0, 70, '<span style="font:800 34px PJS;color:#7a5a00">€</span>', '#ffc542', 'border:5px solid #f0a800')).join('')}`;
+U.pay = t => {
+  pop($('py_a'), t, S(156.0), { from: .7 }); pop($('py_av'), t, S(156.68), { c: true, from: .3 }); pop($('py_s'), t, S(160.06), { c: true, from: .5 });
+  for (let i = 0; i < 5; i++) { const t0 = S(157.2) + i * .22, k = seg(t, t0, t0 + .45); tf($('py_c' + i), { x: 580 + i * 26, y: lerp(120, 330 - i * 10, eIn(k)) + (k >= 1 ? 0 : 0), o: t > t0 ? (k < 1 ? 1 : 1 - seg(t, t0 + .45, t0 + .8)) : 0, c: true, r: k * 200 }); }
+  pop($('py_b'), t, S(161.38), { from: .7 }); pop($('py_bv'), t, S(164.04), { c: true, from: .3 });
+  const pk = ease(seg(t, S(161.9), S(164.6))); tf($('py_pl'), { x: lerp(-80, 760, pk), y: -Math.sin(pk * Math.PI) * 50, r: -10, o: pk > 0 && pk < 1 ? 1 : 0 });
+  const sk = spring(t - S(165.58), 15, .5); tf($('py_st'), { c: true, s: lerp(2, 1, sk), r: -7, o: clamp((t - S(165.58)) * 7) });
+};
+// recap -------------------------------------------------------------------------------
+const RC = [['2×', 'al mese', 'Aggiungete nuovi gruppi', 172.1], ['3×', 'a settimana', 'Pubblicate gli annunci', 174.42], ['chat', 'sempre', 'Contatti su Messenger', 176.68]];
+HTML.recap = `
+  <div class="a ctr h1" id="rc_t" style="left:960px;top:205px;font-size:90px">${MW('Ricapitoliamo')}</div>
+  ${RC.map(([a, b, c], i) => `<div class="card" id="rc_${i}" style="left:360px;top:${300 + i * 185}px;width:1200px;height:160px">
+    <div class="a" style="left:0;top:0;width:250px;height:160px;border-radius:28px 0 0 28px;background:#5e2d61;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff">${a === 'chat' ? icon('chat', 60, '#fff', 2.2) : `<span style="font:800 66px/1 PJS">${a}</span>`}<span style="font:700 22px INT;color:#dab6fc;margin-top:8px">${b}</span></div>
+    <div class="a" style="left:300px;top:52px;font:800 50px PJS">${c}</div>
+    ${OK('rc_ok' + i, 1110, 80, 72)}</div>`).join('')}
+  <div class="a ctr" id="rc_g" style="left:960px;top:930px;display:flex;align-items:center;gap:20px"><span id="rc_g1" style="display:inline-block">${icon('gear', 64, '#dab6fc', 2)}</span><span id="rc_g2" style="display:inline-block;margin-left:-14px;margin-top:30px">${icon('gear', 46, '#fff', 2)}</span><span class="h1" style="font-size:52px">…e il lavoro gira!</span></div>`;
+U.recap = t => {
+  words($('rc_t'), t, S(167.8) + .15);
+  RC.forEach(([, , , a], i) => { slideIn($('rc_' + i), t, S(a), { dx: 140 }); pop($('rc_ok' + i), t, S(179.0) + i * .2, { c: true, from: .2 }); });
+  rise($('rc_g'), t, S(178.86), { c: true }); $('rc_g1').style.transform = `rotate(${(t - S(178.86)) * 90}deg)`; $('rc_g2').style.transform = `rotate(${-(t - S(178.86)) * 130}deg)`;
+};
+// outro -------------------------------------------------------------------------------
+HTML.outro = `
+  <div class="a ctr" id="ou_q" style="left:960px;top:250px;display:flex;align-items:center;gap:22px">${CIRC('ou_qi', 0, 0, 96, icon('chat', 48, '#30103d', 2.2), '#dab6fc', 'position:relative;transform:none')}<span class="h1" style="font-size:58px">Per qualsiasi dubbio, scrivetemi</span></div>
+  <img class="a ctr" id="ou_logo" src="${LOGO}" style="left:960px;top:520px;width:250px;height:250px">
+  <div class="a ctr h1" id="ou_t" style="left:960px;top:750px;font-size:96px">${MW('Grazie e buon lavoro!')}</div>
+  <div class="a ctr lbl li" id="ou_s" style="left:960px;top:850px;font-size:30px">Il team di LBS · Lavoro Business e Servizi</div>`;
+U.outro = t => {
+  rise($('ou_q'), t, S(181.26), { c: true }); pop($('ou_logo'), t, S(183.0), { c: true, from: .3 });
+  words($('ou_t'), t, [S(183.34), S(183.78), S(184.04), S(184.34)]); rise($('ou_s'), t, S(184.66), { c: true });
+};
+
+// ---------- build DOM ----------
+const scenes = $('scenes');
+SC.forEach(s => { const d = document.createElement('div'); d.className = 'layer'; d.innerHTML = HTML[s.id]; scenes.appendChild(d); s.el = d; s.A = S(s.a) - (s.id.startsWith('ch') ? 0 : .05); s.B = S(s.b); });
+SC[0].A = -1;
+// HUD: guide title, chapter tabs, progress
+$('hud').innerHTML = `
+  <div class="a" id="hd_l" style="left:56px;top:40px;display:flex;align-items:center;gap:16px"><img src="${LOGO}" style="width:58px;height:58px"><div><div class="lbl" style="font-size:19px;color:#fff">Guida collaboratori</div><div style="font:600 18px INT;color:#dab6fc;margin-top:4px">Annunci di lavoro su Facebook</div></div></div>
+  <div class="a" id="hd_t" style="right:56px;top:46px;display:flex;gap:10px">${TABS.map((n, i) => `<div class="tab" id="tab${i}"><b>${i + 1}</b>${n}</div>`).join('')}</div>
+  <div class="a" style="left:0;bottom:0;width:1920px;height:8px;background:rgba(255,255,255,.12)"><div id="hd_p" style="width:100%;height:8px;background:#dab6fc;transform-origin:0 50%"></div></div>`;
+
+// ---------- background (pattern from the LBS videos) ----------
+const PAT = {
+  truck: 'M2 6.5h11.5v9.5H2z M13.5 9.5h4.2l3.8 3.6v2.9h-8z M4 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0 M15.2 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0',
+  pizza: 'M3.5 4.5Q12 1.5 20.5 4.5L12 21.5z M4.6 6.8Q12 4.2 19.4 6.8 M8.9 9.4a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0 M12.9 11.8a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0 M10.4 15.2a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',
+  hat: 'M6.5 13.5C3.4 13.4 3 8.6 6.4 8C6.9 4.3 11.7 3.1 13.6 5.8C16.6 4.6 20.6 7.3 18.5 10.9C18 12 17.5 13.5 17.5 13.5 M6.5 13.5h11v5.6h-11z M6.5 16.2h11',
+  brief: 'M3 7.5h18v12H3z M9 7.5V5h6v2.5 M3 12.5h18',
+};
+const TILE = (() => { const c = document.createElement('canvas'); c.width = 1040; c.height = 840; const x = c.getContext('2d'), r = rng(31), names = Object.keys(PAT);
+  x.strokeStyle = '#fff'; x.lineWidth = 1.25; x.lineJoin = x.lineCap = 'round';
+  for (let row = 0; row < 4; row++) for (let k = 0; k < 4; k++) {
+    const cx = k * 260 + (row % 2 ? 130 : 0) + 65, cy = row * 210 + 70, n = names[(row * 3 + k) % 4], rot = (r() - .5) * .45;
+    for (const dx of [0, 1040]) { if (dx && cx > 130) continue; x.save(); x.translate(cx + dx, cy); x.rotate(rot); x.scale(2.9, 2.9); x.translate(-12, -12); x.stroke(new Path2D(PAT[n])); x.restore(); }
+  } return c; })();
+const bgc = $('bg').getContext('2d'), PW = bgc.createPattern(TILE, 'repeat');
+{ const g = $('glow').getContext('2d'), gw = 2320, gh = 1380;
+  const blob = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, gw, gh); };
+  blob(620, 420, 820, 'rgba(218,182,252,.16)'); blob(1800, 1050, 820, 'rgba(48,16,61,.55)'); blob(1700, 260, 560, 'rgba(218,182,252,.1)'); }
+const GRAIN = []; { const r = rng(99); for (let k = 0; k < 4; k++) { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), im = x.createImageData(256, 256); for (let i = 0; i < im.data.length; i += 4) { const v = r() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); GRAIN.push(`url(${c.toDataURL()})`); } }
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const TR = .45;   // scene cross-fade
+function vis(s, t) { if (t < s.A - .05 || t > s.B + TR) return 0; return seg(t, s.A, s.A + TR) * (1 - seg(t, s.B, s.B + TR)); }
+function drawBg(t, V) {
+  let sw = 0, rgb = [0, 0, 0], dark = 0;
+  SC.forEach((s, i) => { const v = V[i]; if (!v) return; const c = hex(s.bg); sw += v; rgb = rgb.map((x, k) => x + c[k] * v); if (s.bg === D) dark += v; });
+  if (sw < 1e-4) { rgb = hex(P); sw = 1; }
+  rgb = rgb.map(x => Math.round(x / sw)); dark /= sw;
+  bgc.fillStyle = `rgb(${rgb})`; bgc.fillRect(0, 0, W, H);
+  const ox = -(t * 14) % 1040, oy = -(t * 8) % 840;
+  bgc.save(); bgc.translate(ox, oy); bgc.globalAlpha = .13 * (1 - .5 * dark); bgc.fillStyle = PW; bgc.fillRect(-ox, -oy, W, H); bgc.restore(); bgc.globalAlpha = 1;
+  const g = $('glow'); g.style.opacity = .9; g.style.transform = `translate(${Math.sin(t * .23) * 120}px,${Math.cos(t * .17) * 70}px)`;
+}
+// chapter wipes: three bars sweep across just as the chapter card arrives
+const WIPES = CHAP.map(c => S(c[0]));
+function wipes(t) {
+  const bars = [$('wb0'), $('wb1'), $('wb2')], off = [-.07, 0, .06];
+  let T = null; for (const w of WIPES) if (Math.abs(t - w) < .62) T = w;
+  bars.forEach((b, i) => {
+    if (T === null) { b.style.visibility = 'hidden'; return; }
+    const k = ease(seg(t, T - .45 + off[i] * 2, T + .45 + off[i] * 2));
+    b.style.visibility = k > 0 && k < 1 ? 'visible' : 'hidden';
+    b.style.transform = `translate(${lerp(-4600, 2400, k)}px,0) skewX(-18deg)`;
+  });
+}
+
+function seekImpl(t) {
+  const V = SC.map(s => vis(s, t));
+  drawBg(t, V);
+  SC.forEach((s, i) => {
+    const v = V[i]; s.el.style.display = v > 0 ? 'block' : 'none'; if (!v) return;
+    const kin = seg(t, s.A, s.A + TR), kout = seg(t, s.B, s.B + TR), life = seg(t, s.A, s.B + TR);
+    s.el.style.opacity = s.id.startsWith('ch') ? (t < s.A + .02 ? 0 : 1 - kout) : v;
+    s.el.style.transform = `scale(${(1 + .025 * life) * lerp(.97, 1, eOut(kin)) * lerp(1, 1.04, eIn(kout))})`;
+    const bl = (1 - eOut(kin)) * 8 + eIn(kout) * 10; s.el.style.filter = bl > .1 ? `blur(${bl.toFixed(2)}px)` : 'none';
+    U[s.id](t);
+  });
+  wipes(t);
+  // HUD
+  const hudOn = seg(t, S(8.2), S(8.9)) * (1 - seg(t, S(181.0), S(181.6)));
+  $('hud').style.opacity = hudOn; $('hud').style.transform = `translateY(${(1 - hudOn) * -20}px)`;
+  const cur = CHAP.reduce((a, c, i) => t >= S(c[0]) ? i : a, -1), recap = t >= S(167.8);
+  TABS.forEach((_, i) => { const el = $('tab' + i), on = i === cur && !recap, done = i < cur || recap; el.style.background = on ? '#fff' : done ? 'rgba(218,182,252,.28)' : 'rgba(255,255,255,.1)'; el.style.color = on ? '#5e2d61' : '#fff'; el.firstElementChild.style.background = on ? '#5e2d61' : done ? '#2fbf6b' : 'rgba(255,255,255,.18)'; el.firstElementChild.innerHTML = done ? icon('check', 16, '#fff', 3.4) : String(i + 1); el.firstElementChild.style.color = '#fff'; const pk = on ? spring(t - S(CHAP[i][0]), 14, .55) : 1; el.style.transform = `scale(${on ? lerp(.85, 1, pk) : 1})`; });
+  $('hd_p').style.transform = `scaleX(${clamp(t / DUR)})`;
+  $('grain').style.backgroundImage = GRAIN[Math.floor(t * 24) % 4];
+  $('fade').style.opacity = Math.max(1 - seg(t, 0, .35), seg(t, DUR - 1.0, DUR - .05));
+}
+
+// =========================================================================================
+// AUDIO: voice + light "tutorial" bed, 108 BPM in F major (Rhodes, pluck, soft drums), ducked under the voice
+const BPM = 108, BEAT = 60 / BPM, BAR = 4 * BEAT;
+const VO_URL = 'data:audio/mpeg;base64,{{VO}}';
+window.buildAudio = async function (ctx) {
+  const sr = ctx.sampleRate;
+  const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .1;
+  const out = ctx.createGain(); out.gain.value = .6; lim.connect(out); out.connect(ctx.destination);
+  const master = ctx.createGain(); master.gain.value = .7; master.connect(lim);
+  const ir = ctx.createBuffer(2, Math.floor(sr * 2.2), sr);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c), r = rng(5 + c); for (let i = 0; i < d.length; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / d.length, 3.2); }
+  const verb = ctx.createConvolver(); verb.buffer = ir; const vr = ctx.createGain(); vr.gain.value = .35; verb.connect(vr); vr.connect(master);
+  const music = ctx.createGain(); music.connect(master); const ms = ctx.createGain(); ms.gain.value = .3; music.connect(ms); ms.connect(verb);
+  const sfx = ctx.createGain(); sfx.gain.value = .55; sfx.connect(master); const ss = ctx.createGain(); ss.gain.value = .2; sfx.connect(ss); ss.connect(verb);
+  // duck the music under the voice; it comes up on the chapter pauses
+  const lo = .26, hi = .62; music.gain.setValueAtTime(.62, 0);
+  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, voT(a) - .3, .1); music.gain.setTargetAtTime(BRK.some(k => Math.abs(k.c - b) < .7) ? .9 : hi, voT(b) + .1, .25); }
+  music.gain.setTargetAtTime(.6, voT(186.2), .4); music.gain.setTargetAtTime(0, DUR - 1.4, .35);
+  // voice, in chunks around the pauses
+  try {
+    const vb = await ctx.decodeAudioData(await (await fetch(VO_URL)).arrayBuffer());
+    const vg = ctx.createGain(); vg.gain.value = 1.05; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 70; hp.connect(vg); vg.connect(master);
+    const cuts = [0, ...BRK.map(b => b.c), vb.duration];
+    for (let i = 0; i + 1 < cuts.length; i++) { const src = ctx.createBufferSource(); src.buffer = vb; src.connect(hp); src.start(voT(cuts[i]), cuts[i], cuts[i + 1] - cuts[i]); }
+  } catch (e) { console.warn('voice not decoded', e); }
+
+  const nb = ctx.createBuffer(1, sr * 2, sr); { const d = nb.getChannelData(0), r = rng(1234); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
+  const noise = (t, dur, { type = 'highpass', f = 1000, q = .7, g = .2, dest = sfx, f2, a = .002, pan = 0 } = {}) => {
+    const s = ctx.createBufferSource(); s.buffer = nb; s.loop = true;
+    const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q; if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + a); e.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    const p = ctx.createStereoPanner(); p.pan.value = pan; s.connect(fl); fl.connect(e); e.connect(p); p.connect(dest); s.start(t, (t * 7.3) % 1.5); s.stop(t + dur + .05);
+  };
+  const tone = (t, f, dur, { type = 'sine', g = .1, a = .005, dest = sfx, f2, lp, pan = 0, det = 0 } = {}) => {
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = det; if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur * .8);
+    const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + a); e.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    let n = o; if (lp) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; o.connect(fl); n = fl; }
+    const p = ctx.createStereoPanner(); p.pan.value = pan; n.connect(e); e.connect(p); p.connect(dest); o.start(t); o.stop(t + dur + .05);
+  };
+  // Rhodes-like electric piano: FM bell tone
+  const rhodes = (t, m, g, dur = 1.6, pan = 0) => {
+    const f = mtof(m), c = ctx.createOscillator(), mo = ctx.createOscillator(), mg = ctx.createGain(), e = ctx.createGain(), p = ctx.createStereoPanner();
+    c.frequency.value = f; mo.frequency.value = f; mg.gain.setValueAtTime(f * 1.6, t); mg.gain.exponentialRampToValueAtTime(f * .08, t + .5);
+    mo.connect(mg); mg.connect(c.frequency); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + .006); e.gain.exponentialRampToValueAtTime(g * .35, t + .4); e.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    p.pan.value = pan; c.connect(e); e.connect(p); p.connect(music); c.start(t); mo.start(t); c.stop(t + dur + .05); mo.stop(t + dur + .05);
+  };
+  const pluck = (t, m, g, pan = 0) => { tone(t, mtof(m), .5, { type: 'triangle', g, dest: music, pan, lp: 3000 }); tone(t, mtof(m) * 2, .18, { g: g * .3, dest: music, pan }); };
+  const chime = (t, m, g = .06) => { tone(t, mtof(m), 1.4, { g }); tone(t, mtof(m) * 2.76, .45, { g: g * .25 }); };
+
+  const PROG = [[53, 57, 60, 64], [50, 53, 57, 60], [46, 50, 53, 57], [48, 52, 55, 58]], ROOT = [41, 38, 34, 36];
+  const MEL = [[72, 0, 76, 1.5, 74, 2.5], [69, 0, 72, 1.5, 74, 3], [70, 0, 69, 1, 65, 2.5], [67, 0, 69, 1.5, 72, 2.5]];
+  const nBars = Math.ceil(DUR / BAR);
+  const quiet = t => (t >= S(50.55) && t < S(61.6)) || (t >= S(133.05) && t < S(152.05));   // warnings: no drums
+  for (let n = 0; n < nBars; n++) {
+    const t = .15 + n * BAR, ci = n % 4, ch = PROG[ci], intro = t < S(8.0), end = t > DUR - 3.5;
+    if (t > DUR - 1.2) break;
+    // Rhodes comping: on 1, the "and" of 2, and 4
+    for (const [b, gg] of [[0, .07], [1.5, .05], [3, .045]]) ch.forEach((m, j) => rhodes(t + b * BEAT + j * .008, m, gg, 1.4, (j - 1.5) * .15));
+    // bass
+    if (!intro) { tone(t, mtof(ROOT[ci]), BEAT * 1.6, { type: 'triangle', g: .2, a: .01, dest: music, lp: 500 }); tone(t + 2.5 * BEAT, mtof(ROOT[ci] + 7), BEAT * .9, { type: 'triangle', g: .14, a: .01, dest: music, lp: 500 }); }
+    // pluck melody every other phrase
+    if (!quiet(t) && Math.floor(n / 4) % 2 === 1 && !end) { const ml = MEL[ci]; for (let k = 0; k < ml.length; k += 2) pluck(t + ml[k + 1] * BEAT, ml[k], .05, .2); }
+    // drums
+    if (!intro && !quiet(t) && !end) for (let b = 0; b < 4; b++) {
+      const tb = t + b * BEAT;
+      if (b === 0 || b === 2) { const o = ctx.createOscillator(), e = ctx.createGain(); o.frequency.setValueAtTime(110, tb); o.frequency.exponentialRampToValueAtTime(48, tb + .1); e.gain.setValueAtTime(.32, tb); e.gain.exponentialRampToValueAtTime(.001, tb + .3); o.connect(e); e.connect(music); o.start(tb); o.stop(tb + .32); }
+      if (b === 1 || b === 3) { noise(tb, .08, { type: 'bandpass', f: 1800, q: 2.5, g: .1, dest: music }); tone(tb, 380, .04, { g: .04, dest: music }); }
+      for (let s = 0; s < 4; s++) noise(tb + s * BEAT / 4 + (s % 2 ? .02 : 0), .03, { f: 7500, g: s % 2 ? .02 : .035, dest: music, pan: .3 });
+    }
+  }
+  // closing chord
+  [53, 57, 60, 64, 69].forEach((m, j) => rhodes(DUR - 3.2 + j * .06, m, .07, 3));
+
+  // ---- sound effects, read from the same scene times ----
+  const whoosh = (t, g = .13, pan = 0) => noise(t - .25, .55, { type: 'bandpass', f: 600, f2: 3500, q: 1, g, a: .22, pan });
+  const popS = (t, i = 0) => { tone(t, 420 + (i % 5) * 60, .1, { f2: 820 + (i % 5) * 70, g: .1 }); noise(t, .03, { type: 'bandpass', f: 3000, q: 2, g: .05 }); };
+  const ding = (t, i = 0) => { tone(t, mtof(84 + [0, 4, 7][i % 3]), .25, { g: .07 }); tone(t + .06, mtof(91 + [0, 4, 7][i % 3]), .3, { g: .04 }); };
+  const click = t => { noise(t, .02, { type: 'bandpass', f: 4000, q: 4, g: .14 }); tone(t, 1800, .02, { g: .03 }); };
+  const key = (t, i) => { noise(t, .025, { type: 'bandpass', f: 2600 + (i % 4) * 400, q: 3, g: .07, pan: ((i % 5) - 2) * .08 }); tone(t, 150, .03, { g: .03 }); };
+  const stamp = t => { tone(t, 150, .3, { f2: 55, g: .4 }); noise(t, .12, { type: 'lowpass', f: 2200, g: .2 }); };
+  const buzz = t => { tone(t, 160, .12, { type: 'square', g: .03, lp: 900 }); tone(t + .15, 150, .14, { type: 'square', g: .03, lp: 900 }); };
+  const coin = (t, i) => { tone(t, mtof(88 + i % 3), .12, { type: 'square', g: .025, lp: 4000 }); tone(t + .07, mtof(95 + i % 3), .4, { type: 'square', g: .025, lp: 4000 }); };
+  // chapter stingers: whoosh into the wipe + rising chime arpeggio
+  CHAP.forEach(([c]) => { const t = S(c); noise(t - .55, .9, { type: 'bandpass', f: 400, f2: 4500, q: 1.2, g: .3, a: .45 }); tone(t, 90, .7, { f2: 40, g: .35 }); [72, 76, 79, 84].forEach((m, j) => chime(t + .25 + j * .09, m, .05)); });
+  chime(S(167.8) + .1, 77, .05); chime(S(167.8) + .2, 81, .05); chime(S(167.8) + .3, 84, .05); whoosh(S(167.8));
+  // scene changes
+  SC.forEach((s, i) => { if (i && !s.id.startsWith('ch')) whoosh(s.A + .05, .1, i % 2 ? .3 : -.3); });
+  // intro/steps/job
+  chime(S(.3), 84, .06); popS(S(1.4)); for (let i = 0; i < 5; i++) popS(S(6.3 + i * .26), i);
+  [8.32, 10.66, 12.52].forEach((x, i) => popS(S(x), i)); popS(S(14.6), 2); noise(S(16.42), .35, { type: 'bandpass', f: 2000, f2: 5000, q: 2, g: .05 });
+  // calendar
+  [24.92, 25.1].forEach((x, i) => ding(S(x), i));
+  // search: typing, results, joins, checks
+  KW.forEach(k => { const n = k.q.length; for (let c = 0; c < n; c++) key(S(k.t0) + (S(k.t1) - S(k.t0)) * c / n, c); noise(S(k.t1) + .12, .2, { type: 'bandpass', f: 1500, f2: 3000, q: 1, g: .05 }); k.join.forEach(jt => click(S(jt))); popS(S(k.chk), 3); });
+  // warning
+  tone(S(50.66), mtof(76), .35, { type: 'triangle', g: .08 }); tone(S(50.66) + .18, mtof(72), .5, { type: 'triangle', g: .08 });
+  stamp(S(55.5)); buzz(S(56.5)); stamp(S(58.48)); ding(S(58.9), 2); popS(S(60.32)); ding(S(61.08), 1);
+  // week
+  [64.82, 65.1, 65.38].forEach((x, i) => ding(S(x), i)); [67.06, 67.24].forEach((x, i) => popS(S(x), i)); buzz(S(68.1));
+  // copy & paste
+  ding(S(70.36), 0); click(S(72.44)); noise(S(72.7), .6, { type: 'bandpass', f: 1200, f2: 3000, q: 1, g: .08, a: .3 }); click(S(73.3)); popS(S(75.46), 1);
+  // gold rule
+  chime(S(77.96), 84, .07); chime(S(78.06), 88, .06); chime(S(78.16), 91, .05);
+  [81.72, 85.38].forEach((x, i) => ding(S(x), i)); [90.64, 91.3].forEach(x => noise(S(x), .5, { type: 'bandpass', f: 800, f2: 2500, q: 1, g: .06, a: .2 })); buzz(S(94.36));
+  // messenger
+  popS(S(97.95)); popS(S(98.26), 2); [100.88, 101.72].forEach(x => noise(S(x), .12, { type: 'bandpass', f: 2400, f2: 900, q: 1, g: .08 })); ding(S(102.72), 2); ding(S(102.86), 0); ding(S(104.54), 1);
+  // form
+  FF.forEach(([, v, a, b]) => { for (let c = 0; c < v.length; c++) key(S(a) + (S(b) - S(a)) * c / v.length, c); }); stamp(S(113.62)); chime(S(113.7), 89, .05);
+  // reply / eu
+  ding(S(117.2), 0); noise(S(118.9), .3, { type: 'bandpass', f: 1800, f2: 4200, q: 3, g: .12 }); buzz(S(119.3));
+  popS(S(120.3)); popS(S(121.8), 2); ding(S(124.7), 2); tone(S(126.4), mtof(69), .3, { type: 'triangle', g: .06 }); popS(S(127.96), 1);
+  // don'ts
+  DT.forEach(([, , , a, , b, good], i) => { whoosh(S(a), .08); if (good) ding(S(b), 2); else buzz(S(b)); });
+  // pay
+  for (let i = 0; i < 5; i++) coin(S(157.2) + i * .22 + .45, i); stamp(S(156.68)); stamp(S(164.04)); noise(S(161.9), 2.6, { type: 'bandpass', f: 400, f2: 1800, q: 1.4, g: .09, a: 1.2, pan: .3 }); stamp(S(165.58));
+  // recap / outro
+  [172.1, 174.42, 176.68].forEach((x, i) => popS(S(x), i)); for (let i = 0; i < 3; i++) ding(S(179.0) + i * .2, i);
+  popS(S(181.26)); chime(S(183.0), 84, .07); chime(S(183.12), 88, .06); chime(S(183.24), 91, .06);
+};
+
+async function boot() {
+  await Promise.all([...document.fonts].map(f => f.load().catch(() => { })));
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.decode().catch(() => { })));
+  window.seek = seekImpl;
+  seekImpl(0);
+  if (RENDER) return;
+  const stage = $('stage'), fit = () => { const k = Math.min(innerWidth / W, (innerHeight - 50) / H); stage.style.transform = `scale(${k})`; }; fit(); addEventListener('resize', fit);
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() { ac ??= new AudioContext(); if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); } src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination); src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; $('pb').textContent = 'Pausa ❚❚'; }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; $('pb').textContent = 'Play ▶'; }
+  const now = () => playing ? (offset + ac.currentTime - startAt) % DUR : offset;
+  $('pb').onclick = () => playing ? pause() : play();
+  $('sc').oninput = e => { const was = playing; pause(); offset = e.target.value / 1000 * DUR; if (was) play(); };
+  (function loop() { const t = now(); seekImpl(t); $('sc').value = t / DUR * 1000; $('tc').textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+}
+boot();
+</script></body></html>
