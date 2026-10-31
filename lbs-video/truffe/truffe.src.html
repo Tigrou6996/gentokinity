@@ -47,14 +47,14 @@ svg{overflow:visible}
  Area sicura TikTok: niente di importante sopra y 230, sotto y 1500, né a destra di x 930 (pulsanti).
  Sottotitoli parola per parola (testo del copione, tempi della voce). τ = tempo della voce, t = τ + O.
  0     hook: offerta "troppo bella", 3 bandierine, "Scappa!" allarme          5.78  RED FLAG #1 (drop del beat)
- 8.1   chat: "Mandaci 200 € per la pratica", soldi che volano, "Certo, come no", timbro TRUFFA, MAI!
- 15.3  RED FLAG #2   17.3 contratto e busta paga barrati, "ti paghiamo a mano", NO GRAZIE
- 24.04 RED FLAG #3   25.9 caparra della casa, valigia, la casa sparisce (womp womp)
- 32.7  LBS: logo, 11+ anni, IT->DE, contratto/alloggio/assistenza    44.8 ZERO ANTICIPI, TUTTO IN BUSTA PAGA
- 48.4  condividi "Mandalo a chi sta per partire"     51.9  logo e contatti */
+ 8.0   chat: "Devi decidere entro stasera", countdown, ULTIMO POSTO, "Ah sì? Che fortuna", timbro TRUFFA, "ti lascia il tempo"
+ 17.2  RED FLAG #2   19.2 contratto e busta paga barrati, "ti paghiamo a mano", NO GRAZIE
+ 25.6 RED FLAG #3   25.9 caparra della casa, valigia, la casa sparisce (womp womp)
+ 34.24  LBS: logo, 11+ anni, IT->DE, contratto/alloggio/assistenza    44.8 ZERO ANTICIPI, TUTTO IN BUSTA PAGA
+ 49.95  condividi "Mandalo a chi sta per partire"     53.45  logo e contatti */
 const W = 1080, H = 1920, O = 0.3;
 const RENDER = location.search.includes('render'); if (RENDER) document.body.classList.add('render');
-const TAU_END = 53.8, DUR = O + TAU_END;
+const TAU_END = 55.4, DUR = O + TAU_END;
 window.VIDEO = { w: W, h: H, duration: DUR };
 const $ = id => document.getElementById(id), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k, seg = (t, a, b) => clamp((t - a) / (b - a));
@@ -78,10 +78,11 @@ const IC = {
   check: '<path d="M20 6L9 17l-5-5"/>', x: '<path d="M18 6L6 18M6 6l12 12"/>',
   doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
   home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   share: '<path d="M14 4l7 7-7 7v-4c-6 0-9 2-11 6 1-7 4-11 11-12z"/>',
   user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
-  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a17.2 17.2 0 0 1 4 10 17.2 17.2 0 0 1-4 10 17.2 17.2 0 0 1-4-10 17.2 17.2 0 0 1 4-10z"/>',
   plane: '<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
   heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>',
   chat: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
@@ -102,11 +103,11 @@ const SUIT = (s, col = '#fff') => `<svg width="${s}" height="${s * .95}" viewBox
 // ---------- captions (script words on voice timings) ----------
 const CAPS = {{CAPS}};
 // ---------- timeline ----------
-const RF = [[5.78, 1], [15.3, 2], [24.04, 3]];
-const HITS = [[4.7, 30, '#ff3b4f', .55], [5.78, 40, '#ff3b4f', .7], [13.58, 18, '#fff', .2], [14.5, 34, '#ff3b4f', .5], [15.3, 40, '#ff3b4f', .7], [18.18, 14, '#ff3b4f', .2], [19.68, 14, '#ff3b4f', .2],
-  [22.78, 26, '#ff3b4f', .4], [24.04, 40, '#ff3b4f', .7], [31.48, 16, '#000', .0], [32.7, 26, '#dab6fc', .7], [33.18, 22, '#fff', .3], [45.52, 26, '#2fbf6b', .45], [47.82, 18, '#2fbf6b', .3]];
-const SC = [['hook', 0, 5.7, 'dark'], ['rf1', 5.7, 8.05, 'red'], ['chat1', 8.05, 15.25, 'dark'], ['rf2', 15.25, 17.3, 'red'], ['docs', 17.3, 23.98, 'dark'], ['rf3', 23.98, 25.85, 'red'],
-  ['house', 25.85, 32.62, 'dark'], ['lbs1', 32.62, 36.6, 'lbs'], ['lbs2', 36.6, 40.1, 'lbs'], ['lbs3', 40.1, 44.78, 'lbs'], ['fin', 44.78, 48.4, 'lbs'], ['cta', 48.4, 51.9, 'lbs'], ['end', 51.9, TAU_END + 1, 'lbs']].map(([id, a, b, bg]) => ({ id, a, b, bg }));
+const RF = [[5.78, 1], [17.2, 2], [25.6, 3]];
+const HITS = [[4.7, 30, '#ff3b4f', .55], [5.78, 40, '#ff3b4f', .7], [10.32, 12, '#ffd43b', .15], [12.46, 30, '#ff3b4f', .45], [14.32, 12, '#2fbf6b', .25], [17.2, 40, '#ff3b4f', .7], [20.02, 14, '#ff3b4f', .2], [21.54, 14, '#ff3b4f', .2],
+  [24.4, 26, '#ff3b4f', .4], [25.6, 40, '#ff3b4f', .7], [32.86, 16, '#000', .0], [34.24, 26, '#dab6fc', .7], [34.88, 22, '#fff', .3], [47.08, 26, '#2fbf6b', .45], [49.34, 18, '#2fbf6b', .3]];
+const SC = [['hook', 0, 5.7, 'dark'], ['rf1', 5.7, 8.0, 'red'], ['chat1', 8.0, 17.15, 'dark'], ['rf2', 17.15, 19.2, 'red'], ['docs', 19.2, 25.55, 'dark'], ['rf3', 25.55, 26.95, 'red'],
+  ['house', 26.95, 34.15, 'dark'], ['lbs1', 34.15, 38.1, 'lbs'], ['lbs2', 38.1, 41.8, 'lbs'], ['lbs3', 41.8, 46.3, 'lbs'], ['fin', 46.3, 49.95, 'lbs'], ['cta', 49.95, 53.45, 'lbs'], ['end', 53.45, TAU_END + 1, 'lbs']].map(([id, a, b, bg]) => ({ id, a, b, bg }));
 const HTML = {}, U = {};
 
 // hook: the "too good" offer ----------------------------------------------------------
@@ -120,7 +121,7 @@ HTML.hook = `
   <div class="a" id="hk_al" style="left:150px;top:400px;width:780px;height:700px;border-radius:36px;border:14px solid #ff3b4f;box-shadow:0 0 60px #ff3b4f"></div>`;
 U.hook = t => {
   const k = spring(t - S(.15), 11, .62); tf($('hk_c'), { y: (1 - k) * 600, r: (1 - k) * 8, o: clamp((t - S(.15)) * 5) });
-  [[2.92, 230, 380, -14], [3.16, 540, 330, 4], [3.36, 850, 380, 16]].forEach(([a, x, y, r], i) => { pop($('hk_f' + i), t, S(a), { from: .1, x, y, r }); wave($('hk_fl' + i), t); });
+  [[2.94, 230, 380, -14], [3.2, 540, 330, 4], [3.44, 850, 380, 16]].forEach(([a, x, y, r], i) => { pop($('hk_f' + i), t, S(a), { from: .1, x, y, r }); wave($('hk_fl' + i), t); });
   const al = t > S(4.7) ? .5 + .5 * Math.sin((t - S(4.7)) * 26) : 0; $('hk_al').style.opacity = al;
   if (t > S(4.7)) { const s = seg(t, S(5.25), S(5.7)); $('hk_c').style.transform += ` translate(${Math.sin(t * 90) * 10 + eIn(s) * 1200}px,0) rotate(${eIn(s) * 25}deg)`; $('hk_al').style.transform = $('hk_c').style.transform.replace(/^.*?translate/, 'translate'); }
 };
@@ -139,27 +140,32 @@ RF.forEach(([a, n]) => {
     const kn = spring(t - S(a + .98), 16, .5); tf($(id + '_n'), { c: true, x: 0, y: 170, s: t > S(a + .98) ? lerp(3, 1, kn) : 0, o: t > S(a + .98) ? 1 : 0, r: -6 });
   };
 });
-// chat 1: pay for the "pratica" -------------------------------------------------------
+// chat 1: "decide tonight, only one place left" ------------------------------------------
 const PHONE = (id, name) => `<div class="card" id="${id}" style="left:120px;top:330px;width:840px;height:760px;background:#efe7f3;overflow:hidden">
   <div style="height:150px;background:#2b1236;display:flex;align-items:center;gap:24px;padding:0 36px">
     <div style="width:90px;height:90px;border-radius:50%;background:#7a6a82;display:flex;align-items:center;justify-content:center;font:800 54px PJS;color:#fff">?</div>
     <div><div style="font:800 40px PJS;color:#fff">${name}</div><div style="font:600 28px INT;color:#7ee2a2">online</div></div></div></div>`;
 HTML.chat1 = `${PHONE('c1_p', 'Lavoro Germania VIP')}
   <div class="bub" id="c1_ty" style="left:170px;top:530px;width:200px;font-size:60px;letter-spacing:.1em">•••</div>
-  <div class="bub" id="c1_b" style="left:170px;top:530px;width:700px">Ciao! Per iniziare mandaci <b style="color:#d9233a">200 €</b> per la pratica 🙏</div>
-  ${[0, 1, 2].map(i => NOTE('c1_n' + i, '200 €')).join('')}
-  <div class="sticker" id="c1_s" style="left:0;top:0">Certo, come no 🙄</div>
+  <div class="bub" id="c1_b" style="left:170px;top:530px;width:720px">Devi decidere <b style="color:#d9233a">entro stasera</b>!!! È rimasto UN SOLO posto ⏰</div>
+  <div class="a ctr" id="c1_tm" style="padding:18px 40px;border-radius:24px;background:#ff3b4f;color:#fff;font:800 96px/1 PJS;letter-spacing:.02em;box-shadow:0 14px 30px rgba(0,0,0,.35);font-variant-numeric:tabular-nums">00:59:59</div>
+  <div class="sticker" id="c1_u" style="left:0;top:0;background:#ffd43b">ULTIMO POSTO!!!</div>
+  <div class="sticker" id="c1_s" style="left:0;top:0;background:#fff">Ah sì? Che fortuna 🙄</div>
   <div class="stamp" id="c1_st" style="left:0;top:0">TRUFFA</div>
-  <div class="a ctr h1" id="c1_m" style="left:500px;top:960px;font-size:200px;color:#ff3b4f;paint-order:stroke fill;-webkit-text-stroke:14px #14061b">MAI!</div>`;
+  <div class="card" id="c1_ok" style="left:140px;top:760px;width:800px;height:240px;display:flex;align-items:center;gap:30px;padding:0 40px">
+    <div style="width:130px;height:130px;border-radius:50%;background:#2fbf6b;display:flex;align-items:center;justify-content:center;flex:none">${icon('clock', 76, '#fff', 2.2)}</div>
+    <div style="font:800 54px/1.1 PJS">Chi è serio<br><span style="color:#2fbf6b">ti lascia il tempo</span></div></div>`;
 U.chat1 = t => {
-  fly($('c1_p'), t, S(8.05), { dy: 500, c: false });
-  const ty = t > S(7.95) && t < S(8.24); $('c1_ty').style.opacity = ty ? 1 : 0; $('c1_ty').style.transform = `scale(${1 + .06 * Math.sin(t * 20)})`;
-  pop($('c1_b'), t, S(8.24), { c: false, from: .5 }); $('c1_b').style.transformOrigin = '0 100%';
-  [0, 1, 2].forEach(i => { const t0 = S(9.16) + i * .18, k = eOut(seg(t, t0, t0 + 1.3)); tf($('c1_n' + i), { c: true, x: 330 + i * 160 + Math.sin(k * 8 + i) * 40, y: lerp(800, -150, k), r: Math.sin(k * 12 + i) * 25, s: 1 - .3 * k, o: t > t0 ? 1 : 0 }); });
-  pop($('c1_s'), t, S(10.94), { c: true, from: .2, x: 560, y: 860, r: -8, r0: 30 });
-  const sk = spring(t - S(13.58), 16, .5); tf($('c1_st'), { c: true, x: 530, y: 650, s: t > S(13.58) ? lerp(2.4, 1, sk) : 0, r: -12, o: t > S(13.58) ? 1 : 0 });
-  slam($('c1_m'), t, S(14.5), { from: 3, r: -4 });
-  if (t > S(12.48)) { $('c1_s').style.opacity = 1 - seg(t, S(12.3), S(12.5)); }
+  fly($('c1_p'), t, S(8.0), { dy: 500, c: false });
+  const ty = t > S(7.8) && t < S(8.1); $('c1_ty').style.opacity = ty ? 1 : 0; $('c1_ty').style.transform = `scale(${1 + .06 * Math.sin(t * 20)})`;
+  pop($('c1_b'), t, S(8.1), { c: false, from: .5 }); $('c1_b').style.transformOrigin = '0 100%';
+  const left = Math.max(0, 3599 - Math.floor((t - S(8.96)) * 97)), mm = String(Math.floor(left / 60)).padStart(2, '0'), ss = String(left % 60).padStart(2, '0');
+  $('c1_tm').textContent = `00:${mm}:${ss}`; pop($('c1_tm'), t, S(8.96), { from: .3, x: 540, y: 860 }); if (t > S(8.96)) $('c1_tm').style.transform += ` scale(${1 + .04 * Math.sin((t - S(8.96)) * 14)})`;
+  pop($('c1_u'), t, S(10.32), { from: .2, x: 720, y: 470, r: 10, r0: -30 }); if (t > S(10.32)) $('c1_u').style.transform += ` scale(${1 + .05 * Math.sin((t - S(10.32)) * 18)})`;
+  pop($('c1_s'), t, S(11.38), { from: .2, x: 470, y: 990, r: -6, r0: 30 });
+  const sk = spring(t - S(12.46), 16, .5); tf($('c1_st'), { c: true, x: 520, y: 640, s: t > S(12.46) ? lerp(2.4, 1, sk) : 0, r: -12, o: t > S(12.46) ? 1 : 0 });
+  const dim = seg(t, S(13.4), S(13.7)); if (dim > 0) ['c1_p', 'c1_b', 'c1_tm', 'c1_u', 'c1_s', 'c1_st'].forEach(id => { $(id).style.opacity = Math.min(+$(id).style.opacity || 1, 1 - (id === 'c1_s' ? 1 : .75) * dim); });
+  pop($('c1_ok'), t, S(14.32), { c: false, from: .5 });
 };
 // docs: no German contract, no payslip ------------------------------------------------
 const DOC = (id, x, a, b) => `<div class="card" id="${id}" style="left:${x}px;top:380px;width:380px;height:480px;padding:36px">
@@ -173,12 +179,12 @@ HTML.docs = `${DOC('dc_a', 110, 'Contratto tedesco', 'Arbeitsvertrag')}${DOC('dc
   <div class="stamp" id="dc_no" style="left:0;top:0;font-size:120px">NO, GRAZIE</div>`;
 const drawX = (el, t, t0) => { const p = el.querySelector('path'); p.style.strokeDasharray = '100 100'; p.style.strokeDashoffset = 100 - 100 * eOut(seg(t, t0, t0 + .25)); el.style.opacity = t > t0 ? 1 : 0; };
 U.docs = t => {
-  pop($('dc_a'), t, S(17.42), { c: false, from: .5, r: -4 }); pop($('dc_b'), t, S(18.9), { c: false, from: .5, r: 4 });
-  drawX($('dc_xa'), t, S(18.18)); tf($('dc_xa'), { c: true, x: 300, y: 620, o: t > S(18.18) ? 1 : 0 }); drawX($('dc_xa'), t, S(18.18));
-  tf($('dc_xb'), { c: true, x: 780, y: 620, o: t > S(19.68) ? 1 : 0 }); drawX($('dc_xb'), t, S(19.68));
-  pop($('dc_bub'), t, S(20.58), { c: false, from: .5 }); $('dc_bub').style.transformOrigin = '0 100%';
-  [0, 1, 2, 3].forEach(i => { const t0 = S(21.46) + i * .1, k = expo(seg(t, t0, t0 + .5)); tf($('dc_n' + i), { c: true, x: lerp(1300, 700 + i * 22, k), y: 1110 - i * 18, r: -10 + i * 6, o: t > t0 ? 1 : 0 }); });
-  const sk = spring(t - S(22.78), 16, .5); tf($('dc_no'), { c: true, x: 520, y: 760, s: t > S(22.78) ? lerp(2.4, 1, sk) : 0, r: -10, o: t > S(22.78) ? 1 : 0 });
+  pop($('dc_a'), t, S(19.26), { c: false, from: .5, r: -4 }); pop($('dc_b'), t, S(20.8), { c: false, from: .5, r: 4 });
+  drawX($('dc_xa'), t, S(20.02)); tf($('dc_xa'), { c: true, x: 300, y: 620, o: t > S(20.02) ? 1 : 0 }); drawX($('dc_xa'), t, S(20.02));
+  tf($('dc_xb'), { c: true, x: 780, y: 620, o: t > S(21.54) ? 1 : 0 }); drawX($('dc_xb'), t, S(21.54));
+  pop($('dc_bub'), t, S(22.22), { c: false, from: .5 }); $('dc_bub').style.transformOrigin = '0 100%';
+  [0, 1, 2, 3].forEach(i => { const t0 = S(23.08) + i * .1, k = expo(seg(t, t0, t0 + .5)); tf($('dc_n' + i), { c: true, x: lerp(1300, 700 + i * 22, k), y: 1110 - i * 18, r: -10 + i * 6, o: t > t0 ? 1 : 0 }); });
+  const sk = spring(t - S(24.4), 16, .5); tf($('dc_no'), { c: true, x: 520, y: 760, s: t > S(24.4) ? lerp(2.4, 1, sk) : 0, r: -10, o: t > S(24.4) ? 1 : 0 });
 };
 // house: deposit paid in advance, the house does not exist ----------------------------
 HTML.house = `
@@ -190,23 +196,23 @@ HTML.house = `
   <div class="a ctr" id="hs_q" style="font:800 260px/1 PJS;color:#ff3b4f">?</div>
   <canvas class="a" id="hs_dust" width="1080" height="1920" style="left:0;top:0"></canvas>`;
 U.house = t => {
-  pop($('hs_bub'), t, S(25.94), { c: false, from: .5 }); $('hs_bub').style.transformOrigin = '0 100%';
-  const gone = seg(t, S(31.3), S(31.8));
-  const kh = pop($('hs_h'), t, S(26.66), { from: .3, x: 540, y: 760 }); $('hs_h').style.opacity = clamp((t - S(26.66)) * 8) * (1 - gone); $('hs_h').style.filter = gone > 0 ? `blur(${gone * 14}px)` : 'none';
-  if (t > S(31.3)) $('hs_h').querySelector('svg').style.strokeDasharray = '4 6';
-  pop($('hs_tag'), t, S(26.14), { from: .2, x: 760, y: 600, r: 10 }); $('hs_tag').style.opacity = clamp((t - S(26.14)) * 8) * (1 - gone);
-  [0, 1, 2].forEach(i => { const t0 = S(27.22) + i * .16, k = ease(seg(t, t0, t0 + .7)); tf($('hs_n' + i), { c: true, x: lerp(180, 540, k), y: lerp(1150, 760, k) - Math.sin(k * Math.PI) * 220, s: 1 - .7 * k, r: k * 360, o: t > t0 && k < 1 ? 1 : 0 }); });
-  const ks = ease(seg(t, S(29.6), S(30.6))); tf($('hs_s'), { c: true, x: lerp(-200, 330, ks), y: 1000 + Math.abs(Math.sin(ks * 16)) * -10, r: (1 - ks) * -8, o: t > S(29.6) ? 1 : 0 });
-  pop($('hs_q'), t, S(31.6), { from: .2, x: 560, y: 740 });
+  pop($('hs_bub'), t, S(26.98), { c: false, from: .5 }); $('hs_bub').style.transformOrigin = '0 100%';
+  const gone = seg(t, S(32.7), S(33.2));
+  const kh = pop($('hs_h'), t, S(28.12), { from: .3, x: 540, y: 760 }); $('hs_h').style.opacity = clamp((t - S(28.12)) * 8) * (1 - gone); $('hs_h').style.filter = gone > 0 ? `blur(${gone * 14}px)` : 'none';
+  if (t > S(32.7)) $('hs_h').querySelector('svg').style.strokeDasharray = '4 6';
+  pop($('hs_tag'), t, S(27.56), { from: .2, x: 760, y: 600, r: 10 }); $('hs_tag').style.opacity = clamp((t - S(27.56)) * 8) * (1 - gone);
+  [0, 1, 2].forEach(i => { const t0 = S(28.76) + i * .16, k = ease(seg(t, t0, t0 + .7)); tf($('hs_n' + i), { c: true, x: lerp(180, 540, k), y: lerp(1150, 760, k) - Math.sin(k * Math.PI) * 220, s: 1 - .7 * k, r: k * 360, o: t > t0 && k < 1 ? 1 : 0 }); });
+  const ks = ease(seg(t, S(30.72), S(31.7))); tf($('hs_s'), { c: true, x: lerp(-200, 330, ks), y: 1000 + Math.abs(Math.sin(ks * 16)) * -10, r: (1 - ks) * -8, o: t > S(30.72) ? 1 : 0 });
+  pop($('hs_q'), t, S(33.0), { from: .2, x: 560, y: 740 });
   const cv = $('hs_dust'), g = cv.getContext('2d'); g.clearRect(0, 0, W, H);
-  if (gone > 0 && gone < 1.6) { const r = rng(9), p = seg(t, S(31.3), S(32.2)); for (let i = 0; i < 40; i++) { const a = r() * 6.28, d = 120 + r() * 260 * eOut(p); g.fillStyle = `rgba(255,255,255,${.5 * (1 - p)})`; g.beginPath(); g.arc(540 + Math.cos(a) * d, 760 + Math.sin(a) * d * .7, 6 + r() * 16 * (1 - p), 0, 7); g.fill(); } }
+  if (gone > 0 && gone < 1.6) { const r = rng(9), p = seg(t, S(32.7), S(33.6)); for (let i = 0; i < 40; i++) { const a = r() * 6.28, d = 120 + r() * 260 * eOut(p); g.fillStyle = `rgba(255,255,255,${.5 * (1 - p)})`; g.beginPath(); g.arc(540 + Math.cos(a) * d, 760 + Math.sin(a) * d * .7, 6 + r() * 16 * (1 - p), 0, 7); g.fill(); } }
 };
 // LBS ---------------------------------------------------------------------------------
 HTML.lbs1 = `
   <svg class="a ctr" id="l1_rays" width="1400" height="1400" viewBox="0 0 100 100" style="left:540px;top:640px">${Array.from({ length: 18 }, (_, i) => `<path d="M50 50 L${50 + 70 * Math.cos(i / 18 * 6.283)} ${50 + 70 * Math.sin(i / 18 * 6.283)} L${50 + 70 * Math.cos((i + .45) / 18 * 6.283)} ${50 + 70 * Math.sin((i + .45) / 18 * 6.283)}Z" fill="rgba(218,182,252,.12)"/>`).join('')}</svg>
   <img class="a ctr" id="l1_logo" src="${LOGO}" style="left:540px;top:640px;width:420px;height:420px">
   <div class="a ctr lbl" id="l1_t" style="left:540px;top:960px;font-size:44px;color:#dab6fc">Lavoro · Business · Servizi</div>`;
-U.lbs1 = t => { slam($('l1_logo'), t, S(33.18) - .1, { from: 2.6 }); $('l1_rays').style.transform = `translate(-50%,-50%) rotate(${t * 12}deg)`; $('l1_rays').style.opacity = clamp((t - S(33.1)) * 3); pop($('l1_t'), t, S(34.68), { from: .5 }); };
+U.lbs1 = t => { slam($('l1_logo'), t, S(34.88) - .1, { from: 2.6 }); $('l1_rays').style.transform = `translate(-50%,-50%) rotate(${t * 12}deg)`; $('l1_rays').style.opacity = clamp((t - S(34.8)) * 3); pop($('l1_t'), t, S(36.2), { from: .5 }); };
 HTML.lbs2 = `
   <img class="a ctr" src="${LOGO}" style="left:540px;top:420px;width:220px;height:220px">
   <div class="a ctr h1" id="l2_n" style="left:540px;top:700px;font-size:300px;color:#fff">11+</div>
@@ -215,36 +221,36 @@ HTML.lbs2 = `
   <svg class="a" style="left:0;top:0" width="1080" height="1920"><path id="l2_arc" d="M420 1030 Q540 930 660 1030" stroke="#dab6fc" stroke-width="7" stroke-dasharray="2 14" stroke-linecap="round" fill="none"/></svg>
   <div class="a" id="l2_pl">${icon('plane', 76, '#fff', 2)}</div>`;
 U.lbs2 = t => {
-  const k = eOut(seg(t, S(37.04), S(37.9))); $('l2_n').textContent = Math.round(11 * k) + '+'; pop($('l2_n'), t, S(37.04), { from: .4 }); pop($('l2_a'), t, S(37.48), { from: .5 });
-  pop($('l2_it'), t, S(38.64), { from: .3 }); pop($('l2_de'), t, S(39.28), { from: .3 });
-  const q = ease(seg(t, S(38.7), S(39.6))), x = (1 - q) * (1 - q) * 420 + 2 * (1 - q) * q * 540 + q * q * 660, y = (1 - q) * (1 - q) * 1030 + 2 * (1 - q) * q * 930 + q * q * 1030;
-  $('l2_arc').style.opacity = clamp((t - S(38.64)) * 4); tf($('l2_pl'), { x: x - 38, y: y - 38, r: lerp(-30, 30, q) + 45, o: q > 0 && q < 1 ? 1 : 0 });
+  const k = eOut(seg(t, S(38.62), S(39.5))); $('l2_n').textContent = Math.round(11 * k) + '+'; pop($('l2_n'), t, S(38.62), { from: .4 }); pop($('l2_a'), t, S(38.98), { from: .5 });
+  pop($('l2_it'), t, S(40.3), { from: .3 }); pop($('l2_de'), t, S(40.94), { from: .3 });
+  const q = ease(seg(t, S(40.3), S(41.2))), x = (1 - q) * (1 - q) * 420 + 2 * (1 - q) * q * 540 + q * q * 660, y = (1 - q) * (1 - q) * 1030 + 2 * (1 - q) * q * 930 + q * q * 1030;
+  $('l2_arc').style.opacity = clamp((t - S(40.3)) * 4); tf($('l2_pl'), { x: x - 38, y: y - 38, r: lerp(-30, 30, q) + 45, o: q > 0 && q < 1 ? 1 : 0 });
 };
 const OKC = s => `<div style="width:${s}px;height:${s}px;border-radius:50%;background:#2fbf6b;display:flex;align-items:center;justify-content:center;flex:none">${icon('check', s * .55, '#fff', 3.4)}</div>`;
-HTML.lbs3 = [['Contratto regolare', 40.24], ['Alloggio', 41.44], ['Assistenza 24/7', 42.04]].map(([n], i) => `<div class="pill" id="l3_${i}" style="left:120px;top:${520 + i * 190}px">${OKC(84)}${n}</div>`).join('');
-U.lbs3 = t => [40.24, 41.44, 42.04].forEach((a, i) => { const k = expo(seg(t, S(a), S(a) + .45)); tf($('l3_' + i), { x: (1 - k) * -900, o: clamp((t - S(a)) * 6), r: (1 - k) * -6 }); });
+HTML.lbs3 = [['Contratto regolare', 41.92], ['Alloggio', 43.06], ['Assistenza 24/7', 43.7]].map(([n], i) => `<div class="pill" id="l3_${i}" style="left:120px;top:${520 + i * 190}px">${OKC(84)}${n}</div>`).join('');
+U.lbs3 = t => [41.92, 43.06, 43.7].forEach((a, i) => { const k = expo(seg(t, S(a), S(a) + .45)); tf($('l3_' + i), { x: (1 - k) * -900, o: clamp((t - S(a)) * 6), r: (1 - k) * -6 }); });
 HTML.fin = `
   <div class="a ctr h1" id="fn_a" style="left:540px;top:520px;font-size:170px;text-align:center">ZERO<br>ANTICIPI</div>
   <div class="a ctr" id="fn_ok">${OKC(150)}</div>
   <div class="card" id="fn_p" style="left:170px;top:880px;width:740px;height:250px;display:flex;align-items:center;gap:30px;padding:0 40px">
     ${icon('doc', 110, '#5e2d61', 1.8)}<div><div style="font:800 52px/1.1 PJS">Tutto in</div><div style="font:800 52px/1.1 PJS;color:#2fbf6b">busta paga</div></div></div>`;
-U.fin = t => { slam($('fn_a'), t, S(45.52), { from: 2 }); pop($('fn_ok'), t, S(46.3), { from: .2, x: 870, y: 360 }); pop($('fn_p'), t, S(47.12), { c: false, from: .5 }); };
+U.fin = t => { slam($('fn_a'), t, S(47.08), { from: 2 }); pop($('fn_ok'), t, S(47.8), { from: .2, x: 870, y: 360 }); pop($('fn_p'), t, S(48.62), { c: false, from: .5 }); };
 HTML.cta = `
   <div class="a ctr" id="ct_sh" style="width:260px;height:260px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 20px 40px rgba(0,0,0,.35)">${icon('share', 150, '#5e2d61', 2)}</div>
   ${[0, 1, 2].map(i => `<div class="a ctr" id="ct_f${i}" style="width:150px;height:150px;border-radius:50%;background:${['#dab6fc', '#ffd43b', '#7ee2a2'][i]};display:flex;align-items:center;justify-content:center">${icon('user', 80, '#30103d', 2)}</div>`).join('')}
   <div class="card" id="ct_w" style="left:170px;top:880px;width:740px;height:220px;display:flex;align-items:center;gap:30px;padding:0 40px">
     ${icon('shield', 120, '#2fbf6b', 1.8)}<div style="font:800 52px/1.1 PJS">Stipendio<br><span style="color:#2fbf6b">salvato</span></div></div>`;
 U.cta = t => {
-  const k = pop($('ct_sh'), t, S(48.5), { from: .2, x: 540, y: 520 }); $('ct_sh').style.transform += ` rotate(${Math.sin((t - S(48.5)) * 7) * 8}deg)`;
-  [0, 1, 2].forEach(i => { const t0 = S(49.06) + i * .2; pop($('ct_f' + i), t, t0, { from: .2, x: 240 + i * 300, y: 820 }); });
-  [0, 1, 2].forEach(i => { if (t > S(50.2)) $('ct_f' + i).style.opacity = 1 - seg(t, S(50.1), S(50.3)); });
-  pop($('ct_w'), t, S(50.68), { c: false, from: .5 });
+  const k = pop($('ct_sh'), t, S(50.0), { from: .2, x: 540, y: 520 }); $('ct_sh').style.transform += ` rotate(${Math.sin((t - S(50.0)) * 7) * 8}deg)`;
+  [0, 1, 2].forEach(i => { const t0 = S(50.46) + i * .2; pop($('ct_f' + i), t, t0, { from: .2, x: 240 + i * 300, y: 820 }); });
+  [0, 1, 2].forEach(i => { if (t > S(51.78)) $('ct_f' + i).style.opacity = 1 - seg(t, S(51.7), S(51.9)); });
+  pop($('ct_w'), t, S(52.22), { c: false, from: .5 });
 };
 HTML.end = `
   <img class="a ctr" id="en_l" src="${LOGO}" style="left:540px;top:560px;width:380px;height:380px">
   <div class="a ctr lbl" id="en_t" style="left:540px;top:820px;font-size:42px;color:#dab6fc">Lavoro Business e Servizi</div>
   ${[['globe', 'lbswork.com'], ['de', '+49 1573 9037885'], ['it', '+39 351 881 8391']].map(([ic, v], i) => `<div class="pill" id="en_${i}" style="left:540px;top:${960 + i * 140}px;transform:translate(-50%,-50%);font-size:46px;padding:20px 40px 20px 24px">${ic === 'globe' ? icon('globe', 60, '#5e2d61', 2.2) : FLAG(ic, 64)}${v}</div>`).join('')}`;
-U.end = t => { pop($('en_l'), t, S(51.9), { from: .4 }); pop($('en_t'), t, S(52.1), { from: .5 }); [0, 1, 2].forEach(i => pop($('en_' + i), t, S(52.25) + i * .15, { from: .5 })); };
+U.end = t => { pop($('en_l'), t, S(53.45), { from: .4 }); pop($('en_t'), t, S(53.65), { from: .5 }); [0, 1, 2].forEach(i => pop($('en_' + i), t, S(53.8) + i * .15, { from: .5 })); };
 
 // ---------- build ----------
 SC.forEach(s => { const d = document.createElement('div'); d.className = 'sc'; d.innerHTML = HTML[s.id]; $('world').appendChild(d); s.el = d; });
@@ -278,7 +284,7 @@ function seekImpl(t) {
   $('world').style.transform = `translate(${sx}px,${sy}px) rotate(${sx * .03}deg)`;
   $('flash').style.opacity = fl; $('flash').style.background = fc;
   // red flag counter chip
-  const rf = RF.reduce((a, r) => tau >= r[0] ? r[1] : a, 0), chipOn = rf && tau < 32.62;
+  const rf = RF.reduce((a, r) => tau >= r[0] ? r[1] : a, 0), chipOn = rf && tau < 34.15;
   $('chip').style.opacity = chipOn ? 1 : 0; if (chipOn) { $('chip').innerHTML = `<svg width="40" height="40" viewBox="0 0 100 100"><rect x="14" y="6" width="9" height="92" rx="4" fill="#fff"/><path d="M23 10 L90 10 L78 31 L90 52 L23 52Z" fill="#fff"/></svg>RED FLAG ${rf}/3`; const k = spring(tau - RF[rf - 1][0], 14, .5); $('chip').style.transform = `translate(-50%,-50%) scale(${lerp(.5, 1, k)})`; }
   // captions
   let ci = -1; CAPS.forEach((c, i) => { if (tau >= c[0][0] - .05) ci = i; });
@@ -296,7 +302,7 @@ function seekImpl(t) {
 
 // =========================================================================================
 // AUDIO: voice + phonk-style beat (150 BPM, half-time) in E minor, switching to a bright major loop for LBS
-const BEAT = 60 / 150, BAR = 4 * BEAT, G0 = S(5.78), G1 = S(32.7);
+const BEAT = 60 / 150, BAR = 4 * BEAT, G0 = S(5.78), G1 = S(34.24);
 const VO_URL = 'data:audio/mpeg;base64,{{VO}}';
 const SPEECH = {{SPEECH}};
 window.buildAudio = async function (ctx) {
@@ -344,7 +350,7 @@ window.buildAudio = async function (ctx) {
   // LBS: bright major loop (G – D – Em – C)
   const MAJOR = [[43, 55, 59, 62], [38, 50, 54, 57], [40, 52, 55, 59], [36, 48, 52, 55]];
   for (let n = 0; G1 + n * BAR < DUR - 1.2; n++) {
-    const t = G1 + n * BAR, ch = MAJOR[n % 4], end = t > S(51.9) - .1;
+    const t = G1 + n * BAR, ch = MAJOR[n % 4], end = t > S(53.45) - .1;
     pad(t, ch.slice(1), BAR + .1, .03, 2000); b808(t, ch[0], BAR * .5, .4); b808(t + 2.5 * BEAT, ch[0], BAR * .3, .32);
     const arp = [ch[1] + 12, ch[2] + 12, ch[3] + 12, ch[2] + 12]; for (let s = 0; s < 8; s++) pluck(t + s * BEAT / 2, arp[s % 4] + (s >= 4 ? 12 : 0), .03, s % 2 ? .3 : -.3);
     if (!end) { kick(t, .6); kick(t + 2 * BEAT, .5); clap(t + BEAT, .22); clap(t + 3 * BEAT, .22); for (let s = 0; s < 8; s++) hat(t + s * BEAT / 2 + BEAT / 4, .03); }
@@ -366,22 +372,22 @@ window.buildAudio = async function (ctx) {
   const chaChing = t => { noise(t, .08, { type: 'bandpass', f: 3500, q: 2, g: .15 }); [91, 96, 100].forEach((m, i) => tone(t + .08 + i * .05, mtof(m), .6, { g: .07 })); };
   const siren = (t, d) => { for (let i = 0; i < d / .25; i++) tone(t + i * .25, i % 2 ? 880 : 1175, .24, { type: 'square', g: .035, lp: 3000 }); };
   // hook
-  whoosh(S(.15)); [2.92, 3.16, 3.36].forEach((x, i) => { popS(S(x), i); }); siren(S(4.7), .9); scratch(S(5.3));
+  whoosh(S(.15)); [2.94, 3.2, 3.44].forEach((x, i) => { popS(S(x), i); }); siren(S(4.7), .9); scratch(S(5.3));
   // red flag cards
   RF.forEach(([a]) => { impact(S(a)); flutter(S(a) + .05); stampS(S(a + .98)); });
   // chat 1
-  whoosh(S(8.05)); ping(S(8.24)); [0, 1, 2].forEach(i => noise(S(9.16) + i * .18, .3, { type: 'bandpass', f: 2200, f2: 4000, q: 2, g: .07 })); boing(S(10.94)); stampS(S(13.58)); impact(S(14.5), .8);
+  whoosh(S(8.0)); ping(S(8.1)); for (let i = 0; i < 18; i++) tone(S(8.96) + i * .2, i % 2 ? 1800 : 2400, .03, { g: .035, pan: .2 }); siren(S(10.32), .5); boing(S(11.38)); stampS(S(12.46)); impact(S(12.46), .5); [79, 83, 86].forEach((m, j) => tone(S(14.32) + j * .07, mtof(m), .6, { g: .05 }));
   // docs
-  whoosh(S(17.3)); popS(S(17.42)); popS(S(18.9), 2); buzz(S(18.18)); buzz(S(19.68)); ping(S(20.58)); [0, 1, 2, 3].forEach(i => noise(S(21.46) + i * .1, .12, { type: 'bandpass', f: 2600, q: 1.5, g: .08 })); buzz(S(22.78)); stampS(S(22.8));
+  whoosh(S(19.2)); popS(S(19.26)); popS(S(20.8), 2); buzz(S(20.02)); buzz(S(21.54)); ping(S(22.22)); [0, 1, 2, 3].forEach(i => noise(S(23.08) + i * .1, .12, { type: 'bandpass', f: 2600, q: 1.5, g: .08 })); buzz(S(24.4)); stampS(S(24.42));
   // house
-  whoosh(S(25.85)); ping(S(25.94)); popS(S(26.14), 1); popS(S(26.66), 3); [0, 1, 2].forEach(i => coin(S(27.22) + i * .16 + .6, i));
-  for (let i = 0; i < 8; i++) noise(S(29.6) + i * .12, .05, { type: 'bandpass', f: 600, q: 2, g: .07 }); noise(S(31.3), .7, { type: 'bandpass', f: 300, f2: 2000, q: 1, g: .15 }); womp(S(31.48) + .1);
+  whoosh(S(26.95)); ping(S(26.98)); popS(S(27.56), 1); popS(S(28.12), 3); [0, 1, 2].forEach(i => coin(S(28.76) + i * .16 + .6, i));
+  for (let i = 0; i < 8; i++) noise(S(30.72) + i * .12, .05, { type: 'bandpass', f: 600, q: 2, g: .07 }); noise(S(32.7), .7, { type: 'bandpass', f: 300, f2: 2000, q: 1, g: .15 }); womp(S(32.86) + .1);
   // LBS
-  impact(S(32.7), .9); [79, 83, 86, 91].forEach((m, j) => tone(S(33.08) + j * .07, mtof(m), 1, { g: .05 })); popS(S(34.68), 2);
-  for (let i = 0; i < 11; i++) tone(S(37.04) + i * .07, 1500 + i * 60, .03, { g: .04 }); popS(S(38.64)); popS(S(39.28), 1); noise(S(38.7), .9, { type: 'bandpass', f: 500, f2: 2400, q: 1.4, g: .1, a: .5 });
-  [40.24, 41.44, 42.04].forEach((x, i) => { whoosh(S(x), .12, -.3); popS(S(x) + .2, i + 2); });
-  impact(S(45.52), .7); popS(S(46.3), 3); chaChing(S(47.82));
-  popS(S(48.5), 2); [0, 1, 2].forEach(i => popS(S(49.06) + i * .2, i)); chaChing(S(50.68)); whoosh(S(51.9)); [86, 90, 93].forEach((m, j) => tone(S(51.95) + j * .08, mtof(m), .8, { g: .05 }));
+  impact(S(34.24), .9); [79, 83, 86, 91].forEach((m, j) => tone(S(34.78) + j * .07, mtof(m), 1, { g: .05 })); popS(S(36.2), 2);
+  for (let i = 0; i < 11; i++) tone(S(38.62) + i * .07, 1500 + i * 60, .03, { g: .04 }); popS(S(40.3)); popS(S(40.94), 1); noise(S(40.3), .9, { type: 'bandpass', f: 500, f2: 2400, q: 1.4, g: .1, a: .5 });
+  [41.92, 43.06, 43.7].forEach((x, i) => { whoosh(S(x), .12, -.3); popS(S(x) + .2, i + 2); });
+  impact(S(47.08), .7); popS(S(47.8), 3); chaChing(S(49.34));
+  popS(S(50.0), 2); [0, 1, 2].forEach(i => popS(S(50.46) + i * .2, i)); chaChing(S(52.22)); whoosh(S(53.45)); [86, 90, 93].forEach((m, j) => tone(S(53.5) + j * .08, mtof(m), .8, { g: .05 }));
 };
 
 async function boot() {
