@@ -62,3 +62,10 @@ lbs-video/datori/*_silent.mp4
 lbs-video/datori/*.pcm
 lbs-video/datori/*_segs.txt
 lbs-video/datori/thumbnail/thumb.html
+lbs-video/truffe/node_modules
+lbs-video/truffe/*.log
+lbs-video/truffe/LBS-truffe-final*.mp4
+lbs-video/truffe/*_seg*.mp4
+lbs-video/truffe/*_silent.mp4
+lbs-video/truffe/*.pcm
+lbs-video/truffe/*_segs.txt
