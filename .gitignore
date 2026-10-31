@@ -61,3 +61,4 @@ lbs-video/datori/*_seg*.mp4
 lbs-video/datori/*_silent.mp4
 lbs-video/datori/*.pcm
 lbs-video/datori/*_segs.txt
+lbs-video/datori/thumbnail/thumb.html
