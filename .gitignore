@@ -69,3 +69,10 @@ lbs-video/truffe/*_seg*.mp4
 lbs-video/truffe/*_silent.mp4
 lbs-video/truffe/*.pcm
 lbs-video/truffe/*_segs.txt
+lbs-video/stipendi/node_modules
+lbs-video/stipendi/*.log
+lbs-video/stipendi/LBS-stipendi-final*.mp4
+lbs-video/stipendi/*_seg*.mp4
+lbs-video/stipendi/*_silent.mp4
+lbs-video/stipendi/*.pcm
+lbs-video/stipendi/*_segs.txt

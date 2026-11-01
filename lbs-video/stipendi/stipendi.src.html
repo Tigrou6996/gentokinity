@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quanto si guadagna in Germania</title>
+<style>
+@font-face{font-family:PJS;src:url(data:font/woff2;base64,{{PJS}}) format('woff2');font-weight:200 800}
+@font-face{font-family:INT;src:url(data:font/woff2;base64,{{INTER}}) format('woff2');font-weight:100 900}
+:root{--p:#5e2d61;--l:#dab6fc;--d:#30103d;--g:#2fbf6b;--r:#ff5a6e;--y:#ffc542}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;overflow:hidden;height:100%}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:#5e2d61;transform-origin:0 0;font-family:INT}
+#bg{position:absolute;left:0;top:0}
+#glow{position:absolute;left:-200px;top:-150px}
+.layer{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:960px 560px}
+.a{position:absolute;white-space:nowrap}
+.ctr{transform:translate(-50%,-50%)}
+.h1{font-family:PJS;font-weight:800;letter-spacing:-.02em;line-height:1.05;color:#fff}
+.lbl{font-family:INT;font-weight:800;text-transform:uppercase;letter-spacing:.2em}
+.li{color:var(--l)}
+.mask{display:inline-block;overflow:hidden;vertical-align:top;padding:.16em .04em .1em;margin:-.16em -.04em -.1em}
+.mi{display:inline-block}
+.card{position:absolute;border-radius:28px;background:#fff;box-shadow:0 24px 50px rgba(25,4,35,.38);color:#30103d}
+.cc{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)}
+.pill{position:absolute;padding:14px 28px;border-radius:999px;background:#fff;color:var(--p);font:800 26px/1 INT;letter-spacing:.04em;box-shadow:0 12px 26px rgba(25,4,35,.3);display:flex;align-items:center;gap:12px;white-space:nowrap}
+.hl{position:relative;display:inline-block}
+.hl>i{position:absolute;left:-.12em;right:-.12em;top:.04em;bottom:-.02em;background:var(--l);transform-origin:0 50%;transform:scaleX(0);border-radius:.12em}
+.hl>b{position:relative;font-weight:inherit}
+.row{position:absolute;left:0;width:100%;display:flex;align-items:center;gap:22px;padding:0 34px}
+.av{flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.btn{flex:none;margin-left:auto;padding:14px 26px;border-radius:12px;font:800 24px/1 INT;display:flex;align-items:center;gap:10px}
+.bub{position:absolute;padding:18px 24px;border-radius:24px;font:600 26px/1.35 INT;white-space:nowrap}
+.fld{position:absolute;left:44px;right:44px;height:92px;border-radius:16px;border:3px solid #ece4f1;background:#faf7fc;display:flex;align-items:center;padding:0 26px;font:600 32px INT;color:#30103d}
+.flb{position:absolute;left:46px;font:800 20px INT;letter-spacing:.14em;text-transform:uppercase;color:#9a83a6}
+.caret{display:inline-block;width:3px;height:1.05em;background:#5e2d61;margin-left:3px;vertical-align:-.15em}
+.chk{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#2fbf6b;box-shadow:0 10px 24px rgba(20,90,50,.35);transform:translate(-50%,-50%)}
+.no{background:#ff5a6e;box-shadow:0 10px 24px rgba(120,20,40,.35)}
+.wbar{position:absolute;top:-140px;width:4400px;height:1360px;transform-origin:0 0;visibility:hidden}
+#hud{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+.tab{display:flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;font:700 19px/1 INT;color:#fff;background:rgba(255,255,255,.1);white-space:nowrap}
+.tab b{display:flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:rgba(255,255,255,.18);font:800 16px INT}
+#grain{position:absolute;inset:0;opacity:.045;mix-blend-mode:overlay;background-size:256px 256px;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 55%,rgba(20,0,30,.3) 100%);pointer-events:none}
+#fade{position:absolute;inset:0;background:#000;opacity:0}
+#ctl{position:fixed;left:0;right:0;bottom:0;display:flex;gap:12px;padding:10px 16px;background:#000c;color:#fff;font:14px sans-serif;align-items:center}
+#ctl input{flex:1}
+body.render #ctl{display:none}
+svg{overflow:visible}
+</style></head><body>
+<div id="stage">
+  <canvas id="bg" width="1920" height="1080"></canvas>
+  <canvas id="glow" width="2320" height="1380"></canvas>
+  <div id="scenes"></div>
+  <div id="hud"></div>
+  <div class="wbar" id="wb0" style="background:#dab6fc"></div>
+  <div class="wbar" id="wb1" style="background:#ffffff"></div>
+  <div class="wbar" id="wb2" style="background:#30103d"></div>
+  <div id="grain"></div><div id="vig"></div><div id="fade"></div>
+</div>
+<div id="ctl"><button id="pb">Play ▶</button><input id="sc" type="range" min="0" max="1000" value="0"><span id="tc"></span></div>
+<script>
+/* ===== "Quanto si guadagna in Germania" — ristorazione, edilizia, logistica — 16:9 1920x1080 =====
+ Voce + musica 120 BPM (La minore). Le entrate delle animazioni sono agganciate alla griglia di crome (Q) e lo sfondo pulsa sul beat.
+ τ = tempo della voce; a ogni capitolo la voce si ferma 1.6 s sulla scheda (BRK). Il motion blur viene dal render a sotto-fotogrammi
+ e da un blur direzionale (SVG) sulle transizioni a frusta. */
+const W = 1920, H = 1080, O = 0.5;
+const RENDER = location.search.includes('render');
+if (RENDER) document.body.classList.add('render');
+
+// ---------- helpers ----------
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const eOut = x => (x = clamp(x), 1 - Math.pow(1 - x, 3));
+const eIn = x => (x = clamp(x), x * x * x);
+const expo = x => (x = clamp(x), x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const $ = id => document.getElementById(id);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function tf(el, { x = 0, y = 0, s = 1, r = 0, o, b = 0, c = false } = {}) {
+  let tr = (c ? 'translate(-50%,-50%) ' : '') + `translate(${x.toFixed(2)}px,${y.toFixed(2)}px)`;
+  if (s !== 1) tr += ` scale(${s.toFixed(4)})`;
+  if (r) tr += ` rotate(${r.toFixed(2)}deg)`;
+  el.style.transform = tr;
+  if (o !== undefined) { el.style.opacity = o; el.style.visibility = o <= 0.002 ? 'hidden' : 'visible'; }
+  el.style.filter = b > 0.08 ? `blur(${b.toFixed(2)}px)` : 'none';
+}
+const rise = (el, t, t0, { d = .6, dy = 40, c = false, x = 0 } = {}) => { const k = eOut(seg(t, t0, t0 + d)); tf(el, { x, y: (1 - k) * dy, o: k, b: (1 - k) * 6, c }); return k; };
+let pop = (el, t, t0, { c = false, from = .4, w = 13, z = .66, x = 0, y = 0, r0 = 0 } = {}) => { const k = spring(t - t0, w, z); tf(el, { x, y, s: Math.max(0, lerp(from, 1, k)), r: r0 * (1 - k), o: clamp((t - t0) * 6), c }); return k; };
+const slideIn = (el, t, t0, { dx = 120, d = .7, c = false } = {}) => { const k = expo(seg(t, t0, t0 + d)); tf(el, { x: (1 - k) * dx, o: clamp((t - t0) / .25), b: (1 - k) * 8, c }); return k; };
+function words(el, t, times, d = .6) {
+  $$('.mi', el).forEach((w, i) => {
+    const t0 = Array.isArray(times) ? times[Math.min(i, times.length - 1)] : times + i * .09;
+    w.style.transform = `translateY(${((1 - expo(seg(t, t0, t0 + d))) * 135).toFixed(2)}%)`;
+  });
+}
+const hl = (el, t, t0, d = .45) => { el.querySelector('i').style.transform = `scaleX(${eOut(seg(t, t0, t0 + d))})`; };
+const draw = (el, k) => { el.style.strokeDasharray = '100 100'; el.style.strokeDashoffset = (100 - 100 * clamp(k)).toFixed(2); el.style.opacity = k > .002 ? 1 : 0; };
+function typeTo(el, str, t, t0, t1, caret = true) {
+  const n = Math.round(str.length * seg(t, t0, t1));
+  const blink = caret && (t < t0 || t > t1 + .25 ? Math.floor(t * 2.4) % 2 === 0 : true);
+  el.innerHTML = esc(str.slice(0, n)) + (caret && t > t0 - .6 ? `<span class="caret" style="opacity:${blink ? 1 : 0}"></span>` : '');
+}
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const MW = s => s.split(' ').map(w => `<span class="mask"><span class="mi">${w}</span></span>`).join(' ');
+
+// ---------- icons (stroke, 24 grid) ----------
+const IC = {
+  mega: '<path d="M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  userPlus: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  chat: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>',
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  refresh: '<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  clip: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+  send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+  plane: '<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  euro: '<path d="M18 6.5A7 7 0 1 0 18 17.5"/><path d="M4 10h10M4 14h10"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  medal: '<circle cx="12" cy="15" r="6"/><path d="M8.2 10.4L5 2h4l3 6 3-6h4l-3.2 8.4"/>',
+  ban: '<circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/>',
+  helmet: '<path d="M2 18h20"/><path d="M4 18v-2a8 8 0 0 1 16 0v2"/><path d="M10 8.5V5h4v3.5"/>',
+  hat: '<path d="M6.5 13.5C3.4 13.4 3 8.6 6.4 8 6.9 4.3 11.7 3.1 13.6 5.8 16.6 4.6 20.6 7.3 18.5 10.9 18 12 17.5 13.5 17.5 13.5"/><path d="M6.5 13.5h11v5.6h-11z"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  arrow: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  check: '<path d="M20 6L9 17l-5-5"/>',
+  x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>',
+};
+const icon = (n, size = 24, col = '#fff', sw = 2.2) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${IC[n]}</svg>`;
+const CIRC = (id, x, y, size, inner, bg = '#fff', extra = '') => `<div class="cc" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${bg};${extra}">${inner}</div>`;
+const OK = (id, x, y, size = 64) => `<div class="chk" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px">${icon('check', size * .52, '#fff', 3.4)}</div>`;
+const NO = (id, x, y, size = 64) => `<div class="chk no" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px">${icon('x', size * .52, '#fff', 3.4)}</div>`;
+const LOGO = 'data:image/png;base64,{{LOGO}}';
+const EU = size => { let s = ''; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; s += `<path transform="translate(${50 + Math.sin(a) * 30},${50 - Math.cos(a) * 30}) scale(.32)" d="M0 -10 2.9 -4 9.5 -3.1 4.7 1.5 5.9 8.1 0 5 -5.9 8.1 -4.7 1.5 -9.5 -3.1 -2.9 -4z" fill="#ffcc00"/>`; } return `<svg width="${size}" height="${size}" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#003399"/>${s}</svg>`; };
+
+// ---------- extra icons ----------
+Object.assign(IC, {
+  building: '<rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+  bed: '<path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>',
+  truck: '<path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+  factory: '<path d="M2 20V9l6 4V9l6 4V4h4l2 16z"/><path d="M2 20h20"/>',
+  cross: '<path d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/>',
+  bank: '<path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>',
+  home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  brief: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+  lang: '<path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>',
+  pin: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  video: '<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
+});
+const FLAG = (c, w = 44) => c === 'it'
+  ? `<svg width="${w}" height="${w * 2 / 3}" viewBox="0 0 3 2" style="border-radius:${w / 9}px;flex:none"><rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#ce2b37"/><rect width="3" height="2" fill="none" stroke="#0002" stroke-width=".06"/></svg>`
+  : `<svg width="${w}" height="${w * 2 / 3}" viewBox="0 0 3 2" style="border-radius:${w / 9}px;flex:none"><rect width="3" height=".67" fill="#111"/><rect y=".67" width="3" height=".67" fill="#dd0000"/><rect y="1.33" width="3" height=".67" fill="#ffce00"/></svg>`;
+const WA = size => CIRC('', 0, 0, size, icon('chat', size * .5, '#fff', 2.4), '#25d366', 'position:relative;transform:none;flex:none');
+
+
+// ---------- more icons ----------
+Object.assign(IC, {
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  sun: '<circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M1.5 12H4M20 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>',
+  snow: '<path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5M3.2 10.6l3.4-.9-.9-3.4M20.8 13.4l-3.4.9.9 3.4M5.7 17.7l.9-3.4-3.4-.9M18.3 6.3l-.9 3.4 3.4.9"/>',
+  wallet: '<path d="M20 7H5a2 2 0 0 1 0-4h13v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15V7"/><path d="M16 14h.01"/>',
+  pkg: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>',
+  gauge: '<path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+  thermo: '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>',
+  boot: '<path d="M7 3h6v8l6 3a2 2 0 0 1 1 1.7V19H4V3z"/><path d="M4 16h16"/>',
+  vest: '<path d="M8 3l4 4 4-4 4 3v15H4V6z"/><path d="M12 7v14M4 13h16"/>',
+  percent: '<path d="M19 5L5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+  coins: '<ellipse cx="9" cy="6" rx="6" ry="3"/><path d="M3 6v4c0 1.66 2.69 3 6 3s6-1.34 6-3V6"/><path d="M3 10v4c0 1.66 2.69 3 6 3 .7 0 1.37-.06 2-.17"/><ellipse cx="16" cy="15" rx="5" ry="2.5"/><path d="M11 15v3.5c0 1.38 2.24 2.5 5 2.5s5-1.12 5-2.5V15"/>',
+  idcard: '<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h5M14 14h4"/>',
+  pen: '<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
+  hourglass: '<path d="M6 2h12M6 22h12M7 2c0 5 10 5 10 10S7 17 7 22M17 2c0 5-10 5-10 10s10 5 10 10"/>',
+  trend: '<path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>',
+  scale: '<path d="M12 3v18M5 21h14M3 7h18"/><path d="M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  zap: '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
+  grid: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>',
+  dolly: '<path d="M4 3h3l3 13h9"/><circle cx="11" cy="19.5" r="2"/><rect x="11" y="6" width="8" height="7" rx="1"/>',
+  ruler: '<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>',
+});
+
+// ---------- time: voice τ -> video t, with a pause on every chapter card ----------
+const BRK = [[12.6, 1.6], [34.65, 1.6], [58.25, 1.6], [101.95, 1.6], [165.5, 1.6], [217.1, 1.6], [242.5, 1.6], [273.45, 1.0]].map(([c, h]) => ({ c, h }));
+const m = tau => tau + BRK.reduce((a, b) => a + (b.c < tau ? b.h : 0), 0);
+const S0 = tau => O + m(tau);                                           // exact
+const BPM = 120, BEAT = 60 / BPM, BAR = 4 * BEAT, GRID = BEAT / 2;
+const S = tau => Math.round(S0(tau) / GRID) * GRID;                     // snapped to the eighth-note grid → animations hit on the beat
+const voT = tau => O + tau + BRK.reduce((a, b) => a + (b.c <= tau ? b.h : 0), 0);
+const TAU_END = 293.2, DUR = O + m(TAU_END) + .01;
+window.VIDEO = { w: W, h: H, duration: DUR };
+const SPEECH = [[0, 6.22], [6.9, 12.42], [12.76, 14.82], [15.4, 21.56], [22.06, 34.6], [34.74, 44.94], [45.3, 58.14], [58.36, 60.36], [60.78, 77.22], [77.22, 101.78],
+  [102.14, 133.02], [133.02, 144.4], [144.96, 165.42], [165.64, 189.72], [190.2, 216.66], [217.26, 241.6], [242.94, 261.66], [262.28, 273.4], [273.54, 278.72], [279.38, 289.82]];
+const CHAP = [[12.6, 'Il salario minimo', 'scale', 'Uguale per tutti'], [34.65, 'Lordo e netto', 'percent', 'Cosa ti arriva davvero'], [58.25, 'Ristorazione', 'hat', 'Primo settore'],
+  [101.95, 'Edilizia', 'helmet', 'Secondo settore'], [165.5, 'Logistica', 'truck', 'Terzo settore'], [217.1, 'Regole per tutti', 'shield', 'In tutti e tre i settori'], [242.5, "L'affitto", 'home', 'La spesa più grande']];
+const TABS = ['Minimo', 'Netto', 'Ristorazione', 'Edilizia', 'Logistica', 'Regole', 'Affitto'];
+const HUD_ON = 12.6, HUD_OFF = 273.45;
+
+// beat pulse: 1 on every kick, decays fast (drives background, glow and accents)
+const DRUMS = t => t > S0(12.6) - .05 && !(t > S0(246.5) && t < S0(262.2)) && t < DUR - 3;
+const pulse = (t, k = 9) => DRUMS(t) ? Math.exp(-((t % BEAT + BEAT) % BEAT) * k) : 0;
+const barPulse = t => DRUMS(t) ? Math.exp(-((t % BAR + BAR) % BAR) * 5) : 0;
+
+// ---------- numbers ----------
+const fmt = (n, dec = 0) => { const s = Math.abs(n).toFixed(dec), [i, d] = s.split('.'); return (n < 0 ? '−' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (d ? ',' + d : ''); };
+// rolling counter: counts from `from` to `n` with an ease-out; a little vertical blur while it spins
+function roll(el, n, t, t0, { d = .9, dec = 0, pre = '', suf = '', from = 0 } = {}) {
+  const k = eOut(seg(t, t0, t0 + d)), v = lerp(from, n, k);
+  el.innerHTML = pre + fmt(dec ? v : Math.round(v), dec) + suf;
+  const sp = k > 0 && k < 1 ? (1 - k) * 3 : 0; el.style.filter = sp > .2 ? `blur(${(sp * .4).toFixed(2)}px)` : 'none';
+}
+
+// ---------- directional (motion) blur via per-element SVG filters ----------
+const SVGNS = 'http://www.w3.org/2000/svg';
+const DEFS = (() => { const s = document.createElementNS(SVGNS, 'svg'); s.setAttribute('width', 0); s.setAttribute('height', 0); s.style.position = 'absolute'; const d = document.createElementNS(SVGNS, 'defs'); s.appendChild(d); document.body.appendChild(s); return d; })();
+const FB = {};
+function dblur(el, bx, by = 0) {
+  bx = Math.min(60, Math.abs(bx)); by = Math.min(60, Math.abs(by));
+  if (bx < .4 && by < .4) { el.style.filter = 'none'; return; }
+  const id = 'mb_' + (el.id || (el.id = 'e' + Math.random().toString(36).slice(2)));
+  if (!FB[id]) { const f = document.createElementNS(SVGNS, 'filter'); f.id = id; f.setAttribute('x', '-30%'); f.setAttribute('y', '-30%'); f.setAttribute('width', '160%'); f.setAttribute('height', '160%'); f.setAttribute('color-interpolation-filters', 'sRGB'); const g = document.createElementNS(SVGNS, 'feGaussianBlur'); f.appendChild(g); DEFS.appendChild(f); FB[id] = g; }
+  FB[id].setAttribute('stdDeviation', `${bx.toFixed(2)} ${by.toFixed(2)}`);
+  el.style.filter = `url(#${id})`;
+}
+// fast slide with real directional blur proportional to speed
+function whip(el, t, t0, { dx = 520, dy = 0, d = .55, c = false, s0 = 1 } = {}) {
+  const f = x => expo(seg(x, t0, t0 + d)), k = f(t), v = (f(t + 1 / 120) - k) * 120;
+  const x = (1 - k) * dx, y = (1 - k) * dy;
+  tf(el, { x, y, s: lerp(s0, 1, k), o: clamp((t - t0) / .12), c });
+  dblur(el, v * dx / 60 * .45, v * dy / 60 * .45);
+  return k;
+}
+// a spring "pop" that also lands on a slight beat bump afterwards
+const popB = (el, t, t0, o = {}) => { const k = pop(el, t, t0, o); if (k > .98) { const p = pulse(t, 12) * .025; el.style.transform += ` scale(${(1 + p).toFixed(4)})`; } return k; };
+
+// ---------- Germany map (simplified outline, lon/lat) ----------
+const DE_PTS = [[8.6, 53.9], [8.6, 54.9], [9.4, 54.83], [9.9, 54.8], [10.9, 54.4], [11.0, 54.0], [11.6, 54.15], [12.1, 54.2], [13.0, 54.45], [13.4, 54.6], [13.75, 54.15], [14.2, 53.9], [14.4, 53.3], [14.1, 52.8], [14.6, 52.5], [14.7, 52.0], [15.0, 51.2],
+  [14.3, 50.9], [13.5, 50.6], [12.5, 50.3], [12.1, 50.3], [12.4, 49.8], [12.9, 49.3], [13.8, 48.8], [13.5, 48.6], [13.0, 48.3], [12.9, 47.7], [13.0, 47.5], [12.2, 47.7], [11.2, 47.4], [10.5, 47.5], [10.0, 47.6], [9.6, 47.55], [8.6, 47.7], [7.6, 47.6],
+  [7.6, 48.1], [8.2, 48.97], [7.5, 49.1], [6.4, 49.5], [6.1, 50.1], [6.4, 50.3], [6.0, 50.7], [6.2, 51.2], [5.9, 51.8], [6.7, 51.9], [7.0, 52.2], [7.0, 52.6], [7.2, 53.3], [8.0, 53.6]];
+const INNER = [[10.9, 54.1], [10.6, 53.4], [10.9, 52.6], [10.5, 52.0], [10.0, 51.5], [10.2, 50.8], [10.6, 50.3], [11.5, 50.4], [12.1, 50.3]];
+const CITY = { Amburgo: [10.0, 53.55], Berlino: [13.4, 52.52], Monaco: [11.58, 48.14], 'Düsseldorf': [6.78, 51.23], Francoforte: [8.68, 50.11], Lipsia: [12.37, 51.34], Stoccarda: [9.18, 48.78], Hannover: [9.73, 52.37] };
+const proj = (s = 64) => ([lo, la]) => [(lo - 5.85) * .63 * s, (55.05 - la) * s];
+const pts = (P, s) => P.map(proj(s)).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+function MAP(id, s, { split = false, cities = [], fill = 'rgba(255,255,255,.1)' } = {}) {
+  const w = 9.15 * .63 * s, h = 7.8 * s, p = proj(s);
+  const west = [...INNER, [12.1, 50.0], [16, 50.0], [16, 45], [4, 45], [4, 56], [10.9, 56]], east = [...INNER, [12.1, 50.0], [16, 50.0], [16, 56], [10.9, 56]];
+  return `<svg class="a" id="${id}" width="${w.toFixed(0)}" height="${h.toFixed(0)}" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">
+    <defs><clipPath id="${id}_cw"><polygon points="${pts(west, s)}"/></clipPath><clipPath id="${id}_ce"><polygon points="${pts(east, s)}"/></clipPath></defs>
+    <polygon id="${id}_f" points="${pts(DE_PTS, s)}" fill="${fill}"/>
+    ${split ? `<g id="${id}_w" clip-path="url(#${id}_cw)"><polygon points="${pts(DE_PTS, s)}" fill="#dab6fc"/></g><g id="${id}_e" clip-path="url(#${id}_ce)"><polygon points="${pts(DE_PTS, s)}" fill="#ffc542"/></g>
+    <polyline id="${id}_in" points="${pts(INNER, s)}" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="3 10" stroke-linecap="round"/>` : ''}
+    <polygon id="${id}_o" points="${pts(DE_PTS, s)}" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round" pathLength="100"/>
+    ${cities.map(n => { const [x, y] = p(CITY[n]); return `<g id="${id}_${n.replace(/\W/g, '')}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="26" fill="#dab6fc" opacity=".35" class="ring"/><circle r="10" fill="#fff" stroke="#30103d" stroke-width="3"/></g>`; }).join('')}
+  </svg>`;
+}
+const cityXY = (n, s) => proj(s)(CITY[n]);
+
+// ---------- small building blocks ----------
+const NUMC = (i, bg = '#5e2d61', col = '#fff', sz = 54) => `<span style="display:flex;flex:none;width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};color:${col};align-items:center;justify-content:center;font:800 ${sz * .5}px PJS">${i}</span>`;
+const IB = (ic, sz = 96, bg = '#5e2d61', col = '#fff', sw = 2.2) => CIRC('', 0, 0, sz, icon(ic, sz * .48, col, sw), bg, 'position:relative;transform:none;flex:none');
+const TITLE = (id, txt, y = 170, size = 72, x = 960) => `<div class="a ctr h1" id="${id}" style="left:${x}px;top:${y}px;font-size:${size}px">${MW(txt)}</div>`;
+const KICK = (id, txt, y = 108) => `<div class="a ctr lbl li" id="${id}" style="left:960px;top:${y}px;font-size:24px">${txt}</div>`;
+
+IC.pizza = '<path d="M3.5 4.5Q12 1.5 20.5 4.5L12 21.5z"/><path d="M4.6 6.8Q12 4.2 19.4 6.8"/><circle cx="10" cy="9.4" r="1.1"/><circle cx="14" cy="11.8" r="1.1"/><circle cx="11.4" cy="15.2" r="1"/>';
+// ---------- scenes ----------
+const P = '#5e2d61', D = '#30103d';
+const HTML = {}, U = {};
+const SC = [
+  ['intro', 0, 6.8, P], ['ask', 6.8, 12.6, P], ['ch1', 12.6, 15.3, D], ['min', 15.3, 26.15, P], ['floor', 26.15, 34.65, P],
+  ['ch2', 34.65, 35.9, D], ['gross', 35.9, 49.6, P], ['ex', 49.6, 58.25, P],
+  ['ch3', 58.25, 60.7, D], ['rist', 60.7, 71.4, P], ['ctr', 71.4, 77.15, P], ['three', 77.15, 91.45, P], ['food', 91.45, 101.95, P],
+  ['ch4', 101.95, 104.0, D], ['bau1', 104.0, 113.95, P], ['bau2', 113.95, 132.95, P], ['bau3', 132.95, 144.85, P], ['bau4', 144.85, 159.25, P], ['dpi', 159.25, 165.5, P],
+  ['ch5', 165.5, 167.95, D], ['log1', 167.95, 178.6, P], ['log2', 178.6, 190.05, P], ['log3', 190.05, 197.7, P], ['log4', 197.7, 205.15, P], ['log5', 205.15, 217.1, P],
+  ['ch6', 217.1, 220.3, D], ['reg1', 220.3, 226.9, P], ['reg2', 226.9, 242.5, P],
+  ['ch7', 242.5, 246.45, D], ['rent1', 246.45, 255.55, D], ['rent2', 255.55, 267.1, D], ['rent3', 267.1, 273.45, P],
+  ['disc', 273.45, 279.3, P], ['recap', 279.3, 286.65, P], ['outro', 286.65, TAU_END + 1, P],
+].map(([id, a, b, bg]) => ({ id, a, b, bg }));
+
+// intro ---------------------------------------------------------------------------------
+const SECT3 = [['hat', 'Ristorazione', 3.06], ['helmet', 'Edilizia', 4.36], ['truck', 'Logistica', 5.5]];
+HTML.intro = `
+  <div class="a ctr" id="in_f" style="left:960px;top:190px">${FLAG('de', 130)}</div>
+  <div class="a ctr h1" id="in_a" style="left:960px;top:360px;font-size:128px">${MW('Quanto si guadagna')}</div>
+  <div class="a ctr h1" id="in_b" style="left:960px;top:500px;font-size:128px">${MW('davvero in')} <span class="mask"><span class="mi"><span class="hl" id="in_hl"><i></i><b style="color:#30103d">Germania?</b></span></span></span></div>
+  ${SECT3.map(([ic, n], i) => `<div class="card" id="in_c${i}" style="left:${260 + i * 480}px;top:680px;width:440px;height:200px;display:flex;align-items:center;gap:22px;padding:0 30px">${IB(ic, 100)}<div style="font:800 38px PJS">${n}</div></div>`).join('')}`;
+U.intro = t => {
+  pop($('in_f'), t, S(1.62), { c: true, from: .2, r0: -25 });
+  words($('in_a'), t, [S(0), S(.46), S(.68)]); words($('in_b'), t, [S(1.0), S(1.46), S(1.62)]); hl($('in_hl'), t, S(1.62) + .15);
+  SECT3.forEach(([, , a], i) => whip($('in_c' + i), t, S(a), { dy: 260, dx: 0, d: .5 }));
+};
+// ask: what this video answers --------------------------------------------------------------
+const ASK = [['euro', 'Lordo', 7.08], ['coins', 'Netto', 7.78], ['scale', 'La legge', 9.3], ['wallet', 'In tasca', 11.3]];
+HTML.ask = `
+  ${KICK('ak_k', 'In questo video', 230)}
+  ${ASK.map(([ic, n], i) => `<div class="card" id="ak_${i}" style="left:${160 + i * 420}px;top:340px;width:340px;height:360px">
+    <div class="a ctr" style="left:170px;top:140px">${IB(ic, 150, i === 3 ? '#2fbf6b' : '#5e2d61')}</div>
+    <div class="a ctr" style="left:170px;top:285px;font:800 46px PJS">${n}</div></div>`).join('')}
+  <svg class="a" style="left:0;top:0" width="1920" height="1080">${[0, 1, 2].map(i => `<path id="ak_ar${i}" d="M${510 + i * 420} 520 h60" stroke="#dab6fc" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/>`).join('')}</svg>
+  <div class="pill ctr" id="ak_p" style="left:1420px;top:790px;font-size:30px">${icon('cal', 28, '#5e2d61', 2.6)} a fine mese</div>`;
+U.ask = t => {
+  rise($('ak_k'), t, S(6.9), { c: true });
+  ASK.forEach(([, , a], i) => popB($('ak_' + i), t, S(a), { from: .5 }));
+  [7.6, 9.1, 11.1].forEach((a, i) => draw($('ak_ar' + i), eOut(seg(t, S(a), S(a) + .35))));
+  pop($('ak_p'), t, S(11.74), { c: true, from: .4 });
+};
+// chapter cards -----------------------------------------------------------------------------
+CHAP.forEach(([c, title, ic, sub], i) => {
+  const id = 'ch' + (i + 1);
+  HTML[id] = `
+  <div class="a ctr" id="${id}_n" style="left:400px;top:540px;font:800 420px/1 PJS;color:transparent;-webkit-text-stroke:5px #dab6fc;letter-spacing:-.04em">0${i + 1}</div>
+  <div class="a lbl li" id="${id}_l" style="left:760px;top:385px;font-size:30px">Capitolo ${i + 1} di 7 · ${sub}</div>
+  <div class="a h1" id="${id}_t" style="left:755px;top:440px;font-size:${title.length > 14 ? 104 : 120}px">${MW(title)}</div>
+  ${CIRC(id + '_i', 820, 760, 124, icon(ic, 60, '#30103d', 2.2), '#dab6fc')}
+  <div class="a" id="${id}_u" style="left:760px;top:600px;width:600px;height:8px;border-radius:4px;background:#dab6fc;transform-origin:0 50%"></div>`;
+  U[id] = t => {
+    const t0 = S(c);
+    const k = expo(seg(t, t0 + .05, t0 + .8)), p = pulse(t, 10);
+    tf($(id + '_n'), { x: (1 - k) * -260, o: k, c: true, s: 1 + .025 * (t - t0) + p * .03 });
+    dblur($(id + '_n'), (1 - k) * 40);
+    rise($(id + '_l'), t, t0 + .25); words($(id + '_t'), t, t0 + .5);
+    $(id + '_u').style.transform = `scaleX(${eOut(seg(t, t0 + .75, t0 + 1.25))})`;
+    popB($(id + '_i'), t, t0 + 1.0, { c: true, from: .2 });
+  };
+});
+// 1. minimum wage --------------------------------------------------------------------------
+HTML.min = `
+  ${KICK('mn_k', 'Salario minimo per legge · Mindestlohn', 175)}
+  <div class="pill ctr" id="mn_y0" style="left:500px;top:300px;font-size:30px">${icon('cal', 28, '#5e2d61', 2.6)} 2026</div>
+  <div class="a ctr" id="mn_v0" style="left:500px;top:470px;font:800 170px/1 PJS;color:#fff;letter-spacing:-.03em">0,00 €</div>
+  <div class="a ctr lbl li" id="mn_s0" style="left:500px;top:590px;font-size:30px">lordi all'ora</div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="mn_ar" d="M900 470 h140 m-34 -34 l34 34 l-34 34" stroke="#dab6fc" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none" pathLength="100"/></svg>
+  <div class="card" id="mn_c" style="left:1090px;top:250px;width:620px;height:430px">
+    <div class="a ctr" id="mn_y1" style="left:310px;top:70px;display:flex;gap:12px;align-items:center;font:800 30px INT;color:#5e2d61">${icon('cal', 32, '#5e2d61', 2.4)} dal 1° gennaio <span id="mn_yr" style="display:inline-block">2026</span></div>
+    <div class="a ctr" id="mn_v1" style="left:310px;top:215px;font:800 170px/1 PJS;color:#30103d;letter-spacing:-.03em">13,90 €</div>
+    <div class="a ctr lbl" id="mn_s1" style="left:310px;top:335px;font-size:28px;color:#9a83a6">lordi all'ora</div>
+    <div class="pill ctr" id="mn_up" style="left:560px;top:-6px;background:#2fbf6b;color:#fff;font-size:28px">${icon('trend', 28, '#fff', 2.8)} +0,70 €</div></div>
+  <div class="a ctr" id="mn_law" style="left:960px;top:840px;display:flex;gap:18px;align-items:center;padding:20px 36px;border-radius:999px;background:rgba(255,255,255,.12);font:700 32px INT;color:#fff">${icon('scale', 36, '#dab6fc', 2.4)} Vale per tutti i lavoratori, in ogni settore</div>`;
+U.min = t => {
+  rise($('mn_k'), t, S(16.38), { c: true }); pop($('mn_y0'), t, S(17.42), { c: true, from: .4 });
+  const k0 = pop($('mn_v0'), t, S(18.3), { c: true, from: .6 }); roll($('mn_v0'), 13.9, t, S(18.3), { d: 1.0, dec: 2, suf: ' €' });
+  if (k0 > .98) $('mn_v0').style.transform += ` scale(${1 + pulse(t, 12) * .03})`;
+  rise($('mn_s0'), t, S(19.48), { c: true });
+  draw($('mn_ar'), eOut(seg(t, S(22.06), S(22.06) + .45)));
+  whip($('mn_c'), t, S(22.06), { dx: 520 });
+  const fl = seg(t, S(22.94), S(22.94) + .3); $('mn_yr').textContent = fl > .5 ? '2027' : '2026'; $('mn_yr').style.transform = `scaleY(${Math.abs(Math.cos(fl * Math.PI))})`;
+  roll($('mn_v1'), 14.6, t, S(24.58), { d: 1.0, dec: 2, suf: ' €', from: 13.9 });
+  rise($('mn_s1'), t, S(22.3), { c: true }); popB($('mn_up'), t, S(25.78), { c: true, from: .3 });
+  rise($('mn_law'), t, S(20.6), { c: true });
+};
+// floor: nobody below the minimum, full-time monthly -----------------------------------------
+const BARS = [[.55, 0], [.78, 0], [1.12, 1], [1.3, 1], [1.5, 1]];
+HTML.floor = `
+  ${TITLE('fl_t', 'Sotto questa cifra, nessuno può pagarti.', 170, 64)}
+  <div class="a" id="fl_ln" style="left:420px;top:440px;width:1080px;height:6px;border-radius:3px;background:#fff;transform-origin:0 50%"></div>
+  <div class="pill" id="fl_lb" style="left:1520px;top:412px;font-size:28px">13,90 €/h</div>
+  ${BARS.map(([h, ok], i) => `<div class="a" id="fl_b${i}" style="left:${500 + i * 190}px;top:${600 - h * 140}px;width:120px;height:${h * 140}px;border-radius:14px 14px 0 0;background:${ok ? '#dab6fc' : '#ff8a98'};transform-origin:50% 100%"></div>
+    ${ok ? OK('fl_m' + i, 560 + i * 190, 600 - h * 140 - 50, 60) : NO('fl_m' + i, 560 + i * 190, 600 - h * 140 - 50, 60)}`).join('')}
+  <div class="a" style="left:470px;top:600px;width:980px;height:4px;background:rgba(255,255,255,.35)"></div>
+  <div class="card" id="fl_c" style="left:360px;top:690px;width:1200px;height:220px;display:flex;align-items:center;gap:30px;padding:0 50px">
+    ${IB('clock', 110)}
+    <div style="flex:1;white-space:nowrap"><div class="lbl" style="font-size:24px;color:#9a83a6">A tempo pieno · circa 173 ore al mese</div>
+    <div style="font:800 60px PJS;margin-top:10px;display:flex;align-items:center;gap:20px;white-space:nowrap">13,90 € <span style="color:#9a83a6">×</span> 173 h <span style="color:#9a83a6">≈</span> <span id="fl_v" style="color:#5e2d61">0 €</span></div></div>
+    <div class="lbl" id="fl_s" style="margin-left:auto;font-size:26px;color:#5e2d61;text-align:right;line-height:1.3">lordi<br>al mese</div></div>`;
+U.floor = t => {
+  words($('fl_t'), t, S(26.24), .5);
+  $('fl_ln').style.transform = `scaleX(${expo(seg(t, S(27.1), S(27.1) + .6))})`; pop($('fl_lb'), t, S(27.44), { from: .4 });
+  BARS.forEach(([, ok], i) => { const t0 = S(27.6) + i * GRID; const k = spring(t - t0, 12, .6); $('fl_b' + i).style.transform = `scaleY(${Math.max(0, k)})`; $('fl_b' + i).style.opacity = t > t0 ? 1 : 0; popB($('fl_m' + i), t, S(27.96) + (ok ? 1.25 : .25) + i * .1, { c: true, from: .2 }); });
+  whip($('fl_c'), t, S(30.52), { dy: 260, dx: 0 }); roll($('fl_v'), 2400, t, S(32.0), { d: 1.0, suf: ' €' });
+};
+// 2. gross vs net: the payslip -------------------------------------------------------------
+const DED = [['Pensione', 9.3, 41.64, '#dab6fc', '9,3'], ['Sanità', 8.75, 42.4, '#ffc542', '≈ 8,8'], ['Disoccupazione', 1.3, 43.14, '#7fe0a8', '1,3'], ['Assistenza*', 2.4, 44.2, '#8ec5ff', '2,4'], ['Imposta sul reddito', 8.25, 45.94, '#ff8a98', '≈ 8']];
+HTML.gross = `
+  ${TITLE('gr_t', 'Il lordo non è quello che ti arriva sul conto.', 165, 60)}
+  <div class="card" id="gr_p" style="left:200px;top:245px;width:780px;height:770px">
+    <div class="a" style="left:44px;top:36px;display:flex;align-items:center;gap:16px">${IB('doc', 72)}<div><div style="font:800 36px PJS">Busta paga</div><div class="lbl" style="font-size:20px;color:#9a83a6;margin-top:4px">Lohnabrechnung</div></div></div>
+    <div class="a lbl" id="gr_h" style="left:44px;top:150px;font-size:22px;color:#9a83a6">Contributi</div>
+    ${DED.map(([n, p, , c, lab], i) => `<div class="a" id="gr_r${i}" style="left:44px;top:${195 + i * 86 + (i === 4 ? 60 : 0)}px;width:692px;height:70px;border-radius:16px;background:#f6f1f9;display:flex;align-items:center;gap:18px;padding:0 24px;font:700 32px INT">
+      <span style="width:22px;height:22px;border-radius:50%;background:${c};flex:none"></span>${n}<span style="margin-left:auto;font:800 34px PJS;color:#5e2d61">${lab} %</span></div>`).join('')}
+    <div class="a lbl" id="gr_h2" style="left:44px;top:${195 + 4 * 86 + 18}px;font-size:22px;color:#9a83a6">Tasse</div>
+    <div class="a" id="gr_n" style="left:44px;top:700px;font:600 20px INT;color:#9a83a6">* senza figli · imposta calcolata su 2.500 € lordi</div></div>
+  <svg class="a" style="left:1150px;top:300px" width="560" height="560" viewBox="-280 -280 560 560">
+    <circle r="200" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="80"/>
+    ${DED.map(([, , , c], i) => `<circle id="gr_d${i}" r="200" fill="none" stroke="${c}" stroke-width="80" pathLength="100" transform="rotate(-90)"/>`).join('')}
+  </svg>
+  <div class="a ctr" id="gr_v" style="left:1430px;top:560px;font:800 120px/1 PJS;color:#fff">0 %</div>
+  <div class="a ctr lbl li" id="gr_vl" style="left:1430px;top:650px;font-size:24px">dal lordo</div>
+  <div class="pill ctr" id="gr_tot" style="left:1430px;top:920px;font-size:32px;background:#ff5a6e;color:#fff">In tutto circa il 30 %</div>`;
+U.gross = t => {
+  words($('gr_t'), t, [S(36.06), S(36.24), S(36.7), S(37.04), S(37.24), S(37.46), S(37.58), S(37.78), S(37.98), S(38.16)], .5);
+  whip($('gr_p'), t, S(39.06), { dx: -520 }); rise($('gr_h'), t, S(40.66)); rise($('gr_h2'), t, S(45.58)); rise($('gr_n'), t, S(46.3));
+  let acc = 0;
+  DED.forEach(([, p, a], i) => {
+    whip($('gr_r' + i), t, S(a), { dx: 260, d: .45 });
+    const k = eOut(seg(t, S(a), S(a) + .6)), el = $('gr_d' + i);
+    el.style.strokeDasharray = `${(p * k).toFixed(3)} ${100 - p * k}`; el.style.strokeDashoffset = (-acc).toFixed(3); el.style.opacity = k > 0 ? 1 : 0;
+    acc += p * k;
+  });
+  $('gr_v').textContent = Math.round(acc) + ' %'; pop($('gr_v'), t, S(41.64), { c: true, from: .6 }); rise($('gr_vl'), t, S(41.8), { c: true });
+  if (t > S(48.68)) $('gr_v').style.transform += ` scale(${1 + pulse(t, 10) * .04})`;
+  popB($('gr_tot'), t, S(48.42), { c: true, from: .3 });
+};
+// example: 2.500 gross -> 1.750 net ----------------------------------------------------------
+HTML.ex = `
+  ${KICK('ex_k', 'Esempio', 190)}
+  <div class="a ctr h1" id="ex_t" style="left:960px;top:270px;font-size:66px">${MW('Con 2.500 € lordi al mese')}</div>
+  <div class="pill ctr" id="ex_p" style="left:960px;top:375px;font-size:28px">${icon('user', 28, '#5e2d61', 2.6)} single · senza figli · classe I</div>
+  <div class="a" id="ex_bar" style="left:360px;top:470px;width:1200px;height:150px;border-radius:24px;background:#dab6fc;transform-origin:0 50%;overflow:hidden">
+    <div id="ex_net" style="position:absolute;left:0;top:0;height:150px;width:840px;background:#2fbf6b;transform-origin:0 50%"></div>
+    <div id="ex_bl" style="position:absolute;left:40px;top:0;height:150px;display:flex;align-items:center;font:800 76px PJS;color:#30103d">2.500 €</div></div>
+  <div class="a" id="ex_cut" style="left:1200px;top:470px;width:360px;height:150px;border-radius:0 24px 24px 0;background:#ff5a6e;display:flex;align-items:center;justify-content:center;font:800 54px PJS;color:#fff">−750 €</div>
+  <div class="a ctr lbl li" id="ex_l0" style="left:960px;top:670px;font-size:28px">lordo</div>
+  <div class="card" id="ex_c" style="left:560px;top:740px;width:800px;height:200px;display:flex;align-items:center;gap:30px;padding:0 46px">
+    ${IB('wallet', 110, '#2fbf6b')}<div><div class="lbl" style="font-size:24px;color:#9a83a6">Ti restano circa</div><div id="ex_v" style="font:800 92px/1 PJS;color:#2fbf6b;margin-top:6px">2.500 €</div></div>
+    <div class="lbl" style="margin-left:auto;font-size:28px;color:#5e2d61">netti</div></div>`;
+U.ex = t => {
+  rise($('ex_k'), t, S(49.76), { c: true }); words($('ex_t'), t, [S(50.78), S(50.98), S(51.72), S(52.34), S(52.6), S(52.8)], .5);
+  pop($('ex_p'), t, S(53.16), { c: true, from: .4 });
+  $('ex_bar').style.transform = `scaleX(${expo(seg(t, S(50.98), S(50.98) + .7))})`; $('ex_bar').style.opacity = t > S(50.98) ? 1 : 0;
+  rise($('ex_l0'), t, S(51.72), { c: true });
+  const kc = seg(t, S(54.8), S(54.8) + .35), kf = eIn(seg(t, S(55.54), S(55.54) + .7));
+  $('ex_cut').style.opacity = kc * (1 - kf); tf($('ex_cut'), { x: kf * 120, y: kf * 260, r: kf * 22, o: kc * (1 - kf) });
+  $('ex_net').style.transform = `scaleX(${eOut(seg(t, S(55.54), S(55.54) + .5))})`;
+  $('ex_bl').textContent = t > S(55.54) + .3 ? '1.750 €' : '2.500 €'; $('ex_bl').style.color = t > S(55.54) + .3 ? '#fff' : '#30103d';
+  whip($('ex_c'), t, S(54.64), { dy: 240, dx: 0 }); roll($('ex_v'), 1750, t, S(55.54), { d: 1.0, from: 2500, suf: ' €' });
+};
+// 3. restaurants: monthly ranges ---------------------------------------------------------------
+const AX = v => 520 + (v - 2000) * 1.0;    // € -> x
+const RANGES_R = [['hat', 'Cuoco', 'con esperienza', 2400, 3000, 63.54, 65.02, 380], ['pizza', 'Pizzaiolo', 'a tempo pieno', 2500, 2900, 68.88, 70.36, 610]];
+const RANGE_HTML = (pre, R) => `
+  <div class="a" style="left:${AX(2000)}px;top:840px;width:1200px;height:4px;background:rgba(255,255,255,.5)" id="${pre}_ax"></div>
+  ${[2000, 2200, 2400, 2600, 2800, 3000, 3200].map((v, i) => `<div class="a ctr" id="${pre}_tk${i}" style="left:${AX(v)}px;top:880px;font:700 26px INT;color:rgba(255,255,255,.75)">${fmt(v)}</div><div class="a" style="left:${AX(v) - 2}px;top:800px;width:4px;height:44px;background:rgba(255,255,255,.18)"></div>`).join('')}
+  ${R.map(([ic, n, sub, a, b, , , y], i) => `
+  <div class="a" id="${pre}_n${i}" style="left:120px;top:${y - 56}px;display:flex;align-items:center;gap:20px">${IB(ic, 96, '#fff', '#5e2d61')}<div><div style="font:800 40px PJS;color:#fff">${n}</div><div class="lbl li" style="font-size:20px;margin-top:4px">${sub}</div></div></div>
+  <div class="a" style="left:${AX(2000)}px;top:${y - 6}px;width:1200px;height:12px;border-radius:6px;background:rgba(255,255,255,.12)"></div>
+  <div class="a" id="${pre}_b${i}" style="left:${AX(a)}px;top:${y - 30}px;width:${b - a}px;height:60px;border-radius:30px;background:linear-gradient(90deg,#dab6fc,#fff);transform-origin:0 50%"></div>
+  <div class="pill ctr" id="${pre}_a${i}" style="left:${AX(a)}px;top:${y - 82}px;font-size:30px">${fmt(a)} €</div>
+  <div class="pill ctr" id="${pre}_z${i}" style="left:${AX(b)}px;top:${y - 82}px;font-size:30px;background:#2fbf6b;color:#fff">${fmt(b)} €</div>`).join('')}`;
+const RANGE_U = (pre, R, t) => {
+  R.forEach(([, , , , , a, b], i) => {
+    whip($(pre + '_n' + i), t, S(a) - 1.2, { dx: -300 });
+    popB($(pre + '_a' + i), t, S(a), { c: true, from: .3 });
+    $(pre + '_b' + i).style.transform = `scaleX(${expo(seg(t, S(a) + .1, S(b)))})`; $(pre + '_b' + i).style.opacity = t > S(a) + .1 ? 1 : 0;
+    popB($(pre + '_z' + i), t, S(b), { c: true, from: .3 });
+  });
+};
+HTML.rist = `${TITLE('rs_t', 'Quanto si prende al mese (lordo)', 190, 62)}${RANGE_HTML('rs', RANGES_R)}`;
+U.rist = t => {
+  words($('rs_t'), t, S(60.78), .5); $('rs_ax').style.transform = `scaleX(${expo(seg(t, S(60.9), S(61.6)))})`; $('rs_ax').style.transformOrigin = '0 50%';
+  RANGE_U('rs', RANGES_R, t);
+};
+// collective contract, region by region -----------------------------------------------------------
+const CTR_C = ['Amburgo', 'Berlino', 'Düsseldorf', 'Francoforte', 'Lipsia', 'Monaco'];
+HTML.ctr = `
+  <div class="card" id="ct_d" style="left:200px;top:300px;width:700px;height:500px">
+    <div class="a" style="left:50px;top:50px">${IB('doc', 120)}</div>
+    <div class="a" style="left:50px;top:210px;font:800 52px/1.1 PJS">Contratto<br>collettivo</div>
+    <div class="a lbl" style="left:52px;top:350px;font-size:22px;color:#9a83a6">Tarifvertrag · ristorazione</div>
+    <div class="a" style="left:52px;top:400px;display:flex;gap:10px">${[90, 70, 80].map(w => `<div style="height:12px;width:${w * 1.5}px;border-radius:6px;background:#e3d7ea"></div>`).join('')}</div></div>
+  <div class="a" id="ct_mw" style="left:1130px;top:200px">${MAP('ct_m', 82, { cities: CTR_C })}</div>
+  <div class="pill ctr" id="ct_p" style="left:1360px;top:900px;font-size:30px">${icon('pin', 28, '#5e2d61', 2.6)} cambia da regione a regione</div>`;
+U.ctr = t => {
+  whip($('ct_d'), t, S(73.54), { dx: -480 });
+  rise($('ct_mw'), t, S(71.8)); draw($('ct_m_o'), ease(seg(t, S(71.8), S(73.2))));
+  CTR_C.forEach((n, i) => { const g = $('ct_m_' + n.replace(/\W/g, '')), t0 = S(75.44) + i * GRID, k = spring(t - t0, 13, .55); g.style.opacity = t > t0 ? 1 : 0; g.firstElementChild.setAttribute('r', (26 + pulse(t, 7) * 12).toFixed(1)); g.firstElementChild.setAttribute('fill', ['#dab6fc', '#ffc542', '#7fe0a8', '#8ec5ff', '#ff8a98', '#fff'][i]); g.lastElementChild.setAttribute('r', (10 * Math.max(0, k)).toFixed(2)); });
+  pop($('ct_p'), t, S(75.94), { c: true, from: .4 });
+};
+
+// three things that make a difference ----------------------------------------------------------
+HTML.three = `
+  ${TITLE('th_t', 'Tre cose che fanno la differenza', 175, 64)}
+  ${[['coins', 'Le mance'], ['moon', 'I supplementi'], ['home', 'Vitto e alloggio']].map(([ic, n], i) => `<div class="card" id="th_${i}" style="left:${150 + i * 560}px;top:270px;width:500px;height:680px">
+    <div class="a" style="left:40px;top:40px;display:flex;align-items:center;gap:20px">${NUMC(i + 1)}<div style="font:800 42px PJS">${n}</div></div>
+    <div class="a" id="th_x${i}" style="left:40px;top:150px;width:420px;height:500px"></div></div>`).join('')}`;
+U.three = t => {
+  words($('th_t'), t, [S(77.22), S(77.68), S(78.12), S(78.52), S(78.78), S(79.04)], .5);
+  [80.14, 83.86, 90.08].forEach((a, i) => whip($('th_' + i), t, S(a) - .25, { dy: 300, dx: 0, d: .5 }));
+  // 1: tips into a jar, tax-free
+  const x0 = $('th_x0'); if (!x0.dataset.on) { x0.dataset.on = 1; x0.innerHTML = `
+    <svg style="position:absolute;left:90px;top:40px" width="240" height="280" viewBox="0 0 240 280"><path d="M40 60h160v170a30 30 0 0 1-30 30H70a30 30 0 0 1-30-30z" fill="#f6f1f9" stroke="#5e2d61" stroke-width="6"/><rect x="30" y="40" width="180" height="26" rx="10" fill="#5e2d61"/>
+    ${[0, 1, 2, 3, 4, 5].map(i => `<g transform="translate(${80 + (i % 3) * 40},${215 - Math.floor(i / 3) * 26})"><g class="cn"><ellipse rx="26" ry="11" fill="#ffc542" stroke="#c98a00" stroke-width="3"/></g></g>`).join('')}</svg>
+    <div id="th_s0" style="position:absolute;left:210px;top:380px;transform:translate(-50%,-50%);padding:16px 30px;border-radius:999px;background:#2fbf6b;color:#fff;font:800 36px INT;white-space:nowrap">0 % tasse</div>
+    <div style="position:absolute;left:0;right:0;top:450px;text-align:center;font:600 26px INT;color:#7d6787">se il cliente le dà a te</div>`; }
+  $$('.cn', x0).forEach((c, i) => { const t0 = S(81.66) + i * GRID / 2, k = eOut(seg(t, t0, t0 + .3)); c.style.opacity = t > t0 ? 1 : 0; c.style.transform = `translateY(${(1 - k) * -160}px)`; });
+  popB($('th_s0'), t, S(82.56), { c: true, from: .3 });
+  // 2: night, sunday, holidays
+  const x1 = $('th_x1'); if (!x1.dataset.on) { x1.dataset.on = 1; x1.innerHTML = [['moon', 'Notte'], ['cal', 'Domenica'], ['star', 'Festivi']].map(([ic, n], i) => `<div class="sp" style="position:absolute;left:0;top:${20 + i * 110}px;width:420px;height:90px;border-radius:18px;background:#f6f1f9;display:flex;align-items:center;gap:18px;padding:0 22px;font:800 34px PJS">${IB(ic, 62)}${n}<span style="margin-left:auto;font:800 30px INT;color:#2fbf6b">+ %</span></div>`).join('') + `
+    <div id="th_s1" style="position:absolute;left:210px;top:395px;transform:translate(-50%,-50%);padding:16px 30px;border-radius:999px;background:#2fbf6b;color:#fff;font:800 34px INT;white-space:nowrap">senza tasse*</div>
+    <div id="th_n1" style="position:absolute;left:0;right:0;top:450px;text-align:center;font:600 24px INT;color:#7d6787">* entro certi limiti di legge</div>`; }
+  $$('.sp', x1).forEach((r, i) => whip(r, t, S([84.72, 85.42, 86.24][i]), { dx: 240, d: .4 }));
+  popB($('th_s1'), t, S(88.82), { c: true, from: .3 }); rise($('th_n1'), t, S(87.0));
+  // 3: food & lodging
+  const x2 = $('th_x2'); if (!x2.dataset.on) { x2.dataset.on = 1; x2.innerHTML = `<div class="vt" style="position:absolute;left:30px;top:60px">${IB('hat', 170, '#ffc542', '#30103d')}</div><div class="vt" style="position:absolute;left:220px;top:200px">${IB('bed', 170, '#dab6fc', '#30103d')}</div>`; }
+  $$('.vt', x2).forEach((v, i) => pop(v, t, S([90.08, 90.7][i]), { from: .2 }));
+};
+// food & lodging: values fixed by law ------------------------------------------------------------
+HTML.food = `
+  ${TITLE('fd_t', 'Vitto e alloggio: un valore fissato per legge', 175, 60)}
+  <div class="pill ctr" id="fd_y" style="left:960px;top:275px;font-size:28px">${icon('cal', 28, '#5e2d61', 2.6)} valori 2026 · Sachbezugswerte</div>
+  ${[['hat', 'Pasti', 345, 96.6, '#ffc542'], ['bed', 'Alloggio', 285, 99.56, '#dab6fc']].map(([ic, n], i) => `<div class="card" id="fd_${i}" style="left:${300 + i * 680}px;top:380px;width:640px;height:460px">
+    <div class="a" style="left:50px;top:50px;display:flex;align-items:center;gap:22px">${IB(ic, 110, i ? '#dab6fc' : '#ffc542', '#30103d')}<div style="font:800 48px PJS">${n}</div></div>
+    <div class="a" id="fd_v${i}" style="left:50px;top:220px;font:800 150px/1 PJS;color:#5e2d61;letter-spacing:-.03em">0 €</div>
+    <div class="a lbl" style="left:54px;top:390px;font-size:24px;color:#9a83a6">al mese</div></div>`).join('')}
+  <div class="a ctr" id="fd_st" style="left:1610px;top:330px;width:150px;height:150px;border-radius:50%;border:7px solid #2fbf6b;color:#2fbf6b;background:#fff;display:flex;align-items:center;justify-content:center;font:800 92px PJS">§</div>`;
+U.fd = 0;
+U.food = t => {
+  words($('fd_t'), t, S(91.58), .5); pop($('fd_y'), t, S(95.42), { c: true, from: .4 });
+  const k = pop($('fd_st'), t, S(94.24), { c: true, from: 2.2, w: 16, z: .6, r0: -40 });
+  [[96.6, 345], [99.56, 285]].forEach(([a, n], i) => { whip($('fd_' + i), t, S(a) - .4, { dx: i ? 500 : -500 }); roll($('fd_v' + i), n, t, S(a), { suf: ' €' }); if (t > S(a) + 1) $('fd_v' + i).style.transform = `scale(${1 + pulse(t, 11) * .03})`; });
+};
+// 4. construction: collective contract, east = west ---------------------------------------------
+HTML.bau1 = `
+  <div class="a h1" id="b1_t" style="left:170px;top:240px;font-size:84px;line-height:1.1">${MW('Qui si')}<br>${MW('guadagna di più')}</div>
+  <div class="pill" id="b1_up" style="left:170px;top:470px;font-size:30px;background:#2fbf6b;color:#fff">${icon('trend', 30, '#fff', 2.8)} grazie al contratto collettivo edile</div>
+  <div class="card" id="b1_d" style="left:170px;top:580px;width:700px;height:300px;display:flex;align-items:center;gap:30px;padding:0 44px">
+    ${IB('cal', 120)}<div><div class="lbl" style="font-size:24px;color:#9a83a6">Da aprile 2026</div><div style="font:800 46px/1.15 PJS;margin-top:8px">paghe uguali<br>in tutta la Germania</div></div></div>
+  <div class="a" id="b1_mw" style="left:1100px;top:190px">${MAP('b1_m', 98, { split: true })}</div>
+  <div class="pill ctr" id="b1_w" style="left:1210px;top:560px;font-size:28px">Ovest</div>
+  <div class="pill ctr" id="b1_e" style="left:1530px;top:480px;font-size:28px">Est</div>
+  <div class="a ctr" id="b1_eq" style="left:1720px;top:820px;width:110px;height:110px;border-radius:50%;background:#2fbf6b;display:flex;align-items:center;justify-content:center;font:800 86px/1 PJS;color:#fff;box-shadow:0 14px 30px rgba(20,90,50,.35)">=</div>`;
+U.bau1 = t => {
+  words($('b1_t'), t, [S(104.06), S(104.66), S(104.94), S(105.26), S(105.52)], .5); pop($('b1_up'), t, S(105.92), { from: .5 });
+  whip($('b1_d'), t, S(108.12), { dy: 260, dx: 0 });
+  rise($('b1_mw'), t, S(109.5)); draw($('b1_m_o'), ease(seg(t, S(109.5), S(111.3))));
+  const kw = seg(t, S(110.4), S(110.4) + .4), ke = seg(t, S(112.4), S(112.4) + .4), km = eOut(seg(t, S(113.2), S(113.2) + .6));
+  $('b1_m_w').style.opacity = kw * (1 - km * .0); $('b1_m_e').style.opacity = ke;
+  $('b1_m_e').firstElementChild.setAttribute('fill', km > 0 ? `rgb(${[255, 197, 66].map((c, i) => Math.round(lerp(c, [218, 182, 252][i], km))).join(',')})` : '#ffc542');
+  $('b1_m_in').style.opacity = 1 - km; draw($('b1_m_in'), eOut(seg(t, S(111.6), S(112.3))));
+  pop($('b1_w'), t, S(113.2), { c: true, from: .3 }); pop($('b1_e'), t, S(112.4), { c: true, from: .3 });
+  popB($('b1_eq'), t, S(113.2) + .25, { c: true, from: .2 });
+};
+// construction: hourly pay by category -----------------------------------------------------------
+const BAU = [['Senza qualifica', 'Werker', 15.86, 116.4], ['Muratore qualificato', 'Facharbeiter', 23.97, 120.68], ['Specializzato', 'Spezialfacharbeiter', 26.05, 124.5]];
+const BH = v => v * 17;
+HTML.bau2 = `
+  ${TITLE('b2_t', 'Paga oraria del contratto edile (lordo)', 165, 56)}
+  <div class="card" id="b2_m" style="left:560px;top:225px;width:800px;height:96px;display:flex;align-items:center;gap:22px;padding:0 34px">
+    ${icon('cal', 40, '#5e2d61', 2.4)}<div style="font:800 36px PJS">Al mese: <span id="b2_ma">2.700 €</span> <span style="color:#9a83a6">→</span> <span id="b2_mb" style="color:#2fbf6b">oltre 4.000 €</span></div></div>
+  <div class="a" style="left:330px;top:930px;width:1260px;height:5px;background:rgba(255,255,255,.5)"></div>
+  <div class="a" id="b2_min" style="left:330px;top:${930 - BH(13.9)}px;width:1260px;height:0;border-top:4px dashed rgba(255,255,255,.55)"></div>
+  <div class="a lbl" id="b2_minl" style="left:1600px;top:${930 - BH(13.9) - 16}px;font-size:20px;color:rgba(255,255,255,.75)">minimo<br>13,90 €</div>
+  ${BAU.map(([n, de, v], i) => `<div class="a" id="b2_b${i}" style="left:${420 + i * 400}px;top:${930 - BH(v)}px;width:280px;height:${BH(v)}px;border-radius:22px 22px 0 0;background:linear-gradient(180deg,${['#fff', '#dab6fc', '#ffc542'][i]},rgba(255,255,255,.25));transform-origin:50% 100%"></div>
+    <div class="a ctr" id="b2_v${i}" style="left:${560 + i * 400}px;top:${930 - BH(v) - 54}px;font:800 66px/1 PJS;color:#fff">0 €</div>
+    <div class="a ctr" id="b2_n${i}" style="left:${560 + i * 400}px;top:${930 - BH(v) / 2 + 20}px;text-align:center;white-space:normal;width:260px"><div style="font:800 32px/1.15 PJS;color:#30103d">${n}</div><div class="lbl" style="font-size:16px;color:#5e2d61;margin-top:8px;letter-spacing:.1em">${de}</div></div>`).join('')}`;
+U.bau2 = t => {
+  words($('b2_t'), t, S(114.06), .5);
+  rise($('b2_min'), t, S(114.6)); rise($('b2_minl'), t, S(114.6));
+  BAU.forEach(([, , v, a], i) => {
+    const t0 = S(a) - .5, k = spring(t - t0, 11, .62); $('b2_b' + i).style.transform = `scaleY(${Math.max(0, k)})`; $('b2_b' + i).style.opacity = t > t0 ? 1 : 0;
+    rise($('b2_n' + i), t, t0 + .3, { c: true }); const kv = pop($('b2_v' + i), t, S(a), { c: true, from: .5 }); roll($('b2_v' + i), v, t, S(a), { dec: 2, suf: ' €' });
+    if (kv > .98) $('b2_v' + i).style.transform += ` scale(${1 + pulse(t, 11) * .03})`;
+  });
+  whip($('b2_m'), t, S(126.42), { dy: -200, dx: 0 }); roll($('b2_ma'), 2700, t, S(129.38), { suf: ' €' }); roll($('b2_mb'), 4000, t, S(131.24), { pre: 'oltre ', suf: ' €', from: 2700 });
+};
+// construction: sector minimum wages ----------------------------------------------------------
+const BL = v => (v - 12) * 300;
+const SMIN = [['scale', 'Salario minimo di legge', 13.9, 133.6, 'rgba(255,255,255,.35)'], ['ruler', 'Ponteggiatori', 14.35, 139.04, '#dab6fc'], ['zap', 'Elettricisti', 14.93, 142.92, '#ffc542']];
+HTML.bau3 = `
+  ${TITLE('b3_t', 'Alcuni mestieri hanno un minimo di settore', 175, 60)}
+  <div class="pill ctr" id="b3_o" style="left:960px;top:270px;font-size:30px;background:#2fbf6b;color:#fff">${icon('shield', 30, '#fff', 2.6)} obbligatorio per tutte le aziende</div>
+  ${SMIN.map(([ic, n, v, , c], i) => `<div class="a" id="b3_r${i}" style="left:140px;top:${400 + i * 190}px;width:1640px;height:150px">
+    <div class="a" style="left:0;top:14px;display:flex;align-items:center;gap:18px">${IB(ic, 96, i ? '#fff' : 'rgba(255,255,255,.2)', i ? '#5e2d61' : '#fff')}<div style="font:800 ${i ? 38 : 30}px PJS;color:#fff;width:300px;white-space:normal;line-height:1.1">${n}</div></div>
+    <div class="a" id="b3_b${i}" style="left:440px;top:40px;width:${BL(v)}px;height:70px;border-radius:35px;background:${c};transform-origin:0 50%"></div>
+    <div class="a" id="b3_v${i}" style="left:${440 + BL(v) + 26}px;top:42px;font:800 60px/1 PJS;color:#fff">0 €</div></div>`).join('')}`;
+U.bau3 = t => {
+  words($('b3_t'), t, [S(133.02), S(133.66), S(134.12), S(134.34), S(134.92), S(135.22), S(135.42)], .5);
+  popB($('b3_o'), t, S(136.16), { c: true, from: .3 });
+  SMIN.forEach(([, , v, a], i) => { whip($('b3_r' + i), t, S(a) - .6, { dx: -300 }); $('b3_b' + i).style.transform = `scaleX(${expo(seg(t, S(a) - .2, S(a) + .6))})`; roll($('b3_v' + i), v, t, S(a), { dec: 2, suf: ' €/h', from: 12 }); });
+};
+// construction site rules: holidays + winter ---------------------------------------------------------
+HTML.bau4 = `
+  ${TITLE('b4_t', 'Le regole del cantiere', 170, 70)}
+  <div class="card" id="b4_a" style="left:170px;top:260px;width:760px;height:700px">
+    <div class="a" style="left:46px;top:40px;display:flex;align-items:center;gap:20px">${IB('cal', 92)}<div style="font:800 40px PJS">Ferie</div></div>
+    <div class="a" id="b4_n" style="left:46px;top:170px;font:800 150px/1 PJS;color:#5e2d61">0</div>
+    <div class="a" style="left:290px;top:200px;font:800 38px/1.2 PJS;color:#30103d">giorni lavorativi<br><span style="color:#9a83a6;font:700 28px INT">all'anno · contratto edile</span></div>
+    <div class="a" style="left:46px;top:370px;display:grid;grid-template-columns:repeat(10,58px);gap:10px">${Array.from({ length: 30 }, (_, i) => `<div class="dy" style="width:58px;height:58px;border-radius:12px;background:#f0e8f5"></div>`).join('')}</div></div>
+  <div class="card" id="b4_b" style="left:990px;top:260px;width:760px;height:700px;overflow:hidden">
+    <div class="a" id="b4_snow" style="left:0;top:0;width:760px;height:700px"></div>
+    <div class="a" style="left:46px;top:40px;display:flex;align-items:center;gap:20px">${IB('snow', 92, '#8ec5ff', '#fff')}<div style="font:800 40px PJS">Inverno</div></div>
+    <div class="a" id="b4_d" style="left:46px;top:170px;display:flex;align-items:center;gap:18px;font:800 48px PJS"><span id="b4_d1" class="pill" style="position:relative;font-size:34px;background:#5e2d61;color:#fff">1 dic</span>${icon('arrow', 40, '#5e2d61', 2.8)}<span id="b4_d2" class="pill" style="position:relative;font-size:34px;background:#5e2d61;color:#fff">31 mar</span></div>
+    <div class="a" id="b4_s" style="left:46px;top:300px;width:668px;height:150px;border-radius:20px;background:#eafaf1;display:flex;align-items:center;gap:20px;padding:0 26px">${IB('shield', 90, '#2fbf6b')}<div style="font:800 34px/1.2 PJS">Niente licenziamento<br>per il brutto tempo</div></div>
+    <div class="a" id="b4_i" style="left:46px;top:480px;width:668px;height:170px;border-radius:20px;background:#f6f1f9;display:flex;align-items:center;gap:20px;padding:0 26px">${IB('euro', 90, '#ffc542', '#30103d')}<div><div style="font:800 34px/1.2 PJS">Cantiere fermo per il freddo?<br>C'è un'indennità apposta</div><div class="lbl" style="font-size:18px;color:#9a83a6;margin-top:8px">Saison-Kurzarbeitergeld</div></div></div></div>`;
+U.bau4 = t => {
+  words($('b4_t'), t, [S(144.96), S(145.24), S(145.4), S(145.68), S(145.86)], .5);
+  whip($('b4_a'), t, S(146.9), { dx: -500 }); roll($('b4_n'), 30, t, S(148.72), { d: .9 });
+  $$('.dy', $('b4_a')).forEach((d, i) => { const on = t > S(148.72) + i * .03; d.style.background = on ? (i % 10 > 7 ? '#ffc542' : '#dab6fc') : '#f0e8f5'; d.style.transform = `scale(${on ? lerp(.6, 1, eOut(seg(t, S(148.72) + i * .03, S(148.72) + i * .03 + .2))) : .9})`; });
+  whip($('b4_b'), t, S(151.0), { dx: 500 }); pop($('b4_d1'), t, S(151.14), { from: .4 }); pop($('b4_d2'), t, S(152.08), { from: .4 });
+  whip($('b4_s'), t, S(153.2), { dx: 300, d: .45 }); whip($('b4_i'), t, S(156.02), { dx: 300, d: .45 });
+  const sn = $('b4_snow'); if (!sn.dataset.on) { sn.dataset.on = 1; const r = rng(7); sn.innerHTML = Array.from({ length: 26 }, () => `<div class="fk" data-x="${(r() * 760).toFixed(0)}" data-v="${(40 + r() * 60).toFixed(0)}" data-p="${(r() * 700).toFixed(0)}" style="position:absolute;left:0;top:0;width:12px;height:12px;border-radius:50%;background:#cfe6ff"></div>`).join(''); }
+  $$('.fk', sn).forEach(f => { const y = (+f.dataset.p + t * +f.dataset.v) % 720 - 20; f.style.transform = `translate(${+f.dataset.x + Math.sin(t + +f.dataset.p) * 14}px,${y}px)`; f.style.opacity = t > S(151.0) ? .8 : 0; });
+};
+// safety gear is on the employer ----------------------------------------------------------------
+const DPI = [['boot', 'Scarpe antinfortunistiche', 160.16], ['helmet', 'Casco', 161.52], ['vest', 'Protezioni', 162.08]];
+HTML.dpi = `
+  ${DPI.map(([ic, n], i) => `<div class="card" id="dp_${i}" style="left:${210 + i * 520}px;top:240px;width:460px;height:400px">
+    <div class="a ctr" style="left:230px;top:160px">${IB(ic, 190, '#ffc542', '#30103d', 2)}</div>
+    <div class="a ctr" style="left:230px;top:325px;font:800 34px PJS;text-align:center;white-space:normal;width:400px;line-height:1.15">${n}</div></div>`).join('')}
+  <div class="a ctr" id="dp_a" style="left:960px;top:760px;display:flex;align-items:center;gap:22px;font:800 66px PJS;color:#fff">${OK('', 0, 0, 84).replace('class="chk"', 'class="chk" style="position:relative;transform:none;width:84px;height:84px"')} Li paga il datore di lavoro</div>
+  <div class="pill ctr" id="dp_b" style="left:960px;top:900px;font-size:40px;background:#ff5a6e;color:#fff">${icon('wallet', 38, '#fff', 2.6)} non tu</div>`;
+U.dpi = t => {
+  DPI.forEach(([, , a], i) => whip($('dp_' + i), t, S(a) - .5, { dy: 260, dx: 0 }));
+  rise($('dp_a'), t, S(162.72), { c: true }); popB($('dp_b'), t, S(164.5), { c: true, from: .3, r0: -8 });
+};
+// 5. logistics: no sector minimum, courier range ---------------------------------------------------
+const RANGES_L = [['truck', 'Corriere di pacchi', 'in genere', 2200, 2800, 174.9, 176.24, 640]];
+HTML.log1 = `
+  <div class="card" id="l1_a" style="left:330px;top:200px;width:560px;height:260px;display:flex;align-items:center;gap:24px;padding:0 36px">${IB('ban', 100, '#ff5a6e')}<div style="font:800 40px/1.15 PJS">Nessun minimo<br>di settore</div></div>
+  <div class="card" id="l1_b" style="left:1030px;top:200px;width:560px;height:260px;display:flex;align-items:center;gap:24px;padding:0 36px">${IB('scale', 100, '#2fbf6b')}<div><div class="lbl" style="font-size:22px;color:#9a83a6">vale il minimo di legge</div><div style="font:800 76px/1 PJS;color:#5e2d61;margin-top:10px">13,90 €</div></div></div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="l1_ar" d="M905 330 h110 m-30 -30 l30 30 l-30 30" stroke="#dab6fc" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none" pathLength="100"/></svg>
+  ${RANGE_HTML('l1', RANGES_L)}`;
+U.log1 = t => {
+  whip($('l1_a'), t, S(168.04), { dx: -500 }); draw($('l1_ar'), eOut(seg(t, S(170.1), S(170.1) + .4))); whip($('l1_b'), t, S(170.3), { dx: 500 });
+  $('l1_ax').style.transform = `scaleX(${expo(seg(t, S(172.3), S(173)))})`; $('l1_ax').style.transformOrigin = '0 50%';
+  for (let i = 0; i < 7; i++) rise($('l1_tk' + i), t, S(172.3) + i * .06, { c: true });
+  RANGE_U('l1', RANGES_L, t);
+};
+// hourly pay: € per hour × hours per month; every hour counts --------------------------------------
+const DAY = [['Carico del furgone', 187.48, 3], ['Consegne', 186.18, 4], ["Attesa al deposito", 188.74, 3]];
+HTML.log2 = `
+  <div class="pill ctr" id="l2_p" style="left:960px;top:180px;font-size:30px">${icon('clock', 30, '#5e2d61', 2.6)} spesso la paga è oraria</div>
+  <div class="a ctr" id="l2_f" style="left:960px;top:390px;display:flex;align-items:center;gap:36px">
+    <div class="card" id="l2_a" style="position:relative;width:420px;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">${IB('clock', 92)}<div style="font:800 36px PJS">Quanto all'ora?</div></div>
+    <div id="l2_x" style="font:800 90px PJS;color:#dab6fc">×</div>
+    <div class="card" id="l2_b" style="position:relative;width:420px;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">${IB('cal', 92)}<div style="font:800 36px PJS">Quante ore al mese?</div></div>
+    <div id="l2_e" style="font:800 90px PJS;color:#dab6fc">=</div>
+    <div class="card" id="l2_c" style="position:relative;width:300px;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">${IB('wallet', 92, '#2fbf6b')}<div style="font:800 36px PJS">Stipendio</div></div></div>
+  <div class="a ctr h1" id="l2_t" style="left:960px;top:640px;font-size:58px">${MW('Ogni ora lavorata va pagata')}</div>
+  <div class="a" id="l2_tl" style="left:260px;top:740px;width:1400px;height:130px;display:flex;gap:10px">
+    ${DAY.map(([n, , w], i) => `<div id="l2_s${i}" style="position:relative;flex:${w};height:130px;border-radius:20px;background:${['#ffc542', '#dab6fc', '#8ec5ff'][i]};display:flex;align-items:center;justify-content:center;font:800 30px PJS;color:#30103d">${n}
+      <div class="chk" id="l2_k${i}" style="left:calc(100% - 20px);top:0;width:58px;height:58px">${icon('check', 30, '#fff', 3.4)}</div></div>`).join('')}</div>`;
+U.log2 = t => {
+  pop($('l2_p'), t, S(178.76), { c: true, from: .4 });
+  pop($('l2_a'), t, S(181.64), { from: .5 }); pop($('l2_x'), t, S(182.88), { from: .2 }); pop($('l2_b'), t, S(183.48), { from: .5 }); pop($('l2_e'), t, S(184.08), { from: .2 }); popB($('l2_c'), t, S(184.26), { from: .5 });
+  words($('l2_t'), t, [S(185.1), S(185.32), S(185.52), S(186.0), S(186.18)], .5);
+  DAY.forEach(([, a], i) => { whip($('l2_s' + i), t, S(a) - .2, { dx: 200, d: .4 }); popB($('l2_k' + i), t, S(a) + .3, { c: true, from: .2 }); });
+};
+// laws: heavy parcels -----------------------------------------------------------------------------
+HTML.log3 = `
+  <div class="a ctr" id="l3_t" style="left:960px;top:180px;display:flex;align-items:center;gap:24px"><div style="width:100px;height:100px;border-radius:50%;background:#fff;color:#5e2d61;display:flex;align-items:center;justify-content:center;font:800 64px PJS">§</div><div class="h1" style="font-size:74px">${MW('Le leggi da conoscere')}</div></div>
+  <div class="card" id="l3_c" style="left:260px;top:310px;width:1400px;height:600px">
+    <div class="pill" id="l3_y" style="left:46px;top:40px;font-size:26px;background:#5e2d61;color:#fff">${icon('cal', 26, '#fff', 2.6)} dal 2025 · legge postale</div>
+    <div class="a" id="l3_box" style="left:120px;top:170px;width:330px;height:330px">
+      <svg width="330" height="330" viewBox="0 0 330 330"><path d="M30 110 165 40 300 110v130L165 310 30 240z" fill="#e8c9a0" stroke="#8a5a2b" stroke-width="7" stroke-linejoin="round"/><path d="M30 110l135 70 135-70M165 180v130" stroke="#8a5a2b" stroke-width="7" fill="none"/><path d="M95 75l135 70" stroke="#c99a66" stroke-width="16"/></svg>
+      <div class="pill ctr" id="l3_kg" style="left:250px;top:40px;font-size:40px;background:#ff5a6e;color:#fff">20+ kg</div></div>
+    <div class="a" id="l3_o1" style="left:620px;top:190px;width:700px;height:150px;border-radius:22px;background:#f6f1f9;display:flex;align-items:center;gap:22px;padding:0 30px">${IB('users', 96)}<div style="font:800 40px PJS">Si consegna in due</div></div>
+    <div class="a lbl" id="l3_or" style="left:940px;top:362px;font-size:26px;color:#9a83a6">oppure</div>
+    <div class="a" id="l3_o2" style="left:620px;top:410px;width:700px;height:150px;border-radius:22px;background:#f6f1f9;display:flex;align-items:center;gap:22px;padding:0 30px">${IB('dolly', 96)}<div style="font:800 40px PJS">Con un mezzo adatto</div></div></div>`;
+U.log3 = t => {
+  rise($('l3_t'), t, S(190.2), { c: true }); words($('l3_t'), t, [S(190.2), S(190.36), S(190.66), S(190.9)], .5);
+  whip($('l3_c'), t, S(191.82), { dy: 300, dx: 0 }); pop($('l3_y'), t, S(191.92), { from: .4 });
+  const kb = spring(t - S(193.32), 9, .45); tf($('l3_box'), { y: (1 - kb) * -300, o: t > S(193.32) ? 1 : 0, r: (1 - kb) * -10 });
+  popB($('l3_kg'), t, S(194.02), { c: true, from: .2 });
+  whip($('l3_o1'), t, S(194.9), { dx: 300, d: .45 }); rise($('l3_or'), t, S(196.16)); whip($('l3_o2'), t, S(196.48), { dx: 300, d: .45 });
+};
+// laws: subcontractor chain ------------------------------------------------------------------------
+HTML.log4 = `
+  <div class="card" id="l4_u" style="left:160px;top:330px;width:380px;height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">${IB('user', 120)}<div style="font:800 40px PJS">Tu</div></div>
+  <div class="card" id="l4_s" style="left:770px;top:330px;width:380px;height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">${IB('brief', 120, '#ffc542', '#30103d')}<div style="font:800 36px PJS">Subappaltatore</div></div>
+  <div class="card" id="l4_g" style="left:1380px;top:280px;width:400px;height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">${IB('building', 150)}<div style="font:800 36px/1.15 PJS;text-align:center">Grande azienda<br>di spedizioni</div></div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080">
+    <path id="l4_a1" d="M760 480 H560" stroke="#fff" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/>
+    <path id="l4_a2" d="M1370 480 H1170" stroke="#fff" stroke-width="8" stroke-linecap="round" fill="none" pathLength="100"/>
+    <path id="l4_r" d="M1580 690 C1580 900 1000 940 960 820" stroke="#2fbf6b" stroke-width="10" stroke-linecap="round" fill="none" pathLength="100" stroke-dasharray="100 100"/></svg>
+  <div class="a" id="l4_c" style="left:740px;top:700px;width:440px;height:130px;border-radius:24px;background:#fff;display:flex;align-items:center;gap:20px;padding:0 28px;box-shadow:0 24px 50px rgba(25,4,35,.38)">${IB('coins', 84, '#ffc542', '#30103d')}<div style="font:800 34px PJS;color:#30103d">I tuoi contributi</div></div>
+  ${NO('l4_x', 1170, 700, 84)}
+  <div class="pill ctr" id="l4_p" style="left:960px;top:950px;font-size:32px;background:#2fbf6b;color:#fff">${icon('shield', 30, '#fff', 2.6)} per legge ne risponde anche la grande azienda</div>`;
+U.log4 = t => {
+  whip($('l4_u'), t, S(197.96), { dx: -400 }); whip($('l4_s'), t, S(198.64), { dy: -300, dx: 0 }); draw($('l4_a1'), eOut(seg(t, S(198.9), S(199.3))));
+  whip($('l4_c'), t, S(200.66), { dy: 240, dx: 0 }); popB($('l4_x'), t, S(199.96), { c: true, from: .2, r0: -30 });
+  if (t > S(199.96) && t < S(202.5)) { const sh = Math.sin(t * 70) * 6 * Math.exp(-(t - S(199.96)) * 3); $('l4_s').style.transform += ` translateX(${sh}px)`; }
+  whip($('l4_g'), t, S(203.48), { dx: 500 }); draw($('l4_a2'), eOut(seg(t, S(203.7), S(204.1))));
+  const kr = ease(seg(t, S(202.56), S(204.2))); const r = $('l4_r'); r.style.strokeDashoffset = (100 - 100 * kr).toFixed(2); r.style.opacity = kr > 0 ? 1 : 0;
+  pop($('l4_p'), t, S(203.0), { c: true, from: .4 });
+};
+// laws: trucks over 3.5 t ----------------------------------------------------------------------------
+const DRV = [['Guida', 4.5, '#7fe0a8', 211.46], ['Pausa', .75, '#ffc542', 213.5], ['Guida', 4.5, '#7fe0a8', 215.52]];
+HTML.log5 = `
+  <div class="card" id="l5_k" style="left:160px;top:190px;width:520px;height:330px">
+    <div class="a ctr" style="left:260px;top:140px">${IB('truck', 170)}</div>
+    <div class="pill ctr" id="l5_w" style="left:400px;top:250px;font-size:38px;background:#ff5a6e;color:#fff">oltre 3,5 t</div></div>
+  <div class="card" id="l5_c" style="left:740px;top:190px;width:500px;height:330px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px">${IB('idcard', 130)}<div style="font:800 42px PJS">Patente C</div></div>
+  <div class="card" id="l5_g" style="left:1300px;top:190px;width:460px;height:330px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px">${IB('gauge', 130)}<div style="font:800 42px PJS">Tachigrafo</div></div>
+  <div class="a lbl li" id="l5_l" style="left:160px;top:590px;font-size:26px">Al massimo 9 ore di guida al giorno</div>
+  <div class="a" id="l5_tl" style="left:160px;top:640px;width:1600px;height:150px;display:flex;gap:12px">
+    ${DRV.map(([n, h, c], i) => `<div id="l5_s${i}" style="flex:${h};height:150px;border-radius:22px;background:${c};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#30103d;transform-origin:0 50%"><div style="font:800 ${i === 1 ? 32 : 44}px PJS">${i === 1 ? '45 min' : '4 h 30'}</div><div class="lbl" style="font-size:${i === 1 ? 16 : 20}px;margin-top:6px">${n}</div></div>`).join('')}</div>
+  <div class="a ctr" id="l5_tot" style="left:960px;top:880px;display:flex;align-items:center;gap:20px;font:800 50px PJS;color:#fff">${icon('clock', 48, '#dab6fc', 2.4)} 9 ore di guida · pausa di 45 minuti ogni 4 ore e mezza</div>`;
+U.log5 = t => {
+  whip($('l5_k'), t, S(205.5), { dx: -500 }); popB($('l5_w'), t, S(206.56), { c: true, from: .3 });
+  whip($('l5_c'), t, S(208.84), { dy: 260, dx: 0 }); whip($('l5_g'), t, S(209.7), { dy: 260, dx: 0 });
+  rise($('l5_l'), t, S(210.74));
+  DRV.forEach(([, , , a], i) => { const el = $('l5_s' + i), k = expo(seg(t, S(a) - .1, S(a) + .5)); el.style.transform = `scaleX(${k})`; el.style.opacity = k > 0 ? 1 : 0; });
+  rise($('l5_tot'), t, S(215.2), { c: true });
+};
+
+// 6. rules for everyone: the 24-hour dial ---------------------------------------------------------
+const arc = (a0, a1, r = 230) => { const p = a => [Math.sin(a / 24 * 2 * Math.PI) * r, -Math.cos(a / 24 * 2 * Math.PI) * r]; const [x0, y0] = p(a0), [x1, y1] = p(a1); return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${a1 - a0 > 12 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+HTML.reg1 = `
+  <svg class="a" style="left:180px;top:160px" width="760" height="760" viewBox="-380 -380 760 760">
+    <circle r="230" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="70"/>
+    ${Array.from({ length: 24 }, (_, i) => `<line x1="0" y1="-300" x2="0" y2="${i % 6 ? -285 : -275}" stroke="rgba(255,255,255,.5)" stroke-width="${i % 6 ? 3 : 5}" transform="rotate(${i * 15})"/>`).join('')}
+    <path id="r1_w" d="${arc(0, 8)}" fill="none" stroke="#dab6fc" stroke-width="70" pathLength="100"/>
+    <path id="r1_x" d="${arc(8, 10)}" fill="none" stroke="#ffc542" stroke-width="70" pathLength="100"/>
+    <path id="r1_r" d="${arc(10, 21)}" fill="none" stroke="#2fbf6b" stroke-width="70" pathLength="100"/>
+  </svg>
+  <div class="a ctr" id="r1_c" style="left:560px;top:540px;text-align:center"><div style="font:800 96px/1 PJS;color:#fff">24 h</div><div class="lbl li" style="font-size:22px;margin-top:8px">una giornata</div></div>
+  ${[['#dab6fc', '8 ore', 'in media al giorno', 221.4], ['#ffc542', 'max 10 ore', 'al giorno', 223.46], ['#2fbf6b', '11 ore', 'di riposo tra un turno e l\'altro', 224.32]].map(([c, a, b], i) => `<div class="card" id="r1_${i}" style="left:1060px;top:${250 + i * 220}px;width:680px;height:180px;display:flex;align-items:center;gap:26px;padding:0 36px">
+    <div style="width:30px;height:110px;border-radius:15px;background:${c};flex:none"></div><div><div style="font:800 60px/1 PJS">${a}</div><div style="font:600 28px INT;color:#7d6787;margin-top:8px">${b}</div></div></div>`).join('')}`;
+U.reg1 = t => {
+  rise($('r1_c'), t, S(220.42), { c: true });
+  [['r1_w', 221.4], ['r1_x', 223.46], ['r1_r', 224.32]].forEach(([id, a], i) => { draw($(id), ease(seg(t, S(a) - .1, S(a) + .8))); whip($('r1_' + i), t, S(a) - .2, { dx: 400 }); });
+};
+// rules for everyone: four cards -----------------------------------------------------------------
+HTML.reg2 = `
+  <div class="card" id="r2_0" style="left:170px;top:200px;width:770px;height:360px">
+    <div class="a" style="left:40px;top:40px;display:flex;align-items:center;gap:20px">${IB('doc', 96)}<div style="font:800 40px/1.15 PJS">Condizioni<br>per iscritto</div></div>
+    <div class="a" style="left:40px;top:190px;width:690px;height:130px;border-radius:18px;background:#f6f1f9"><svg width="690" height="130"><path id="r2_sig" d="M40 85 C70 30 95 30 100 80 S140 110 160 60 S205 40 215 85 S260 95 280 60 Q300 40 330 78 L400 70" stroke="#5e2d61" stroke-width="6" fill="none" stroke-linecap="round" pathLength="100"/><line x1="40" y1="105" x2="650" y2="105" stroke="#d6c6e0" stroke-width="3"/></svg>
+    <div id="r2_pen" style="position:absolute;left:0;top:0">${icon('pen', 54, '#30103d', 2.2)}</div></div></div>
+  <div class="card" id="r2_1" style="left:980px;top:200px;width:770px;height:360px">
+    <div class="a" style="left:40px;top:40px;display:flex;align-items:center;gap:20px">${IB('sun', 96, '#ffc542', '#30103d')}<div style="font:800 40px/1.15 PJS">Ferie pagate<br><span style="font:600 26px INT;color:#7d6787">almeno, per legge</span></div></div>
+    <div class="a" id="r2_fv" style="left:40px;top:200px;font:800 110px/1 PJS;color:#5e2d61">0</div>
+    <div class="a" style="left:220px;top:215px;font:800 34px/1.2 PJS">giorni all'anno</div>
+    <div class="a" id="r2_wk" style="left:220px;top:268px;display:flex;gap:10px;align-items:center;font:700 22px INT;color:#7d6787">${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => `<span class="wd" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#f0e8f5;color:#9a83a6">${d}</span>`).join('')}</div></div>
+  <div class="card" id="r2_2" style="left:170px;top:600px;width:770px;height:360px">
+    <div class="a" style="left:40px;top:40px;display:flex;align-items:center;gap:20px">${IB('thermo', 96, '#ff5a6e')}<div style="font:800 40px/1.15 PJS">Malattia<br><span style="font:600 26px INT;color:#7d6787">stipendio pieno</span></div></div>
+    <div class="a" style="left:40px;top:200px;display:flex;gap:12px">${Array.from({ length: 6 }, (_, i) => `<div class="mw" style="width:100px;height:70px;border-radius:14px;background:#f0e8f5;display:flex;align-items:center;justify-content:center;font:800 26px PJS;color:#fff">${i + 1}</div>`).join('')}</div>
+    <div class="a" id="r2_mv" style="left:40px;top:295px;font:800 36px PJS;color:#5e2d61">fino a 6 settimane</div></div>
+  <div class="card" id="r2_3" style="left:980px;top:600px;width:770px;height:360px">
+    <div class="a" style="left:40px;top:40px;display:flex;align-items:center;gap:20px">${IB('hourglass', 96)}<div style="font:800 40px/1.15 PJS">Periodo di prova</div></div>
+    <div class="a" style="left:40px;top:200px;font:800 34px PJS;color:#9a83a6">al massimo</div>
+    <div class="a" id="r2_pv" style="left:40px;top:245px;font:800 84px/1 PJS;color:#5e2d61">0 mesi</div></div>`;
+U.reg2 = t => {
+  whip($('r2_0'), t, S(227.18), { dx: -500 });
+  const ks = ease(seg(t, S(228.2), S(229.9))); draw($('r2_sig'), ks); const sp = $('r2_sig').getPointAtLength ? $('r2_sig').getPointAtLength($('r2_sig').getTotalLength() * ks) : { x: 0, y: 0 };
+  tf($('r2_pen'), { x: sp.x - 6, y: sp.y - 48, o: ks > 0 && ks < 1 ? 1 : 0 });
+  whip($('r2_1'), t, S(230.32), { dx: 500 }); roll($('r2_fv'), 20, t, S(230.88), { d: .8 });
+  $$('.wd', $('r2_1')).forEach((d, i) => { const on = i < 5 && t > S(233.4) + i * GRID / 2; d.style.background = on ? '#ffc542' : '#f0e8f5'; d.style.color = on ? '#30103d' : '#9a83a6'; });
+  whip($('r2_2'), t, S(235.16), { dx: -500 });
+  $$('.mw', $('r2_2')).forEach((d, i) => { const on = t > S(237.5) + i * GRID / 2; d.style.background = on ? '#2fbf6b' : '#f0e8f5'; d.style.transform = `scale(${on ? lerp(.7, 1, eOut(seg(t, S(237.5) + i * GRID / 2, S(237.5) + i * GRID / 2 + .2))) : 1})`; });
+  rise($('r2_mv'), t, S(237.96));
+  whip($('r2_3'), t, S(239.32), { dx: 500 }); roll($('r2_pv'), 6, t, S(241.08), { d: .6, suf: ' mesi' });
+};
+// 7. rent ------------------------------------------------------------------------------------------
+const RENT = [['Media in Germania', 510, 249.52, '', 'rgba(255,255,255,.75)'], ['Düsseldorf', 630, 253.0, 'più di ', '#ffc542'], ['Monaco', 800, 254.5, '', '#ff8a98']];
+const RW = v => v * 1.05;
+HTML.rent1 = `
+  <div class="a" id="re_mw" style="left:150px;top:230px">${MAP('re_m', 80, { cities: ['Düsseldorf', 'Monaco'] })}</div>
+  <div class="card" id="re_c" style="left:800px;top:200px;width:960px;height:150px;display:flex;align-items:center;gap:24px;padding:0 36px">${IB('bed', 96)}<div><div style="font:800 40px PJS">Una stanza in una casa condivisa</div><div class="lbl" style="font-size:20px;color:#9a83a6;margin-top:6px">WG-Zimmer · affitto medio al mese</div></div></div>
+  ${RENT.map(([n, v, , pre, c], i) => `<div class="a" id="re_r${i}" style="left:800px;top:${430 + i * 175}px;width:1000px;height:140px">
+    <div class="a" style="left:0;top:0;font:800 34px PJS;color:#fff">${n}</div>
+    <div class="a" id="re_b${i}" style="left:0;top:58px;width:${RW(v)}px;height:70px;border-radius:35px;background:${c};transform-origin:0 50%"></div>
+    <div class="a" id="re_v${i}" style="left:${RW(v) + 24}px;top:60px;font:800 60px/1 PJS;color:#fff">0 €</div></div>`).join('')}`;
+U.rent1 = t => {
+  rise($('re_mw'), t, S(246.56)); draw($('re_m_o'), ease(seg(t, S(246.56), S(248.2))));
+  whip($('re_c'), t, S(246.56), { dx: 500 });
+  RENT.forEach(([, v, a, pre], i) => { rise($('re_r' + i), t, S(a) - .5); $('re_b' + i).style.transform = `scaleX(${expo(seg(t, S(a) - .2, S(a) + .6))})`; roll($('re_v' + i), pre ? 600 : v, t, S(a), { pre, suf: ' €' }); });
+  [['Düsseldorf', 251.92], ['Monaco', 254.04]].forEach(([n, a]) => { const g = $('re_m_' + n.replace(/\W/g, '')), k = spring(t - S(a), 13, .55); g.style.opacity = t > S(a) ? 1 : 0; g.lastElementChild.setAttribute('r', (12 * Math.max(0, k)).toFixed(2)); g.firstElementChild.setAttribute('r', (28 + pulse(t, 7) * 12).toFixed(1)); g.firstElementChild.setAttribute('fill', n === 'Monaco' ? '#ff8a98' : '#ffc542'); });
+};
+// rent: what's left out of 1.750 ---------------------------------------------------------------------
+const NW = v => v * .62;
+HTML.rent2 = `
+  ${KICK('rt_k', 'Netto 1.750 € · affitto a carico tuo', 200)}
+  <div class="a" id="rt_bar" style="left:${960 - NW(1750) / 2}px;top:300px;width:${NW(1750)}px;height:170px;border-radius:26px;background:#2fbf6b;transform-origin:0 50%;overflow:hidden">
+    <div id="rt_rent" style="position:absolute;right:0;top:0;height:170px;width:${NW(750)}px;background:#ff5a6e;display:flex;align-items:center;justify-content:center;font:800 54px PJS;color:#fff;transform-origin:100% 50%">− affitto</div></div>
+  <div class="a ctr" id="rt_v" style="left:960px;top:560px;font:800 140px/1 PJS;color:#fff">1.750 €</div>
+  <div class="a ctr lbl li" id="rt_vl" style="left:960px;top:650px;font-size:26px">ti restano</div>
+  <div class="card" id="rt_inc" style="left:460px;top:740px;width:1000px;height:200px;display:flex;align-items:center;gap:30px;padding:0 44px">${IB('home', 120, '#2fbf6b')}
+    <div><div style="font:800 52px PJS;color:#30103d">Alloggio incluso</div><div style="font:600 30px INT;color:#7d6787;margin-top:6px">può valere più di uno stipendio alto</div></div></div>`;
+U.rent2 = t => {
+  rise($('rt_k'), t, S(255.66), { c: true });
+  $('rt_bar').style.transform = `scaleX(${expo(seg(t, S(256.72), S(256.72) + .7))})`; $('rt_bar').style.opacity = t > S(256.72) ? 1 : 0;
+  const kr = eOut(seg(t, S(259.18), S(259.18) + .6)), km = eOut(seg(t, S(260.88), S(260.88) + .4)), kb = eOut(seg(t, S(263.62), S(263.62) + .7));
+  $('rt_rent').style.transform = `scaleX(${kr * (1 + km * .07) * (1 - kb)})`;
+  const v = t < S(259.18) ? 1750 : t < S(263.62) ? lerp(1750, 1000, kr) - km * 50 : lerp(950, 1750, kb);
+  $('rt_v').textContent = (t > S(260.88) && t < S(263.62) ? '≤ ' : '') + fmt(Math.round(v / 10) * 10) + ' €';
+  pop($('rt_v'), t, S(256.72), { c: true, from: .6 }); rise($('rt_vl'), t, S(259.18), { c: true });
+  if (t > S(260.88) && t < S(262.2)) $('rt_v').style.transform += ` translateX(${Math.sin(t * 60) * 8 * Math.exp(-(t - S(260.88)) * 4)}px)`;
+  $('rt_v').style.color = t > S(259.4) && t < S(263.62) ? '#ff8a98' : '#fff';
+  whip($('rt_inc'), t, S(262.9), { dy: 300, dx: 0 });
+};
+// rent deducted from the payslip? check it, get it in writing ----------------------------------------
+HTML.rent3 = `
+  <div class="card" id="r3_p" style="left:200px;top:220px;width:740px;height:640px">
+    <div class="a" style="left:44px;top:40px;display:flex;align-items:center;gap:16px">${IB('doc', 72)}<div style="font:800 36px PJS">Busta paga</div></div>
+    ${[['Stipendio netto', '1.750 €'], ['Alloggio', '− ? €'], ['Accredito', '? €']].map(([a, b], i) => `<div class="a" id="r3_r${i}" style="left:44px;top:${170 + i * 120}px;width:652px;height:96px;border-radius:16px;background:${i === 1 ? '#fff4d6' : '#f6f1f9'};display:flex;align-items:center;padding:0 26px;font:700 34px INT">${a}<span style="margin-left:auto;font:800 38px PJS;color:${i === 1 ? '#c98a00' : '#5e2d61'}">${b}</span></div>`).join('')}
+    <div class="a" id="r3_mg" style="left:0;top:0">${CIRC('', 0, 0, 170, icon('search', 110, '#5e2d61', 2.2), 'rgba(255,255,255,.35)', 'position:relative;transform:none;border:8px solid #5e2d61;backdrop-filter:blur(1px)')}</div>
+    <div class="pill ctr" id="r3_ck" style="left:370px;top:560px;font-size:32px;background:#ffc542;color:#30103d">${icon('search', 30, '#30103d', 2.6)} controlla quanto</div></div>
+  <div class="card" id="r3_c" style="left:1000px;top:220px;width:720px;height:640px">
+    <div class="a" style="left:44px;top:40px;display:flex;align-items:center;gap:16px">${IB('edit', 72)}<div style="font:800 36px PJS">Contratto</div></div>
+    ${[90, 76, 84, 60, 80].map((w, i) => `<div class="a" style="left:44px;top:${170 + i * 40}px;width:${w * 6.3}px;height:14px;border-radius:7px;background:#e3d7ea"></div>`).join('')}
+    <div class="a" id="r3_hl" style="left:36px;top:${170 + 3 * 40 - 12}px;width:600px;height:38px;border-radius:10px;background:#ffc542;opacity:.6;transform-origin:0 50%"></div>
+    <div class="a" style="left:60px;top:${170 + 3 * 40 - 8}px;font:800 24px INT;color:#30103d" id="r3_hlt">Alloggio: ... € al mese</div>
+    <svg class="a" style="left:44px;top:420px" width="630" height="140"><path id="r3_sig" d="M30 95 C60 30 90 35 95 88 S135 110 160 60 S205 40 220 90 S270 100 290 60 Q310 40 340 85 L420 76" stroke="#5e2d61" stroke-width="6" fill="none" stroke-linecap="round" pathLength="100"/><line x1="20" y1="115" x2="600" y2="115" stroke="#d6c6e0" stroke-width="3"/></svg>
+    ${OK('r3_ok', 620, 560, 90)}</div>`;
+U.rent3 = t => {
+  whip($('r3_p'), t, S(267.4), { dx: -500 }); for (let i = 0; i < 3; i++) rise($('r3_r' + i), t, S(267.66) + i * GRID);
+  const km = ease(seg(t, S(269.6), S(270.6))); tf($('r3_mg'), { x: lerp(520, 440, km), y: lerp(420, 268, km), o: clamp((t - S(269.5)) * 4), s: lerp(.6, 1, km) });
+  pop($('r3_ck'), t, S(270.5), { c: true, from: .4 });
+  whip($('r3_c'), t, S(271.44), { dx: 500 }); $('r3_hl').style.transform = `scaleX(${eOut(seg(t, S(271.84), S(272.2)))})`; rise($('r3_hlt'), t, S(271.9));
+  draw($('r3_sig'), ease(seg(t, S(272.0), S(273.1)))); popB($('r3_ok'), t, S(272.46) + .5, { c: true, from: .2 });
+};
+// disclaimer -----------------------------------------------------------------------------------------
+HTML.disc = `
+  <div class="pill ctr" id="ds_y" style="left:960px;top:260px;font-size:30px">${icon('info', 30, '#5e2d61', 2.6)} dati 2026</div>
+  ${TITLE('ds_t', 'Le cifre sono indicative', 390, 96)}
+  <div class="a ctr lbl li" id="ds_l" style="left:960px;top:500px;font-size:28px">Dipendono da</div>
+  ${[['doc', 'Contratto', 276.08], ['pin', 'Città', 277.02], ['clock', 'Ore di lavoro', 278.02]].map(([ic, n], i) => `<div class="card" id="ds_${i}" style="left:${300 + i * 460}px;top:580px;width:400px;height:200px;display:flex;align-items:center;gap:24px;padding:0 34px">${IB(ic, 96)}<div style="font:800 40px PJS">${n}</div></div>`).join('')}`;
+U.disc = t => {
+  pop($('ds_y'), t, S(273.6), { c: true, from: .4 }); words($('ds_t'), t, [S(273.54), S(273.76), S(274.08), S(274.36)], .5); rise($('ds_l'), t, S(275.38), { c: true });
+  [276.08, 277.02, 278.02].forEach((a, i) => whip($('ds_' + i), t, S(a) - .2, { dy: 260, dx: 0 }));
+};
+// recap: how to read an offer --------------------------------------------------------------------------
+const RC = [['Lordo o netto?', 281.92, 'euro'], ['Quante ore?', 283.68, 'clock'], ['Alloggio?', 284.56, 'home'], ['Contratto?', 285.9, 'doc']];
+HTML.recap = `
+  ${TITLE('rc_t', "Ora sai come leggere un'offerta", 210, 80)}
+  ${RC.map(([n, , ic], i) => `<div class="card" id="rc_${i}" style="left:${170 + i * 400}px;top:360px;width:360px;height:440px">
+    <div class="a ctr" style="left:180px;top:150px">${IB(ic, 150)}</div>
+    <div class="a ctr" style="left:180px;top:300px;font:800 40px PJS">${n}</div>
+    ${OK('rc_k' + i, 180, 385, 84)}</div>`).join('')}`;
+U.recap = t => {
+  words($('rc_t'), t, [S(279.38), S(279.68), S(279.96), S(280.24), S(280.62)], .5);
+  RC.forEach(([, a], i) => { whip($('rc_' + i), t, S(a) - .35, { dy: 300, dx: 0, d: .45 }); popB($('rc_k' + i), t, S(a) + .25, { c: true, from: .2 }); });
+};
+// outro --------------------------------------------------------------------------------------------------
+HTML.outro = `
+  <div class="a ctr h1" id="ou_a" style="left:960px;top:400px;font-size:120px">${MW('Il lavoro vero')}</div>
+  <div class="a ctr h1" id="ou_b" style="left:960px;top:550px;font-size:96px">${MW('è quello che ti resta')} <span class="mask"><span class="mi"><span class="hl" id="ou_hl"><i></i><b style="color:#30103d">in tasca.</b></span></span></span></div>
+  <div class="a ctr" id="ou_c" style="left:960px;top:820px;display:flex;gap:30px;align-items:center;font:700 30px INT;color:#fff"><img src="${LOGO}" style="width:74px;height:74px"> lbswork.com <span style="opacity:.4">|</span> ${FLAG('de', 38)} +49 1573 9037885 <span style="opacity:.4">|</span> ${FLAG('it', 38)} +39 351 881 8391</div>`;
+U.outro = t => {
+  words($('ou_a'), t, [S(286.76), S(287.0), S(287.22), S(287.44)]);
+  words($('ou_b'), t, [S(288.24), S(288.5), S(288.7), S(288.84), S(289.04), S(289.34)]); hl($('ou_hl'), t, S(289.5));
+  rise($('ou_c'), t, S(290.6), { c: true });
+};
+
+// ---------- build DOM ----------
+const scenes = $('scenes');
+SC.forEach((s, i) => { const d = document.createElement('div'); d.className = 'layer'; d.id = 'L' + i; d.innerHTML = HTML[s.id]; scenes.appendChild(d); s.el = d; s.ch = s.id.startsWith('ch'); s.A = S(s.a) - (s.ch ? 0 : .05); s.B = S(s.b); });
+SC[0].A = -1;
+$('hud').innerHTML = `
+  <div class="a" id="hd_l" style="left:56px;top:40px;display:flex;align-items:center;gap:16px"><img src="${LOGO}" style="width:58px;height:58px"><div><div class="lbl" style="font-size:19px;color:#fff">Quanto si guadagna in Germania</div><div style="font:600 18px INT;color:#dab6fc;margin-top:4px">Lordo, netto e leggi · dati 2026</div></div></div>
+  <div class="a" id="hd_t" style="right:56px;top:46px;display:flex;gap:10px">${TABS.map((n, i) => `<div class="tab" id="tab${i}"><b>${i + 1}</b>${n}</div>`).join('')}</div>
+  <div class="a" style="left:0;bottom:0;width:1920px;height:8px;background:rgba(255,255,255,.12)"><div id="hd_p" style="width:100%;height:8px;background:#dab6fc;transform-origin:0 50%"></div></div>`;
+
+// ---------- background: drifting icon pattern that breathes on the beat ----------
+const PAT = {
+  truck: 'M2 6.5h11.5v9.5H2z M13.5 9.5h4.2l3.8 3.6v2.9h-8z M4 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0 M15.2 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0',
+  pizza: 'M3.5 4.5Q12 1.5 20.5 4.5L12 21.5z M4.6 6.8Q12 4.2 19.4 6.8 M8.9 9.4a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0 M12.9 11.8a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0',
+  helmet: 'M2 18h20 M4 18v-2a8 8 0 0 1 16 0v2 M10 8.5V5h4v3.5',
+  euro: 'M18 6.5A7 7 0 1 0 18 17.5 M4 10h10 M4 14h10',
+};
+const TILE = (() => { const c = document.createElement('canvas'); c.width = 1040; c.height = 840; const x = c.getContext('2d'), r = rng(31), names = Object.keys(PAT);
+  x.strokeStyle = '#fff'; x.lineWidth = 1.25; x.lineJoin = x.lineCap = 'round';
+  for (let row = 0; row < 4; row++) for (let k = 0; k < 4; k++) {
+    const cx = k * 260 + (row % 2 ? 130 : 0) + 65, cy = row * 210 + 70, n = names[(row * 3 + k) % 4], rot = (r() - .5) * .45;
+    for (const dx of [0, 1040]) { if (dx && cx > 130) continue; x.save(); x.translate(cx + dx, cy); x.rotate(rot); x.scale(2.9, 2.9); x.translate(-12, -12); x.stroke(new Path2D(PAT[n])); x.restore(); }
+  } return c; })();
+const bgc = $('bg').getContext('2d'), PW = bgc.createPattern(TILE, 'repeat');
+{ const g = $('glow').getContext('2d'), gw = 2320, gh = 1380;
+  const blob = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, gw, gh); };
+  blob(620, 420, 820, 'rgba(218,182,252,.16)'); blob(1800, 1050, 820, 'rgba(48,16,61,.55)'); blob(1700, 260, 560, 'rgba(218,182,252,.1)'); }
+const GRAIN = []; { const r = rng(99); for (let k = 0; k < 4; k++) { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), im = x.createImageData(256, 256); for (let i = 0; i < im.data.length; i += 4) { const v = r() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); GRAIN.push(`url(${c.toDataURL()})`); } }
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const TR = .42;
+function vis(s, t) { if (t < s.A - .05 || t > s.B + TR) return 0; return seg(t, s.A, s.A + TR) * (1 - seg(t, s.B, s.B + TR)); }
+function drawBg(t, V) {
+  let sw = 0, rgb = [0, 0, 0], dark = 0;
+  SC.forEach((s, i) => { const v = V[i]; if (!v) return; const c = hex(s.bg); sw += v; rgb = rgb.map((x, k) => x + c[k] * v); if (s.bg === D) dark += v; });
+  if (sw < 1e-4) { rgb = hex(P); sw = 1; }
+  rgb = rgb.map(x => Math.round(x / sw)); dark /= sw;
+  bgc.fillStyle = `rgb(${rgb})`; bgc.fillRect(0, 0, W, H);
+  const p = pulse(t, 8), bp = barPulse(t);
+  const ox = -(t * 14) % 1040, oy = -(t * 8) % 840;
+  bgc.save(); bgc.translate(W / 2, H / 2); bgc.scale(1 + p * .012, 1 + p * .012); bgc.translate(-W / 2, -H / 2);
+  bgc.translate(ox, oy); bgc.globalAlpha = (.12 + p * .05) * (1 - .45 * dark); bgc.fillStyle = PW; bgc.fillRect(-ox - 40, -oy - 40, W + 80, H + 80); bgc.restore(); bgc.globalAlpha = 1;
+  // a ring that expands from the centre on every bar downbeat
+  if (bp > .01) { const ph = 1 - bp; bgc.strokeStyle = `rgba(218,182,252,${(.16 * bp).toFixed(3)})`; bgc.lineWidth = 3 + 10 * bp; bgc.beginPath(); bgc.arc(W / 2, H * .55, 160 + ph * 1100, 0, Math.PI * 2); bgc.stroke(); }
+  const g = $('glow'); g.style.opacity = .85 + p * .15; g.style.transform = `translate(${Math.sin(t * .23) * 120}px,${Math.cos(t * .17) * 70}px) scale(${1 + p * .03})`;
+}
+// chapter wipes: three skewed bars sweep across as the chapter card arrives
+const WIPES = CHAP.map(c => S(c[0]));
+function wipes(t) {
+  const bars = [$('wb0'), $('wb1'), $('wb2')], off = [-.07, 0, .06];
+  let T = null; for (const w of WIPES) if (Math.abs(t - w) < .62) T = w;
+  bars.forEach((b, i) => {
+    if (T === null) { b.style.visibility = 'hidden'; return; }
+    const f = x => ease(seg(x, T - .45 + off[i] * 2, T + .45 + off[i] * 2)), k = f(t), v = (f(t + 1 / 120) - k) * 120;
+    b.style.visibility = k > 0 && k < 1 ? 'visible' : 'hidden';
+    b.style.transform = `translate(${lerp(-4600, 2400, k)}px,0) skewX(-18deg)`;
+    dblur(b, v * 7000 / 60 * .25);
+  });
+}
+// whip-pan between scenes of the same chapter (with directional blur)
+const WX = 460;
+const lx = (s, t) => s.ch ? 0 : (1 - expo(seg(t, s.A, s.A + TR))) * WX - eIn(seg(t, s.B, s.B + TR)) * WX;
+function seekImpl(t) {
+  const V = SC.map(s => vis(s, t));
+  drawBg(t, V);
+  const bump = 1 + .006 * barPulse(t) + .003 * pulse(t, 10);
+  SC.forEach((s, i) => {
+    const v = V[i]; s.el.style.display = v > 0 ? 'block' : 'none'; if (!v) return;
+    const kin = seg(t, s.A, s.A + TR), kout = seg(t, s.B, s.B + TR), life = seg(t, s.A, s.B + TR);
+    s.el.style.opacity = s.ch ? (t < s.A + .02 ? 0 : 1 - kout) : Math.min(clamp(kin * 2.2), 1 - eIn(kout));
+    const x = lx(s, t), vx = (lx(s, t + 1 / 120) - x) * 120;
+    s.el.style.transform = `translateX(${x.toFixed(1)}px) scale(${((1 + .02 * life) * bump).toFixed(4)})`;
+    dblur(s.el, s.ch ? (1 - eOut(kin)) * 0 : vx / 60 * .5);
+    U[s.id](t);
+  });
+  wipes(t);
+  // HUD
+  const hudOn = seg(t, S(HUD_ON) + .6, S(HUD_ON) + 1.3) * (1 - seg(t, S(HUD_OFF), S(HUD_OFF) + .6));
+  $('hud').style.opacity = hudOn; $('hud').style.transform = `translateY(${(1 - hudOn) * -20}px)`;
+  const cur = CHAP.reduce((a, c, i) => t >= S(c[0]) ? i : a, -1);
+  TABS.forEach((_, i) => { const el = $('tab' + i), on = i === cur, done = i < cur; el.style.background = on ? '#fff' : done ? 'rgba(218,182,252,.28)' : 'rgba(255,255,255,.1)'; el.style.color = on ? '#5e2d61' : '#fff'; el.firstElementChild.style.background = on ? '#5e2d61' : done ? '#2fbf6b' : 'rgba(255,255,255,.18)'; el.firstElementChild.innerHTML = done ? icon('check', 16, '#fff', 3.4) : String(i + 1); el.firstElementChild.style.color = '#fff'; const pk = on ? spring(t - S(CHAP[i][0]), 14, .55) : 1; el.style.transform = `scale(${on ? lerp(.85, 1, pk) * (1 + pulse(t, 12) * .04) : 1})`; });
+  $('hd_p').style.transform = `scaleX(${clamp(t / DUR)})`;
+  $('grain').style.backgroundImage = GRAIN[Math.floor(t * 24) % 4];
+  $('fade').style.opacity = Math.max(1 - seg(t, 0, .35), seg(t, DUR - 1.0, DUR - .05));
+}
+
+// =========================================================================================
+// AUDIO: voice + 120 BPM bed in A minor (Am–F–C–G): four-on-the-floor kick, claps, 16th hats, pumping sub bass,
+// pluck arpeggio and pad; risers + impacts on every chapter; a darker drumless stretch in the rent section.
+// Sound effects follow the animations automatically (every whip / pop / counter registers its own cue).
+// Music and effects are synthesised in short windows (separate OfflineAudioContexts) and stitched into two stems:
+// a single 5-minute graph with thousands of scheduled nodes is far too slow to render.
+const VO_URL = 'data:audio/mpeg;base64,{{VO}}';
+const CUES = { whip: [], pop: [], roll: [] }; let REC = false;
+{ const w0 = whip, p0 = pop, r0 = roll;
+  whip = function (el, t, t0, o) { if (REC) CUES.whip.push(t0); return w0(el, t, t0, o); };
+  pop = function (el, t, t0, o) { if (REC) CUES.pop.push(t0); return p0(el, t, t0, o); };
+  roll = function (el, n, t, t0, o = {}) { if (REC) CUES.roll.push([t0, o.d || .9]); return r0(el, n, t, t0, o); }; }
+const dedupe = (a, gap) => { a = [...a].sort((x, y) => x - y); const o = []; for (const x of a) if (!o.length || x - o[o.length - 1] > gap) o.push(x); return o; };
+
+// ---- synth helpers: they schedule into the current window only (CUR) ----
+let CUR = null, NB = null;
+const live = (t, dest) => CUR && dest === CUR.pass && t >= CUR.w0 && t < CUR.w1;
+const at = t => t - CUR.w0;
+function noise(t, dur, { type = 'highpass', f = 1000, q = .7, g = .2, dest = 'sfx', f2, a = .002, pan = 0 } = {}) {
+  if (!live(t, dest)) return; const c = CUR.c, T = at(t);
+  const s = c.createBufferSource(); s.buffer = NB; s.loop = true;
+  const fl = c.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, T); fl.Q.value = q; if (f2) fl.frequency.exponentialRampToValueAtTime(f2, T + dur);
+  const e = c.createGain(); e.gain.setValueAtTime(0, T); e.gain.linearRampToValueAtTime(g, T + a); e.gain.exponentialRampToValueAtTime(.0005, T + dur);
+  const p = c.createStereoPanner(); p.pan.value = pan; s.connect(fl); fl.connect(e); e.connect(p); p.connect(c.destination); s.start(T, (t * 7.3) % 1.5); s.stop(T + dur + .05);
+}
+function tone(t, f, dur, { type = 'sine', g = .1, a = .005, dest = 'sfx', f2, lp, pan = 0, det = 0 } = {}) {
+  if (!live(t, dest)) return; const c = CUR.c, T = at(t);
+  const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, T); o.detune.value = det; if (f2) o.frequency.exponentialRampToValueAtTime(f2, T + dur * .8);
+  const e = c.createGain(); e.gain.setValueAtTime(0, T); e.gain.linearRampToValueAtTime(g, T + a); e.gain.exponentialRampToValueAtTime(.0005, T + dur);
+  let n = o; if (lp) { const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; o.connect(fl); n = fl; }
+  const p = c.createStereoPanner(); p.pan.value = pan; n.connect(e); e.connect(p); p.connect(c.destination); o.start(T); o.stop(T + dur + .05);
+}
+function pluck(t, mm, g, pan = 0, bright = 1) {
+  if (!live(t, 'music')) return; const c = CUR.c, T = at(t);
+  const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = 4; fl.frequency.setValueAtTime(700 + 2800 * bright, T); fl.frequency.exponentialRampToValueAtTime(340, T + .2);
+  const e = c.createGain(); e.gain.setValueAtTime(0, T); e.gain.linearRampToValueAtTime(g, T + .004); e.gain.exponentialRampToValueAtTime(.0005, T + .3);
+  const p = c.createStereoPanner(); p.pan.value = pan; fl.connect(e); e.connect(p); p.connect(c.destination);
+  for (const dt of [-8, 8]) { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(mm); o.detune.value = dt; o.connect(fl); o.start(T); o.stop(T + .35); }
+}
+function pad(t, notes, dur, g, lpf = 1400) {
+  if (!live(t, 'music')) return; const c = CUR.c, T = at(t);
+  const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lpf; fl.Q.value = .3;
+  const e = c.createGain(); e.gain.setValueAtTime(0, T); e.gain.linearRampToValueAtTime(g, T + .4); e.gain.setValueAtTime(g, T + dur - .3); e.gain.linearRampToValueAtTime(0, T + dur); fl.connect(e); e.connect(c.destination);
+  for (const mm of notes) for (const dt of [-7, 7]) { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(mm); o.detune.value = dt; o.connect(fl); o.start(T); o.stop(T + dur + .05); }
+}
+function kick(t, g = .32) {
+  if (!live(t, 'music')) return; const c = CUR.c, T = at(t);
+  const o = c.createOscillator(), e = c.createGain(); o.frequency.setValueAtTime(140, T); o.frequency.exponentialRampToValueAtTime(45, T + .11); e.gain.setValueAtTime(g, T); e.gain.exponentialRampToValueAtTime(.001, T + .3); o.connect(e); e.connect(c.destination); o.start(T); o.stop(T + .32);
+}
+function bass(t, f, dur, g, lpf) {
+  if (!live(t, 'music')) return; const c = CUR.c, T = at(t);
+  const o = c.createOscillator(), o2 = c.createOscillator(), e = c.createGain(), fl = c.createBiquadFilter(); o.type = 'sawtooth'; o2.type = 'sine'; o.frequency.value = f; o2.frequency.value = f;
+  fl.type = 'lowpass'; fl.frequency.value = lpf; e.gain.setValueAtTime(0, T); e.gain.linearRampToValueAtTime(g, T + .06); e.gain.exponentialRampToValueAtTime(.001, T + dur);
+  o.connect(fl); o2.connect(fl); fl.connect(e); e.connect(c.destination); o.start(T); o2.start(T); o.stop(T + dur + .02); o2.stop(T + dur + .02);
+}
+const chime = (t, mm, g = .06) => { tone(t, mtof(mm), 1.3, { g }); tone(t, mtof(mm) * 2.76, .4, { g: g * .25 }); };
+
+// every musical / sound-effect event of the film (each helper keeps only what falls in the current window)
+function score() {
+  const PROG = [[57, 60, 64], [57, 60, 65], [55, 60, 64], [55, 59, 62]], ROOT = [33, 29, 36, 31];
+  const LEAD = [[76, 0], [74, .5], [72, 1], [74, 1.5], [76, 2.5], [79, 3], [76, 3.5]];
+  const moody = t => t > S0(246.5) && t < S0(262.2), intro = t => t < S0(12.6) - .05;
+  const nBars = Math.ceil(DUR / BAR);
+  for (let n = 0; n < nBars; n++) {
+    const t = n * BAR, ci = n % 4, ch = PROG[ci];
+    if (t > DUR - 1.2) break;
+    if (t + BAR < CUR.w0 - 4 || t > CUR.w1) continue;
+    const md = moody(t + .01), it = intro(t + .01), endZone = t > DUR - 4;
+    const lpf = it ? 500 + 2500 * clamp(t / (S0(12.6) - 1)) : md ? 650 : 1600;
+    pad(t, [ch[0] - 12, ...ch], BAR + .15, md ? .03 : .022, lpf);
+    const arp = [ch[0] + 12, ch[2], ch[1] + 12, ch[0] + 12, ch[2] + 12, ch[1] + 12, ch[2], ch[1] + 12];
+    for (let k = 0; k < 16; k++) { if (md && k % 2) continue; if (endZone && k % 4) continue; pluck(t + k * BEAT / 4, arp[k % 8], md ? .02 : .024, k % 2 ? .35 : -.35, it ? .1 + .6 * clamp(t / S0(12.6)) : md ? .05 : .55 + .25 * (k % 2)); }
+    if (!it || t > S0(12.6) - 2 * BAR) for (let e = 0; e < 8; e++) bass(t + e * BEAT / 2, mtof(ROOT[ci] + (e === 7 ? 12 : 0)), BEAT / 2 - .02, e % 2 ? .16 : .06, md ? 260 : 420);
+    if (DRUMS(t + .01) && !endZone) for (let b = 0; b < 4; b++) {
+      const tb = t + b * BEAT; kick(tb);
+      if (b % 2) { for (const d of [0, .012, .026]) noise(tb + d, .14, { type: 'bandpass', f: 1400, q: .9, g: .09, dest: 'music' }); noise(tb, .2, { type: 'highpass', f: 5000, g: .03, dest: 'music' }); }
+      for (let s = 0; s < 4; s++) noise(tb + s * BEAT / 4, s === 2 ? .12 : .03, { f: s === 2 ? 7000 : 9500, g: s === 2 ? .04 : .016, dest: 'music', pan: s % 2 ? .3 : -.3 });
+    }
+    if ((t >= S0(279.3) && !endZone) || (t >= S0(12.6) && t < S0(15.3))) LEAD.forEach(([mm, b]) => tone(t + b * BEAT, mtof(mm), .35, { type: 'square', g: .018, dest: 'music', lp: 2600, pan: .15 }));
+  }
+  [33, 45, 57, 60, 64, 69].forEach((mm, j) => tone(DUR - 3.4 + j * .05, mtof(mm), 3.2, { type: 'triangle', g: .05, dest: 'music', lp: 2400 }));
+
+  // ---- sound effects ----
+  const whoosh = (t, g = .1, pan = 0) => noise(t - .18, .45, { type: 'bandpass', f: 500, f2: 4200, q: 1.1, g, a: .16, pan });
+  const popS = (t, i = 0) => { tone(t, 380 + (i % 6) * 55, .09, { f2: 760 + (i % 6) * 70, g: .085 }); noise(t, .025, { type: 'bandpass', f: 3200, q: 2, g: .04 }); };
+  const ding = (t, i = 0) => { tone(t, mtof(88 + [0, 3, 7][i % 3]), .25, { g: .06 }); tone(t + .05, mtof(95 + [0, 3, 7][i % 3]), .3, { g: .035 }); };
+  const tick = (t, i) => tone(t, 1400 + i * 60, .025, { g: .03 });
+  const stamp = t => { tone(t, 150, .3, { f2: 55, g: .4 }); noise(t, .12, { type: 'lowpass', f: 2200, g: .2 }); };
+  const cash = t => { noise(t, .06, { type: 'bandpass', f: 2500, q: 3, g: .12 }); [0, .07].forEach(d => { tone(t + .1 + d, 2093, .5, { g: .05 }); tone(t + .1 + d, 2637, .4, { g: .035 }); }); noise(t + .1, .35, { type: 'highpass', f: 6000, g: .04 }); };
+  const womp = (t, d = .6) => tone(t, 220, d, { type: 'sawtooth', f2: 90, g: .05, lp: 900 });
+  const thud = t => { tone(t, 90, .3, { f2: 40, g: .3 }); noise(t, .08, { type: 'lowpass', f: 900, g: .14 }); };
+  const scribble = (t, d) => { for (let i = 0; i < d / .09; i++) noise(t + i * .09, .07, { type: 'bandpass', f: 2600 + (i % 3) * 600, q: 2, g: .03 }); };
+  const shimmer = (t, d) => { for (let i = 0; i < 10; i++) tone(t + i * d / 10, mtof(96 + [0, 3, 7, 10, 12][i % 5]), .5, { g: .015, pan: (i % 3 - 1) * .4 }); };
+  CHAP.forEach(([c]) => { const t = S(c); noise(t - 1.0, 1.05, { type: 'bandpass', f: 300, f2: 6000, q: 1.2, g: .22, a: .95 }); for (let i = 0; i < 8; i++) noise(t - 1 + i * BEAT / 4, .05, { type: 'bandpass', f: 1500, q: 1, g: .02 + i * .008 }); tone(t, 70, .9, { f2: 32, g: .4 }); noise(t, .5, { type: 'highpass', f: 3000, g: .08 }); [69, 72, 76, 81].forEach((mm, j) => chime(t + .2 + j * BEAT / 4, mm, .05)); });
+  SC.forEach((s, i) => { if (i && !s.ch && !SC[i - 1].ch) whoosh(s.A + .12, .09, i % 2 ? .3 : -.3); });
+  dedupe(CUES.whip, .2).forEach((t, i) => whoosh(t + .1, .075, (i % 3 - 1) * .4));
+  dedupe(CUES.pop, .12).forEach((t, i) => popS(t, i));
+  CUES.roll.forEach(([t0, d], j) => { const n = Math.round(d / .07); for (let k = 0; k < n; k++) tick(t0 + k * .07, k); ding(t0 + d, j); });
+  stamp(S(94.24)); cash(S(32.0) + 1.0); cash(S(55.54) + 1.0); cash(S(131.24) + .9);
+  for (let i = 0; i < 6; i++) { const t0 = S(81.66) + i * GRID / 2 + .28; tone(t0, 2400 + i * 130, .18, { g: .04 }); tone(t0, 3600 + i * 90, .1, { g: .02 }); }
+  stamp(S(82.56)); womp(S(55.54) + .1, .5); thud(S(193.32) + .32); stamp(S(199.96));
+  shimmer(S(151.0), 2.2); scribble(S(228.2), 1.6); scribble(S(272.0), 1.0);
+  womp(S(259.18), .7); womp(S(260.88), .6); [72, 76, 79, 84].forEach((mm, j) => chime(S(263.62) + j * BEAT / 4, mm, .06));
+  [69, 72, 76, 81, 84].forEach((mm, j) => chime(S(289.5) + j * .08, mm, .05));
+}
+
+window.buildAudio = async function (ctx) {
+  if (!CUES.done) { REC = true; SC.forEach(s => { try { U[s.id](s.A + .01); } catch (e) { } }); REC = false; CUES.done = 1; seekImpl(0); }
+  const sr = ctx.sampleRate, LEN = Math.ceil(DUR * sr);
+  NB = new AudioBuffer({ numberOfChannels: 1, length: sr * 2, sampleRate: sr }); { const d = NB.getChannelData(0), r = rng(1234); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
+  // render the two stems window by window
+  const STEM = {}, WIN = 12, TAIL = 3.6;
+  for (const pass of ['music', 'sfx']) {
+    const st = new AudioBuffer({ numberOfChannels: 2, length: LEN, sampleRate: sr }), L = st.getChannelData(0), R = st.getChannelData(1);
+    for (let w0 = 0; w0 < DUR; w0 += WIN) {
+      const c = new OfflineAudioContext(2, Math.ceil((WIN + TAIL) * sr), sr);
+      CUR = { c, w0, w1: w0 + WIN, pass }; score(); CUR = null;
+      const b = await c.startRendering(), bl = b.getChannelData(0), br = b.getChannelData(1), o = Math.round(w0 * sr);
+      for (let i = 0; i < bl.length && o + i < LEN; i++) { L[o + i] += bl[i]; R[o + i] += br[i]; }
+    }
+    STEM[pass] = st;
+  }
+  // final mix
+  const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .1;
+  const out = ctx.createGain(); out.gain.value = .6; lim.connect(out); out.connect(ctx.destination);
+  const master = ctx.createGain(); master.gain.value = .7; master.connect(lim);
+  const ir = ctx.createBuffer(2, Math.floor(sr * 2.2), sr);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c), r = rng(5 + c); for (let i = 0; i < d.length; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / d.length, 3.2); }
+  const verb = ctx.createConvolver(); verb.buffer = ir; const vr = ctx.createGain(); vr.gain.value = .33; verb.connect(vr); vr.connect(master);
+  const music = ctx.createGain(); music.connect(master); const ms = ctx.createGain(); ms.gain.value = .22; music.connect(ms); ms.connect(verb);
+  const sfx = ctx.createGain(); sfx.gain.value = .5; sfx.connect(master); const ss = ctx.createGain(); ss.gain.value = .2; sfx.connect(ss); ss.connect(verb);
+  const lo = .28, hi = .6; music.gain.setValueAtTime(.6, 0);
+  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, voT(a) - .3, .1); music.gain.setTargetAtTime(BRK.some(k => Math.abs(k.c - b) < .9) ? .92 : hi, voT(b) + .1, .25); }
+  music.gain.setTargetAtTime(.75, voT(289.9), .3); music.gain.setTargetAtTime(0, DUR - 1.2, .3);
+  for (const [pass, g] of [['music', music], ['sfx', sfx]]) { const s = ctx.createBufferSource(); s.buffer = STEM[pass]; s.connect(g); s.start(0); }
+  try {
+    const vb = await ctx.decodeAudioData(await (await fetch(VO_URL)).arrayBuffer());
+    const vg = ctx.createGain(); vg.gain.value = 1.05; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 70; hp.connect(vg); vg.connect(master);
+    const cuts = [0, ...BRK.map(b => b.c), vb.duration];
+    for (let i = 0; i + 1 < cuts.length; i++) { const src = ctx.createBufferSource(); src.buffer = vb; src.connect(hp); src.start(voT(cuts[i]), cuts[i], cuts[i + 1] - cuts[i]); }
+  } catch (e) { console.warn('voice not decoded', e); }
+};
+async function boot() {
+  await Promise.all([...document.fonts].map(f => f.load().catch(() => { })));
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.decode().catch(() => { })));
+  window.seek = seekImpl;
+  seekImpl(0);
+  if (RENDER) return;
+  const stage = $('stage'), fit = () => { const k = Math.min(innerWidth / W, (innerHeight - 50) / H); stage.style.transform = `scale(${k})`; }; fit(); addEventListener('resize', fit);
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() { ac ??= new AudioContext(); if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); } src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination); src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; $('pb').textContent = 'Pausa ❚❚'; }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; $('pb').textContent = 'Play ▶'; }
+  const now = () => playing ? (offset + ac.currentTime - startAt) % DUR : offset;
+  $('pb').onclick = () => playing ? pause() : play();
+  $('sc').oninput = e => { const was = playing; pause(); offset = e.target.value / 1000 * DUR; if (was) play(); };
+  (function loop() { const t = now(); seekImpl(t); $('sc').value = t / DUR * 1000; $('tc').textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+}
+boot();
+</script></body></html>
