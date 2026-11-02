@@ -11,6 +11,7 @@ const CK = '<span class="ck"><svg width="20" height="20" viewBox="0 0 24 24" fil
 const GLOBE = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#dab6fc" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
 let s = readFileSync(path.join(D, 'banner.src.html'), 'utf8');
 const rep = { PJS: b64('pjs.woff2'), INTER: b64('inter.woff2'), BC: b64('bc900i.woff2'), LOGO: b64('logo.png'), IT: flag('it', 40), DE: flag('de', 40), ITs: flag('it', 54), DEs: flag('de', 54), IT2: flag('it', 78), DE2: flag('de', 90), CK, GLOBE };
+for (const n of ['furgone', 'pizza', 'farfalla', 'cappello', 'aereo']) rep['ICO_' + n] = b64('icone/' + n + '.png');
 for (const [k, v] of Object.entries(rep)) s = s.replaceAll(`{{${k}}}`, v);
 writeFileSync(path.join(D, 'banner.html'), s);
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
