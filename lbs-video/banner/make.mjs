@@ -17,7 +17,7 @@ writeFileSync(path.join(D, 'banner.html'), s);
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 const pg = await b.newPage({ viewport: { width: 1640, height: 1000 }, deviceScaleFactor: 1 });
 await pg.goto('file://' + path.resolve(D, 'banner.html'));
-await pg.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.images].map(i => i.decode().catch(() => {}))); });
+await pg.evaluate(async () => { await window.PAT_READY; await document.fonts.ready; await Promise.all([...document.images].map(i => i.decode().catch(() => {}))); });
 for (const v of ['A', 'B', 'C']) {
   await pg.locator('#' + v).screenshot({ path: `${D}/LBS-copertina-${v}.png` });
   await pg.locator('#' + v).screenshot({ path: `${D}/LBS-copertina-${v}.jpg`, type: 'jpeg', quality: 95 });
