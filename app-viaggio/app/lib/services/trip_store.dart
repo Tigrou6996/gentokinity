@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/trip.dart';
 
 /// Viaggi e biglietti salvati sul telefono (file JSON + copie dei biglietti nella cartella dell'app).
@@ -17,9 +18,16 @@ class TripStore extends ChangeNotifier {
 
   Future<void> load() async {
     try {
-      final f = await _file;
-      if (!await f.exists()) return;
-      final list = jsonDecode(await f.readAsString()) as List;
+      String? txt;
+      if (kIsWeb) {
+        txt = (await SharedPreferences.getInstance()).getString('viaggi'); // nel browser: memoria del sito
+      } else {
+        final f = await _file;
+        if (!await f.exists()) return;
+        txt = await f.readAsString();
+      }
+      if (txt == null) return;
+      final list = jsonDecode(txt) as List;
       trips
         ..clear()
         ..addAll(list.whereType<Map>().map((m) => SavedTrip.fromJson(Map<String, dynamic>.from(m))));
@@ -31,6 +39,11 @@ class TripStore extends ChangeNotifier {
   }
 
   Future<void> _save() async {
+    if (kIsWeb) {
+      await (await SharedPreferences.getInstance()).setString('viaggi', jsonEncode(trips.map((t) => t.toJson()).toList()));
+      notifyListeners();
+      return;
+    }
     final f = await _file;
     final tmp = File('${f.path}.tmp');
     await tmp.writeAsString(jsonEncode(trips.map((t) => t.toJson()).toList()));
@@ -52,7 +65,7 @@ class TripStore extends ChangeNotifier {
   Future<void> remove(SavedTrip t) async {
     trips.removeWhere((x) => x.id == t.id);
     final p = t.ticket.filePath;
-    if (p != null) {
+    if (p != null && !kIsWeb) {
       try {
         await File(p).delete();
       } catch (_) {}

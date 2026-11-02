@@ -36,8 +36,8 @@ class _AddTicketScreenState extends State<AddTicketScreen> {
       if (info == null) return;
       await _apply(info);
     } catch (e) {
-      setState(() => _msg = 'Non sono riuscito a leggere il biglietto ($e). Puoi inserire i dati a mano.');
-      _apply(TicketInfo());
+      await _apply(TicketInfo());
+      setState(() => _msg = e is StateError ? e.message : 'Non sono riuscito a leggere il biglietto ($e). Puoi inserire i dati a mano.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

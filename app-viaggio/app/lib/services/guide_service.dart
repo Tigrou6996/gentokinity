@@ -42,7 +42,9 @@ class GuideService extends ChangeNotifier {
     unawaited(VoiceService.instance.say('Guida vocale attiva. Ti avviso prima di ogni fermata.'));
 
     if (perm == null && speed == 1) {
-      final settings = Platform.isAndroid
+      final settings = kIsWeb
+          ? const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 15)
+          : Platform.isAndroid
           ? AndroidSettings(
               accuracy: LocationAccuracy.high,
               distanceFilter: 15,

@@ -49,7 +49,7 @@ class VoiceService {
 
   /// Prepara in anticipo gli annunci del viaggio (così funzionano anche senza rete durante il tragitto).
   Future<void> prefetch(Iterable<String> texts) async {
-    if (!cloudAvailable) return;
+    if (!cloudAvailable || kIsWeb) return;
     for (final t in texts.toSet()) {
       try {
         await _cached(t);
@@ -67,8 +67,12 @@ class VoiceService {
   Future<void> _speak(String text) async {
     if (cloudAvailable) {
       try {
-        final f = await _cached(text);
-        await _player.setFilePath(f.path);
+        if (kIsWeb) {
+          await _player.setAudioSource(AudioSource.uri(Uri.dataFromBytes(await _fetch(text), mimeType: 'audio/mpeg')));
+        } else {
+          final f = await _cached(text);
+          await _player.setFilePath(f.path);
+        }
         await _player.setVolume(volume);
         final done = _player.playerStateStream.firstWhere((s) => s.processingState == ProcessingState.completed);
         await _player.play();
@@ -87,14 +91,18 @@ class VoiceService {
     await d.create(recursive: true);
     final f = File('${d.path}/$key.mp3');
     if (await f.exists() && await f.length() > 1000) return f;
+    await f.writeAsBytes(await _fetch(text), flush: true);
+    return f;
+  }
+
+  Future<List<int>> _fetch(String text) async {
     final r = await http
         .post(Uri.parse(AppConfig.ttsUrl),
             headers: {'content-type': 'application/json', ...AppConfig.supabaseHeaders},
             body: jsonEncode({'text': text, if (voiceId.isNotEmpty) 'voice_id': voiceId}))
         .timeout(const Duration(seconds: 20));
     if (r.statusCode != 200 || r.bodyBytes.length < 1000) throw Exception('tts ${r.statusCode}');
-    await f.writeAsBytes(r.bodyBytes, flush: true);
-    return f;
+    return r.bodyBytes;
   }
 
   Future<void> _deviceSpeak(String text) async {

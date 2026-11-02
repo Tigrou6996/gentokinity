@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,17 +13,23 @@ import 'trip_store.dart';
 class TicketReader {
   final _picker = ImagePicker();
 
+  // nel browser non c'è il riconoscimento del testo (ML Kit è solo per telefono)
+  static const webMsg = 'Nel browser il biglietto non si può leggere: inserisci partenza e arrivo a mano. Sul telefono la lettura è automatica.';
+
   Future<TicketInfo?> fromCamera() async {
+    if (kIsWeb) throw StateError(webMsg);
     final x = await _picker.pickImage(source: ImageSource.camera, imageQuality: 92, maxWidth: 2400);
     return x == null ? null : _fromImage(x.path);
   }
 
   Future<TicketInfo?> fromGallery() async {
+    if (kIsWeb) throw StateError(webMsg);
     final x = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 92, maxWidth: 2400);
     return x == null ? null : _fromImage(x.path);
   }
 
   Future<TicketInfo?> fromFile() async {
+    if (kIsWeb) throw StateError(webMsg);
     final files = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png']);
     if (files.isEmpty) return null;
     final f = files.first;

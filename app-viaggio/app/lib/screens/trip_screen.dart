@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pdfx/pdfx.dart';
@@ -290,9 +291,13 @@ class _SketchPainter extends CustomPainter {
       if (p.lon < minLon) minLon = p.lon;
       if (p.lon > maxLon) maxLon = p.lon;
     }
+    // margini larghi ai lati per i nomi delle fermate
+    const mx = 110.0, my = 30.0;
     final kx = .63, w = (maxLon - minLon) * kx, h = maxLat - minLat;
-    final sc = (w == 0 || h == 0) ? 1.0 : (size.width - 40) / w < (size.height - 40) / h ? (size.width - 40) / w : (size.height - 40) / h;
-    Offset o(LatLon p) => Offset(20 + ((p.lon - minLon) * kx) * sc + (size.width - 40 - w * sc) / 2, 20 + (maxLat - p.lat) * sc + (size.height - 40 - h * sc) / 2);
+    final aw = size.width - 2 * mx, ah = size.height - 2 * my;
+    final sc = (w == 0 || h == 0) ? 1.0 : (aw / w < ah / h ? aw / w : ah / h);
+    Offset o(LatLon p) => Offset(mx + ((p.lon - minLon) * kx) * sc + (aw - w * sc) / 2, my + (maxLat - p.lat) * sc + (ah - h * sc) / 2);
+    final placed = <Rect>[];
     for (final l in j.legs) {
       final path = l.path;
       if (path.length < 2) continue;
@@ -308,8 +313,18 @@ class _SketchPainter extends CustomPainter {
         final e = s == l.stops.first || s == l.stops.last;
         c.drawCircle(o(p), e ? 9 : 6, Paint()..color = Colors.white);
         c.drawCircle(o(p), e ? 9 : 6, Paint()..color = lineColor(l.line)..style = PaintingStyle.stroke..strokeWidth = 3);
-        final tp = TextPainter(text: TextSpan(text: s.stop.name, style: TextStyle(color: kDark, fontSize: e ? 13 : 11, fontWeight: e ? FontWeight.w800 : FontWeight.w500)), textDirection: TextDirection.ltr)..layout(maxWidth: 160);
-        tp.paint(c, o(p) + const Offset(12, -8));
+        final tp = TextPainter(text: TextSpan(text: s.stop.name, style: TextStyle(color: kDark, fontSize: e ? 13 : 11, fontWeight: e ? FontWeight.w800 : FontWeight.w500)), textDirection: TextDirection.ltr)..layout(maxWidth: mx - 14);
+        // a destra del punto, o a sinistra se non c'è spazio; salta i nomi che si sovrapporrebbero
+        final right = o(p).dx + 12 + tp.width < size.width;
+        var at = o(p) + Offset(right ? 12 : -12 - tp.width, -tp.height / 2);
+        var r = at & tp.size;
+        if (placed.any((q) => q.overlaps(r))) {
+          at = at + Offset(0, tp.height + 2);
+          r = at & tp.size;
+          if (placed.any((q) => q.overlaps(r))) continue;
+        }
+        placed.add(r);
+        tp.paint(c, at);
       }
     }
   }
@@ -505,7 +520,7 @@ class _TicketTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = t.filePath;
-    if (f != null && File(f).existsSync()) {
+    if (!kIsWeb && f != null && File(f).existsSync()) {
       if (t.fileType == 'pdf') return PdfViewPinch(controller: PdfControllerPinch(document: PdfDocument.openFile(f)));
       return InteractiveViewer(maxScale: 6, child: Center(child: Image.file(File(f))));
     }
