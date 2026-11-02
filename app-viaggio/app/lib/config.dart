@@ -19,6 +19,10 @@ class AppConfig {
     return 'https://v6.db.transport.rest';
   }
 
+  /// true quando la chiave Google Maps è stata messa nei file nativi (android/local.properties,
+  /// ios/Flutter/Secrets.xcconfig). Senza chiave Google Maps fa chiudere l'app, quindi si mostra uno schema del percorso.
+  static const mapsEnabled = bool.fromEnvironment('MAPS_ENABLED');
+
   static String get ttsUrl => supabaseUrl.isEmpty ? '' : '$supabaseUrl/functions/v1/tts';
 
   /// Intestazioni per le chiamate alle funzioni Supabase.

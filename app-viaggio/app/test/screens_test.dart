@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:lbs_viaggio/models/trip.dart';
 import 'package:lbs_viaggio/screens/home_screen.dart';
+import 'package:lbs_viaggio/screens/trip_screen.dart';
+import 'package:lbs_viaggio/services/demo.dart';
 import 'package:lbs_viaggio/services/trip_store.dart';
 import 'package:lbs_viaggio/theme.dart';
 import 'guide_engine_test.dart' show sample;
@@ -35,6 +37,28 @@ void main() {
     expect(find.text('Wilhelmshöhe'), findsOneWidget);
     expect(find.text('Göttingen'), findsOneWidget);
     expect(find.text('Bus 42'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('viaggio di esempio: schema, coincidenze e fermate', (t) async {
+    t.view.physicalSize = const Size(360 * 3, 690 * 3);
+    t.view.devicePixelRatio = 3;
+    addTearDown(t.view.reset);
+    final d = Demo.trip();
+    TripStore.instance.trips
+      ..clear()
+      ..add(d);
+    await t.pumpWidget(app(TripScreen(tripId: d.id)));
+    await t.pump();
+    expect(find.textContaining('Anteprima: la mappa Google'), findsOneWidget);
+    await t.tap(find.text('Coincidenze'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Cambio a Kassel Hauptbahnhof'), findsOneWidget);
+    await t.ensureVisible(find.text('Fermate'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Fermate'));
+    await t.pumpAndSettle();
+    expect(find.text('Bebelplatz'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 }

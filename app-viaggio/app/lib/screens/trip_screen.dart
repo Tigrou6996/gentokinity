@@ -4,7 +4,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/transit.dart';
+import '../config.dart';
 import '../models/trip.dart';
+import '../services/demo.dart';
 import '../services/guide_engine.dart';
 import '../services/guide_service.dart';
 import '../services/transit_api.dart';
@@ -27,7 +29,9 @@ class _TripScreenState extends State<TripScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh(silent: true));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_trip != null && !Demo.isDemo(_trip!)) _refresh(silent: true);
+    });
   }
 
   Future<void> _refresh({bool silent = false}) async {
@@ -56,7 +60,8 @@ class _TripScreenState extends State<TripScreen> {
       await WakelockPlus.disable();
       return;
     }
-    final warn = await GuideService.instance.start(t.id, t.journey);
+    // nel viaggio di esempio il tempo scorre 12 volte più veloce, così si sentono tutti gli annunci in pochi minuti
+    final warn = await GuideService.instance.start(t.id, t.journey, speed: Demo.isDemo(t) ? 12 : 1);
     await WakelockPlus.enable();
     if (warn != null && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(warn)));
   }
@@ -101,7 +106,9 @@ class _TripScreenState extends State<TripScreen> {
                 IconButton(tooltip: 'Elimina', onPressed: () => _delete(t), icon: const Icon(Icons.delete_outline_rounded)),
               ],
               bottom: const TabBar(
-                isScrollable: true,
+                // tutte e quattro le schede sempre visibili, anche sui telefoni piccoli
+                labelPadding: EdgeInsets.symmetric(horizontal: 2),
+                labelStyle: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
                 labelColor: Colors.white,
                 unselectedLabelColor: kLilac,
                 indicatorColor: Colors.white,
@@ -111,7 +118,7 @@ class _TripScreenState extends State<TripScreen> {
             body: Column(children: [
               Expanded(
                 child: TabBarView(physics: const NeverScrollableScrollPhysics(), children: [
-                  _MapTab(t.journey),
+                  AppConfig.mapsEnabled ? _MapTab(t.journey) : _RouteSketch(t.journey),
                   _ConnectionsTab(t.journey),
                   _StopsTab(t.journey, guiding ? g.status : null),
                   _TicketTab(t.ticket),
@@ -251,6 +258,64 @@ class _MapTabState extends State<_MapTab> with AutomaticKeepAliveClientMixin {
         }
         _ctl!.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: LatLng(s, w), northeast: LatLng(n, e)), 60));
       };
+}
+
+// ---------------------------------------------------------------- schema del percorso (senza chiave Google Maps)
+class _RouteSketch extends StatelessWidget {
+  final Journey j;
+  const _RouteSketch(this.j);
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        Container(
+          width: double.infinity,
+          color: const Color(0xFFFFF4D6),
+          padding: const EdgeInsets.all(12),
+          child: const Text('Anteprima: la mappa Google si attiva con la chiave Google Maps. Qui vedi lo schema del percorso.', style: TextStyle(fontSize: 13)),
+        ),
+        Expanded(child: Padding(padding: const EdgeInsets.all(20), child: CustomPaint(painter: _SketchPainter(j), size: Size.infinite))),
+      ]);
+}
+
+class _SketchPainter extends CustomPainter {
+  final Journey j;
+  _SketchPainter(this.j);
+  @override
+  void paint(Canvas c, Size size) {
+    final pts = j.legs.expand((l) => l.path).toList();
+    if (pts.length < 2) return;
+    var minLat = pts.first.lat, maxLat = minLat, minLon = pts.first.lon, maxLon = minLon;
+    for (final p in pts) {
+      if (p.lat < minLat) minLat = p.lat;
+      if (p.lat > maxLat) maxLat = p.lat;
+      if (p.lon < minLon) minLon = p.lon;
+      if (p.lon > maxLon) maxLon = p.lon;
+    }
+    final kx = .63, w = (maxLon - minLon) * kx, h = maxLat - minLat;
+    final sc = (w == 0 || h == 0) ? 1.0 : (size.width - 40) / w < (size.height - 40) / h ? (size.width - 40) / w : (size.height - 40) / h;
+    Offset o(LatLon p) => Offset(20 + ((p.lon - minLon) * kx) * sc + (size.width - 40 - w * sc) / 2, 20 + (maxLat - p.lat) * sc + (size.height - 40 - h * sc) / 2);
+    for (final l in j.legs) {
+      final path = l.path;
+      if (path.length < 2) continue;
+      final pa = Path()..moveTo(o(path.first).dx, o(path.first).dy);
+      for (final p in path.skip(1)) {
+        pa.lineTo(o(p).dx, o(p).dy);
+      }
+      c.drawPath(pa, Paint()..color = l.walking ? Colors.black38 : lineColor(l.line)..style = PaintingStyle.stroke..strokeWidth = l.walking ? 3 : 6..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+      if (l.walking) continue;
+      for (final s in l.stops) {
+        final p = s.stop.location;
+        if (p == null) continue;
+        final e = s == l.stops.first || s == l.stops.last;
+        c.drawCircle(o(p), e ? 9 : 6, Paint()..color = Colors.white);
+        c.drawCircle(o(p), e ? 9 : 6, Paint()..color = lineColor(l.line)..style = PaintingStyle.stroke..strokeWidth = 3);
+        final tp = TextPainter(text: TextSpan(text: s.stop.name, style: TextStyle(color: kDark, fontSize: e ? 13 : 11, fontWeight: e ? FontWeight.w800 : FontWeight.w500)), textDirection: TextDirection.ltr)..layout(maxWidth: 160);
+        tp.paint(c, o(p) + const Offset(12, -8));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SketchPainter old) => old.j != j;
 }
 
 // ---------------------------------------------------------------- coincidenze

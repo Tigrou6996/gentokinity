@@ -66,8 +66,13 @@ supabase functions deploy tts
 - Il modello predefinito è `eleven_multilingual_v2`, che pronuncia bene anche i nomi tedeschi delle fermate.
 - Gli annunci sono brevi, vengono preparati all'inizio del viaggio e salvati sul telefono: la stessa frase non viene mai pagata due volte.
 
+### Provarla subito (senza chiavi)
+Nella home c'è **"Prova con un viaggio di esempio"**: un viaggio Kassel → Göttingen (bus + treno) con la guida vocale
+simulata (il tempo scorre 12 volte più veloce). Senza `MAPS_ENABLED` al posto della mappa Google si vede uno schema del percorso.
+L'APK di anteprima contiene sia la versione per telefoni (arm64) sia quella per gli emulatori del PC (x86_64).
+
 ### 3. Configurazione dell'app
-Copia `app/config.example.json` in `app/config.json` e inserisci URL e chiave anon (pubblica) di Supabase, poi:
+Copia `app/config.example.json` in `app/config.json` e inserisci URL e chiave anon (pubblica) di Supabase (`MAPS_ENABLED` a `"true"` solo dopo aver messo la chiave Google Maps), poi:
 ```bash
 cd app
 flutter pub get

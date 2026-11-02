@@ -19,13 +19,19 @@ class GuideService extends ChangeNotifier {
   LatLon? position;
   final List<GuideEvent> log = [];
 
+  double speed = 1; // >1 = viaggio simulato (accelerato), senza GPS: per provare l'app
+  DateTime _t0 = DateTime.now();
+  DateTime get now => speed == 1 ? DateTime.now() : _t0.add(DateTime.now().difference(_t0) * speed);
+
   bool get active => _engine != null;
   GuideStatus? get status => _engine?.status;
 
   /// Restituisce un messaggio di errore da mostrare, oppure null se tutto ok.
-  Future<String?> start(String id, Journey journey) async {
+  Future<String?> start(String id, Journey journey, {double speed = 1}) async {
     await stop();
-    final perm = await _permission();
+    this.speed = speed;
+    _t0 = DateTime.now();
+    final perm = speed == 1 ? await _permission() : 'Viaggio simulato: il tempo scorre ${speed.round()} volte più veloce.';
     _engine = GuideEngine(journey);
     tripId = id;
     log.clear();
@@ -33,9 +39,9 @@ class GuideService extends ChangeNotifier {
 
     // prepara le frasi mentre c'è ancora rete
     unawaited(VoiceService.instance.prefetch(_engine!.allPhrases()));
-    await VoiceService.instance.say('Guida vocale attiva. Ti avviso prima di ogni fermata.');
+    unawaited(VoiceService.instance.say('Guida vocale attiva. Ti avviso prima di ogni fermata.'));
 
-    if (perm == null) {
+    if (perm == null && speed == 1) {
       final settings = Platform.isAndroid
           ? AndroidSettings(
               accuracy: LocationAccuracy.high,
@@ -64,7 +70,7 @@ class GuideService extends ChangeNotifier {
       }, onError: (e) => debugPrint('gps: $e'));
     }
     // controllo a tempo: funziona anche senza GPS (in galleria, in metropolitana)
-    _timer = Timer.periodic(const Duration(seconds: 10), (_) => _tick());
+    _timer = Timer.periodic(Duration(seconds: speed == 1 ? 10 : 1), (_) => _tick());
     _tick();
     return perm;
   }
@@ -86,14 +92,14 @@ class GuideService extends ChangeNotifier {
   /// Aggiorna gli orari (ritardi) senza perdere lo stato della guida.
   void replaceJourney(Journey j) {
     if (_engine == null) return;
-    _engine = GuideEngine(j)..update(DateTime.now(), position);
+    _engine = GuideEngine(j)..update(now, position);
     notifyListeners();
   }
 
   void _tick() {
     final e = _engine;
     if (e == null) return;
-    final events = e.update(DateTime.now(), position);
+    final events = e.update(now, speed == 1 ? position : null);
     for (final ev in events) {
       log.insert(0, ev);
       VoiceService.instance.say(ev.text);

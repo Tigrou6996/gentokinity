@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/trip.dart';
+import '../services/demo.dart';
 import '../services/guide_service.dart';
 import '../services/trip_store.dart';
 import '../theme.dart';
@@ -18,6 +19,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('LBS Viaggio', style: TextStyle(fontWeight: FontWeight.w800)),
         actions: [
+          IconButton(tooltip: 'Viaggio di esempio', icon: const Icon(Icons.play_circle_outline_rounded), onPressed: () => _demo(context)),
           IconButton(tooltip: 'Fermate vicine', icon: const Icon(Icons.near_me_rounded), onPressed: () => _go(context, const NearbyScreen())),
           IconButton(tooltip: 'Impostazioni', icon: const Icon(Icons.settings_rounded), onPressed: () => _go(context, const SettingsScreen())),
         ],
@@ -30,7 +32,7 @@ class HomeScreen extends StatelessWidget {
       body: ListenableBuilder(
         listenable: Listenable.merge([store, GuideService.instance]),
         builder: (context, _) {
-          if (store.trips.isEmpty) return _Empty(onAdd: () => _go(context, const AddTicketScreen()));
+          if (store.trips.isEmpty) return _Empty(onAdd: () => _go(context, const AddTicketScreen()), onDemo: () => _demo(context));
           final now = DateTime.now();
           final next = store.trips.where((t) => (t.journey.arrival ?? t.createdAt).isAfter(now.subtract(const Duration(hours: 2)))).toList();
           final past = store.trips.where((t) => !next.contains(t)).toList().reversed.toList();
@@ -43,6 +45,12 @@ class HomeScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  static Future<void> _demo(BuildContext c) async {
+    final t = Demo.trip();
+    await TripStore.instance.upsert(t);
+    if (c.mounted) _go(c, TripScreen(tripId: t.id));
   }
 
   static void _go(BuildContext c, Widget w) => Navigator.of(c).push(MaterialPageRoute(builder: (_) => w));
@@ -108,11 +116,11 @@ class _TripCard extends StatelessWidget {
 }
 
 class _Empty extends StatelessWidget {
-  final VoidCallback onAdd;
-  const _Empty({required this.onAdd});
+  final VoidCallback onAdd, onDemo;
+  const _Empty({required this.onAdd, required this.onDemo});
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(
@@ -131,6 +139,8 @@ class _Empty extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add_rounded), label: const Text('Aggiungi il tuo biglietto')),
+            const SizedBox(height: 10),
+            TextButton.icon(onPressed: onDemo, icon: const Icon(Icons.play_circle_outline_rounded), label: const Text('Prova con un viaggio di esempio')),
           ]),
         ),
       );

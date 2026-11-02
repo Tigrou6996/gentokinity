@@ -99,6 +99,7 @@ class VoiceService {
 
   Future<void> _deviceSpeak(String text) async {
     if (!_ttsReady) {
+      _ttsReady = true;
       await _tts.setLanguage('it-IT');
       await _tts.setSpeechRate(0.48);
       await _tts.setPitch(1.0);
@@ -115,9 +116,9 @@ class VoiceService {
         best ??= it.isNotEmpty ? it.first : null;
         if (best != null) await _tts.setVoice({'name': '${best['name']}', 'locale': '${best['locale']}'});
       } catch (_) {}
-      _ttsReady = true;
     }
     await _tts.setVolume(volume);
-    await _tts.speak(text);
+    // alcuni dispositivi/emulatori non hanno un motore vocale: non bloccare la coda degli annunci
+    await _tts.speak(text).timeout(const Duration(seconds: 15), onTimeout: () => null);
   }
 }

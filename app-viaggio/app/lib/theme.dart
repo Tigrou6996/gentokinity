@@ -74,10 +74,10 @@ class TimeText extends StatelessWidget {
     final delay = (actual != null && planned != null) ? actual!.difference(planned!).inMinutes : 0;
     final base = TextStyle(fontSize: size, fontWeight: FontWeight.w800, color: kDark, fontFeatures: const [FontFeature.tabularFigures()]);
     if (delay.abs() < 1) return Text(fmtTime(actual ?? planned), style: base);
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Text(fmtTime(planned), style: base.copyWith(decoration: TextDecoration.lineThrough, color: Colors.black38, fontSize: size * .85)),
-      const SizedBox(width: 6),
-      Text(fmtTime(actual), style: base.copyWith(color: delay > 0 ? kRed : kGreen)),
+    // in ritardo: orario previsto barrato sopra, orario reale sotto (stretto, entra anche nelle colonne piccole)
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(fmtTime(planned), style: base.copyWith(decoration: TextDecoration.lineThrough, color: Colors.black38, fontSize: size * .72, height: 1.1)),
+      Text(fmtTime(actual), style: base.copyWith(color: delay > 0 ? kRed : kGreen, height: 1.1)),
     ]);
   }
 }
