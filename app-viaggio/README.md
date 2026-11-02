@@ -44,6 +44,20 @@ app-viaggio/
 
 **Da dove vengono gli orari.** I dati sono quelli di bahn.de: tutti i bus, tram, metro e treni della Germania, con ritardi e binari. Arrivano tramite la funzione Supabase `transit`, che usa la stessa interfaccia di [db-rest](https://v6.db.transport.rest). Se serve, l'app può puntare anche a un server db-rest (vedi `TRANSIT_BASE_URL`).
 
+## Avviarla dal PC (Windows o Mac)
+1. Installa **Flutter**, seguendo https://docs.flutter.dev/get-started/install.
+2. Installa **Android Studio** e, dal suo Device Manager, crea un emulatore: un telefono Pixel con un'immagine di sistema **x86_64**.
+3. Estrai lo zip e, nel terminale (o nel Prompt dei comandi), vai nella cartella `app`.
+4. Lancia questi comandi:
+```bash
+flutter doctor        # controlla che sia tutto installato (accetta le licenze Android se le chiede)
+flutter pub get
+flutter run           # avvia l'app sull'emulatore aperto (o sul telefono collegato con il cavo)
+```
+5. Nell'app tocca **"Prova con un viaggio di esempio"** e attiva la guida vocale.
+
+**Attenzione:** l'app usa fotocamera, GPS, ML Kit e Google Maps per telefono, quindi gira su Android o iPhone (anche emulati), non come programma Windows o nel browser.
+
 ## Cosa serve per farla partire
 
 ### 1. Chiavi Google Maps (Google Cloud Console)
