@@ -60,7 +60,7 @@ class _JourneyPickScreenState extends State<JourneyPickScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scegli il tuo viaggio')),
+      appBar: lbsBar(title: const Text('Scegli il tuo viaggio')),
       body: RefreshIndicator(
         onRefresh: () => _load(widget.departure.subtract(const Duration(minutes: 10))),
         child: ListView(padding: const EdgeInsets.all(16), children: [

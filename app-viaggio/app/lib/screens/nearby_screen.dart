@@ -52,7 +52,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Fermate vicine')),
+        appBar: lbsBar(title: const Text('Fermate vicine')),
         body: RefreshIndicator(
           onRefresh: _load,
           child: ListView(padding: const EdgeInsets.all(16), children: [
@@ -109,7 +109,7 @@ class _DeparturesScreenState extends State<DeparturesScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(widget.stop.name)),
+        appBar: lbsBar(title: Text(widget.stop.name)),
         body: RefreshIndicator(
           onRefresh: _load,
           child: ListView(padding: const EdgeInsets.all(12), children: [

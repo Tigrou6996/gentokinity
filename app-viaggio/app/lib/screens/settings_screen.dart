@@ -36,7 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final cloud = AppConfig.ttsUrl.isNotEmpty;
     return Scaffold(
-      appBar: AppBar(title: const Text('Impostazioni')),
+      appBar: lbsBar(title: const Text('Impostazioni')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         const Text('GUIDA VOCALE', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.4, fontSize: 12, color: Colors.black54)),
         const SizedBox(height: 8),

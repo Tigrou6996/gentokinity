@@ -93,10 +93,11 @@ class _TripScreenState extends State<TripScreen> {
         return DefaultTabController(
           length: 4,
           child: Scaffold(
-            appBar: AppBar(
+            appBar: lbsBar(
               title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(t.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800), overflow: TextOverflow.ellipsis),
-                if (t.journey.departure != null) Text('${dayFmt.format(t.journey.departure!)} · ${fmtTime(t.journey.departure)}–${fmtTime(t.journey.arrival)}', style: const TextStyle(fontSize: 13, color: kLilac)),
+                if (t.journey.departure != null)
+                  Text('${dayFmt.format(t.journey.departure!)} · ${fmtTime(t.journey.departure)}–${fmtTime(t.journey.arrival)}', style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: kLilac)),
               ]),
               actions: [
                 IconButton(
@@ -108,11 +109,9 @@ class _TripScreenState extends State<TripScreen> {
               ],
               bottom: const TabBar(
                 // tutte e quattro le schede sempre visibili, anche sui telefoni piccoli
+                padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
                 labelPadding: EdgeInsets.symmetric(horizontal: 2),
-                labelStyle: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
-                labelColor: Colors.white,
-                unselectedLabelColor: kLilac,
-                indicatorColor: Colors.white,
+                splashBorderRadius: BorderRadius.all(Radius.circular(999)),
                 tabs: [Tab(text: 'Mappa'), Tab(text: 'Coincidenze'), Tab(text: 'Fermate'), Tab(text: 'Biglietto')],
               ),
             ),

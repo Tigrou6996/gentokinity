@@ -88,7 +88,7 @@ class _AddTicketScreenState extends State<AddTicketScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_info == null ? 'Aggiungi biglietto' : 'Il tuo viaggio')),
+      appBar: lbsBar(title: Text(_info == null ? 'Aggiungi biglietto' : 'Il tuo viaggio')),
       body: AbsorbPointer(
         absorbing: _busy,
         child: Stack(children: [
@@ -207,7 +207,7 @@ class _ScanScreenState extends State<_ScanScreen> {
   bool _done = false;
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Inquadra il codice')),
+        appBar: lbsBar(title: const Text('Inquadra il codice')),
         body: Stack(children: [
           MobileScanner(onDetect: (c) {
             final v = c.barcodes.map((b) => b.rawValue).whereType<String>().firstOrNull;
