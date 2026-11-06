@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'services/auth.dart';
+import 'services/cloud_sync.dart';
 import 'services/trip_store.dart';
 import 'services/voice.dart';
 import 'theme.dart';
@@ -10,6 +13,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('it');
   await Future.wait([TripStore.instance.load(), VoiceService.instance.loadSettings()]);
+  AuthService.instance.onSignedIn = CloudSync.pull;
+  await AuthService.instance.init();
+  if (AuthService.instance.signedIn) CloudSync.pull(); // aggiorna in background
   runApp(const ViaggioApp());
 }
 
@@ -23,6 +29,21 @@ class ViaggioApp extends StatelessWidget {
         locale: const Locale('it'),
         supportedLocales: const [Locale('it'), Locale('de'), Locale('en')],
         localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
-        home: const HomeScreen(),
+        home: const AuthGate(),
+      );
+}
+
+/// Schermata iniziale: accesso, nuova password (dal link email) oppure l'app.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: AuthService.instance,
+        builder: (context, _) {
+          final a = AuthService.instance;
+          if (a.recovering) return const NewPasswordScreen();
+          if (a.signedIn || a.guest) return const HomeScreen();
+          return const LoginScreen();
+        },
       );
 }

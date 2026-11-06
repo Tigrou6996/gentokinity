@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config.dart';
+import '../services/auth.dart';
 import '../services/voice.dart';
 import '../theme.dart';
 
@@ -38,6 +39,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: lbsBar(title: const Text('Impostazioni')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
+        const SectionLabel('Account'),
+        _account(context),
+        const SizedBox(height: 12),
         const Text('GUIDA VOCALE', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.4, fontSize: 12, color: Colors.black54)),
         const SizedBox(height: 8),
         Card(
@@ -84,6 +88,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
         ),
       ]),
+    );
+  }
+
+  Widget _account(BuildContext context) {
+    final a = AuthService.instance;
+    Future<void> out() async {
+      await a.signOut();
+      if (context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+    }
+
+    if (a.signedIn) {
+      return Card(
+        child: Column(children: [
+          ListTile(
+            leading: CircleAvatar(backgroundColor: kLilac, child: Text(a.displayName.isEmpty ? '?' : a.displayName[0].toUpperCase(), style: const TextStyle(color: kInk, fontWeight: FontWeight.w800))),
+            title: Text(a.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(a.user?.email ?? ''),
+          ),
+          const ListTile(leading: Icon(Icons.cloud_done_outlined, color: kGreen), title: Text('I tuoi viaggi sono salvati sull\'account')),
+          ListTile(leading: const Icon(Icons.logout_rounded, color: kRed), title: const Text('Esci', style: TextStyle(color: kRed, fontWeight: FontWeight.w700)), onTap: out),
+        ]),
+      );
+    }
+    return Card(
+      child: ListTile(
+        leading: const IconBubble(Icons.person_outline_rounded, size: 40),
+        title: const Text('Non hai effettuato l\'accesso', style: TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: const Text('Accedi per salvare i viaggi sull\'account'),
+        trailing: const Icon(Icons.chevron_right_rounded),
+        onTap: out, // esce dalla modalità "senza account" e torna alla schermata di accesso
+      ),
     );
   }
 }

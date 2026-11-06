@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:lbs_viaggio/models/trip.dart';
 import 'package:lbs_viaggio/screens/home_screen.dart';
+import 'package:lbs_viaggio/screens/login_screen.dart';
 import 'package:lbs_viaggio/screens/trip_screen.dart';
 import 'package:lbs_viaggio/services/demo.dart';
 import 'package:lbs_viaggio/services/trip_store.dart';
@@ -59,6 +60,19 @@ void main() {
     await t.tap(find.text('Fermate'));
     await t.pumpAndSettle();
     expect(find.text('Bebelplatz'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('accesso: senza Supabase si può entrare senza account', (t) async {
+    t.view.physicalSize = const Size(360 * 3, 690 * 3);
+    t.view.devicePixelRatio = 3;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(app(const LoginScreen()));
+    expect(find.textContaining('non ancora collegato a Supabase'), findsOneWidget);
+    expect(find.text('Continua senza account'), findsOneWidget);
+    await t.tap(find.text('Registrati'));
+    await t.pumpAndSettle();
+    expect(find.text('Nome e cognome'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 }

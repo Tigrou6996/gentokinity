@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/trip.dart';
+import 'cloud_sync.dart';
 
 /// Viaggi e biglietti salvati sul telefono (file JSON + copie dei biglietti nella cartella dell'app).
 class TripStore extends ChangeNotifier {
@@ -60,9 +61,20 @@ class TripStore extends ChangeNotifier {
     }
     trips.sort((a, b) => (a.journey.departure ?? a.createdAt).compareTo(b.journey.departure ?? b.createdAt));
     await _save();
+    CloudSync.push(t); // copia sull'account, se collegato (non blocca)
+  }
+
+  /// Unisce i viaggi scaricati dall'account con quelli del telefono.
+  Future<void> mergeFromCloud(List<SavedTrip> remote) async {
+    for (final r in remote) {
+      if (!trips.any((t) => t.id == r.id)) trips.add(r);
+    }
+    trips.sort((a, b) => (a.journey.departure ?? a.createdAt).compareTo(b.journey.departure ?? b.createdAt));
+    await _save();
   }
 
   Future<void> remove(SavedTrip t) async {
+    CloudSync.remove(t);
     trips.removeWhere((x) => x.id == t.id);
     final p = t.ticket.filePath;
     if (p != null && !kIsWeb) {

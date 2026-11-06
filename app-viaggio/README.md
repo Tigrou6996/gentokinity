@@ -56,6 +56,20 @@ Nel browser la lettura automatica del biglietto non c'è, perché ML Kit esiste 
 
 **Su un emulatore Android:** installa Android Studio, crea un emulatore Pixel con immagine x86_64, poi lancia `flutter run` dalla stessa cartella.
 
+## Login (Supabase Auth)
+All'avvio c'è la schermata di accesso:
+- accedi o registrati con email e password (alla registrazione si chiedono anche nome e telefono);
+- "Password dimenticata", con un link via email che riapre l'app;
+- "Continua senza account": in questo caso i viaggi restano solo sul telefono.
+
+Con l'account i viaggi vengono salvati anche su Supabase (tabella `viaggi`) e si ritrovano su un altro telefono. In Impostazioni ci sono i dati dell'account e il pulsante **Esci**.
+
+**Per collegarlo:**
+1. Supabase → **SQL Editor**: incolla ed esegui `supabase/migrations/20261106000000_account.sql`. Crea le tabelle `profili` e `viaggi`, con i permessi impostati in modo che ogni utente veda solo i propri dati.
+2. Supabase → **Authentication → URL Configuration → Redirect URLs**: aggiungi `com.lbswork.lbsviaggio://login-callback/`.
+3. Supabase → **Authentication → Providers → Email**: deve essere attivo. Se lasci attiva "Confirm email", l'utente deve confermare l'email prima di poter accedere.
+4. In `app/config.json` metti `SUPABASE_URL` e `SUPABASE_ANON_KEY`, cioè la chiave *anon/publishable*. Mai la chiave service_role.
+
 ## Cosa serve per farla partire
 
 ### 1. Chiavi Google Maps (Google Cloud Console)

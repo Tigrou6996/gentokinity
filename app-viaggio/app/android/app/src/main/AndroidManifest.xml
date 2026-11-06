@@ -34,6 +34,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- link delle email di Supabase (conferma account, nuova password) che riaprono l'app -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="com.lbswork.lbsviaggio" android:host="login-callback"/>
+            </intent-filter>
         </activity>
         <meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}"/>
         <!-- modello ML Kit per leggere il testo dei biglietti, scaricato all'installazione -->
