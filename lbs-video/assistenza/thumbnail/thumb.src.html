@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<title>LBS Assistenza - Miniatura</title>
+<style>
+@font-face{font-family:PJS;src:url(data:font/woff2;base64,{{PJS}}) format('woff2');font-weight:200 800}
+@font-face{font-family:INT;src:url(data:font/woff2;base64,{{INTER}}) format('woff2');font-weight:100 900}
+:root{--p:#5e2d61;--l:#dab6fc;--d:#30103d}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000}
+#t{position:relative;width:1280px;height:720px;overflow:hidden;background:var(--p);font-family:INT}
+#t>*{position:absolute}
+.h1{font-family:PJS;font-weight:800;text-transform:uppercase;letter-spacing:-.025em;line-height:.92;color:#fff;white-space:nowrap}
+.cc{border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px rgba(25,4,35,.4)}
+</style></head><body>
+<div id="t">
+  <canvas id="bg" width="1280" height="720" style="left:0;top:0"></canvas>
+  <div style="left:-300px;top:-300px;width:1100px;height:1000px;background:radial-gradient(closest-side,rgba(218,182,252,.22),rgba(218,182,252,0))"></div>
+  <!-- diagonal bands, like the video's wipes -->
+  <div style="left:900px;top:-200px;width:900px;height:1200px;background:#30103d;transform:skewX(14deg);transform-origin:0 0"></div>
+  <div style="left:862px;top:-200px;width:22px;height:1200px;background:#dab6fc;transform:skewX(14deg);transform-origin:0 0"></div>
+  <div style="left:830px;top:-200px;width:10px;height:1200px;background:#fff;opacity:.85;transform:skewX(14deg);transform-origin:0 0"></div>
+
+  <!-- left: headline -->
+  <div style="left:64px;top:58px;display:flex;align-items:center;gap:14px;padding:14px 28px 14px 16px;border-radius:999px;background:#dab6fc;color:#30103d;font:800 30px/1 INT;letter-spacing:.07em;box-shadow:0 10px 24px rgba(25,4,35,.35)">
+    <img id="lg" style="width:46px;height:46px">AGENZIA PER IL LAVORO</div>
+  <div class="h1" id="l1" style="left:60px;top:168px;font-size:106px">TROVA LAVORO</div>
+  <div class="h1" id="l2" style="left:58px;top:274px;font-size:126px;color:#dab6fc;text-shadow:0 9px 0 rgba(48,16,61,.55)">IN GERMANIA</div>
+  <div class="h1" style="left:64px;top:428px;font-size:50px;letter-spacing:-.01em">E NON SEI MAI SOLO.</div>
+  <div style="left:64px;top:528px;display:flex;gap:12px">
+    <div style="padding:15px 24px;border-radius:999px;background:#fff;color:#5e2d61;font:800 23px/1 INT;letter-spacing:.03em;display:flex;align-items:center;gap:10px;box-shadow:0 12px 26px rgba(25,4,35,.35)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2fbf6b" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>ASSISTENZA 24/7</div>
+    <div style="padding:15px 24px;border-radius:999px;background:#fff;color:#5e2d61;font:800 23px/1 INT;letter-spacing:.03em;display:flex;align-items:center;gap:10px;box-shadow:0 12px 26px rgba(25,4,35,.35)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2fbf6b" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>ALLOGGIO</div>
+    <div style="padding:15px 24px;border-radius:999px;background:#fff;color:#5e2d61;font:800 23px/1 INT;letter-spacing:.03em;display:flex;align-items:center;gap:10px;box-shadow:0 12px 26px rgba(25,4,35,.35)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2fbf6b" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>TRADUZIONI</div>
+  </div>
+
+  <!-- right: the job, from Italy to Germany -->
+  <svg style="left:0;top:0;overflow:visible" width="1280" height="720" viewBox="0 0 1280 720">
+    <circle cx="1110" cy="360" r="200" fill="none" stroke="#fff" stroke-width="2" opacity=".22"/>
+    <path d="M985 150 Q1100 40 1215 128" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray=".1 16" opacity=".9"/>
+  </svg>
+  <div class="cc" style="left:960px;top:210px;width:300px;height:300px">
+    <svg width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="#5e2d61" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+  </div>
+  <div class="cc" style="left:930px;top:108px;width:96px;height:96px"><svg width="54" height="36" viewBox="0 0 3 2" style="border-radius:5px"><rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#ce2b37"/></svg></div>
+  <div class="cc" style="left:1170px;top:84px;width:96px;height:96px"><svg width="54" height="36" viewBox="0 0 3 2" style="border-radius:5px"><rect width="3" height=".67" fill="#111"/><rect y=".67" width="3" height=".67" fill="#dd0000"/><rect y="1.33" width="3" height=".67" fill="#ffce00"/></svg></div>
+  <div class="cc" style="left:1068px;top:30px;width:60px;height:60px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#5e2d61" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(20deg)"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
+  <img id="lg2" style="left:905px;top:450px;width:150px;height:150px;border-radius:50%;box-shadow:0 16px 36px rgba(25,4,35,.5)">
+  <div class="cc" style="left:1180px;top:470px;width:90px;height:90px;background:#2fbf6b;box-shadow:0 12px 26px rgba(20,90,50,.45)">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+  <div style="inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 60%,rgba(20,0,30,.35) 100%)"></div>
+</div>
+<script>
+const LOGO = 'data:image/png;base64,{{LOGO}}';
+document.getElementById('lg').src = LOGO; document.getElementById('lg2').src = LOGO;
+const PAT = {
+  truck: 'M2 6.5h11.5v9.5H2z M13.5 9.5h4.2l3.8 3.6v2.9h-8z M4 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0 M15.2 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0',
+  pizza: 'M3.5 4.5Q12 1.5 20.5 4.5L12 21.5z M4.6 6.8Q12 4.2 19.4 6.8 M8.9 9.4a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0 M12.9 11.8a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0 M10.4 15.2a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',
+  hat: 'M6.5 13.5C3.4 13.4 3 8.6 6.4 8C6.9 4.3 11.7 3.1 13.6 5.8C16.6 4.6 20.6 7.3 18.5 10.9C18 12 17.5 13.5 17.5 13.5 M6.5 13.5h11v5.6h-11z M6.5 16.2h11',
+  brief: 'M3 7.5h18v12H3z M9 7.5V5h6v2.5 M3 12.5h18',
+};
+const x = document.getElementById('bg').getContext('2d'), names = Object.keys(PAT);
+x.strokeStyle = 'rgba(255,255,255,.14)'; x.lineWidth = 1.25; x.lineJoin = x.lineCap = 'round';
+for (let row = 0; row < 5; row++) for (let k = 0; k < 8; k++) {
+  const cx = k * 175 + (row % 2 ? 88 : 0) + 30, cy = row * 150 + 50;
+  x.save(); x.translate(cx, cy); x.rotate(((row * 7 + k * 3) % 5 - 2) * .08); x.scale(2.2, 2.2); x.translate(-12, -12); x.stroke(new Path2D(PAT[names[(row * 3 + k) % 4]])); x.restore();
+}
+</script></body></html>

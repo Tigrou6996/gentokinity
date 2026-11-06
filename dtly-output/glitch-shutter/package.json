@@ -1,0 +1,13 @@
+{
+  "name": "glitch-shutter-stinger",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "python3 build.py",
+    "render": "node render.mjs",
+    "preview": "node render.mjs --preview"
+  },
+  "dependencies": {
+    "@dnyantra/dtly": "0.3.0"
+  }
+}

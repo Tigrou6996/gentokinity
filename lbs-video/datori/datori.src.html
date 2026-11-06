@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LBS per le Aziende</title>
+<style>
+@font-face{font-family:PJS;src:url(data:font/woff2;base64,{{PJS}}) format('woff2');font-weight:200 800}
+@font-face{font-family:INT;src:url(data:font/woff2;base64,{{INTER}}) format('woff2');font-weight:100 900}
+:root{--p:#5e2d61;--l:#dab6fc;--d:#30103d;--g:#2fbf6b;--r:#ff5a6e;--y:#ffc542}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;overflow:hidden;height:100%}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:#5e2d61;transform-origin:0 0;font-family:INT}
+#bg{position:absolute;left:0;top:0}
+#glow{position:absolute;left:-200px;top:-150px}
+.layer{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:960px 560px}
+.a{position:absolute;white-space:nowrap}
+.ctr{transform:translate(-50%,-50%)}
+.h1{font-family:PJS;font-weight:800;letter-spacing:-.02em;line-height:1.05;color:#fff}
+.lbl{font-family:INT;font-weight:800;text-transform:uppercase;letter-spacing:.2em}
+.li{color:var(--l)}
+.mask{display:inline-block;overflow:hidden;vertical-align:top;padding:.16em .04em .1em;margin:-.16em -.04em -.1em}
+.mi{display:inline-block}
+.card{position:absolute;border-radius:28px;background:#fff;box-shadow:0 24px 50px rgba(25,4,35,.38);color:#30103d}
+.cc{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)}
+.pill{position:absolute;padding:14px 28px;border-radius:999px;background:#fff;color:var(--p);font:800 26px/1 INT;letter-spacing:.04em;box-shadow:0 12px 26px rgba(25,4,35,.3);display:flex;align-items:center;gap:12px;white-space:nowrap}
+.hl{position:relative;display:inline-block}
+.hl>i{position:absolute;left:-.12em;right:-.12em;top:.04em;bottom:-.02em;background:var(--l);transform-origin:0 50%;transform:scaleX(0);border-radius:.12em}
+.hl>b{position:relative;font-weight:inherit}
+.row{position:absolute;left:0;width:100%;display:flex;align-items:center;gap:22px;padding:0 34px}
+.av{flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.btn{flex:none;margin-left:auto;padding:14px 26px;border-radius:12px;font:800 24px/1 INT;display:flex;align-items:center;gap:10px}
+.bub{position:absolute;padding:18px 24px;border-radius:24px;font:600 26px/1.35 INT;white-space:nowrap}
+.fld{position:absolute;left:44px;right:44px;height:92px;border-radius:16px;border:3px solid #ece4f1;background:#faf7fc;display:flex;align-items:center;padding:0 26px;font:600 32px INT;color:#30103d}
+.flb{position:absolute;left:46px;font:800 20px INT;letter-spacing:.14em;text-transform:uppercase;color:#9a83a6}
+.caret{display:inline-block;width:3px;height:1.05em;background:#5e2d61;margin-left:3px;vertical-align:-.15em}
+.chk{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#2fbf6b;box-shadow:0 10px 24px rgba(20,90,50,.35);transform:translate(-50%,-50%)}
+.no{background:#ff5a6e;box-shadow:0 10px 24px rgba(120,20,40,.35)}
+.wbar{position:absolute;top:-140px;width:4400px;height:1360px;transform-origin:0 0;visibility:hidden}
+#hud{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+.tab{display:flex;align-items:center;gap:10px;padding:11px 20px;border-radius:999px;font:700 19px/1 INT;color:#fff;background:rgba(255,255,255,.1);white-space:nowrap}
+.tab b{display:flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:rgba(255,255,255,.18);font:800 16px INT}
+#grain{position:absolute;inset:0;opacity:.045;mix-blend-mode:overlay;background-size:256px 256px;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 55%,rgba(20,0,30,.3) 100%);pointer-events:none}
+#fade{position:absolute;inset:0;background:#000;opacity:0}
+#ctl{position:fixed;left:0;right:0;bottom:0;display:flex;gap:12px;padding:10px 16px;background:#000c;color:#fff;font:14px sans-serif;align-items:center}
+#ctl input{flex:1}
+body.render #ctl{display:none}
+svg{overflow:visible}
+</style></head><body>
+<div id="stage">
+  <canvas id="bg" width="1920" height="1080"></canvas>
+  <canvas id="glow" width="2320" height="1380"></canvas>
+  <div id="scenes"></div>
+  <div id="hud"></div>
+  <div class="wbar" id="wb0" style="background:#dab6fc"></div>
+  <div class="wbar" id="wb1" style="background:#ffffff"></div>
+  <div class="wbar" id="wb2" style="background:#30103d"></div>
+  <div id="grain"></div><div id="vig"></div><div id="fade"></div>
+</div>
+<div id="ctl"><button id="pb">Play ▶</button><input id="sc" type="range" min="0" max="1000" value="0"><span id="tc"></span></div>
+<script>
+/* ===== LBS — "Datori di lavoro": video per le aziende in Germania — 16:9 1920x1080, voce + musica 116 BPM (Sol maggiore) =====
+ Stesso impianto della guida collaboratori: ogni scena resta per tutta la frase; a ogni punto la voce si ferma 1.6 s sulla scheda.
+ τ = tempo della voce. Pause: 36.85 (selezione), 53.6 (burocrazia), 62.15 (assistenza), 75.35 (costo zero), 92.5 (come iniziare), 120.5 (contatti).
+ 0     "Buongiorno!" azienda in Germania           4.8   il problema: annunci senza risposta, candidati assenti, burocrazia
+ 16.9  "Noi siamo LBS": 11 anni, 350+, 200+         30.5  sedi Kassel / Catania, i 3 punti
+ 38.75 selezione: imbuto candidati -> profili verificati      47.3 settori + "diteci chi cercate"
+ 55.45 burocrazia: documenti nella cartella, traduzioni IT->DE      64.2 assistenza 24/7, viaggio/alloggio/medico/banca
+ 77.65 0 € gratis al 100%                          86.9  contratto regolare secondo la legge tedesca
+ 94.8  4 passi (modulo/WhatsApp, profilo, colloquio, partenza)      120.5 contatti      144.4 chiusura */
+const W = 1920, H = 1080, O = 0.5;
+const RENDER = location.search.includes('render');
+if (RENDER) document.body.classList.add('render');
+
+// ---------- helpers ----------
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const eOut = x => (x = clamp(x), 1 - Math.pow(1 - x, 3));
+const eIn = x => (x = clamp(x), x * x * x);
+const expo = x => (x = clamp(x), x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const $ = id => document.getElementById(id);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function tf(el, { x = 0, y = 0, s = 1, r = 0, o, b = 0, c = false } = {}) {
+  let tr = (c ? 'translate(-50%,-50%) ' : '') + `translate(${x.toFixed(2)}px,${y.toFixed(2)}px)`;
+  if (s !== 1) tr += ` scale(${s.toFixed(4)})`;
+  if (r) tr += ` rotate(${r.toFixed(2)}deg)`;
+  el.style.transform = tr;
+  if (o !== undefined) { el.style.opacity = o; el.style.visibility = o <= 0.002 ? 'hidden' : 'visible'; }
+  el.style.filter = b > 0.08 ? `blur(${b.toFixed(2)}px)` : 'none';
+}
+const rise = (el, t, t0, { d = .6, dy = 40, c = false, x = 0 } = {}) => { const k = eOut(seg(t, t0, t0 + d)); tf(el, { x, y: (1 - k) * dy, o: k, b: (1 - k) * 6, c }); return k; };
+const pop = (el, t, t0, { c = false, from = .4, w = 13, z = .66, x = 0, y = 0, r0 = 0 } = {}) => { const k = spring(t - t0, w, z); tf(el, { x, y, s: Math.max(0, lerp(from, 1, k)), r: r0 * (1 - k), o: clamp((t - t0) * 6), c }); return k; };
+const slideIn = (el, t, t0, { dx = 120, d = .7, c = false } = {}) => { const k = expo(seg(t, t0, t0 + d)); tf(el, { x: (1 - k) * dx, o: clamp((t - t0) / .25), b: (1 - k) * 8, c }); return k; };
+function words(el, t, times, d = .6) {
+  $$('.mi', el).forEach((w, i) => {
+    const t0 = Array.isArray(times) ? times[Math.min(i, times.length - 1)] : times + i * .09;
+    w.style.transform = `translateY(${((1 - expo(seg(t, t0, t0 + d))) * 135).toFixed(2)}%)`;
+  });
+}
+const hl = (el, t, t0, d = .45) => { el.querySelector('i').style.transform = `scaleX(${eOut(seg(t, t0, t0 + d))})`; };
+const draw = (el, k) => { el.style.strokeDasharray = '100 100'; el.style.strokeDashoffset = (100 - 100 * clamp(k)).toFixed(2); el.style.opacity = k > .002 ? 1 : 0; };
+function typeTo(el, str, t, t0, t1, caret = true) {
+  const n = Math.round(str.length * seg(t, t0, t1));
+  const blink = caret && (t < t0 || t > t1 + .25 ? Math.floor(t * 2.4) % 2 === 0 : true);
+  el.innerHTML = esc(str.slice(0, n)) + (caret && t > t0 - .6 ? `<span class="caret" style="opacity:${blink ? 1 : 0}"></span>` : '');
+}
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const MW = s => s.split(' ').map(w => `<span class="mask"><span class="mi">${w}</span></span>`).join(' ');
+
+// ---------- icons (stroke, 24 grid) ----------
+const IC = {
+  mega: '<path d="M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  userPlus: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  chat: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>',
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  refresh: '<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  clip: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+  send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+  plane: '<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  euro: '<path d="M18 6.5A7 7 0 1 0 18 17.5"/><path d="M4 10h10M4 14h10"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  medal: '<circle cx="12" cy="15" r="6"/><path d="M8.2 10.4L5 2h4l3 6 3-6h4l-3.2 8.4"/>',
+  ban: '<circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/>',
+  helmet: '<path d="M2 18h20"/><path d="M4 18v-2a8 8 0 0 1 16 0v2"/><path d="M10 8.5V5h4v3.5"/>',
+  hat: '<path d="M6.5 13.5C3.4 13.4 3 8.6 6.4 8 6.9 4.3 11.7 3.1 13.6 5.8 16.6 4.6 20.6 7.3 18.5 10.9 18 12 17.5 13.5 17.5 13.5"/><path d="M6.5 13.5h11v5.6h-11z"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  arrow: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  check: '<path d="M20 6L9 17l-5-5"/>',
+  x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>',
+};
+const icon = (n, size = 24, col = '#fff', sw = 2.2) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${IC[n]}</svg>`;
+const CIRC = (id, x, y, size, inner, bg = '#fff', extra = '') => `<div class="cc" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${bg};${extra}">${inner}</div>`;
+const OK = (id, x, y, size = 64) => `<div class="chk" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px">${icon('check', size * .52, '#fff', 3.4)}</div>`;
+const NO = (id, x, y, size = 64) => `<div class="chk no" id="${id}" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px">${icon('x', size * .52, '#fff', 3.4)}</div>`;
+const LOGO = 'data:image/png;base64,{{LOGO}}';
+const EU = size => { let s = ''; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; s += `<path transform="translate(${50 + Math.sin(a) * 30},${50 - Math.cos(a) * 30}) scale(.32)" d="M0 -10 2.9 -4 9.5 -3.1 4.7 1.5 5.9 8.1 0 5 -5.9 8.1 -4.7 1.5 -9.5 -3.1 -2.9 -4z" fill="#ffcc00"/>`; } return `<svg width="${size}" height="${size}" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#003399"/>${s}</svg>`; };
+
+// ---------- extra icons ----------
+Object.assign(IC, {
+  building: '<rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+  bed: '<path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>',
+  truck: '<path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+  factory: '<path d="M2 20V9l6 4V9l6 4V4h4l2 16z"/><path d="M2 20h20"/>',
+  cross: '<path d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/>',
+  bank: '<path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>',
+  home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  brief: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+  lang: '<path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>',
+  pin: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  video: '<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
+});
+const FLAG = (c, w = 44) => c === 'it'
+  ? `<svg width="${w}" height="${w * 2 / 3}" viewBox="0 0 3 2" style="border-radius:${w / 9}px;flex:none"><rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#ce2b37"/><rect width="3" height="2" fill="none" stroke="#0002" stroke-width=".06"/></svg>`
+  : `<svg width="${w}" height="${w * 2 / 3}" viewBox="0 0 3 2" style="border-radius:${w / 9}px;flex:none"><rect width="3" height=".67" fill="#111"/><rect y=".67" width="3" height=".67" fill="#dd0000"/><rect y="1.33" width="3" height=".67" fill="#ffce00"/></svg>`;
+const WA = size => CIRC('', 0, 0, size, icon('chat', size * .5, '#fff', 2.4), '#25d366', 'position:relative;transform:none;flex:none');
+
+// ---------- time: voice τ -> video t, with a pause on every chapter card ----------
+const BRK = [[36.85, 1.6], [53.6, 1.6], [62.15, 1.6], [75.35, 1.6], [92.5, 1.6], [120.5, 1.0]].map(([c, h]) => ({ c, h }));
+const m = tau => tau + BRK.reduce((a, b) => a + (b.c < tau ? b.h : 0), 0);
+const S = tau => O + m(tau);
+const voT = tau => O + tau + BRK.reduce((a, b) => a + (b.c <= tau ? b.h : 0), 0);
+const TAU_END = 151.6, DUR = O + m(TAU_END) + .01;
+window.VIDEO = { w: W, h: H, duration: DUR };
+const SPEECH = [[0.76,3.16],[3.58,4.58],[5.0,8.3],[8.78,13.62],[14.26,16.52],[17.0,18.66],[19.1,21.06],[21.48,27.34],[27.92,30.16],[30.66,34.18],[34.6,36.7],[37.18,46.96],[47.58,85.04],[85.46,88.36],[88.76,100.94],[101.38,104.16],[104.64,115.3],[115.7,120.42],[120.9,145.18],[145.72,146.7],[147.4,148.78]];
+const CHAP = [[36.85, 'La selezione', 'search'], [53.6, 'La burocrazia', 'doc'], [62.15, "L'assistenza", 'heart'], [75.35, 'Costo zero per voi', 'euro'], [92.5, 'Come si inizia', 'arrow']];
+const TABS = ['Selezione', 'Burocrazia', 'Assistenza', 'Costo zero', 'Come iniziare'];
+const HUD_ON = 16.9, HUD_OFF = 144.3, RECAP = 120.5;
+const HUD_T = ['LBS per le aziende', 'Lavoratori italiani in Germania'];
+
+// ---------- scenes ----------
+const P = '#5e2d61', D = '#30103d';
+const HTML = {}, U = {};
+const SC = [
+  ['intro', 0, 4.8, P], ['prob', 4.8, 16.9, D], ['about', 16.9, 30.5, P], ['seats', 30.5, 36.85, P], ['ch1', 36.85, 38.75, D], ['sel', 38.75, 47.3, P],
+  ['sect', 47.3, 53.6, P], ['ch2', 53.6, 55.45, D], ['bur', 55.45, 62.15, P], ['ch3', 62.15, 64.2, D], ['ass', 64.2, 75.35, P], ['ch4', 75.35, 77.65, D],
+  ['free', 77.65, 86.9, P], ['deal', 86.9, 92.5, P], ['ch5', 92.5, 94.8, D], ['how', 94.8, 120.5, P], ['cont', 120.5, 144.4, P], ['outro', 144.4, TAU_END + 1, P],
+].map(([id, a, b, bg]) => ({ id, a, b, bg }));
+const count = (el, n, t, t0, d = 1, suf = '+') => { el.textContent = Math.round(n * eOut(seg(t, t0, t0 + d))) + suf; };
+
+// intro -------------------------------------------------------------------------------
+HTML.intro = `
+  ${CIRC('in_b', 960, 300, 200, icon('building', 96, '#fff', 1.8), '#5e2d61', 'border:6px solid #dab6fc;box-shadow:0 20px 40px rgba(25,4,35,.4)')}
+  <div class="a ctr" id="in_f" style="left:1040px;top:380px">${FLAG('de', 84)}</div>
+  <div class="a ctr h1" id="in_t" style="left:960px;top:540px;font-size:130px">${MW('Buongiorno!')}</div>
+  <div class="a ctr h1" id="in_s" style="left:960px;top:670px;font-size:62px">Avete un'azienda <span class="hl" id="in_hl"><i></i><b style="color:#30103d">in Germania?</b></span></div>
+  <div class="pill ctr" id="in_p" style="left:960px;top:800px;font-size:32px">${icon('video', 30, '#5e2d61', 2.6)} Questo video è per voi</div>`;
+U.intro = t => {
+  pop($('in_b'), t, S(.3), { c: true, from: .2 }); pop($('in_f'), t, S(.9), { c: true, from: .2, r0: -30 });
+  words($('in_t'), t, S(.76)); rise($('in_s'), t, S(1.76), { c: true }); hl($('in_hl'), t, S(2.64)); pop($('in_p'), t, S(3.58), { c: true, from: .5 });
+};
+// problem -----------------------------------------------------------------------------
+const PB = [['chat', 'Annunci senza', 8.78, 'risposta'], ['user', 'Candidati che non', 11.02, 'si presentano'], ['doc', 'Tanta', 14.26, 'burocrazia']];
+HTML.prob = `
+  <div class="a ctr h1" id="pb_t" style="left:960px;top:205px;font-size:76px">${MW('Trovare personale affidabile è')} <span class="mask"><span class="mi" style="color:#ff8a98">difficile.</span></span></div>
+  ${PB.map(([ic, a, , b], i) => `<div class="card" id="pb_${i}" style="left:${175 + i * 540}px;top:300px;width:490px;height:560px">
+    ${CIRC('', 80, 80, 92, icon(ic, 44, '#fff', 2.2), '#ff5a6e', 'transform:translate(-50%,-50%)')}
+    <div class="a" style="left:144px;top:${b ? 42 : 58}px;font:800 34px/1.15 PJS">${a}${b ? '<br>' + b : ''}</div>
+    <div class="a" id="pb_x${i}" style="left:40px;top:170px;width:410px;height:350px"></div></div>`).join('')}`;
+U.prob = t => {
+  words($('pb_t'), t, S(5.0), .6);
+  PB.forEach(([, , a], i) => pop($('pb_' + i), t, S(a), { from: .6 }));
+  // 1: a job post with no replies
+  const x0 = $('pb_x0'); if (!x0.dataset.on) { x0.dataset.on = 1; x0.innerHTML = `<div style="border-radius:18px;background:#f6f1f9;padding:24px;font:800 26px INT">CERCASI CUOCO<div style="height:12px"></div>${[90, 75, 82].map(w => `<div style="height:12px;width:${w}%;border-radius:6px;background:#e3d7ea;margin:10px 0"></div>`).join('')}</div>
+    <div id="pb_r" style="margin-top:26px;display:flex;align-items:center;gap:12px;font:800 30px INT;color:#ff5a6e">${icon('chat', 34, '#ff5a6e', 2.6)} 0 risposte</div>`; }
+  const rk = spring(t - S(9.94), 14, .5); $('pb_r').style.transform = `scale(${t > S(9.94) ? lerp(.5, 1, rk) : 0})`; $('pb_r').style.transformOrigin = '0 50%';
+  // 2: interview slot, nobody shows up
+  const x1 = $('pb_x1'); if (!x1.dataset.on) { x1.dataset.on = 1; x1.innerHTML = `<div style="border-radius:18px;background:#f6f1f9;padding:22px 24px;display:flex;align-items:center;gap:16px;font:800 28px INT">${icon('clock', 36, '#5e2d61', 2.4)} Colloquio · ore 10:00</div>
+    <div style="position:relative;margin:40px auto 0;width:150px;height:150px;border-radius:50%;border:5px dashed #d0bfdb;display:flex;align-items:center;justify-content:center">${icon('user', 70, '#d0bfdb', 2)}
+    <div id="pb_no" class="chk no" style="left:130px;top:20px;width:64px;height:64px">${icon('x', 34, '#fff', 3.4)}</div></div>`; }
+  pop($('pb_no'), t, S(12.04), { c: true, from: .2 });
+  // 3: paperwork piling up
+  const x2 = $('pb_x2'); if (!x2.dataset.on) { x2.dataset.on = 1; x2.innerHTML = [0, 1, 2, 3, 4, 5].map(i => `<div class="pp" style="position:absolute;left:${85 + (i % 2) * 22}px;top:${250 - i * 34}px;width:230px;height:150px;border-radius:12px;background:#fff;border:3px solid #e3d7ea;box-shadow:0 6px 14px rgba(25,4,35,.15);padding:18px">${[80, 60, 70].map(w => `<div style="height:10px;width:${w}%;border-radius:5px;background:#e3d7ea;margin:8px 0"></div>`).join('')}</div>`).join(''); }
+  $$('.pp', x2).forEach((p, i) => { const t0 = S(14.4) + i * .3, k = eOut(seg(t, t0, t0 + .35)); p.style.opacity = k; p.style.transform = `translateY(${(1 - k) * -160}px) rotate(${(i % 2 ? 4 : -5) * (1 - k * .6)}deg)`; });
+};
+// about -------------------------------------------------------------------------------
+const STAT = [[11, 'anni di esperienza', 21.9], [350, 'lavoratori collocati', 25.98], [200, 'aziende partner', 28.72]];
+HTML.about = `
+  <svg class="a" style="left:850px;top:105px" width="220" height="220" viewBox="0 0 220 220"><circle id="ab_ring" cx="110" cy="110" r="104" fill="none" stroke="#dab6fc" stroke-width="6" pathLength="100" transform="rotate(-90 110 110)" stroke-linecap="round"/></svg>
+  <img class="a" id="ab_logo" src="${LOGO}" style="left:875px;top:130px;width:170px;height:170px">
+  <div class="a ctr h1" id="ab_t" style="left:960px;top:385px;font-size:96px">${MW('Noi siamo LBS')}</div>
+  <div class="a ctr lbl li" id="ab_s" style="left:960px;top:462px;font-size:30px">Lavoro · Business · Servizi</div>
+  <div class="pill ctr" id="ab_p" style="left:960px;top:550px;font-size:28px">${FLAG('it', 42)} lavoratori italiani ${icon('arrow', 28, '#5e2d61', 2.8)} aziende tedesche ${FLAG('de', 42)}</div>
+  ${STAT.map(([, l], i) => `<div class="card" id="ab_${i}" style="left:${270 + i * 480}px;top:640px;width:420px;height:250px">
+    <div class="a ctr" id="ab_n${i}" style="left:210px;top:100px;font:800 104px/1 PJS;color:#5e2d61">0+</div>
+    <div class="a ctr" style="left:210px;top:190px;font:700 30px INT;color:#7d6787">${l}</div></div>`).join('')}`;
+U.about = t => {
+  draw($('ab_ring'), ease(seg(t, S(16.95), S(17.9)))); pop($('ab_logo'), t, S(17.0), { from: .2 });
+  words($('ab_t'), t, [S(17.0), S(17.52), S(17.82)]); rise($('ab_s'), t, S(19.1), { c: true }); pop($('ab_p'), t, S(22.54), { c: true, from: .5 });
+  STAT.forEach(([n, , a], i) => { pop($('ab_' + i), t, S(a) - .15, { from: .6 }); count($('ab_n' + i), n, t, S(a), 1.1); });
+};
+// seats -------------------------------------------------------------------------------
+HTML.seats = `
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="se_arc" d="M780 450 Q960 300 1140 450" stroke="#dab6fc" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round" fill="none"/></svg>
+  ${[['de', 'Sede legale', 'Kassel', 'Germania', 32.04], ['it', 'Sede operativa', 'Catania', 'Italia', 33.7]].map(([f, a, c, n], i) => `<div class="card" id="se_${i}" style="left:${300 + i * 820}px;top:300px;width:500px;height:330px">
+    <div class="a ctr" style="left:250px;top:90px">${FLAG(f, 120)}</div>
+    <div class="a ctr lbl" style="left:250px;top:190px;font-size:24px;color:#9a83a6">${a}</div>
+    <div class="a ctr" style="left:250px;top:250px;font:800 54px PJS">${c}<span style="font:600 30px INT;color:#7d6787">, ${n}</span></div></div>`).join('')}
+  <div class="a" id="se_pl" style="left:0;top:0">${icon('plane', 54, '#fff', 2)}</div>
+  <div class="a ctr lbl li" id="se_l" style="left:960px;top:730px;font-size:28px">Come lavoriamo, in 3 punti</div>
+  ${['Selezione', 'Burocrazia', 'Assistenza'].map((n, i) => `<div class="pill ctr" id="se_c${i}" style="left:${600 + i * 360}px;top:820px;font-size:30px"><span style="display:flex;width:40px;height:40px;border-radius:50%;background:#5e2d61;color:#fff;align-items:center;justify-content:center;font:800 22px PJS">${i + 1}</span>${n}</div>`).join('')}`;
+U.seats = t => {
+  slideIn($('se_0'), t, S(31.04), { dx: -120 }); slideIn($('se_1'), t, S(32.72), { dx: 120 });
+  const k = ease(seg(t, S(32.9), S(34.2))), x = (1 - k) * (1 - k) * 780 + 2 * (1 - k) * k * 960 + k * k * 1140, y = (1 - k) * (1 - k) * 450 + 2 * (1 - k) * k * 300 + k * k * 450;
+  $('se_arc').style.opacity = clamp((t - S(32.3)) * 3); tf($('se_pl'), { x: x - 27, y: y - 27, r: lerp(-30, 30, k) + 45, o: k > 0 && k < 1 ? 1 : 0 });
+  rise($('se_l'), t, S(34.6), { c: true }); for (let i = 0; i < 3; i++) pop($('se_c' + i), t, S(35.24) + i * .28, { c: true, from: .4 });
+};
+// chapter cards -----------------------------------------------------------------------
+CHAP.forEach(([c, title, ic], i) => {
+  const id = 'ch' + (i + 1);
+  HTML[id] = `
+  <div class="a ctr" id="${id}_n" style="left:390px;top:540px;font:800 400px/1 PJS;color:transparent;-webkit-text-stroke:5px #dab6fc;letter-spacing:-.04em">0${i + 1}</div>
+  <div class="a lbl li" id="${id}_l" style="left:740px;top:395px;font-size:32px">Punto ${i + 1} di 5</div>
+  <div class="a h1" id="${id}_t" style="left:735px;top:450px;font-size:112px">${MW(title)}</div>
+  ${CIRC(id + '_i', 800, 760, 120, icon(ic, 58, '#30103d', 2.2), '#dab6fc')}
+  <div class="a" id="${id}_u" style="left:740px;top:600px;width:560px;height:8px;border-radius:4px;background:#dab6fc;transform-origin:0 50%"></div>`;
+  U[id] = t => {
+    const t0 = S(c);
+    const k = expo(seg(t, t0 + .1, t0 + .9)); tf($(id + '_n'), { x: (1 - k) * -200, o: k, b: (1 - k) * 12, c: true, s: 1 + .03 * (t - t0) });
+    rise($(id + '_l'), t, t0 + .3); words($(id + '_t'), t, t0 + .45);
+    $(id + '_u').style.transform = `scaleX(${eOut(seg(t, t0 + .8, t0 + 1.4))})`;
+    pop($(id + '_i'), t, t0 + 1.0, { c: true, from: .2 });
+  };
+});
+// selection funnel --------------------------------------------------------------------
+const OUT1 = [1, 4, 6, 9, 11], OUT2 = [0, 3, 7, 10];
+HTML.sel = `
+  <div class="a lbl li" id="sl_l" style="left:170px;top:250px;font-size:24px">Candidati</div>
+  ${Array.from({ length: 12 }, (_, i) => CIRC('sl_a' + i, 230 + (i % 3) * 120, 360 + Math.floor(i / 3) * 125, 96, icon('user', 46, '#5e2d61', 2.2), '#fff')).join('')}
+  ${[['search', 'Ricerca dei candidati', 38.92], ['chat', 'Colloqui tecnici', 40.94], ['shield', 'Verifica delle referenze', 42.04]].map(([ic, n], i) => `
+  <div class="card" id="sl_s${i}" style="left:640px;top:${300 + i * 200}px;width:560px;height:150px;display:flex;align-items:center;gap:24px;padding:0 30px">
+    ${CIRC('', 0, 0, 90, icon(ic, 44, '#fff', 2.2), '#5e2d61', 'position:relative;transform:none;flex:none')}<div style="font:800 36px PJS">${n}</div></div>`).join('')}
+  <svg class="a" style="left:0;top:0" width="1920" height="1080">${[0, 1].map(i => `<path id="sl_ar${i}" d="M920 ${452 + i * 200} V${498 + i * 200}" stroke="#dab6fc" stroke-width="7" stroke-linecap="round" fill="none" pathLength="100"/>`).join('')}</svg>
+  ${[0, 1, 2].map(i => `<div class="card" id="sl_p${i}" style="left:1300px;top:${300 + i * 160}px;width:470px;height:130px;display:flex;align-items:center;gap:20px;padding:0 26px">
+    ${CIRC('', 0, 0, 80, icon('user', 40, '#fff', 2.2), '#8a4f8e', 'position:relative;transform:none;flex:none')}
+    <div><div style="font:800 30px PJS">Profilo ${i + 1}</div><div style="font:700 22px INT;color:#1f9a52;display:flex;gap:8px;align-items:center;margin-top:6px">${icon('check', 24, '#1f9a52', 3.2)} Verificato</div></div></div>`).join('')}
+  <div class="pill ctr" id="sl_go" style="left:1535px;top:830px;background:#2fbf6b;color:#fff;font-size:30px">${icon('plane', 32, '#fff', 2.2)} Pronti a partire</div>`;
+U.sel = t => {
+  rise($('sl_l'), t, S(38.8));
+  for (let i = 0; i < 12; i++) {
+    const el = $('sl_a' + i), k = pop(el, t, S(38.92) + .05 + i * .06, { c: true, from: .2 });
+    const gone = (OUT1.includes(i) && t > S(40.3)) || (OUT2.includes(i) && t > S(42.04)), tg = OUT1.includes(i) ? S(40.3) : S(42.04);
+    if (gone) { const q = seg(t, tg, tg + .5); el.style.opacity = lerp(1, .18, q); el.style.transform = `translate(-50%,-50%) scale(${lerp(1, .82, q)})`; }
+  }
+  [38.92, 40.94, 42.04].forEach((a, i) => slideIn($('sl_s' + i), t, S(a), { dx: 100 }));
+  draw($('sl_ar0'), ease(seg(t, S(40.6), S(40.95)))); draw($('sl_ar1'), ease(seg(t, S(41.7), S(42.05))));
+  [43.82, 44.4, 44.8].forEach((a, i) => pop($('sl_p' + i), t, S(a), { from: .5 }));
+  pop($('sl_go'), t, S(46.12), { c: true, from: .4 });
+};
+// sectors -----------------------------------------------------------------------------
+const SECT = [['hat', 'Ristorazione', 47.58], ['bed', 'Hotel', 48.4], ['helmet', 'Edilizia', 49.02], ['truck', 'Logistica', 49.8], ['factory', 'Industria', 50.54]];
+HTML.sect = `
+  <div class="a ctr lbl li" id="sc_l" style="left:960px;top:215px;font-size:28px">I settori</div>
+  ${SECT.map(([ic, n], i) => `<div class="card" id="sc_${i}" style="left:${150 + i * 330}px;top:280px;width:300px;height:300px">
+    ${CIRC('', 150, 120, 140, icon(ic, 68, '#fff', 2), '#5e2d61', 'transform:translate(-50%,-50%)')}
+    <div class="a ctr" style="left:150px;top:240px;font:800 36px PJS">${n}</div></div>`).join('')}
+  <div class="a" id="sc_bar" style="left:360px;top:690px;width:1200px;height:110px;border-radius:55px;background:#fff;box-shadow:0 20px 40px rgba(25,4,35,.35);display:flex;align-items:center;gap:22px;padding:0 40px;font:600 40px INT;color:#30103d">${icon('search', 44, '#7d6787', 2.6)}<span id="sc_q"></span></div>
+  <div class="pill ctr" id="sc_ok" style="left:960px;top:880px;background:#2fbf6b;color:#fff;font-size:32px">${icon('check', 32, '#fff', 3.2)} …e lo troviamo!</div>`;
+U.sect = t => {
+  rise($('sc_l'), t, S(47.4), { c: true });
+  SECT.forEach(([, , a], i) => pop($('sc_' + i), t, S(a), { from: .4 }));
+  rise($('sc_bar'), t, S(51.3)); typeTo($('sc_q'), 'Diteci chi cercate: es. 2 cuochi a Monaco', t, S(51.54), S(52.6));
+  pop($('sc_ok'), t, S(52.74), { c: true, from: .4 });
+};
+// bureaucracy -------------------------------------------------------------------------
+const TRN = [['Contratto di lavoro', 'Arbeitsvertrag'], ['Busta paga', 'Lohnabrechnung'], ['Codice fiscale', 'Steuer-ID']];
+HTML.bur = `
+  ${[0, 1, 2, 3].map(i => `<div class="card" id="bu_d${i}" style="left:0;top:0;width:200px;height:250px;border-radius:16px;padding:24px">
+    <div style="font:800 22px INT;color:#5e2d61">${['DOCUMENTI', 'PRATICHE', 'MODULI', 'PERMESSI'][i]}</div>${[85, 70, 90, 60, 75].map(w => `<div style="height:10px;width:${w}%;border-radius:5px;background:#e3d7ea;margin:14px 0"></div>`).join('')}</div>`).join('')}
+  <div class="a ctr" id="bu_f" style="left:520px;top:640px;width:380px;height:280px">
+    <div style="position:absolute;inset:0;border-radius:26px;background:#dab6fc;box-shadow:0 24px 50px rgba(25,4,35,.38)"></div>
+    <div style="position:absolute;left:0;top:-30px;width:170px;height:60px;border-radius:20px 20px 0 0;background:#dab6fc"></div>
+    <div class="a ctr" style="left:190px;top:110px">${icon('folder', 90, '#30103d', 1.8)}</div>
+    <div class="a ctr" style="left:190px;top:205px;font:800 34px PJS;color:#30103d">Li gestiamo noi</div></div>
+  <div class="card" id="bu_t" style="left:900px;top:240px;width:840px;height:520px">
+    <div class="a" style="left:44px;top:40px;display:flex;align-items:center;gap:18px">${CIRC('', 0, 0, 80, icon('lang', 40, '#fff', 2.2), '#5e2d61', 'position:relative;transform:none')}<div style="font:800 40px PJS">Traduzioni incluse</div></div>
+    ${TRN.map(([a, b], i) => `<div class="a" id="bu_r${i}" style="left:44px;top:${170 + i * 110}px;width:752px;height:90px;border-radius:18px;background:#f6f1f9;display:flex;align-items:center;gap:18px;padding:0 24px;font:700 28px INT">
+      ${FLAG('it', 40)}<span style="width:260px">${a}</span>${icon('arrow', 30, '#5e2d61', 2.8)}${FLAG('de', 40)}<span style="color:#5e2d61;font-weight:800">${b}</span></div>`).join('')}
+  </div>
+  <div class="pill ctr" id="bu_p" style="left:1320px;top:870px;font-size:34px;padding:22px 38px">${icon('check', 34, '#2fbf6b', 3.4)} Voi non dovete pensare a niente</div>`;
+U.bur = t => {
+  for (let i = 0; i < 4; i++) {
+    const tin = S(i < 2 ? [55.5, 56.56][i] : 56.8 + (i - 2) * .2), k = eOut(seg(t, tin, tin + .45)), tg = S(57.12) + i * .12, g = ease(seg(t, tg, tg + .55));
+    const x0 = 180 + i * 150, y0 = 250 + (i % 2) * 30, x = lerp(x0, 420, g), y = lerp(y0, 560, g);
+    tf($('bu_d' + i), { x, y: y + (1 - k) * -120, s: lerp(1, .4, g), r: (i - 1.5) * 6 * (1 - g), o: k * (1 - seg(t, tg + .4, tg + .55)) });
+  }
+  pop($('bu_f'), t, S(55.7), { c: true, from: .5 });
+  if (t > S(57.12)) { const b = Math.sin(seg(t, S(57.6), S(58.1)) * Math.PI); $('bu_f').style.transform = `translate(-50%,-50%) scale(${1 + .06 * b})`; }
+  slideIn($('bu_t'), t, S(58.1), { dx: 140 }); TRN.forEach((_, i) => rise($('bu_r' + i), t, S(58.4) + i * .3, { dy: 24 }));
+  pop($('bu_p'), t, S(60.12), { c: true, from: .5 });
+};
+// assistance --------------------------------------------------------------------------
+const JR = [['plane', 'Viaggio', 69.32], ['home', 'Alloggio', 69.78], ['cross', 'Medico', 70.66], ['bank', 'Conto in banca', 71.32]];
+HTML.ass = `
+  <div class="card" id="as_a" style="left:330px;top:190px;width:600px;height:340px">
+    <svg class="a" style="left:40px;top:50px" width="240" height="240" viewBox="0 0 240 240"><circle cx="120" cy="120" r="100" fill="none" stroke="#f1ecf4" stroke-width="22"/><circle id="as_ring" cx="120" cy="120" r="100" fill="none" stroke="#5e2d61" stroke-width="22" pathLength="100" transform="rotate(-90 120 120)" stroke-linecap="round"/></svg>
+    <div class="a ctr" style="left:160px;top:170px;font:800 64px PJS;color:#5e2d61">24h</div>
+    <div class="a" style="left:310px;top:120px;font:800 46px/1.1 PJS">24 ore<br>su 24</div></div>
+  <div class="card" id="as_b" style="left:990px;top:190px;width:600px;height:340px">
+    <div class="a" style="left:44px;top:60px;font:800 46px PJS">7 giorni su 7</div>
+    ${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => `<div class="cc" id="as_d${i}" style="left:${84 + i * 72}px;top:230px;width:60px;height:60px;transform:translate(-50%,-50%);background:#f1ecf4;font:800 24px INT;color:#9a83a6">${d}</div>`).join('')}</div>
+  <svg class="a" style="left:0;top:0" width="1920" height="1080"><path id="as_ln" d="M480 700 H1440" stroke="#dab6fc" stroke-width="6" stroke-linecap="round" fill="none" pathLength="100"/></svg>
+  ${JR.map(([ic, n], i) => `${CIRC('as_j' + i, 480 + i * 320, 700, 130, icon(ic, 60, '#5e2d61', 2), '#fff')}<div class="a ctr" id="as_n${i}" style="left:${480 + i * 320}px;top:810px;font:800 34px PJS;color:#fff">${n}</div>`).join('')}
+  <div class="pill ctr" id="as_p" style="left:960px;top:925px;font-size:32px">${icon('heart', 32, '#ff5a6e', 2.6)} <span>Arriva sereno</span><span id="as_p2" style="color:#5e2d61">&nbsp;e si concentra sul lavoro</span></div>`;
+U.ass = t => {
+  pop($('as_a'), t, S(64.3), { from: .7 }); draw($('as_ring'), ease(seg(t, S(65.7), S(67.0))));
+  pop($('as_b'), t, S(67.4), { from: .7 });
+  for (let i = 0; i < 7; i++) { const t0 = S(67.72) + i * .1, on = t > t0, d = $('as_d' + i); d.style.background = on ? '#5e2d61' : '#f1ecf4'; d.style.color = on ? '#fff' : '#9a83a6'; d.style.transform = `translate(-50%,-50%) scale(${on ? lerp(.6, 1, spring(t - t0, 16, .55)) : 1})`; }
+  draw($('as_ln'), ease(seg(t, S(69.2), S(71.6))));
+  JR.forEach(([, , a], i) => { pop($('as_j' + i), t, S(a), { c: true, from: .2 }); rise($('as_n' + i), t, S(a) + .1, { c: true }); });
+  pop($('as_p'), t, S(72.5), { c: true, from: .5 }); $('as_p2').style.opacity = clamp((t - S(74.0)) * 4);
+};
+// free --------------------------------------------------------------------------------
+const FR = [['Zero commissioni', 82.4], ['Nessun costo anticipato', 83.82], ['Nessun costo nascosto', 85.46]];
+HTML.free = `
+  <div class="a ctr lbl li" id="fr_l" style="left:560px;top:200px;font-size:28px">Per la vostra azienda</div>
+  <svg class="a" style="left:300px;top:250px" width="520" height="520" viewBox="0 0 520 520"><circle cx="260" cy="260" r="230" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.18)" stroke-width="26"/><circle id="fr_ring" cx="260" cy="260" r="230" fill="none" stroke="#2fbf6b" stroke-width="26" pathLength="100" transform="rotate(-90 260 260)" stroke-linecap="round"/></svg>
+  <div class="a ctr" id="fr_z" style="left:560px;top:485px;font:800 180px/1 PJS;color:#fff">0 €</div>
+  <div class="a ctr lbl" id="fr_g" style="left:560px;top:600px;font-size:28px;color:#2fbf6b">Gratis al 100%</div>
+  ${FR.map(([n], i) => `<div class="card" id="fr_${i}" style="left:1010px;top:${290 + i * 175}px;width:720px;height:140px;display:flex;align-items:center;gap:24px;padding:0 32px">
+    ${CIRC('', 0, 0, 84, icon('euro', 42, '#fff', 2.4), '#5e2d61', 'position:relative;transform:none;flex:none')}<div style="font:800 38px PJS">${n}</div>
+    <div class="chk" style="position:relative;left:auto;top:auto;transform:none;margin-left:auto;width:62px;height:62px;flex:none">${icon('check', 32, '#fff', 3.4)}</div></div>`).join('')}`;
+U.free = t => {
+  rise($('fr_l'), t, S(77.74), { c: true }); draw($('fr_ring'), ease(seg(t, S(80.0), S(81.6))));
+  pop($('fr_z'), t, S(79.1), { c: true, from: .3 }); pop($('fr_g'), t, S(81.16), { c: true, from: .4 });
+  FR.forEach(([, a], i) => slideIn($('fr_' + i), t, S(a), { dx: 140 }));
+};
+// what we ask -------------------------------------------------------------------------
+HTML.deal = `
+  <div class="a ctr h1" id="dl_t" style="left:960px;top:205px;font-size:80px">${MW('Vi chiediamo solo una cosa')}</div>
+  <div class="card" id="dl_c" style="left:610px;top:290px;width:700px;height:640px">
+    <div class="a" style="left:50px;top:46px;display:flex;align-items:center;gap:18px">${CIRC('', 0, 0, 80, icon('doc', 40, '#fff', 2.2), '#5e2d61', 'position:relative;transform:none')}<div><div style="font:800 40px PJS">Contratto di lavoro</div><div style="font:700 22px INT;color:#8d7a97">Arbeitsvertrag</div></div></div>
+    ${['Condizioni chiare', 'Contratto regolare'].map((n, i) => `<div class="a" id="dl_r${i}" style="left:50px;top:${190 + i * 110}px;width:600px;height:90px;border-radius:18px;background:#f6f1f9;display:flex;align-items:center;gap:20px;padding:0 26px;font:800 34px PJS">
+      <div class="chk" style="position:relative;left:auto;top:auto;transform:none;width:52px;height:52px;flex:none">${icon('check', 28, '#fff', 3.4)}</div>${n}</div>`).join('')}
+    <svg class="a" style="left:60px;top:470px" width="380" height="110" viewBox="0 0 380 110"><path id="dl_sig" d="M10 70 C 40 20, 60 20, 70 60 S 100 100, 120 50 S 160 10, 170 60 S 210 90, 240 40 S 290 30, 370 60" stroke="#5e2d61" stroke-width="5" stroke-linecap="round" fill="none" pathLength="100"/><path d="M0 95 H380" stroke="#e3d7ea" stroke-width="3"/></svg>
+  </div>
+  <div class="a ctr" id="dl_st" style="left:1270px;top:840px;padding:18px 28px;border:6px solid #5e2d61;border-radius:18px;color:#5e2d61;background:rgba(255,255,255,.95);font:800 28px INT;letter-spacing:.06em;text-align:center;line-height:1.25">SECONDO LA<br>LEGGE TEDESCA</div>`;
+U.deal = t => {
+  words($('dl_t'), t, S(86.96)); pop($('dl_c'), t, S(87.5), { from: .7 });
+  rise($('dl_r0'), t, S(88.76), { dy: 24 }); rise($('dl_r1'), t, S(90.18), { dy: 24 });
+  draw($('dl_sig'), ease(seg(t, S(90.4), S(91.5))));
+  const sk = spring(t - S(91.66), 15, .5); tf($('dl_st'), { c: true, s: lerp(2, 1, sk), r: -8, o: clamp((t - S(91.66)) * 7) });
+};
+// how to start: 4 steps ---------------------------------------------------------------
+const ST4 = [['Contattateci', 94.88], ['Definiamo il profilo', 103.68], ['Selezione e colloquio', 110.84], ['Partenza e arrivo', 114.84]];
+const P2 = [['user', 'Il profilo che cercate', 105.86], ['users', 'Quante persone vi servono', 107.3], ['euro', 'Lo stipendio', 108.56], ['clock', 'Gli orari', 109.42], ['home', "L'alloggio", 110.1]];
+HTML.how = `
+  ${ST4.map(([n], i) => `<div class="a" id="hw_s${i}" style="left:130px;top:${215 + i * 170}px;width:620px;height:140px;border-radius:26px;display:flex;align-items:center;gap:26px;padding:0 30px">
+    <div id="hw_c${i}" style="flex:none;width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 40px PJS"></div><div style="font:800 40px PJS">${n}</div></div>`).join('')}
+  <div class="card" id="hw_p" style="left:820px;top:200px;width:980px;height:700px;overflow:hidden">
+    <div class="a" id="hw_0" style="left:0;top:0;width:980px;height:700px">
+      <div class="a" style="left:50px;top:44px;font:800 42px PJS">Richiedi lavoratori</div><div class="a" style="left:50px;top:98px;font:600 24px INT;color:#8d7a97">lbswork.com · sezione Datori di lavoro</div>
+      ${['Nome azienda', 'Settore', 'Lavoratori necessari'].map((l, i) => `<div class="flb" style="left:52px;top:${160 + i * 120}px">${l}</div><div class="fld" style="left:50px;right:50px;top:${192 + i * 120}px;height:80px;font-size:30px"><span id="hw_v${i}"></span></div>`).join('')}
+      <div class="a" id="hw_wa" style="left:50px;top:560px;display:flex;align-items:center;gap:16px;padding:16px 26px;border-radius:18px;background:#e7f9ee;font:800 30px INT;color:#14874a">${WA(56)} oppure WhatsApp</div>
+      <div class="a" id="hw_24" style="left:468px;top:560px;display:flex;align-items:center;gap:14px;padding:16px 24px;border-radius:18px;background:#5e2d61;font:800 27px INT;color:#fff">${icon('clock', 40, '#dab6fc', 2.4)} Vi ricontattiamo entro 24 ore</div>
+    </div>
+    <div class="a" id="hw_1" style="left:0;top:0;width:980px;height:700px">
+      <div class="a" style="left:50px;top:44px;font:800 42px PJS">Definiamo insieme</div>
+      ${P2.map(([ic, n], i) => `<div class="a" id="hw_q${i}" style="left:50px;top:${130 + i * 108}px;width:880px;height:90px;border-radius:18px;background:#f6f1f9;display:flex;align-items:center;gap:22px;padding:0 26px;font:800 32px PJS">${icon(ic, 40, '#5e2d61', 2.2)}${n}<div class="chk" style="position:relative;left:auto;top:auto;transform:none;margin-left:auto;width:52px;height:52px">${icon('check', 28, '#fff', 3.4)}</div></div>`).join('')}
+    </div>
+    <div class="a" id="hw_2" style="left:0;top:0;width:980px;height:700px">
+      <div class="a" style="left:50px;top:44px;font:800 42px PJS">I candidati selezionati</div>
+      ${[0, 1, 2].map(i => `<div class="a" id="hw_k${i}" style="left:${50 + i * 300}px;top:140px;width:280px;height:330px;border-radius:24px;background:#f6f1f9">
+        ${CIRC('', 140, 100, 120, icon('user', 60, '#fff', 2), ['#5e2d61', '#8a4f8e', '#a56aa8'][i], 'transform:translate(-50%,-50%)')}
+        <div class="a ctr" style="left:140px;top:210px;font:800 30px PJS">Profilo ${i + 1}</div>
+        <div class="a ctr" style="left:140px;top:265px;display:flex;gap:8px;align-items:center;font:700 22px INT;color:#1f9a52">${icon('check', 24, '#1f9a52', 3.2)} Verificato</div></div>`).join('')}
+      <div class="a" id="hw_iv" style="left:50px;top:530px;display:flex;align-items:center;gap:18px;padding:20px 30px;border-radius:20px;background:#5e2d61;font:800 34px PJS;color:#fff">${icon('video', 40, '#dab6fc', 2.2)} Colloquio con voi</div>
+    </div>
+    <div class="a" id="hw_3" style="left:0;top:0;width:980px;height:700px">
+      <div class="a" style="left:50px;top:44px;font:800 42px PJS">Partenza e arrivo</div>
+      <div class="a ctr" style="left:180px;top:300px">${FLAG('it', 150)}</div><div class="a ctr" style="left:800px;top:300px">${FLAG('de', 150)}</div>
+      <svg class="a" style="left:0;top:0" width="980" height="700"><path id="hw_arc" d="M260 300 Q490 140 720 300" stroke="#dab6fc" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round" fill="none"/></svg>
+      <div class="a" id="hw_pl" style="left:0;top:0">${icon('plane', 64, '#5e2d61', 2)}</div>
+      <div class="a ctr" id="hw_ar" style="left:800px;top:420px;display:flex;align-items:center;gap:10px;font:800 30px PJS;color:#1f9a52">${icon('pin', 34, '#1f9a52', 2.6)} Arrivato</div>
+      <div class="a" id="hw_af" style="left:50px;top:520px;width:880px;display:flex;align-items:center;gap:20px;padding:24px 30px;border-radius:20px;background:#f3e8fd;font:800 34px PJS;color:#30103d">${icon('heart', 42, '#ff5a6e', 2.4)} Restiamo accanto al lavoratore anche dopo</div>
+    </div>
+  </div>`;
+U.how = t => {
+  const cur = ST4.reduce((a, s, i) => t >= S(s[1]) - .1 ? i : a, 0);
+  ST4.forEach(([, a], i) => {
+    const el = $('hw_s' + i), c = $('hw_c' + i), on = i === cur, done = i < cur;
+    rise(el, t, S(94.85) + i * .1, { dy: 30 });
+    el.style.background = on ? '#fff' : 'rgba(255,255,255,.1)'; el.style.color = on ? '#30103d' : '#fff'; el.style.boxShadow = on ? '0 20px 40px rgba(25,4,35,.35)' : 'none';
+    c.style.background = done ? '#2fbf6b' : on ? '#5e2d61' : 'rgba(255,255,255,.2)'; c.style.color = '#fff'; c.innerHTML = done ? icon('check', 44, '#fff', 3.4) : String(i + 1);
+    const pk = on ? spring(t - S(a), 14, .55) : 1; el.style.transform = `translateX(${on ? lerp(-30, 24, pk) : 0}px)`;
+  });
+  slideIn($('hw_p'), t, S(95.2), { dx: 140 });
+  for (let i = 0; i < 4; i++) { const p = $('hw_' + i), t0 = S(ST4[i][1]) - .1, t1 = i < 3 ? S(ST4[i + 1][1]) - .1 : 1e9; const k = i === 0 ? 1 : expo(seg(t, t0, t0 + .5)); p.style.opacity = t >= (i ? t0 : 0) && t < t1 ? 1 : 0; p.style.transform = `translateY(${(1 - k) * 60}px)`; }
+  // step 1
+  [['Ristorante Esempio GmbH', 96.2, 96.9], ['Ristorazione e Cucina', 97.6, 98.2], ['3 - 5 lavoratori', 98.5, 99.0]].forEach(([v, a, b], i) => typeTo($('hw_v' + i), v, t, S(a), S(b), false));
+  pop($('hw_wa'), t, S(100.36), { from: .5 }); pop($('hw_24'), t, S(102.64), { from: .5 });
+  // step 2
+  P2.forEach(([, , a], i) => rise($('hw_q' + i), t, S(a), { dy: 24 }));
+  // step 3
+  [111.4, 111.7, 112.0].forEach((a, i) => pop($('hw_k' + i), t, S(a), { from: .5 })); pop($('hw_iv'), t, S(113.26), { from: .5 });
+  // step 4
+  const k = ease(seg(t, S(116.2), S(117.4))), x = (1 - k) * (1 - k) * 260 + 2 * (1 - k) * k * 490 + k * k * 720, y = (1 - k) * (1 - k) * 300 + 2 * (1 - k) * k * 140 + k * k * 300;
+  tf($('hw_pl'), { x: x - 32, y: y - 32, r: lerp(-30, 30, k) + 45, o: k > 0 && k < 1 ? 1 : 0 });
+  pop($('hw_ar'), t, S(117.32), { c: true, from: .3 }); pop($('hw_af'), t, S(118.12), { from: .6 });
+};
+// contacts ----------------------------------------------------------------------------
+const CT = [['globe', 'Sito', 'lbswork.com', 121.8, [[122.62, 'lbswork'], [123.66, 'lbswork.com']]],
+  ['de', 'WhatsApp Germania', '+49 1573 9037885', 126.28, [[127.24, '+'], [127.48, '+49'], [128.18, '+49 1573'], [129.82, '+49 1573 9037'], [131.42, '+49 1573 9037885']]],
+  ['it', 'WhatsApp Italia', '+39 351 881 8391', 133.08, [[133.8, '+'], [134.48, '+39'], [135.2, '+39 351'], [136.8, '+39 351 881'], [138.06, '+39 351 881 8391']]],
+  ['mail', 'Email', 'info@lbswork.com', 139.5, [[141.26, 'info'], [141.62, 'info@lbswork'], [143.36, 'info@lbswork.com']]]];
+HTML.cont = `
+  <div class="a ctr h1" id="ct_t" style="left:960px;top:200px;font-size:90px">${MW('Scriveteci')}</div>
+  ${CT.map(([ic, l], i) => `<div class="card" id="ct_${i}" style="left:390px;top:${285 + i * 168}px;width:1140px;height:140px;display:flex;align-items:center;gap:30px;padding:0 36px">
+    ${ic === 'de' || ic === 'it' ? `<div style="position:relative;flex:none">${WA(88)}<div style="position:absolute;right:-12px;bottom:-6px">${FLAG(ic, 46)}</div></div>` : CIRC('', 0, 0, 88, icon(ic, 44, '#fff', 2.2), '#5e2d61', 'position:relative;transform:none;flex:none')}
+    <div><div class="lbl" style="font-size:22px;color:#9a83a6">${l}</div><div id="ct_v${i}" style="font:800 50px PJS;color:#30103d;margin-top:6px;letter-spacing:.01em"></div></div></div>`).join('')}`;
+U.cont = t => {
+  words($('ct_t'), t, S(120.9));
+  CT.forEach(([, , full, a, steps], i) => {
+    slideIn($('ct_' + i), t, S(a), { dx: 140 });
+    let v = ''; for (const [st, s] of steps) if (t >= S(st)) v = s;
+    $('ct_v' + i).innerHTML = esc(v) + (t > S(a) && v !== full ? '<span class="caret"></span>' : '');
+    const done = t >= S(steps[steps.length - 1][0]); $('ct_' + i).style.boxShadow = done && t < S(steps[steps.length - 1][0]) + .8 ? '0 0 0 8px #dab6fc,0 24px 50px rgba(25,4,35,.38)' : '';
+  });
+};
+// outro -------------------------------------------------------------------------------
+HTML.outro = `
+  <img class="a ctr" id="ou_logo" src="${LOGO}" style="left:960px;top:290px;width:240px;height:240px">
+  <div class="a ctr h1" id="ou_a" style="left:960px;top:520px;font-size:100px">${MW('Voi pensate al lavoro.')}</div>
+  <div class="a ctr h1 li" id="ou_b" style="left:960px;top:650px;font-size:100px">${MW('Al resto, pensiamo noi.')}</div>
+  <div class="a ctr" id="ou_c" style="left:960px;top:830px;display:flex;gap:34px;align-items:center;font:700 32px INT;color:#fff">${icon('globe', 32, '#dab6fc', 2.4)} lbswork.com <span style="opacity:.4">|</span> ${FLAG('de', 40)} +49 1573 9037885 <span style="opacity:.4">|</span> ${FLAG('it', 40)} +39 351 881 8391</div>`;
+U.outro = t => {
+  pop($('ou_logo'), t, S(144.52), { c: true, from: .3 }); words($('ou_a'), t, [S(145.72), S(145.84), S(146.28), S(146.44)]);
+  words($('ou_b'), t, [S(147.4), S(147.52), S(147.94), S(148.58)]); rise($('ou_c'), t, S(148.9), { c: true });
+};
+
+// ---------- build DOM ----------
+const scenes = $('scenes');
+SC.forEach(s => { const d = document.createElement('div'); d.className = 'layer'; d.innerHTML = HTML[s.id]; scenes.appendChild(d); s.el = d; s.A = S(s.a) - (s.id.startsWith('ch') ? 0 : .05); s.B = S(s.b); });
+SC[0].A = -1;
+// HUD: guide title, chapter tabs, progress
+$('hud').innerHTML = `
+  <div class="a" id="hd_l" style="left:56px;top:40px;display:flex;align-items:center;gap:16px"><img src="${LOGO}" style="width:58px;height:58px"><div><div class="lbl" style="font-size:19px;color:#fff">${HUD_T[0]}</div><div style="font:600 18px INT;color:#dab6fc;margin-top:4px">${HUD_T[1]}</div></div></div>
+  <div class="a" id="hd_t" style="right:56px;top:46px;display:flex;gap:10px">${TABS.map((n, i) => `<div class="tab" id="tab${i}"><b>${i + 1}</b>${n}</div>`).join('')}</div>
+  <div class="a" style="left:0;bottom:0;width:1920px;height:8px;background:rgba(255,255,255,.12)"><div id="hd_p" style="width:100%;height:8px;background:#dab6fc;transform-origin:0 50%"></div></div>`;
+
+// ---------- background (pattern from the LBS videos) ----------
+const PAT = {
+  truck: 'M2 6.5h11.5v9.5H2z M13.5 9.5h4.2l3.8 3.6v2.9h-8z M4 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0 M15.2 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0',
+  pizza: 'M3.5 4.5Q12 1.5 20.5 4.5L12 21.5z M4.6 6.8Q12 4.2 19.4 6.8 M8.9 9.4a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0 M12.9 11.8a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0 M10.4 15.2a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',
+  hat: 'M6.5 13.5C3.4 13.4 3 8.6 6.4 8C6.9 4.3 11.7 3.1 13.6 5.8C16.6 4.6 20.6 7.3 18.5 10.9C18 12 17.5 13.5 17.5 13.5 M6.5 13.5h11v5.6h-11z M6.5 16.2h11',
+  brief: 'M3 7.5h18v12H3z M9 7.5V5h6v2.5 M3 12.5h18',
+};
+const TILE = (() => { const c = document.createElement('canvas'); c.width = 1040; c.height = 840; const x = c.getContext('2d'), r = rng(31), names = Object.keys(PAT);
+  x.strokeStyle = '#fff'; x.lineWidth = 1.25; x.lineJoin = x.lineCap = 'round';
+  for (let row = 0; row < 4; row++) for (let k = 0; k < 4; k++) {
+    const cx = k * 260 + (row % 2 ? 130 : 0) + 65, cy = row * 210 + 70, n = names[(row * 3 + k) % 4], rot = (r() - .5) * .45;
+    for (const dx of [0, 1040]) { if (dx && cx > 130) continue; x.save(); x.translate(cx + dx, cy); x.rotate(rot); x.scale(2.9, 2.9); x.translate(-12, -12); x.stroke(new Path2D(PAT[n])); x.restore(); }
+  } return c; })();
+const bgc = $('bg').getContext('2d'), PW = bgc.createPattern(TILE, 'repeat');
+{ const g = $('glow').getContext('2d'), gw = 2320, gh = 1380;
+  const blob = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, gw, gh); };
+  blob(620, 420, 820, 'rgba(218,182,252,.16)'); blob(1800, 1050, 820, 'rgba(48,16,61,.55)'); blob(1700, 260, 560, 'rgba(218,182,252,.1)'); }
+const GRAIN = []; { const r = rng(99); for (let k = 0; k < 4; k++) { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), im = x.createImageData(256, 256); for (let i = 0; i < im.data.length; i += 4) { const v = r() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); GRAIN.push(`url(${c.toDataURL()})`); } }
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const TR = .45;   // scene cross-fade
+function vis(s, t) { if (t < s.A - .05 || t > s.B + TR) return 0; return seg(t, s.A, s.A + TR) * (1 - seg(t, s.B, s.B + TR)); }
+function drawBg(t, V) {
+  let sw = 0, rgb = [0, 0, 0], dark = 0;
+  SC.forEach((s, i) => { const v = V[i]; if (!v) return; const c = hex(s.bg); sw += v; rgb = rgb.map((x, k) => x + c[k] * v); if (s.bg === D) dark += v; });
+  if (sw < 1e-4) { rgb = hex(P); sw = 1; }
+  rgb = rgb.map(x => Math.round(x / sw)); dark /= sw;
+  bgc.fillStyle = `rgb(${rgb})`; bgc.fillRect(0, 0, W, H);
+  const ox = -(t * 14) % 1040, oy = -(t * 8) % 840;
+  bgc.save(); bgc.translate(ox, oy); bgc.globalAlpha = .13 * (1 - .5 * dark); bgc.fillStyle = PW; bgc.fillRect(-ox, -oy, W, H); bgc.restore(); bgc.globalAlpha = 1;
+  const g = $('glow'); g.style.opacity = .9; g.style.transform = `translate(${Math.sin(t * .23) * 120}px,${Math.cos(t * .17) * 70}px)`;
+}
+// chapter wipes: three bars sweep across just as the chapter card arrives
+const WIPES = CHAP.map(c => S(c[0]));
+function wipes(t) {
+  const bars = [$('wb0'), $('wb1'), $('wb2')], off = [-.07, 0, .06];
+  let T = null; for (const w of WIPES) if (Math.abs(t - w) < .62) T = w;
+  bars.forEach((b, i) => {
+    if (T === null) { b.style.visibility = 'hidden'; return; }
+    const k = ease(seg(t, T - .45 + off[i] * 2, T + .45 + off[i] * 2));
+    b.style.visibility = k > 0 && k < 1 ? 'visible' : 'hidden';
+    b.style.transform = `translate(${lerp(-4600, 2400, k)}px,0) skewX(-18deg)`;
+  });
+}
+
+function seekImpl(t) {
+  const V = SC.map(s => vis(s, t));
+  drawBg(t, V);
+  SC.forEach((s, i) => {
+    const v = V[i]; s.el.style.display = v > 0 ? 'block' : 'none'; if (!v) return;
+    const kin = seg(t, s.A, s.A + TR), kout = seg(t, s.B, s.B + TR), life = seg(t, s.A, s.B + TR);
+    s.el.style.opacity = s.id.startsWith('ch') ? (t < s.A + .02 ? 0 : 1 - kout) : v;
+    s.el.style.transform = `scale(${(1 + .025 * life) * lerp(.97, 1, eOut(kin)) * lerp(1, 1.04, eIn(kout))})`;
+    const bl = (1 - eOut(kin)) * 8 + eIn(kout) * 10; s.el.style.filter = bl > .1 ? `blur(${bl.toFixed(2)}px)` : 'none';
+    U[s.id](t);
+  });
+  wipes(t);
+  // HUD
+  const hudOn = seg(t, S(HUD_ON), S(HUD_ON) + .7) * (1 - seg(t, S(HUD_OFF), S(HUD_OFF) + .6));
+  $('hud').style.opacity = hudOn; $('hud').style.transform = `translateY(${(1 - hudOn) * -20}px)`;
+  const cur = CHAP.reduce((a, c, i) => t >= S(c[0]) ? i : a, -1), recap = t >= S(RECAP);
+  TABS.forEach((_, i) => { const el = $('tab' + i), on = i === cur && !recap, done = i < cur || recap; el.style.background = on ? '#fff' : done ? 'rgba(218,182,252,.28)' : 'rgba(255,255,255,.1)'; el.style.color = on ? '#5e2d61' : '#fff'; el.firstElementChild.style.background = on ? '#5e2d61' : done ? '#2fbf6b' : 'rgba(255,255,255,.18)'; el.firstElementChild.innerHTML = done ? icon('check', 16, '#fff', 3.4) : String(i + 1); el.firstElementChild.style.color = '#fff'; const pk = on ? spring(t - S(CHAP[i][0]), 14, .55) : 1; el.style.transform = `scale(${on ? lerp(.85, 1, pk) : 1})`; });
+  $('hd_p').style.transform = `scaleX(${clamp(t / DUR)})`;
+  $('grain').style.backgroundImage = GRAIN[Math.floor(t * 24) % 4];
+  $('fade').style.opacity = Math.max(1 - seg(t, 0, .35), seg(t, DUR - 1.0, DUR - .05));
+}
+
+// =========================================================================================
+// AUDIO: voice + upbeat "corporate" bed, 116 BPM in G major (plucks, pad, four-on-the-floor), ducked under the voice
+const BPM = 116, BEAT = 60 / BPM, BAR = 4 * BEAT;
+const VO_URL = 'data:audio/mpeg;base64,{{VO}}';
+window.buildAudio = async function (ctx) {
+  const sr = ctx.sampleRate;
+  const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .1;
+  const out = ctx.createGain(); out.gain.value = .6; lim.connect(out); out.connect(ctx.destination);
+  const master = ctx.createGain(); master.gain.value = .7; master.connect(lim);
+  const ir = ctx.createBuffer(2, Math.floor(sr * 2.2), sr);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c), r = rng(5 + c); for (let i = 0; i < d.length; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / d.length, 3.2); }
+  const verb = ctx.createConvolver(); verb.buffer = ir; const vr = ctx.createGain(); vr.gain.value = .35; verb.connect(vr); vr.connect(master);
+  const music = ctx.createGain(); music.connect(master); const ms = ctx.createGain(); ms.gain.value = .25; music.connect(ms); ms.connect(verb);
+  const sfx = ctx.createGain(); sfx.gain.value = .55; sfx.connect(master); const ss = ctx.createGain(); ss.gain.value = .2; sfx.connect(ss); ss.connect(verb);
+  // duck the music under the voice; it swells on the chapter pauses
+  const lo = .26, hi = .62; music.gain.setValueAtTime(.62, 0);
+  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, voT(a) - .3, .1); music.gain.setTargetAtTime(BRK.some(k => Math.abs(k.c - b) < .7) ? .9 : hi, voT(b) + .1, .25); }
+  music.gain.setTargetAtTime(.7, voT(148.9), .4); music.gain.setTargetAtTime(0, DUR - 1.4, .35);
+  // voice, in chunks around the pauses
+  try {
+    const vb = await ctx.decodeAudioData(await (await fetch(VO_URL)).arrayBuffer());
+    const vg = ctx.createGain(); vg.gain.value = 1.05; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 70; hp.connect(vg); vg.connect(master);
+    const cuts = [0, ...BRK.map(b => b.c), vb.duration];
+    for (let i = 0; i + 1 < cuts.length; i++) { const src = ctx.createBufferSource(); src.buffer = vb; src.connect(hp); src.start(voT(cuts[i]), cuts[i], cuts[i + 1] - cuts[i]); }
+  } catch (e) { console.warn('voice not decoded', e); }
+
+  const nb = ctx.createBuffer(1, sr * 2, sr); { const d = nb.getChannelData(0), r = rng(1234); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
+  const noise = (t, dur, { type = 'highpass', f = 1000, q = .7, g = .2, dest = sfx, f2, a = .002, pan = 0 } = {}) => {
+    const s = ctx.createBufferSource(); s.buffer = nb; s.loop = true;
+    const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q; if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + a); e.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    const p = ctx.createStereoPanner(); p.pan.value = pan; s.connect(fl); fl.connect(e); e.connect(p); p.connect(dest); s.start(t, (t * 7.3) % 1.5); s.stop(t + dur + .05);
+  };
+  const tone = (t, f, dur, { type = 'sine', g = .1, a = .005, dest = sfx, f2, lp, pan = 0, det = 0 } = {}) => {
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = det; if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur * .8);
+    const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + a); e.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    let n = o; if (lp) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; o.connect(fl); n = fl; }
+    const p = ctx.createStereoPanner(); p.pan.value = pan; n.connect(e); e.connect(p); p.connect(dest); o.start(t); o.stop(t + dur + .05);
+  };
+  // house-style pluck: two detuned saws through a fast-closing low-pass
+  const pluck = (t, m, g, pan = 0, bright = 1) => {
+    const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = 3; fl.frequency.setValueAtTime(900 + 2600 * bright, t); fl.frequency.exponentialRampToValueAtTime(380, t + .22);
+    const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + .004); e.gain.exponentialRampToValueAtTime(.0005, t + .34);
+    const p = ctx.createStereoPanner(); p.pan.value = pan; fl.connect(e); e.connect(p); p.connect(music);
+    for (const dt of [-9, 9]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t + .4); }
+  };
+  const pad = (t, notes, dur, g, lpf = 1400) => {
+    const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lpf; fl.Q.value = .3;
+    const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + .5); e.gain.setValueAtTime(g, t + dur - .4); e.gain.linearRampToValueAtTime(0, t + dur); fl.connect(e); e.connect(music);
+    for (const m of notes) for (const dt of [-6, 6]) { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(m); o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t + dur + .05); }
+  };
+  const bell = (t, m, g = .05) => { tone(t, mtof(m), 1.3, { g, dest: music, pan: .2 }); tone(t, mtof(m) * 3, .3, { g: g * .2, dest: music, pan: .2 }); };
+  const chime = (t, m, g = .06) => { tone(t, mtof(m), 1.4, { g }); tone(t, mtof(m) * 2.76, .45, { g: g * .25 }); };
+
+  const PROG = [[55, 59, 62], [54, 57, 62], [52, 55, 59], [52, 55, 60]], ROOT = [43, 38, 40, 36];
+  const HOOK = [[74, 0], [71, .75], [74, 1.5], [76, 2.5], [74, 3]];
+  const nBars = Math.ceil(DUR / BAR);
+  const dark = t => t >= S(4.8) - .1 && t < S(16.9) - .1;      // the "problem" scene: no drums, filtered
+  const intro = t => t < S(4.8) - .1, end = t => t > DUR - 4.2;
+  for (let n = 0; n < nBars; n++) {
+    const t = .1 + n * BAR, ci = n % 4, ch = PROG[ci];
+    if (t > DUR - 1.4) break;
+    pad(t, [ch[0] - 12, ...ch], BAR + .2, dark(t) ? .035 : .028, dark(t) ? 700 : 1500);
+    const arp = [ch[0] + 12, ch[2], ch[1] + 12, ch[2], ch[0] + 12, ch[2] + 12, ch[1] + 12, ch[2]];
+    for (let k = 0; k < 8; k++) if (!(end(t) && k % 2)) pluck(t + k * BEAT / 2, arp[k], dark(t) ? .022 : .03, k % 2 ? .35 : -.35, dark(t) ? .1 : .7 + .3 * (k % 2));
+    if (!intro(t)) for (let b = 0; b < 4; b++) { tone(t + b * BEAT, mtof(ROOT[ci]), BEAT * .7, { type: 'triangle', g: dark(t) ? .1 : .16, a: .01, dest: music, lp: 420 }); if (!dark(t)) tone(t + (b + .5) * BEAT, mtof(ROOT[ci] + 12), BEAT * .35, { type: 'triangle', g: .07, a: .01, dest: music, lp: 600 }); }
+    if (!intro(t) && !dark(t) && !end(t)) for (let b = 0; b < 4; b++) {
+      const tb = t + b * BEAT;
+      const o = ctx.createOscillator(), e = ctx.createGain(); o.frequency.setValueAtTime(120, tb); o.frequency.exponentialRampToValueAtTime(46, tb + .1); e.gain.setValueAtTime(.26, tb); e.gain.exponentialRampToValueAtTime(.001, tb + .28); o.connect(e); e.connect(music); o.start(tb); o.stop(tb + .3);
+      if (b % 2) for (const d of [0, .01, .022]) noise(tb + d, .12, { type: 'bandpass', f: 1500, q: 1, g: .07, dest: music });
+      noise(tb + BEAT / 2, .12, { f: 7000, g: .035, dest: music, pan: .25 });
+      for (let s = 0; s < 4; s++) if (s !== 2) noise(tb + s * BEAT / 4, .03, { f: 9000, g: .014, dest: music, pan: -.3 });
+    }
+    // bell hook in the brightest sections
+    const bright = t >= S(77.65) && t < S(92.5) || t >= S(144.4);
+    if (bright && !end(t)) HOOK.forEach(([m, b]) => bell(t + b * BEAT, m - (ci === 2 ? 2 : 0), .04));
+  }
+  // closing chord
+  [43, 55, 59, 62, 67, 71].forEach((m, j) => tone(DUR - 3.4 + j * .05, mtof(m), 3.2, { type: 'triangle', g: .05, dest: music, lp: 2400 }));
+
+  // ---- sound effects ----
+  const whoosh = (t, g = .12, pan = 0) => noise(t - .25, .55, { type: 'bandpass', f: 600, f2: 3500, q: 1, g, a: .22, pan });
+  const popS = (t, i = 0) => { tone(t, 420 + (i % 5) * 60, .1, { f2: 820 + (i % 5) * 70, g: .1 }); noise(t, .03, { type: 'bandpass', f: 3000, q: 2, g: .05 }); };
+  const ding = (t, i = 0) => { tone(t, mtof(86 + [0, 4, 7][i % 3]), .25, { g: .07 }); tone(t + .06, mtof(93 + [0, 4, 7][i % 3]), .3, { g: .04 }); };
+  const key = (t, i) => { noise(t, .025, { type: 'bandpass', f: 2600 + (i % 4) * 400, q: 3, g: .07, pan: ((i % 5) - 2) * .08 }); tone(t, 150, .03, { g: .03 }); };
+  const stamp = t => { tone(t, 150, .3, { f2: 55, g: .4 }); noise(t, .12, { type: 'lowpass', f: 2200, g: .2 }); };
+  const buzz = t => { tone(t, 160, .12, { type: 'square', g: .03, lp: 900 }); tone(t + .15, 150, .14, { type: 'square', g: .03, lp: 900 }); };
+  const paper = t => noise(t, .18, { type: 'bandpass', f: 2500, f2: 5000, q: .8, g: .08 });
+  const tick = (t, i) => tone(t, 1500 + i * 70, .03, { g: .035 });
+  const plane = (t, d) => noise(t, d, { type: 'bandpass', f: 500, f2: 2400, q: 1.4, g: .12, a: d * .6, pan: .3 });
+  // chapter stingers
+  CHAP.forEach(([c]) => { const t = S(c); noise(t - .55, .9, { type: 'bandpass', f: 400, f2: 4500, q: 1.2, g: .3, a: .45 }); tone(t, 90, .7, { f2: 40, g: .35 }); [74, 78, 81, 86].forEach((m, j) => chime(t + .25 + j * .09, m, .05)); });
+  whoosh(S(120.5)); chime(S(120.5) + .15, 79, .05); chime(S(120.5) + .25, 83, .05);
+  SC.forEach((s, i) => { if (i && !s.id.startsWith('ch')) whoosh(s.A + .05, .1, i % 2 ? .3 : -.3); });
+  // intro / problem
+  popS(S(.3)); popS(S(.9), 2); ding(S(2.64)); popS(S(3.58), 1);
+  [8.78, 11.02, 14.26].forEach((x, i) => popS(S(x), i)); buzz(S(9.94)); buzz(S(12.04)); for (let i = 0; i < 6; i++) paper(S(14.4) + i * .3 + .3);
+  // about / seats
+  chime(S(17.0), 86, .07); chime(S(17.1), 90, .05); popS(S(22.54), 2);
+  STAT.forEach(([, , a], i) => { for (let k = 0; k < 10; k++) tick(S(a) + k * .09, k); ding(S(a) + 1.0, i); });
+  popS(S(31.04)); popS(S(32.72), 1); plane(S(32.9), 1.3); [0, 1, 2].forEach(i => popS(S(35.24) + i * .28, i + 2));
+  // selection / sectors
+  for (let i = 0; i < 12; i++) if (i % 2 === 0) popS(S(38.97) + i * .06, i);
+  [38.92, 40.94, 42.04].forEach(x => whoosh(S(x) + .1, .07)); buzz(S(40.3)); buzz(S(42.04) + .05);
+  [43.82, 44.4, 44.8].forEach((x, i) => ding(S(x), i)); plane(S(46.0), .9); stamp(S(46.12));
+  SECT.forEach(([, , a], i) => popS(S(a), i)); { const s = 'Diteci chi cercate: es. 2 cuochi a Monaco'; for (let c = 0; c < s.length; c += 2) key(S(51.54) + (S(52.6) - S(51.54)) * c / s.length, c); } ding(S(52.74), 2);
+  // bureaucracy
+  [55.5, 56.56, 56.8, 57.0].forEach(x => paper(S(x))); noise(S(57.12), .8, { type: 'bandpass', f: 1200, f2: 300, q: 1, g: .1, a: .2 }); stamp(S(57.7));
+  [58.4, 58.7, 59.0].forEach((x, i) => popS(S(x), i)); ding(S(60.12), 1);
+  // assistance
+  noise(S(65.7), 1.3, { type: 'bandpass', f: 600, f2: 2400, q: 2, g: .06, a: 1 }); ding(S(67.0), 0);
+  for (let i = 0; i < 7; i++) tick(S(67.72) + i * .1, i * 2);
+  JR.forEach(([, , a], i) => popS(S(a), i)); chime(S(72.5), 83, .05); chime(S(74.0), 86, .05);
+  // free / deal
+  noise(S(76.8), 1.2, { type: 'bandpass', f: 400, f2: 6000, q: 2, g: .12, a: 1.1 });
+  stamp(S(79.1)); noise(S(80.0), 1.6, { type: 'bandpass', f: 800, f2: 3000, q: 2, g: .05, a: 1.2 }); [79, 83, 86, 91].forEach((m, j) => chime(S(81.16) + j * .08, m, .06));
+  FR.forEach(([, a], i) => ding(S(a) + .1, i));
+  [88.76, 90.18].forEach((x, i) => ding(S(x), i)); noise(S(90.4), 1.1, { type: 'bandpass', f: 3000, f2: 5000, q: 4, g: .05 }); stamp(S(91.66));
+  // how
+  ST4.forEach(([, a], i) => { whoosh(S(a), .07); popS(S(a), i); });
+  [['Ristorante Esempio GmbH', 96.2, 96.9], ['Ristorazione e Cucina', 97.6, 98.2], ['3 - 5 lavoratori', 98.5, 99.0]].forEach(([v, a, b]) => { for (let c = 0; c < v.length; c += 2) key(S(a) + (S(b) - S(a)) * c / v.length, c); });
+  popS(S(100.36), 2); ding(S(102.64), 1);
+  P2.forEach(([, , a], i) => popS(S(a), i));
+  [111.4, 111.7, 112.0].forEach((x, i) => popS(S(x), i)); ding(S(113.26), 2);
+  plane(S(116.2), 1.2); ding(S(117.32), 0); chime(S(118.12), 83, .05);
+  // contacts / outro
+  CT.forEach(([, , , a, steps], i) => { popS(S(a), i); steps.forEach(([st], k) => key(S(st), k + i)); ding(S(steps[steps.length - 1][0]) + .05, i); });
+  chime(S(144.52), 86, .07); chime(S(144.62), 90, .06); chime(S(144.72), 93, .05); popS(S(148.9), 2);
+};
+
+async function boot() {
+  await Promise.all([...document.fonts].map(f => f.load().catch(() => { })));
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.decode().catch(() => { })));
+  window.seek = seekImpl;
+  seekImpl(0);
+  if (RENDER) return;
+  const stage = $('stage'), fit = () => { const k = Math.min(innerWidth / W, (innerHeight - 50) / H); stage.style.transform = `scale(${k})`; }; fit(); addEventListener('resize', fit);
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() { ac ??= new AudioContext(); if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); } src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination); src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; $('pb').textContent = 'Pausa ❚❚'; }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; $('pb').textContent = 'Play ▶'; }
+  const now = () => playing ? (offset + ac.currentTime - startAt) % DUR : offset;
+  $('pb').onclick = () => playing ? pause() : play();
+  $('sc').oninput = e => { const was = playing; pause(); offset = e.target.value / 1000 * DUR; if (was) play(); };
+  (function loop() { const t = now(); seekImpl(t); $('sc').value = t / DUR * 1000; $('tc').textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+}
+boot();
+</script></body></html>

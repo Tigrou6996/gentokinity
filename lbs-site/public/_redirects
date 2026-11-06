@@ -1,0 +1,2 @@
+/* SPA fallback — React Router */
+/*  /  →  index.html  (gestito da netlify.toml) */

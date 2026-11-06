@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LBS Red Flag</title>
+<style>
+@font-face{font-family:PJS;src:url(data:font/woff2;base64,{{PJS}}) format('woff2');font-weight:200 800}
+@font-face{font-family:INT;src:url(data:font/woff2;base64,{{INTER}}) format('woff2');font-weight:100 900}
+:root{--p:#5e2d61;--l:#dab6fc;--d:#30103d;--r:#ff3b4f;--g:#2fbf6b;--y:#ffd43b}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;overflow:hidden;height:100%}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;background:#1a0a22;transform-origin:0 0;font-family:INT}
+#bg{position:absolute;left:0;top:0}
+#world{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.sc{position:absolute;left:0;top:0;width:1080px;height:1920px;display:none;transform-origin:540px 760px}
+.a{position:absolute;white-space:nowrap}
+.ctr{transform:translate(-50%,-50%)}
+.h1{font-family:PJS;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;line-height:.95;color:#fff}
+.lbl{font-family:INT;font-weight:800;text-transform:uppercase;letter-spacing:.18em}
+.card{position:absolute;border-radius:36px;background:#fff;box-shadow:0 30px 60px rgba(0,0,0,.45);color:#30103d}
+.cc{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)}
+.bub{position:absolute;padding:26px 34px;border-radius:40px 40px 40px 10px;background:#fff;color:#1c1022;font:700 44px/1.25 INT;white-space:normal;box-shadow:0 18px 36px rgba(0,0,0,.35)}
+.stamp{position:absolute;padding:14px 34px;border:10px solid var(--r);border-radius:22px;color:var(--r);font:800 96px/1 PJS;letter-spacing:.04em;background:rgba(255,255,255,.04)}
+.sticker{position:absolute;padding:22px 34px;border-radius:26px;background:var(--y);color:#1c1022;font:800 58px/1 PJS;box-shadow:0 14px 0 rgba(0,0,0,.35);text-transform:uppercase}
+.pill{position:absolute;display:flex;align-items:center;gap:22px;padding:26px 44px 26px 26px;border-radius:999px;background:#fff;color:#30103d;font:800 50px/1 PJS;box-shadow:0 18px 36px rgba(0,0,0,.35);white-space:nowrap}
+#cap{position:absolute;left:500px;top:1290px;width:880px;transform:translate(-50%,-50%);text-align:center;font:800 92px/1.08 PJS;text-transform:uppercase;letter-spacing:-.01em;color:#fff;paint-order:stroke fill;-webkit-text-stroke:16px #14061b;z-index:5}
+#cap span{display:inline-block;margin:0 .14em;transform-origin:50% 70%}
+#chip{position:absolute;left:500px;top:265px;transform:translate(-50%,-50%);display:flex;align-items:center;gap:14px;padding:16px 30px;border-radius:999px;background:var(--r);color:#fff;font:800 38px/1 PJS;letter-spacing:.04em;box-shadow:0 12px 28px rgba(0,0,0,.4);z-index:5}
+#grain{position:absolute;inset:0;opacity:.06;mix-blend-mode:overlay;background-size:256px 256px;pointer-events:none;z-index:6}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 50%,rgba(0,0,0,.5) 100%);pointer-events:none;z-index:6}
+#flash{position:absolute;inset:0;opacity:0;pointer-events:none;z-index:7}
+#fade{position:absolute;inset:0;background:#000;opacity:0;z-index:8}
+#ctl{position:fixed;left:0;right:0;bottom:0;display:flex;gap:12px;padding:10px 16px;background:#000c;color:#fff;font:14px sans-serif;align-items:center}
+#ctl input{flex:1}
+body.render #ctl{display:none}
+svg{overflow:visible}
+</style></head><body>
+<div id="stage">
+  <canvas id="bg" width="1080" height="1920"></canvas>
+  <div id="world"></div>
+  <div id="chip"></div>
+  <div id="cap"></div>
+  <div id="grain"></div><div id="vig"></div><div id="flash"></div><div id="fade"></div>
+</div>
+<div id="ctl"><button id="pb">Play ▶</button><input id="sc" type="range" min="0" max="1000" value="0"><span id="tc"></span></div>
+<script>
+/* ===== LBS — TikTok "3 red flag" — 9:16 1080x1920, voce + beat phonk 150 BPM (Mi minore) che passa in maggiore quando arriva LBS =====
+ Area sicura TikTok: niente di importante sopra y 230, sotto y 1500, né a destra di x 930 (pulsanti).
+ Sottotitoli parola per parola (testo del copione, tempi della voce). τ = tempo della voce, t = τ + O.
+ 0     hook: offerta "troppo bella", 3 bandierine, "Scappa!" allarme          5.78  RED FLAG #1 (drop del beat)
+ 8.0   chat: "Devi decidere entro stasera", countdown, ULTIMO POSTO, "Ah sì? Che fortuna", timbro TRUFFA, "ti lascia il tempo"
+ 17.2  RED FLAG #2   19.2 contratto e busta paga barrati, "ti paghiamo a mano", NO GRAZIE
+ 25.6 RED FLAG #3   25.9 caparra della casa, valigia, la casa sparisce (womp womp)
+ 34.24  LBS: logo, 11+ anni, IT->DE, contratto/alloggio/assistenza    44.8 ZERO ANTICIPI, TUTTO IN BUSTA PAGA
+ 49.95  condividi "Mandalo a chi sta per partire"     53.45  logo e contatti */
+const W = 1080, H = 1920, O = 0.3;
+const RENDER = location.search.includes('render'); if (RENDER) document.body.classList.add('render');
+const TAU_END = 55.4, DUR = O + TAU_END;
+window.VIDEO = { w: W, h: H, duration: DUR };
+const $ = id => document.getElementById(id), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k, seg = (t, a, b) => clamp((t - a) / (b - a));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), eOut = x => (x = clamp(x), 1 - Math.pow(1 - x, 3)), eIn = x => (x = clamp(x), x * x * x);
+const expo = x => (x = clamp(x), x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+function spring(t, w = 14, z = .82) { if (t <= 0) return 0; const wd = w * Math.sqrt(1 - z * z); return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t)); }
+function tf(el, { x = 0, y = 0, s = 1, r = 0, o, b = 0, c = false } = {}) {
+  el.style.transform = (c ? 'translate(-50%,-50%) ' : '') + `translate(${x.toFixed(2)}px,${y.toFixed(2)}px) scale(${s.toFixed(4)}) rotate(${r.toFixed(2)}deg)`;
+  if (o !== undefined) { el.style.opacity = o; el.style.visibility = o <= .002 ? 'hidden' : 'visible'; }
+  el.style.filter = b > .08 ? `blur(${b.toFixed(2)}px)` : 'none';
+}
+const S = tau => O + tau;
+const pop = (el, t, t0, { c = true, from = .3, w = 15, z = .55, x = 0, y = 0, r0 = 0, r = 0 } = {}) => { const k = spring(t - t0, w, z); tf(el, { x, y, s: Math.max(0, lerp(from, 1, k)), r: r + r0 * (1 - k), o: clamp((t - t0) * 8), c }); return k; };
+const slam = (el, t, t0, { from = 2.2, r = 0, c = true } = {}) => { const k = spring(t - t0, 18, .6); tf(el, { s: lerp(from, 1, k), r, o: clamp((t - t0) * 10), b: (1 - clamp((t - t0) / .12)) * 14, c }); };
+const fly = (el, t, t0, { dx = 0, dy = 300, d = .5, c = true } = {}) => { const k = expo(seg(t, t0, t0 + d)); tf(el, { x: (1 - k) * dx, y: (1 - k) * dy, o: clamp((t - t0) * 6), b: (1 - k) * 10, c }); return k; };
+
+// ---------- icons ----------
+const IC = {
+  check: '<path d="M20 6L9 17l-5-5"/>', x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  share: '<path d="M14 4l7 7-7 7v-4c-6 0-9 2-11 6 1-7 4-11 11-12z"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a17.2 17.2 0 0 1 4 10 17.2 17.2 0 0 1-4 10 17.2 17.2 0 0 1-4-10 17.2 17.2 0 0 1 4-10z"/>',
+  plane: '<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>',
+  chat: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  euro: '<path d="M18 6.5A7 7 0 1 0 18 17.5"/><path d="M4 10h10M4 14h10"/>',
+  star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+};
+const icon = (n, s = 24, col = '#fff', sw = 2.2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${IC[n]}</svg>`;
+const FLAG = (c, w = 44) => c === 'it'
+  ? `<svg width="${w}" height="${w * 2 / 3}" viewBox="0 0 3 2" style="border-radius:${w / 9}px;flex:none"><rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#ce2b37"/></svg>`
+  : `<svg width="${w}" height="${w * 2 / 3}" viewBox="0 0 3 2" style="border-radius:${w / 9}px;flex:none"><rect width="3" height=".67" fill="#111"/><rect y=".67" width="3" height=".67" fill="#dd0000"/><rect y="1.33" width="3" height=".67" fill="#ffce00"/></svg>`;
+const LOGO = 'data:image/png;base64,{{LOGO}}';
+// waving red flag (path rebuilt every frame)
+const RFLAG = (id, size) => `<svg id="${id}" width="${size}" height="${size}" viewBox="0 0 100 100"><rect x="14" y="6" width="7" height="92" rx="3.5" fill="#e9dff0"/><path class="wave" fill="#ff3b4f"/></svg>`;
+function wave(svg, t, amp = 1) { const p = svg.querySelector('.wave'); let d = 'M21 10'; for (let i = 0; i <= 10; i++) { const x = 21 + i * 7, y = 10 + Math.sin(t * 9 - i * .7) * 4 * amp * (i / 10); d += ` L${x.toFixed(1)} ${y.toFixed(1)}`; } for (let i = 10; i >= 0; i--) { const x = 21 + i * 7, y = 52 + Math.sin(t * 9 - i * .7 - .5) * 4 * amp * (i / 10); d += ` L${x.toFixed(1)} ${y.toFixed(1)}`; } p.setAttribute('d', d + 'Z'); }
+const NOTE = (id, v = '€') => `<div class="a ctr" id="${id}" style="width:200px;height:104px;border-radius:12px;background:#3fbf7a;border:6px solid #2a9a5d;display:flex;align-items:center;justify-content:center;font:800 54px PJS;color:#e9fff1;box-shadow:0 10px 20px rgba(0,0,0,.3)">${v}</div>`;
+const SUIT = (s, col = '#fff') => `<svg width="${s}" height="${s * .95}" viewBox="0 0 400 380"><g fill="none" stroke="${col}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"><path d="M150 92 V52 Q150 30 172 30 H228 Q250 30 250 52 V92"/><rect x="40" y="92" width="320" height="240" rx="30"/><path d="M120 92 V332 M280 92 V332"/><circle cx="95" cy="352" r="17"/><circle cx="305" cy="352" r="17"/></g></svg>`;
+
+// ---------- captions (script words on voice timings) ----------
+const CAPS = {{CAPS}};
+// ---------- timeline ----------
+const RF = [[5.78, 1], [17.2, 2], [25.6, 3]];
+const HITS = [[4.7, 30, '#ff3b4f', .55], [5.78, 40, '#ff3b4f', .7], [10.32, 12, '#ffd43b', .15], [12.46, 30, '#ff3b4f', .45], [14.32, 12, '#2fbf6b', .25], [17.2, 40, '#ff3b4f', .7], [20.02, 14, '#ff3b4f', .2], [21.54, 14, '#ff3b4f', .2],
+  [24.4, 26, '#ff3b4f', .4], [25.6, 40, '#ff3b4f', .7], [32.86, 16, '#000', .0], [34.24, 26, '#dab6fc', .7], [34.88, 22, '#fff', .3], [47.08, 26, '#2fbf6b', .45], [49.34, 18, '#2fbf6b', .3]];
+const SC = [['hook', 0, 5.7, 'dark'], ['rf1', 5.7, 8.0, 'red'], ['chat1', 8.0, 17.15, 'dark'], ['rf2', 17.15, 19.2, 'red'], ['docs', 19.2, 25.55, 'dark'], ['rf3', 25.55, 26.95, 'red'],
+  ['house', 26.95, 34.15, 'dark'], ['lbs1', 34.15, 38.1, 'lbs'], ['lbs2', 38.1, 41.8, 'lbs'], ['lbs3', 41.8, 46.3, 'lbs'], ['fin', 46.3, 49.95, 'lbs'], ['cta', 49.95, 53.45, 'lbs'], ['end', 53.45, TAU_END + 1, 'lbs']].map(([id, a, b, bg]) => ({ id, a, b, bg }));
+const HTML = {}, U = {};
+
+// hook: the "too good" offer ----------------------------------------------------------
+HTML.hook = `
+  <div class="card" id="hk_c" style="left:150px;top:400px;width:780px;height:700px;overflow:hidden">
+    <div style="height:150px;background:linear-gradient(90deg,#ffb703,#ffd43b);display:flex;align-items:center;gap:22px;padding:0 44px;font:800 54px PJS;color:#1c1022">${icon('star', 60, '#1c1022', 2.4)}OFFERTA TOP!!!</div>
+    <div style="padding:40px 44px;font:800 50px/1.35 PJS">${FLAG('de', 70)}&nbsp; Lavoro in Germania<div style="font:700 42px/1.6 INT;color:#5a4a63;margin-top:18px">💸 Guadagni altissimi!!!<br>Parti subito!!!<br>Nessun contratto, tranquillo</div></div>
+    <div style="position:absolute;left:44px;right:44px;bottom:44px;height:110px;border-radius:24px;background:#1c1022;display:flex;align-items:center;justify-content:center;font:800 46px INT;color:#fff">SCRIVICI ORA</div>
+  </div>
+  ${[0, 1, 2].map(i => `<div class="a ctr" id="hk_f${i}">${RFLAG('hk_fl' + i, 170)}</div>`).join('')}
+  <div class="a" id="hk_al" style="left:150px;top:400px;width:780px;height:700px;border-radius:36px;border:14px solid #ff3b4f;box-shadow:0 0 60px #ff3b4f"></div>`;
+U.hook = t => {
+  const k = spring(t - S(.15), 11, .62); tf($('hk_c'), { y: (1 - k) * 600, r: (1 - k) * 8, o: clamp((t - S(.15)) * 5) });
+  [[2.94, 230, 380, -14], [3.2, 540, 330, 4], [3.44, 850, 380, 16]].forEach(([a, x, y, r], i) => { pop($('hk_f' + i), t, S(a), { from: .1, x, y, r }); wave($('hk_fl' + i), t); });
+  const al = t > S(4.7) ? .5 + .5 * Math.sin((t - S(4.7)) * 26) : 0; $('hk_al').style.opacity = al;
+  if (t > S(4.7)) { const s = seg(t, S(5.25), S(5.7)); $('hk_c').style.transform += ` translate(${Math.sin(t * 90) * 10 + eIn(s) * 1200}px,0) rotate(${eIn(s) * 25}deg)`; $('hk_al').style.transform = $('hk_c').style.transform.replace(/^.*?translate/, 'translate'); }
+};
+// red flag title cards ----------------------------------------------------------------
+RF.forEach(([a, n]) => {
+  const id = 'rf' + n;
+  HTML[id] = `<div class="a ctr" id="${id}_g" style="left:500px;top:700px;width:1000px;height:1000px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,79,.45),rgba(255,59,79,0) 65%)"></div>
+  <div class="a ctr" id="${id}_f">${RFLAG(id + '_fl', 520)}</div>
+  <div class="a ctr h1" id="${id}_t" style="left:500px;top:1040px;font-size:150px">RED FLAG</div>
+  <div class="a ctr h1" id="${id}_n" style="left:500px;top:1040px;font-size:150px;color:#ff3b4f;opacity:0">#${n}</div>`;
+  U[id] = t => {
+    const t0 = S(a);
+    pop($(id + '_f'), t, t0, { from: .2, x: 540, y: 660, r0: -40, c: true }); wave($(id + '_fl'), t, 1.4);
+    $(id + '_g').style.transform = `translate(-50%,-50%) scale(${.8 + .2 * Math.sin(t * 6)})`;
+    slam($(id + '_t'), t, t0 + .12, { from: 2 });
+    const kn = spring(t - S(a + .98), 16, .5); tf($(id + '_n'), { c: true, x: 0, y: 170, s: t > S(a + .98) ? lerp(3, 1, kn) : 0, o: t > S(a + .98) ? 1 : 0, r: -6 });
+  };
+});
+// chat 1: "decide tonight, only one place left" ------------------------------------------
+const PHONE = (id, name) => `<div class="card" id="${id}" style="left:120px;top:330px;width:840px;height:760px;background:#efe7f3;overflow:hidden">
+  <div style="height:150px;background:#2b1236;display:flex;align-items:center;gap:24px;padding:0 36px">
+    <div style="width:90px;height:90px;border-radius:50%;background:#7a6a82;display:flex;align-items:center;justify-content:center;font:800 54px PJS;color:#fff">?</div>
+    <div><div style="font:800 40px PJS;color:#fff">${name}</div><div style="font:600 28px INT;color:#7ee2a2">online</div></div></div></div>`;
+HTML.chat1 = `${PHONE('c1_p', 'Lavoro Germania VIP')}
+  <div class="bub" id="c1_ty" style="left:170px;top:530px;width:200px;font-size:60px;letter-spacing:.1em">•••</div>
+  <div class="bub" id="c1_b" style="left:170px;top:530px;width:720px">Devi decidere <b style="color:#d9233a">entro stasera</b>!!! È rimasto UN SOLO posto ⏰</div>
+  <div class="a ctr" id="c1_tm" style="padding:18px 40px;border-radius:24px;background:#ff3b4f;color:#fff;font:800 96px/1 PJS;letter-spacing:.02em;box-shadow:0 14px 30px rgba(0,0,0,.35);font-variant-numeric:tabular-nums">00:59:59</div>
+  <div class="sticker" id="c1_u" style="left:0;top:0;background:#ffd43b">ULTIMO POSTO!!!</div>
+  <div class="sticker" id="c1_s" style="left:0;top:0;background:#fff">Ah sì? Che fortuna 🙄</div>
+  <div class="stamp" id="c1_st" style="left:0;top:0">TRUFFA</div>
+  <div class="card" id="c1_ok" style="left:140px;top:760px;width:800px;height:240px;display:flex;align-items:center;gap:30px;padding:0 40px">
+    <div style="width:130px;height:130px;border-radius:50%;background:#2fbf6b;display:flex;align-items:center;justify-content:center;flex:none">${icon('clock', 76, '#fff', 2.2)}</div>
+    <div style="font:800 54px/1.1 PJS">Chi è serio<br><span style="color:#2fbf6b">ti lascia il tempo</span></div></div>`;
+U.chat1 = t => {
+  fly($('c1_p'), t, S(8.0), { dy: 500, c: false });
+  const ty = t > S(7.8) && t < S(8.1); $('c1_ty').style.opacity = ty ? 1 : 0; $('c1_ty').style.transform = `scale(${1 + .06 * Math.sin(t * 20)})`;
+  pop($('c1_b'), t, S(8.1), { c: false, from: .5 }); $('c1_b').style.transformOrigin = '0 100%';
+  const left = Math.max(0, 3599 - Math.floor((t - S(8.96)) * 97)), mm = String(Math.floor(left / 60)).padStart(2, '0'), ss = String(left % 60).padStart(2, '0');
+  $('c1_tm').textContent = `00:${mm}:${ss}`; pop($('c1_tm'), t, S(8.96), { from: .3, x: 540, y: 860 }); if (t > S(8.96)) $('c1_tm').style.transform += ` scale(${1 + .04 * Math.sin((t - S(8.96)) * 14)})`;
+  pop($('c1_u'), t, S(10.32), { from: .2, x: 720, y: 470, r: 10, r0: -30 }); if (t > S(10.32)) $('c1_u').style.transform += ` scale(${1 + .05 * Math.sin((t - S(10.32)) * 18)})`;
+  pop($('c1_s'), t, S(11.38), { from: .2, x: 470, y: 990, r: -6, r0: 30 });
+  const sk = spring(t - S(12.46), 16, .5); tf($('c1_st'), { c: true, x: 520, y: 640, s: t > S(12.46) ? lerp(2.4, 1, sk) : 0, r: -12, o: t > S(12.46) ? 1 : 0 });
+  const dim = seg(t, S(13.4), S(13.7)); if (dim > 0) ['c1_p', 'c1_b', 'c1_tm', 'c1_u', 'c1_s', 'c1_st'].forEach(id => { $(id).style.opacity = Math.min(+$(id).style.opacity || 1, 1 - (id === 'c1_s' ? 1 : .75) * dim); });
+  pop($('c1_ok'), t, S(14.32), { c: false, from: .5 });
+};
+// docs: no German contract, no payslip ------------------------------------------------
+const DOC = (id, x, a, b) => `<div class="card" id="${id}" style="left:${x}px;top:380px;width:380px;height:480px;padding:36px">
+  ${icon('doc', 90, '#5e2d61', 1.8)}<div style="font:800 40px/1.1 PJS;margin-top:20px">${a}</div><div style="font:700 28px INT;color:#8d7a97;margin-top:8px">${b}</div>
+  ${[90, 70, 85].map(w => `<div style="height:14px;width:${w}%;border-radius:7px;background:#e3d7ea;margin:20px 0 0"></div>`).join('')}</div>`;
+const BIGX = id => `<svg class="a ctr" id="${id}" width="300" height="300" viewBox="0 0 100 100"><path d="M18 18 L82 82 M82 18 L18 82" stroke="#ff3b4f" stroke-width="13" stroke-linecap="round" pathLength="100" fill="none"/></svg>`;
+HTML.docs = `${DOC('dc_a', 110, 'Contratto tedesco', 'Arbeitsvertrag')}${DOC('dc_b', 590, 'Busta paga', 'Lohnabrechnung')}
+  ${BIGX('dc_xa')}${BIGX('dc_xb')}
+  <div class="bub" id="dc_bub" style="left:110px;top:920px;width:820px">Tranquillo, ti paghiamo a mano 😉💶</div>
+  ${[0, 1, 2, 3].map(i => NOTE('dc_n' + i)).join('')}
+  <div class="stamp" id="dc_no" style="left:0;top:0;font-size:120px">NO, GRAZIE</div>`;
+const drawX = (el, t, t0) => { const p = el.querySelector('path'); p.style.strokeDasharray = '100 100'; p.style.strokeDashoffset = 100 - 100 * eOut(seg(t, t0, t0 + .25)); el.style.opacity = t > t0 ? 1 : 0; };
+U.docs = t => {
+  pop($('dc_a'), t, S(19.26), { c: false, from: .5, r: -4 }); pop($('dc_b'), t, S(20.8), { c: false, from: .5, r: 4 });
+  drawX($('dc_xa'), t, S(20.02)); tf($('dc_xa'), { c: true, x: 300, y: 620, o: t > S(20.02) ? 1 : 0 }); drawX($('dc_xa'), t, S(20.02));
+  tf($('dc_xb'), { c: true, x: 780, y: 620, o: t > S(21.54) ? 1 : 0 }); drawX($('dc_xb'), t, S(21.54));
+  pop($('dc_bub'), t, S(22.22), { c: false, from: .5 }); $('dc_bub').style.transformOrigin = '0 100%';
+  [0, 1, 2, 3].forEach(i => { const t0 = S(23.08) + i * .1, k = expo(seg(t, t0, t0 + .5)); tf($('dc_n' + i), { c: true, x: lerp(1300, 700 + i * 22, k), y: 1110 - i * 18, r: -10 + i * 6, o: t > t0 ? 1 : 0 }); });
+  const sk = spring(t - S(24.4), 16, .5); tf($('dc_no'), { c: true, x: 520, y: 760, s: t > S(24.4) ? lerp(2.4, 1, sk) : 0, r: -10, o: t > S(24.4) ? 1 : 0 });
+};
+// house: deposit paid in advance, the house does not exist ----------------------------
+HTML.house = `
+  <div class="bub" id="hs_bub" style="left:110px;top:320px;width:830px">Per la casa: la caparra la paghi <b style="color:#d9233a">prima di partire</b> 🏠</div>
+  <div class="a ctr" id="hs_h">${icon('home', 400, '#ffffff', 1.4)}</div>
+  <div class="a ctr" id="hs_tag" style="padding:14px 26px;border-radius:16px;background:#ffd43b;font:800 44px PJS;color:#1c1022;box-shadow:0 10px 20px rgba(0,0,0,.3)">CAPARRA €€€</div>
+  ${[0, 1, 2].map(i => NOTE('hs_n' + i)).join('')}
+  <div class="a ctr" id="hs_s">${SUIT(220)}</div>
+  <div class="a ctr" id="hs_q" style="font:800 260px/1 PJS;color:#ff3b4f">?</div>
+  <canvas class="a" id="hs_dust" width="1080" height="1920" style="left:0;top:0"></canvas>`;
+U.house = t => {
+  pop($('hs_bub'), t, S(26.98), { c: false, from: .5 }); $('hs_bub').style.transformOrigin = '0 100%';
+  const gone = seg(t, S(32.7), S(33.2));
+  const kh = pop($('hs_h'), t, S(28.12), { from: .3, x: 540, y: 760 }); $('hs_h').style.opacity = clamp((t - S(28.12)) * 8) * (1 - gone); $('hs_h').style.filter = gone > 0 ? `blur(${gone * 14}px)` : 'none';
+  if (t > S(32.7)) $('hs_h').querySelector('svg').style.strokeDasharray = '4 6';
+  pop($('hs_tag'), t, S(27.56), { from: .2, x: 760, y: 600, r: 10 }); $('hs_tag').style.opacity = clamp((t - S(27.56)) * 8) * (1 - gone);
+  [0, 1, 2].forEach(i => { const t0 = S(28.76) + i * .16, k = ease(seg(t, t0, t0 + .7)); tf($('hs_n' + i), { c: true, x: lerp(180, 540, k), y: lerp(1150, 760, k) - Math.sin(k * Math.PI) * 220, s: 1 - .7 * k, r: k * 360, o: t > t0 && k < 1 ? 1 : 0 }); });
+  const ks = ease(seg(t, S(30.72), S(31.7))); tf($('hs_s'), { c: true, x: lerp(-200, 330, ks), y: 1000 + Math.abs(Math.sin(ks * 16)) * -10, r: (1 - ks) * -8, o: t > S(30.72) ? 1 : 0 });
+  pop($('hs_q'), t, S(33.0), { from: .2, x: 560, y: 740 });
+  const cv = $('hs_dust'), g = cv.getContext('2d'); g.clearRect(0, 0, W, H);
+  if (gone > 0 && gone < 1.6) { const r = rng(9), p = seg(t, S(32.7), S(33.6)); for (let i = 0; i < 40; i++) { const a = r() * 6.28, d = 120 + r() * 260 * eOut(p); g.fillStyle = `rgba(255,255,255,${.5 * (1 - p)})`; g.beginPath(); g.arc(540 + Math.cos(a) * d, 760 + Math.sin(a) * d * .7, 6 + r() * 16 * (1 - p), 0, 7); g.fill(); } }
+};
+// LBS ---------------------------------------------------------------------------------
+HTML.lbs1 = `
+  <svg class="a ctr" id="l1_rays" width="1400" height="1400" viewBox="0 0 100 100" style="left:540px;top:640px">${Array.from({ length: 18 }, (_, i) => `<path d="M50 50 L${50 + 70 * Math.cos(i / 18 * 6.283)} ${50 + 70 * Math.sin(i / 18 * 6.283)} L${50 + 70 * Math.cos((i + .45) / 18 * 6.283)} ${50 + 70 * Math.sin((i + .45) / 18 * 6.283)}Z" fill="rgba(218,182,252,.12)"/>`).join('')}</svg>
+  <img class="a ctr" id="l1_logo" src="${LOGO}" style="left:540px;top:640px;width:420px;height:420px">
+  <div class="a ctr lbl" id="l1_t" style="left:540px;top:960px;font-size:44px;color:#dab6fc">Lavoro · Business · Servizi</div>`;
+U.lbs1 = t => { slam($('l1_logo'), t, S(34.88) - .1, { from: 2.6 }); $('l1_rays').style.transform = `translate(-50%,-50%) rotate(${t * 12}deg)`; $('l1_rays').style.opacity = clamp((t - S(34.8)) * 3); pop($('l1_t'), t, S(36.2), { from: .5 }); };
+HTML.lbs2 = `
+  <img class="a ctr" src="${LOGO}" style="left:540px;top:420px;width:220px;height:220px">
+  <div class="a ctr h1" id="l2_n" style="left:540px;top:700px;font-size:300px;color:#fff">11+</div>
+  <div class="a ctr lbl" id="l2_a" style="left:540px;top:870px;font-size:52px;color:#dab6fc">anni di esperienza</div>
+  <div class="a ctr" id="l2_it" style="left:330px;top:1050px">${FLAG('it', 150)}</div><div class="a ctr" id="l2_de" style="left:750px;top:1050px">${FLAG('de', 150)}</div>
+  <svg class="a" style="left:0;top:0" width="1080" height="1920"><path id="l2_arc" d="M420 1030 Q540 930 660 1030" stroke="#dab6fc" stroke-width="7" stroke-dasharray="2 14" stroke-linecap="round" fill="none"/></svg>
+  <div class="a" id="l2_pl">${icon('plane', 76, '#fff', 2)}</div>`;
+U.lbs2 = t => {
+  const k = eOut(seg(t, S(38.62), S(39.5))); $('l2_n').textContent = Math.round(11 * k) + '+'; pop($('l2_n'), t, S(38.62), { from: .4 }); pop($('l2_a'), t, S(38.98), { from: .5 });
+  pop($('l2_it'), t, S(40.3), { from: .3 }); pop($('l2_de'), t, S(40.94), { from: .3 });
+  const q = ease(seg(t, S(40.3), S(41.2))), x = (1 - q) * (1 - q) * 420 + 2 * (1 - q) * q * 540 + q * q * 660, y = (1 - q) * (1 - q) * 1030 + 2 * (1 - q) * q * 930 + q * q * 1030;
+  $('l2_arc').style.opacity = clamp((t - S(40.3)) * 4); tf($('l2_pl'), { x: x - 38, y: y - 38, r: lerp(-30, 30, q) + 45, o: q > 0 && q < 1 ? 1 : 0 });
+};
+const OKC = s => `<div style="width:${s}px;height:${s}px;border-radius:50%;background:#2fbf6b;display:flex;align-items:center;justify-content:center;flex:none">${icon('check', s * .55, '#fff', 3.4)}</div>`;
+HTML.lbs3 = [['Contratto regolare', 41.92], ['Alloggio', 43.06], ['Assistenza 24/7', 43.7]].map(([n], i) => `<div class="pill" id="l3_${i}" style="left:120px;top:${520 + i * 190}px">${OKC(84)}${n}</div>`).join('');
+U.lbs3 = t => [41.92, 43.06, 43.7].forEach((a, i) => { const k = expo(seg(t, S(a), S(a) + .45)); tf($('l3_' + i), { x: (1 - k) * -900, o: clamp((t - S(a)) * 6), r: (1 - k) * -6 }); });
+HTML.fin = `
+  <div class="a ctr h1" id="fn_a" style="left:540px;top:520px;font-size:170px;text-align:center">ZERO<br>ANTICIPI</div>
+  <div class="a ctr" id="fn_ok">${OKC(150)}</div>
+  <div class="card" id="fn_p" style="left:170px;top:880px;width:740px;height:250px;display:flex;align-items:center;gap:30px;padding:0 40px">
+    ${icon('doc', 110, '#5e2d61', 1.8)}<div><div style="font:800 52px/1.1 PJS">Tutto in</div><div style="font:800 52px/1.1 PJS;color:#2fbf6b">busta paga</div></div></div>`;
+U.fin = t => { slam($('fn_a'), t, S(47.08), { from: 2 }); pop($('fn_ok'), t, S(47.8), { from: .2, x: 870, y: 360 }); pop($('fn_p'), t, S(48.62), { c: false, from: .5 }); };
+HTML.cta = `
+  <div class="a ctr" id="ct_sh" style="width:260px;height:260px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 20px 40px rgba(0,0,0,.35)">${icon('share', 150, '#5e2d61', 2)}</div>
+  ${[0, 1, 2].map(i => `<div class="a ctr" id="ct_f${i}" style="width:150px;height:150px;border-radius:50%;background:${['#dab6fc', '#ffd43b', '#7ee2a2'][i]};display:flex;align-items:center;justify-content:center">${icon('user', 80, '#30103d', 2)}</div>`).join('')}
+  <div class="card" id="ct_w" style="left:170px;top:880px;width:740px;height:220px;display:flex;align-items:center;gap:30px;padding:0 40px">
+    ${icon('shield', 120, '#2fbf6b', 1.8)}<div style="font:800 52px/1.1 PJS">Stipendio<br><span style="color:#2fbf6b">salvato</span></div></div>`;
+U.cta = t => {
+  const k = pop($('ct_sh'), t, S(50.0), { from: .2, x: 540, y: 520 }); $('ct_sh').style.transform += ` rotate(${Math.sin((t - S(50.0)) * 7) * 8}deg)`;
+  [0, 1, 2].forEach(i => { const t0 = S(50.46) + i * .2; pop($('ct_f' + i), t, t0, { from: .2, x: 240 + i * 300, y: 820 }); });
+  [0, 1, 2].forEach(i => { if (t > S(51.78)) $('ct_f' + i).style.opacity = 1 - seg(t, S(51.7), S(51.9)); });
+  pop($('ct_w'), t, S(52.22), { c: false, from: .5 });
+};
+HTML.end = `
+  <img class="a ctr" id="en_l" src="${LOGO}" style="left:540px;top:560px;width:380px;height:380px">
+  <div class="a ctr lbl" id="en_t" style="left:540px;top:820px;font-size:42px;color:#dab6fc">Lavoro Business e Servizi</div>
+  ${[['globe', 'lbswork.com'], ['de', '+49 1573 9037885'], ['it', '+39 351 881 8391']].map(([ic, v], i) => `<div class="pill" id="en_${i}" style="left:540px;top:${960 + i * 140}px;transform:translate(-50%,-50%);font-size:46px;padding:20px 40px 20px 24px">${ic === 'globe' ? icon('globe', 60, '#5e2d61', 2.2) : FLAG(ic, 64)}${v}</div>`).join('')}`;
+U.end = t => { pop($('en_l'), t, S(53.45), { from: .4 }); pop($('en_t'), t, S(53.65), { from: .5 }); [0, 1, 2].forEach(i => pop($('en_' + i), t, S(53.8) + i * .15, { from: .5 })); };
+
+// ---------- build ----------
+SC.forEach(s => { const d = document.createElement('div'); d.className = 'sc'; d.innerHTML = HTML[s.id]; $('world').appendChild(d); s.el = d; });
+const GRAIN = []; { const r = rng(99); for (let k = 0; k < 4; k++) { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), im = x.createImageData(256, 256); for (let i = 0; i < im.data.length; i += 4) { const v = r() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); GRAIN.push(`url(${c.toDataURL()})`); } }
+const PAT = { truck: 'M2 6.5h11.5v9.5H2z M13.5 9.5h4.2l3.8 3.6v2.9h-8z M4 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0 M15.2 18.2a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0', hat: 'M6.5 13.5C3.4 13.4 3 8.6 6.4 8C6.9 4.3 11.7 3.1 13.6 5.8C16.6 4.6 20.6 7.3 18.5 10.9C18 12 17.5 13.5 17.5 13.5 M6.5 13.5h11v5.6h-11z M6.5 16.2h11', brief: 'M3 7.5h18v12H3z M9 7.5V5h6v2.5 M3 12.5h18' };
+const TILE = (() => { const c = document.createElement('canvas'); c.width = 720; c.height = 720; const x = c.getContext('2d'), n = Object.keys(PAT); x.strokeStyle = '#fff'; x.lineWidth = 1.2; x.lineJoin = x.lineCap = 'round';
+  for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) { x.save(); x.translate(k * 180 + (r % 2 ? 90 : 0) + 45, r * 180 + 60); x.rotate(((r * 7 + k * 3) % 5 - 2) * .1); x.scale(2.6, 2.6); x.translate(-12, -12); x.stroke(new Path2D(PAT[n[(r * 3 + k) % 3]])); x.restore(); } return c; })();
+const bgc = $('bg').getContext('2d'), PW = bgc.createPattern(TILE, 'repeat');
+function drawBg(t, kind, prev, k) {
+  const col = { dark: [26, 10, 34], red: [48, 8, 20], lbs: [94, 45, 97] };
+  const a = col[prev] || col[kind], b = col[kind], c = a.map((v, i) => Math.round(lerp(v, b[i], k)));
+  bgc.fillStyle = `rgb(${c})`; bgc.fillRect(0, 0, W, H);
+  const lb = (prev === 'lbs' ? 1 - k : 0) + (kind === 'lbs' ? k : 0);
+  if (lb > 0) { const ox = -(t * 20) % 720, oy = -(t * 12) % 720; bgc.save(); bgc.translate(ox, oy); bgc.globalAlpha = .12 * lb; bgc.fillStyle = PW; bgc.fillRect(-ox, -oy, W, H); bgc.restore(); bgc.globalAlpha = 1; }
+  const gr = bgc.createRadialGradient(540, 700, 0, 540, 700, 1000); const glow = kind === 'lbs' ? 'rgba(218,182,252,.22)' : kind === 'red' ? 'rgba(255,59,79,.28)' : 'rgba(255,59,79,.10)';
+  gr.addColorStop(0, glow); gr.addColorStop(1, 'rgba(0,0,0,0)'); bgc.fillStyle = gr; bgc.fillRect(0, 0, W, H);
+}
+
+function seekImpl(t) {
+  const tau = t - O;
+  let cur = SC.findIndex(s => tau >= s.a && tau < s.b); if (cur < 0) cur = tau < 0 ? 0 : SC.length - 1;
+  const s = SC[cur], kin = seg(tau, s.a, s.a + .18);
+  drawBg(t, s.bg, cur ? SC[cur - 1].bg : s.bg, kin);
+  SC.forEach((x, i) => { x.el.style.display = i === cur ? 'block' : 'none'; });
+  // TikTok cut: quick zoom-in with blur
+  s.el.style.transform = `scale(${lerp(1.12, 1, expo(kin)) * (1 + .012 * (tau - s.a))})`; s.el.style.filter = kin < 1 ? `blur(${(1 - expo(kin)) * 12}px)` : 'none';
+  U[s.id](t);
+  // impacts
+  let sx = 0, sy = 0, fl = 0, fc = '#fff';
+  for (const [h, amp, c, f] of HITS) { const d = tau - h; if (d < 0 || d > 1) continue; const e = Math.exp(-d * 8); sx += amp * e * Math.sin(d * 70 + h); sy += amp * e * Math.cos(d * 55 + h); const fv = f * Math.exp(-d * 12); if (fv > fl) { fl = fv; fc = c; } }
+  $('world').style.transform = `translate(${sx}px,${sy}px) rotate(${sx * .03}deg)`;
+  $('flash').style.opacity = fl; $('flash').style.background = fc;
+  // red flag counter chip
+  const rf = RF.reduce((a, r) => tau >= r[0] ? r[1] : a, 0), chipOn = rf && tau < 34.15;
+  $('chip').style.opacity = chipOn ? 1 : 0; if (chipOn) { $('chip').innerHTML = `<svg width="40" height="40" viewBox="0 0 100 100"><rect x="14" y="6" width="9" height="92" rx="4" fill="#fff"/><path d="M23 10 L90 10 L78 31 L90 52 L23 52Z" fill="#fff"/></svg>RED FLAG ${rf}/3`; const k = spring(tau - RF[rf - 1][0], 14, .5); $('chip').style.transform = `translate(-50%,-50%) scale(${lerp(.5, 1, k)})`; }
+  // captions
+  let ci = -1; CAPS.forEach((c, i) => { if (tau >= c[0][0] - .05) ci = i; });
+  const cap = $('cap');
+  if (ci < 0 || tau > CAPS[ci][CAPS[ci].length - 1][1] + .7 || tau > TAU_END - 1.9 || s.id.startsWith('rf')) { cap.style.opacity = 0; }
+  else {
+    const c = CAPS[ci]; if (cap.dataset.i != ci) { cap.dataset.i = ci; cap.innerHTML = c.map(w => `<span>${w[2]}</span>`).join(' '); }
+    cap.style.opacity = 1; const k = spring(tau - c[0][0] + .05, 18, .6); cap.style.transform = `translate(-50%,-50%) scale(${lerp(.7, 1, k)})`;
+    const lbs = s.bg === 'lbs';
+    $$('span', cap).forEach((sp, j) => { const w = c[j], on = tau >= w[0] - .03, active = on && (j === c.length - 1 || tau < c[j + 1][0] - .03); const q = active ? spring(tau - w[0], 20, .5) : 1; sp.style.color = active ? (lbs ? '#dab6fc' : '#ffd43b') : '#fff'; sp.style.opacity = on ? 1 : .55; sp.style.transform = `scale(${active ? lerp(1.3, 1.08, q) : 1})`; });
+  }
+  $('grain').style.backgroundImage = GRAIN[Math.floor(t * 24) % 4];
+  $('fade').style.opacity = Math.max(1 - seg(t, 0, .2), seg(t, DUR - .6, DUR - .02));
+}
+
+// =========================================================================================
+// AUDIO: voice + phonk-style beat (150 BPM, half-time) in E minor, switching to a bright major loop for LBS
+const BEAT = 60 / 150, BAR = 4 * BEAT, G0 = S(5.78), G1 = S(34.24);
+const VO_URL = 'data:audio/mpeg;base64,{{VO}}';
+const SPEECH = {{SPEECH}};
+window.buildAudio = async function (ctx) {
+  const sr = ctx.sampleRate;
+  const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .1;
+  const out = ctx.createGain(); out.gain.value = .6; lim.connect(out); out.connect(ctx.destination);
+  const master = ctx.createGain(); master.gain.value = .7; master.connect(lim);
+  const ir = ctx.createBuffer(2, Math.floor(sr * 1.8), sr); for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c), r = rng(3 + c); for (let i = 0; i < d.length; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / d.length, 3); }
+  const verb = ctx.createConvolver(); verb.buffer = ir; const vr = ctx.createGain(); vr.gain.value = .3; verb.connect(vr); vr.connect(master);
+  const music = ctx.createGain(); music.connect(master); const ms = ctx.createGain(); ms.gain.value = .15; music.connect(ms); ms.connect(verb);
+  const sfx = ctx.createGain(); sfx.gain.value = .6; sfx.connect(master); const ss = ctx.createGain(); ss.gain.value = .2; sfx.connect(ss); ss.connect(verb);
+  const lo = .34, hi = .6; music.gain.setValueAtTime(.5, 0);
+  for (const [a, b] of SPEECH) { music.gain.setTargetAtTime(lo, S(a) - .15, .06); music.gain.setTargetAtTime(hi, S(b) + .05, .15); }
+  music.gain.setTargetAtTime(0, DUR - 1.0, .25);
+  try { const vb = await ctx.decodeAudioData(await (await fetch(VO_URL)).arrayBuffer()); const vg = ctx.createGain(); vg.gain.value = 1.1; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 80; hp.connect(vg); vg.connect(master); const src = ctx.createBufferSource(); src.buffer = vb; src.connect(hp); src.start(O); } catch (e) { console.warn('voice', e); }
+
+  const nb = ctx.createBuffer(1, sr * 2, sr); { const d = nb.getChannelData(0), r = rng(1234); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
+  const noise = (t, dur, { type = 'highpass', f = 1000, q = .7, g = .2, dest = sfx, f2, a = .002, pan = 0 } = {}) => { const s = ctx.createBufferSource(); s.buffer = nb; s.loop = true; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q; if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur); const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + a); e.gain.exponentialRampToValueAtTime(.0005, t + dur); const p = ctx.createStereoPanner(); p.pan.value = pan; s.connect(fl); fl.connect(e); e.connect(p); p.connect(dest); s.start(t, (t * 7.3) % 1.5); s.stop(t + dur + .05); };
+  const tone = (t, f, dur, { type = 'sine', g = .1, a = .005, dest = sfx, f2, lp, pan = 0, det = 0 } = {}) => { const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = det; if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur * .8); const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + a); e.gain.exponentialRampToValueAtTime(.0005, t + dur); let n = o; if (lp) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; o.connect(fl); n = fl; } const p = ctx.createStereoPanner(); p.pan.value = pan; n.connect(e); e.connect(p); p.connect(dest); o.start(t); o.stop(t + dur + .05); };
+  const sh = ctx.createWaveShaper(); { const c = new Float32Array(1024); for (let i = 0; i < 1024; i++) c[i] = Math.tanh((i / 512 - 1) * 2.5); sh.curve = c; } const shg = ctx.createGain(); shg.gain.value = .5; sh.connect(shg); shg.connect(music);
+  const b808 = (t, m, dur, g = .55, from) => { const o = ctx.createOscillator(); o.frequency.setValueAtTime(mtof(from ?? m), t); if (from) o.frequency.exponentialRampToValueAtTime(mtof(m), t + .12); const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + .004); e.gain.setValueAtTime(g * .8, t + dur * .7); e.gain.exponentialRampToValueAtTime(.0005, t + dur); o.connect(e); e.connect(sh); o.start(t); o.stop(t + dur + .05); };
+  const kick = (t, g = .7) => { tone(t, 150, .35, { f2: 45, g, dest: music }); noise(t, .015, { f: 3000, g: g * .3, dest: music }); };
+  const clap = (t, g = .3) => { for (const d of [0, .011, .024]) noise(t + d, .16, { type: 'bandpass', f: 1500, q: .9, g, dest: music }); };
+  const hat = (t, g = .05, pan = .2) => noise(t, .035, { f: 8000, g, dest: music, pan });
+  const cow = (t, m, g = .05) => { const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = mtof(m) * 1.5; bp.Q.value = 2; const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + .002); e.gain.exponentialRampToValueAtTime(.0005, t + .3); bp.connect(e); e.connect(music); for (const r of [1, 1.48]) { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = mtof(m) * r; o.connect(bp); o.start(t); o.stop(t + .32); } };
+  const pluck = (t, m, g = .035, pan = 0) => { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = 3; fl.frequency.setValueAtTime(3600, t); fl.frequency.exponentialRampToValueAtTime(400, t + .2); const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + .004); e.gain.exponentialRampToValueAtTime(.0005, t + .3); const p = ctx.createStereoPanner(); p.pan.value = pan; fl.connect(e); e.connect(p); p.connect(music); for (const dt of [-9, 9]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t + .35); } };
+  const pad = (t, notes, dur, g, lpf = 1200) => { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lpf; const e = ctx.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g, t + .3); e.gain.setValueAtTime(g, t + dur - .3); e.gain.linearRampToValueAtTime(0, t + dur); fl.connect(e); e.connect(music); for (const m of notes) for (const dt of [-7, 7]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t + dur + .05); } };
+
+  // hook: tension (sub drone, clock ticks, riser), cut on "Scappa!", drop at RED FLAG #1
+  tone(0, mtof(28), S(4.7), { g: .2, a: 1.5, dest: music }); pad(0, [40, 47, 52], S(4.7), .025, 600);
+  for (let t = .1; t < S(4.7); t += BEAT) tone(t, 2600, .02, { g: .04, dest: music, pan: .2 });
+  noise(S(2.5), S(4.7) - S(2.5), { type: 'bandpass', f: 400, f2: 5000, q: 2, g: .12, a: S(4.6) - S(2.5), dest: music });
+  // phonk loop (E minor) between the drop and LBS
+  const MINOR = [[40, 52, 55], [36, 48, 52], [38, 50, 54], [35, 47, 50]];
+  const COW = [[76, 0], [76, 2], [79, 3], [76, 5], [81, 6], [79, 8], [76, 10], [74, 12], [76, 14]];
+  for (let n = 0; G0 + n * BAR < G1 - .05; n++) {
+    const t = G0 + n * BAR, ch = MINOR[n % 4], drop = n === 0;
+    b808(t, ch[0], BAR * .62, .55); b808(t + 10 * BEAT / 4, ch[0], BAR * .35, .45, ch[0] + 12);
+    kick(t); kick(t + 10 * BEAT / 4, .55); clap(t + 2 * BEAT);
+    for (let s = 0; s < 16; s += 2) hat(t + s * BEAT / 4, s % 4 ? .035 : .055, s % 4 ? -.25 : .25);
+    if (n % 2) for (let s = 0; s < 6; s++) hat(t + 3 * BEAT + s * BEAT / 6, .03, .3);
+    COW.forEach(([m, s]) => cow(t + s * BEAT / 4, m - (n % 4 === 1 ? 4 : n % 4 === 2 ? 2 : n % 4 === 3 ? 5 : 0), .045));
+    pad(t, ch.slice(1).map(m => m + 12), BAR, .015, 900);
+  }
+  // LBS: bright major loop (G – D – Em – C)
+  const MAJOR = [[43, 55, 59, 62], [38, 50, 54, 57], [40, 52, 55, 59], [36, 48, 52, 55]];
+  for (let n = 0; G1 + n * BAR < DUR - 1.2; n++) {
+    const t = G1 + n * BAR, ch = MAJOR[n % 4], end = t > S(53.45) - .1;
+    pad(t, ch.slice(1), BAR + .1, .03, 2000); b808(t, ch[0], BAR * .5, .4); b808(t + 2.5 * BEAT, ch[0], BAR * .3, .32);
+    const arp = [ch[1] + 12, ch[2] + 12, ch[3] + 12, ch[2] + 12]; for (let s = 0; s < 8; s++) pluck(t + s * BEAT / 2, arp[s % 4] + (s >= 4 ? 12 : 0), .03, s % 2 ? .3 : -.3);
+    if (!end) { kick(t, .6); kick(t + 2 * BEAT, .5); clap(t + BEAT, .22); clap(t + 3 * BEAT, .22); for (let s = 0; s < 8; s++) hat(t + s * BEAT / 2 + BEAT / 4, .03); }
+  }
+  [55, 59, 62, 67, 71].forEach((m, j) => tone(DUR - 1.8 + j * .04, mtof(m), 1.8, { type: 'triangle', g: .04, dest: music, lp: 3000 }));
+
+  // ---- sfx ----
+  const whoosh = (t, g = .18, pan = 0) => noise(t - .18, .4, { type: 'bandpass', f: 700, f2: 4500, q: 1, g, a: .16, pan });
+  const impact = (t, g = 1) => { tone(t, 120, .9, { f2: 32, g: .7 * g }); noise(t, .5, { type: 'lowpass', f: 1200, g: .3 * g }); noise(t, .9, { f: 5000, g: .05 * g, a: .01 }); };
+  const ping = t => { tone(t, mtof(88), .18, { g: .1 }); tone(t + .08, mtof(95), .3, { g: .07 }); };
+  const popS = (t, i = 0) => { tone(t, 420 + (i % 5) * 70, .1, { f2: 900 + (i % 5) * 80, g: .12 }); noise(t, .03, { type: 'bandpass', f: 3000, q: 2, g: .06 }); };
+  const buzz = t => { tone(t, 140, .3, { type: 'square', g: .07, lp: 1000 }); tone(t, 147, .3, { type: 'square', g: .07, lp: 1000 }); };
+  const stampS = t => { tone(t, 160, .3, { f2: 50, g: .55 }); noise(t, .14, { type: 'lowpass', f: 2500, g: .3 }); };
+  const flutter = (t, d = .9) => { for (let i = 0; i < 9; i++) noise(t + i * d / 9, .06, { type: 'bandpass', f: 900 + (i % 3) * 300, q: 1.2, g: .06, pan: -.2 }); };
+  const coin = (t, i = 0) => { tone(t, mtof(88 + i % 3), .1, { type: 'square', g: .03, lp: 4000 }); tone(t + .07, mtof(95 + i % 3), .35, { type: 'square', g: .03, lp: 4000 }); };
+  const boing = t => { tone(t, 180, .45, { f2: 520, g: .14, type: 'triangle' }); tone(t + .18, 520, .3, { f2: 260, g: .08, type: 'triangle' }); };
+  const scratch = t => { noise(t, .12, { type: 'bandpass', f: 1800, f2: 400, q: 3, g: .25 }); noise(t + .12, .1, { type: 'bandpass', f: 500, f2: 2200, q: 3, g: .2 }); };
+  const womp = t => { [62, 61, 60].forEach((m, i) => tone(t + i * .38, mtof(m), .4, { type: 'sawtooth', g: .07, lp: 1400 })); const o = ctx.createOscillator(), e = ctx.createGain(), fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 1300; o.type = 'sawtooth'; o.frequency.setValueAtTime(mtof(59), t + 1.14); o.frequency.linearRampToValueAtTime(mtof(57), t + 2.2); const v = ctx.createOscillator(), vg = ctx.createGain(); v.frequency.value = 6; vg.gain.value = 8; v.connect(vg); vg.connect(o.frequency); e.gain.setValueAtTime(0, t + 1.14); e.gain.linearRampToValueAtTime(.08, t + 1.2); e.gain.linearRampToValueAtTime(0, t + 2.3); o.connect(fl); fl.connect(e); e.connect(sfx); o.start(t + 1.14); o.stop(t + 2.35); v.start(t + 1.14); v.stop(t + 2.35); };
+  const chaChing = t => { noise(t, .08, { type: 'bandpass', f: 3500, q: 2, g: .15 }); [91, 96, 100].forEach((m, i) => tone(t + .08 + i * .05, mtof(m), .6, { g: .07 })); };
+  const siren = (t, d) => { for (let i = 0; i < d / .25; i++) tone(t + i * .25, i % 2 ? 880 : 1175, .24, { type: 'square', g: .035, lp: 3000 }); };
+  // hook
+  whoosh(S(.15)); [2.94, 3.2, 3.44].forEach((x, i) => { popS(S(x), i); }); siren(S(4.7), .9); scratch(S(5.3));
+  // red flag cards
+  RF.forEach(([a]) => { impact(S(a)); flutter(S(a) + .05); stampS(S(a + .98)); });
+  // chat 1
+  whoosh(S(8.0)); ping(S(8.1)); for (let i = 0; i < 18; i++) tone(S(8.96) + i * .2, i % 2 ? 1800 : 2400, .03, { g: .035, pan: .2 }); siren(S(10.32), .5); boing(S(11.38)); stampS(S(12.46)); impact(S(12.46), .5); [79, 83, 86].forEach((m, j) => tone(S(14.32) + j * .07, mtof(m), .6, { g: .05 }));
+  // docs
+  whoosh(S(19.2)); popS(S(19.26)); popS(S(20.8), 2); buzz(S(20.02)); buzz(S(21.54)); ping(S(22.22)); [0, 1, 2, 3].forEach(i => noise(S(23.08) + i * .1, .12, { type: 'bandpass', f: 2600, q: 1.5, g: .08 })); buzz(S(24.4)); stampS(S(24.42));
+  // house
+  whoosh(S(26.95)); ping(S(26.98)); popS(S(27.56), 1); popS(S(28.12), 3); [0, 1, 2].forEach(i => coin(S(28.76) + i * .16 + .6, i));
+  for (let i = 0; i < 8; i++) noise(S(30.72) + i * .12, .05, { type: 'bandpass', f: 600, q: 2, g: .07 }); noise(S(32.7), .7, { type: 'bandpass', f: 300, f2: 2000, q: 1, g: .15 }); womp(S(32.86) + .1);
+  // LBS
+  impact(S(34.24), .9); [79, 83, 86, 91].forEach((m, j) => tone(S(34.78) + j * .07, mtof(m), 1, { g: .05 })); popS(S(36.2), 2);
+  for (let i = 0; i < 11; i++) tone(S(38.62) + i * .07, 1500 + i * 60, .03, { g: .04 }); popS(S(40.3)); popS(S(40.94), 1); noise(S(40.3), .9, { type: 'bandpass', f: 500, f2: 2400, q: 1.4, g: .1, a: .5 });
+  [41.92, 43.06, 43.7].forEach((x, i) => { whoosh(S(x), .12, -.3); popS(S(x) + .2, i + 2); });
+  impact(S(47.08), .7); popS(S(47.8), 3); chaChing(S(49.34));
+  popS(S(50.0), 2); [0, 1, 2].forEach(i => popS(S(50.46) + i * .2, i)); chaChing(S(52.22)); whoosh(S(53.45)); [86, 90, 93].forEach((m, j) => tone(S(53.5) + j * .08, mtof(m), .8, { g: .05 }));
+};
+
+async function boot() {
+  await Promise.all([...document.fonts].map(f => f.load().catch(() => { }))); await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.decode().catch(() => { })));
+  window.seek = seekImpl; seekImpl(0); if (RENDER) return;
+  const stage = $('stage'), fit = () => { const k = Math.min(innerWidth / W, (innerHeight - 50) / H); stage.style.transform = `scale(${k})`; }; fit(); addEventListener('resize', fit);
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() { ac ??= new AudioContext(); if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); } src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination); src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; $('pb').textContent = 'Pausa ❚❚'; }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; $('pb').textContent = 'Play ▶'; }
+  const now = () => playing ? (offset + ac.currentTime - startAt) % DUR : offset;
+  $('pb').onclick = () => playing ? pause() : play();
+  $('sc').oninput = e => { const was = playing; pause(); offset = e.target.value / 1000 * DUR; if (was) play(); };
+  (function loop() { const t = now(); seekImpl(t); $('sc').value = t / DUR * 1000; $('tc').textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+}
+boot();
+</script></body></html>

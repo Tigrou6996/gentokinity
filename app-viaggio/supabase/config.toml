@@ -1,0 +1,8 @@
+# Funzioni Supabase dell'app "LBS Viaggio".
+# Entrambe richiedono la chiave anon del progetto nell'header Authorization (verify_jwt = true):
+# l'app la invia già. Deploy:  supabase functions deploy transit  &&  supabase functions deploy tts
+[functions.transit]
+verify_jwt = true
+
+[functions.tts]
+verify_jwt = true
