@@ -1,0 +1,5 @@
+anthropic>=1.15
+openpyxl>=3.1
+faster-whisper>=1.1
+# av 17+ ha tolto un parametro usato da faster-whisper
+av>=11,<17

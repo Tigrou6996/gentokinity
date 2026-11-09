@@ -1,0 +1,18 @@
+async function boot() {
+  await Promise.all([...document.fonts].map(f => f.load().catch(() => { })));
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.decode().catch(() => { })));
+  window.seek = seekImpl;
+  seekImpl(0);
+  if (RENDER) return;
+  const stage = $('stage'), fit = () => { const k = Math.min(innerWidth / W, (innerHeight - 50) / H); stage.style.transform = `scale(${k})`; }; fit(); addEventListener('resize', fit);
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() { ac ??= new AudioContext(); if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); } src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination); src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; $('pb').textContent = 'Pausa ❚❚'; }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; $('pb').textContent = 'Play ▶'; }
+  const now = () => playing ? (offset + ac.currentTime - startAt) % DUR : offset;
+  $('pb').onclick = () => playing ? pause() : play();
+  $('sc').oninput = e => { const was = playing; pause(); offset = e.target.value / 1000 * DUR; if (was) play(); };
+  (function loop() { const t = now(); seekImpl(t); $('sc').value = t / DUR * 1000; $('tc').textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+}
+boot();
+</script></body></html>

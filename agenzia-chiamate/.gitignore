@@ -1,0 +1,8 @@
+# Dati personali dei candidati: non vanno mai nel repository
+candidati.xlsx
+~$*.xlsx
+chiamate_in_arrivo/
+trascrizioni/
+gia_elaborati.txt
+registro.log
+__pycache__/

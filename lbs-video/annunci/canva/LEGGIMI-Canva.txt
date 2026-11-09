@@ -1,0 +1,17 @@
+ANNUNCIO "CORRIERE A DÜSSELDORF" - FILE MODIFICABILI PER CANVA
+
+1) annuncio-F.pdf  ->  il file da usare in Canva (testi modificabili)
+   Canva: Crea un design > Importa file > scegli annuncio-F.pdf
+   Canva lo apre come design 1080x1350: ogni testo è un elemento a sé, lo clicchi e lo riscrivi.
+   I caratteri sono Plus Jakarta Sans e Inter (li trovi anche nel menu caratteri di Canva).
+
+2) annuncio-F.svg  ->  versione vettoriale a livelli (per Illustrator, Figma, Inkscape).
+   Attenzione: se carichi l'SVG su Canva, Canva lo tratta come UN'UNICA immagine
+   (puoi cambiare qualche colore, non i testi). Per modificare i testi usa il PDF.
+
+3) Immagini separate, se vuoi rifare o spostare i pezzi:
+   - sfondo-F.png             sfondo viola con valigie e valigette da lavoro
+   - corriere-adesivo-F.png   il corriere scontornato con bordo bianco (sfondo trasparente)
+   - logo-LBS.png
+
+Per un nuovo annuncio con un'altra foto: mandami la foto e la scontorno io.

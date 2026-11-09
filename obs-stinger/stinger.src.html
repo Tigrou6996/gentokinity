@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Stinger Boccaccia</title>
+<style>
+@font-face { font-family: 'Bangers'; src: url(data:font/woff2;base64,{{FONT}}) format('woff2'); font-display: block; }
+html, body { margin: 0; background: #16131c; overflow: hidden; font-family: system-ui, sans-serif; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #000; }
+body.render, body.render #stage { background: transparent; }
+.demo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-family: 'Bangers', sans-serif; letter-spacing: 4px; }
+.demo b { font-size: 170px; font-weight: 400; line-height: 1; }
+.demo i { font-style: normal; font-size: 56px; opacity: .8; }
+#demoA { background: radial-gradient(circle at 30% 40%, #4b3f8f, #1b1636 70%); }
+#demoB { background: radial-gradient(circle at 70% 60%, #1f9d8b, #0b3330 70%); }
+.cam { position: absolute; left: 70px; bottom: 70px; width: 480px; height: 270px; border: 6px solid #fff3; border-radius: 18px; background: #0006; }
+body.render .demo { display: none; }
+body.render.demo .demo { display: flex; }
+svg { position: absolute; left: 0; top: 0; overflow: visible; }
+text { font-family: 'Bangers', sans-serif; }
+.o { stroke: #2A1830; stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+#ui { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; align-items: center; padding: 10px 16px; background: #000c; color: #ddd; font-size: 13px; }
+#ui input[type=range] { flex: 1; }
+#ui button { background: #F07A3A; color: #fff; border: 0; border-radius: 6px; padding: 6px 14px; font-weight: 700; cursor: pointer; }
+body.render #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="demo" id="demoA"><div class="cam"></div><i>scena 1</i><b>JUST CHATTING</b></div>
+  <div class="demo" id="demoB"><i>scena 2</i><b>GAMEPLAY</b></div>
+
+  <svg id="svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    <defs>
+      <!-- "boiling" hand-drawn line wobble, re-seeded 12 times a second -->
+      <filter id="boil" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence id="boilNoise" type="fractalNoise" baseFrequency="0.03" numOctaves="1" seed="1" result="n"/>
+        <feDisplacementMap id="boilMap" in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <radialGradient id="throatGrad" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="170">
+        <stop offset="0" stop-color="#12020A"/><stop offset=".45" stop-color="#2C0614"/><stop offset="1" stop-color="#7A1A35" stop-opacity="0"/>
+      </radialGradient>
+      <clipPath id="mouthClip"><path id="mouthClipPath"/></clipPath>
+      <clipPath id="eyeClipL"><circle cx="-90" cy="-268" r="66"/></clipPath>
+      <clipPath id="eyeClipR"><circle cx="94" cy="-262" r="58"/></clipPath>
+      <clipPath id="kidShirtClip"><path id="kidShirtShape" d="M-62,-330 C-70,-280 -70,-220 -64,-180 L64,-180 C70,-220 70,-280 62,-330 C30,-345 -30,-345 -62,-330 Z"/></clipPath>
+      <mask id="iris" maskUnits="userSpaceOnUse" x="0" y="0" width="1920" height="1080">
+        <rect width="1920" height="1080" fill="#fff"/><path id="irisHole" fill="#000"/>
+      </mask>
+
+      <!-- ===== KID (original character): faces right, origin = between the feet ===== -->
+      <g id="kidArt">
+        <g id="kLegL"><path class="o" d="M-26,-150 L-30,-20" stroke-width="34" fill="none"/><path d="M-26,-150 L-30,-20" stroke="#F5C6A5" stroke-width="20" stroke-linecap="round" fill="none"/>
+          <path class="o" d="M-58,-6 C-58,-34 -4,-36 4,-10 C6,0 -54,4 -58,-6 Z" fill="#E2463A"/><path d="M-56,-4 L2,-6" stroke="#fff" stroke-width="5"/></g>
+        <g id="kLegR"><path class="o" d="M26,-150 L30,-20" stroke-width="34" fill="none"/><path d="M26,-150 L30,-20" stroke="#F5C6A5" stroke-width="20" stroke-linecap="round" fill="none"/>
+          <path class="o" d="M0,-6 C0,-34 54,-36 62,-10 C64,0 4,4 0,-6 Z" fill="#E2463A"/><path d="M2,-4 L60,-6" stroke="#fff" stroke-width="5"/></g>
+        <path class="o" d="M-66,-196 L66,-196 L72,-128 L8,-128 L0,-150 L-8,-128 L-72,-128 Z" fill="#2F3E7A"/>
+        <g id="kArmL"><path class="o" d="M-56,-318 L-118,-400 L-112,-470" stroke-width="32" fill="none"/><path d="M-56,-318 L-118,-400 L-112,-470" stroke="#F5C6A5" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle class="o" cx="-112" cy="-478" r="20" fill="#F5C6A5"/></g>
+        <g id="kArmR"><path class="o" d="M56,-318 L120,-396 L132,-468" stroke-width="32" fill="none"/><path d="M56,-318 L120,-396 L132,-468" stroke="#F5C6A5" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle class="o" cx="132" cy="-476" r="20" fill="#F5C6A5"/></g>
+        <use href="#kidShirtShape" class="o" fill="#F7C948"/>
+        <g clip-path="url(#kidShirtClip)"><rect x="-80" y="-300" width="160" height="24" fill="#3C6FD1"/><rect x="-80" y="-250" width="160" height="24" fill="#3C6FD1"/><rect x="-80" y="-200" width="160" height="20" fill="#3C6FD1"/></g>
+        <use href="#kidShirtShape" class="o" fill="none"/>
+        <path class="o" d="M-14,-350 L-12,-328 L14,-328 L16,-350" fill="#F5C6A5"/>
+        <g id="kHead">
+          <ellipse class="o" cx="-92" cy="-452" rx="16" ry="22" fill="#F5C6A5"/>
+          <path class="o" d="M0,-560 C70,-560 100,-510 98,-450 C96,-390 70,-352 6,-350 C-60,-350 -96,-392 -96,-452 C-96,-515 -66,-560 0,-560 Z" fill="#F5C6A5"/>
+          <!-- shaggy blonde hair -->
+          <path class="o" d="M-100,-458 C-112,-520 -80,-580 -10,-586 C40,-600 92,-574 106,-520 C112,-496 108,-476 100,-466 C92,-490 80,-500 70,-498 C76,-512 66,-522 56,-520 C46,-500 28,-494 10,-500 C14,-512 6,-520 -6,-516 C-18,-500 -40,-494 -58,-502 C-60,-488 -70,-480 -80,-484 C-82,-470 -90,-462 -100,-458 Z" fill="#F2D16B"/>
+          <path d="M-40,-560 C-30,-570 -10,-574 8,-570 M30,-566 C46,-566 62,-558 72,-548" stroke="#C9A43E" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <!-- eyes behind round red glasses -->
+          <g id="kEyes"><circle class="o" cx="-30" cy="-458" r="25" fill="#fff"/><circle class="o" cx="48" cy="-458" r="25" fill="#fff"/>
+            <circle id="kPupL" cx="-26" cy="-458" r="6" fill="#2A1830"/><circle id="kPupR" cx="52" cy="-458" r="6" fill="#2A1830"/></g>
+          <circle cx="-30" cy="-458" r="36" fill="none" stroke="#2A1830" stroke-width="15"/><circle cx="48" cy="-458" r="36" fill="none" stroke="#2A1830" stroke-width="15"/>
+          <circle cx="-30" cy="-458" r="36" fill="none" stroke="#D9332B" stroke-width="8"/><circle cx="48" cy="-458" r="36" fill="none" stroke="#D9332B" stroke-width="8"/>
+          <path d="M6,-462 C10,-470 14,-470 12,-462" stroke="#D9332B" stroke-width="7" fill="none"/>
+          <path d="M-66,-500 C-50,-512 -20,-512 -4,-500 M26,-502 C44,-514 70,-512 82,-500" stroke="#2A1830" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <!-- big hook nose -->
+          <path class="o" d="M14,-440 C30,-430 66,-414 64,-398 C62,-386 40,-386 26,-392" fill="#F0B293"/>
+          <!-- screaming mouth with braces -->
+          <path id="kMouth" class="o" d="M-6,-384 C10,-392 44,-392 52,-380 C50,-358 6,-352 -6,-384 Z" fill="#7A1A35"/>
+          <path d="M-2,-380 L48,-378" stroke="#B8C2CC" stroke-width="5"/><circle cx="12" cy="-380" r="3" fill="#8A96A3"/><circle cx="30" cy="-379" r="3" fill="#8A96A3"/>
+          <circle cx="-56" cy="-420" r="3" fill="#D98C6A"/><circle cx="-46" cy="-410" r="3" fill="#D98C6A"/><circle cx="-64" cy="-408" r="3" fill="#D98C6A"/>
+        </g>
+      </g>
+
+      <!-- ===== BANANA GUY (original character): faces right, origin = between the feet ===== -->
+      <g id="banArt">
+        <g id="bLegL"><path class="o" d="M-30,-130 L-38,-18" stroke-width="40" fill="none"/><path d="M-30,-130 L-38,-18" stroke="#F8D84A" stroke-width="26" stroke-linecap="round" fill="none"/>
+          <path class="o" d="M-74,-4 C-74,-36 -10,-38 0,-10 C2,2 -70,6 -74,-4 Z" fill="#6B4A2B"/></g>
+        <g id="bLegR"><path class="o" d="M30,-130 L36,-18" stroke-width="40" fill="none"/><path d="M30,-130 L36,-18" stroke="#F8D84A" stroke-width="26" stroke-linecap="round" fill="none"/>
+          <path class="o" d="M0,-4 C0,-36 64,-38 74,-10 C76,2 4,6 0,-4 Z" fill="#6B4A2B"/></g>
+        <g id="bArmL"><path class="o" d="M-96,-330 L-170,-400 L-176,-480" stroke-width="40" fill="none"/><path d="M-96,-330 L-170,-400 L-176,-480" stroke="#F8D84A" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path class="o" d="M-196,-488 C-200,-520 -186,-532 -176,-512 C-174,-536 -158,-536 -158,-510 C-150,-528 -136,-520 -144,-494 C-150,-474 -190,-470 -196,-488 Z" fill="#D9A57E"/></g>
+        <g id="bArmR"><path class="o" d="M96,-330 L168,-398 L170,-480" stroke-width="40" fill="none"/><path d="M96,-330 L168,-398 L170,-480" stroke="#F8D84A" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path class="o" d="M150,-488 C146,-520 160,-532 170,-512 C172,-536 188,-536 188,-510 C196,-528 210,-520 202,-494 C196,-474 156,-470 150,-488 Z" fill="#D9A57E"/></g>
+        <!-- banana costume body -->
+        <path class="o" d="M-12,-640 C70,-630 140,-520 140,-380 C140,-250 100,-140 20,-118 C-60,-100 -130,-160 -138,-300 C-146,-430 -110,-560 -40,-622 Z" fill="#F8D84A"/>
+        <path d="M60,-590 C112,-500 126,-380 112,-270 C102,-200 76,-150 30,-128" stroke="#E0B52A" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <path d="M-96,-520 C-124,-430 -126,-300 -104,-220" stroke="#FFF0A0" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path class="o" d="M-40,-622 C-34,-660 -20,-686 -6,-692 C8,-694 12,-680 4,-668 C-6,-656 -10,-640 -12,-640 Z" fill="#6B4A2B"/>
+        <ellipse class="o" cx="16" cy="-118" rx="16" ry="10" fill="#4A3220"/>
+        <!-- face hole -->
+        <g id="bHead">
+          <ellipse class="o" cx="10" cy="-430" rx="70" ry="84" fill="#E3B92E" stroke-width="7"/>
+          <ellipse cx="10" cy="-426" rx="60" ry="74" fill="#D9A57E"/>
+          <circle class="o" cx="-12" cy="-460" r="20" fill="#fff"/><circle class="o" cx="38" cy="-460" r="20" fill="#fff"/>
+          <circle id="bPupL" cx="-8" cy="-460" r="6" fill="#2A1830"/><circle id="bPupR" cx="42" cy="-460" r="6" fill="#2A1830"/>
+          <path d="M-38,-492 C-24,-506 0,-502 6,-488 M24,-490 C34,-504 58,-506 66,-490" stroke="#3B2618" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="o" d="M10,-450 C24,-446 34,-420 26,-410 C18,-404 4,-408 2,-416" fill="#C98F68"/>
+          <path id="bMouth" class="o" d="M-6,-384 C4,-392 30,-392 38,-384 C40,-356 0,-352 -6,-384 Z" fill="#7A1A35"/>
+          <!-- bushy moustache -->
+          <path class="o" d="M-34,-392 C-30,-412 0,-414 16,-402 C30,-416 62,-412 64,-390 C52,-394 44,-386 36,-394 C28,-386 16,-388 14,-396 C6,-386 -8,-386 -12,-394 C-20,-386 -30,-386 -34,-392 Z" fill="#3B2618"/>
+        </g>
+      </g>
+    </defs>
+
+    <!-- everything the throat iris cuts a hole through -->
+    <g id="masked">
+      <g id="cam">
+        <g id="world">
+          <!-- ===== MONSTER (original character): origin = centre of the mouth ===== -->
+          <g id="monster">
+            <g id="mArmL"><path id="mArmLo" class="o" fill="none" stroke-width="80"/><path id="mArmLf" fill="none" stroke="#B9A2E3" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+              <g id="mHandL"></g></g>
+            <g id="mArmR"><path id="mArmRo" class="o" fill="none" stroke-width="80"/><path id="mArmRf" fill="none" stroke="#B9A2E3" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+              <g id="mHandR"></g></g>
+            <path class="o" d="M-175,150 C-245,380 -230,640 -160,860 L160,860 C230,640 245,380 175,150 Z" fill="#B9A2E3"/>
+            <ellipse cx="0" cy="520" rx="120" ry="190" fill="#CDB9EE"/>
+            <path d="M-40,450 C-30,470 -10,470 0,455 M10,600 C14,612 26,612 30,600" stroke="#8C70BF" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <g id="mMane"></g>
+            <g id="mHorns"></g>
+            <path id="mHead" class="o" fill="#B9A2E3"/>
+            <path d="M-205,-120 C-200,-40 -180,40 -150,90" stroke="#9F86CF" stroke-width="18" fill="none" stroke-linecap="round"/>
+            <path d="M205,-120 C200,-40 180,40 150,90" stroke="#9F86CF" stroke-width="18" fill="none" stroke-linecap="round"/>
+            <!-- mouth: front teeth/lips at camera scale, tongue and throat on slower (deeper) parallax planes -->
+            <g id="mouth">
+              <path id="mouthBack" fill="#7A1A35"/>
+              <g clip-path="url(#mouthClip)">
+                <g id="mDeep">
+                  <circle r="170" fill="url(#throatGrad)"/>
+                  <path d="M-120,-70 C-60,-100 60,-100 120,-70 M-100,-50 C-50,-74 50,-74 100,-50" stroke="#5E1229" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/>
+                  <g id="uvula"><path class="o" d="M-10,-130 C-12,-100 -22,-74 -16,-58 C-10,-44 10,-44 16,-58 C22,-74 12,-100 10,-130 Z" fill="#C2445E" stroke-width="3"/></g>
+                </g>
+                <g id="mMid">
+                  <g id="tongue"><path class="o" d="M-175,190 C-165,50 -70,30 0,62 C70,30 165,50 175,190 Z" fill="#E8728F" stroke-width="4"/>
+                    <path d="M0,74 C-4,110 -2,150 0,180" stroke="#B94A66" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    <ellipse cx="-70" cy="80" rx="26" ry="9" fill="#F7A8BC"/></g>
+                </g>
+                <g id="mTeeth"></g>
+              </g>
+              <path id="mouthLipO" fill="none" stroke="#2A1830" stroke-width="26" stroke-linejoin="round"/>
+              <path id="mouthLip" fill="none" stroke="#C58BD0" stroke-width="13" stroke-linejoin="round"/>
+            </g>
+            <!-- nose -->
+            <ellipse class="o" cx="0" cy="-168" rx="74" ry="50" fill="#D79BC9"/>
+            <ellipse cx="-24" cy="-160" rx="11" ry="16" fill="#5A2850"/><ellipse cx="24" cy="-160" rx="11" ry="16" fill="#5A2850"/>
+            <ellipse cx="-30" cy="-190" rx="18" ry="8" fill="#EDC3E4"/>
+            <!-- eyes -->
+            <circle class="o" cx="-90" cy="-268" r="66" fill="#FFFDF4"/><circle class="o" cx="94" cy="-262" r="58" fill="#FFFDF4"/>
+            <g clip-path="url(#eyeClipL)"><g id="mIrisL"><circle cx="-90" cy="-268" r="28" fill="#F6D34A"/><circle cx="-90" cy="-268" r="13" fill="#2A1830"/><circle cx="-84" cy="-275" r="5" fill="#fff"/></g>
+              <rect id="mLidL" x="-160" y="-340" width="140" height="60" fill="#A68BD6"/></g>
+            <g clip-path="url(#eyeClipR)"><g id="mIrisR"><circle cx="94" cy="-262" r="25" fill="#F6D34A"/><circle cx="94" cy="-262" r="12" fill="#2A1830"/><circle cx="99" cy="-268" r="4" fill="#fff"/></g>
+              <rect id="mLidR" x="30" y="-330" width="130" height="60" fill="#A68BD6"/></g>
+            <path id="mLidLineL" class="o" fill="none"/><path id="mLidLineR" class="o" fill="none"/>
+            <circle cx="-90" cy="-268" r="66" fill="none" class="o"/><circle cx="94" cy="-262" r="58" fill="none" class="o"/>
+            <!-- bushy unibrow -->
+            <path id="mBrow" class="o" fill="#F07A3A"/>
+          </g>
+          <!-- kids in front of the monster -->
+          <g id="kid"><use href="#kidArt"/></g>
+          <g id="ban"><use href="#banArt"/></g>
+          <g id="bang"></g>
+        </g>
+      </g>
+      <!-- inside the mouth: the two kids get swallowed -->
+      <g id="inside">
+        <g id="fallKid"><use href="#kidArt"/></g>
+        <g id="fallBan"><use href="#banArt"/></g>
+        <text id="aah1" font-size="90" fill="#FFD23F" stroke="#2A1830" stroke-width="10" paint-order="stroke" text-anchor="middle">AAAH!</text>
+        <text id="aah2" font-size="90" fill="#FFD23F" stroke="#2A1830" stroke-width="10" paint-order="stroke" text-anchor="middle">NOOO!</text>
+      </g>
+    </g>
+    <!-- screen-space layers on top -->
+    <g id="speed"></g>
+    <path id="irisRimO" fill="none" stroke="#5E1229" stroke-width="40"/>
+    <path id="irisRim" fill="none" stroke="#E7839A" stroke-width="9"/>
+    <g id="drops"></g>
+    <g id="gulp"><text x="0" y="0" font-size="300" text-anchor="middle" dominant-baseline="central" fill="#2A1830" transform="translate(12,14)">GULP!</text>
+      <text x="0" y="0" font-size="300" text-anchor="middle" dominant-baseline="central" fill="#FFD23F" stroke="#2A1830" stroke-width="16" paint-order="stroke">GULP!</text></g>
+  </svg>
+</div>
+<div id="ui"><button id="pp">▶ Play</button><input id="scrub" type="range" min="0" max="1000" value="0"><span id="tc">0.00</span><label><input id="demoT" type="checkbox" checked> scene demo</label></div>
+
+<script>
+/* BEAT SHEET (seconds) — 60 fps, transition point 1.10 s (screen fully covered 0.93–1.30)
+   0.00  kid runs in from the left ..................... whoosh (kit)
+   0.05  banana guy runs in from the right ............. quick woosh
+   0.16  monster shoots up from the bottom, overshoot .. swoosh-v2
+   0.30  monster lands (squash) ........................ soft heavy impact
+   0.40  RAWR: mouth springs open, eyes go wide ........ pluck pop
+   0.46  "!" over both kids, they jump ................. pop (kit)
+   0.55  camera dives into the mouth (exp zoom) ........ riser, ends on the gulp
+   0.93  screen covered: GULP! + camera shake .......... mouth-pop + impact (kit)
+   0.97  kids tumble down the throat .................. long woosh
+   1.10  >>> OBS TRANSITION POINT (scene swaps underneath)
+   1.30  throat iris opens on the new scene ........... chop whoosh
+   1.40  saliva drops fly at the camera ............... plop
+   2.00  end (fully transparent)
+*/
+const VIDEO = window.VIDEO = { w: 1920, h: 1080, duration: 2.0, transitionPoint: 1.10 };
+const SFX = {{SFX}};
+
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const track = (v0, keys) => t => { let v = v0, p = v0; for (const [tk, val, w, z] of keys) { v += (val - p) * spring(t - tk, w, z); p = val; } return v; };
+const kf = keys => t => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) { const [a, va] = keys[i - 1], [b, vb, e = ease] = keys[i]; if (t <= b) return lerp(va, vb, e((t - a) / (b - a))); } return keys[keys.length - 1][1]; };
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeIn = p => x => Math.pow(clamp(x), p);
+const easeOut = p => x => 1 - Math.pow(1 - clamp(x), p);
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+const f1 = n => n.toFixed(1);
+
+// ---------- one-time art generation (seeded, deterministic) ----------
+{ // shaggy mane: hooked strands all round the head
+  const r = rng(7), g = $('mMane'), cx = 0, cy = -150, n = 26; let d = '', d2 = '';
+  const P = (a, k) => [cx + Math.cos(a) * 335 * k, cy + Math.sin(a) * 330 * k * (Math.sin(a) > 0 ? 1.05 : 1)];
+  for (let i = 0; i < n; i++) {
+    const a0 = (i / n) * Math.PI * 2, a1 = ((i + .5) / n) * Math.PI * 2, a2 = ((i + 1) / n) * Math.PI * 2;
+    const v0 = P(a0, .84), tip = P(a1 + .06, 1.04 + r() * .1), c1 = P(a0 + .02, 1.02), v1 = P(a2, .84);
+    if (!i) d += `M${f1(v0[0])},${f1(v0[1])}`;
+    d += `Q${f1(c1[0])},${f1(c1[1])} ${f1(tip[0])},${f1(tip[1])} Q${f1(P(a1 + .2, .9)[0])},${f1(P(a1 + .2, .9)[1])} ${f1(v1[0])},${f1(v1[1])}`;
+    const s0 = P(a1, .78), s1 = P(a1 + .05, .95);
+    d2 += `M${f1(s0[0])},${f1(s0[1])}L${f1(s1[0])},${f1(s1[1])}`;
+  }
+  el('path', { d: d + 'Z', class: 'o', fill: '#F07A3A' }, g);
+  el('path', { d: d2, stroke: '#C9551F', 'stroke-width': 9, 'stroke-linecap': 'round', fill: 'none' }, g);
+}
+{ // ram horns: thick spirals with ridges
+  const g = $('mHorns');
+  for (const dir of [-1, 1]) {
+    const C = [dir * 268, -372]; let d = '', ridges = '';
+    for (let i = 0; i <= 40; i++) {
+      const k = i / 40, phi = Math.PI - k * 1.62 * Math.PI, r = lerp(100, 34, k);
+      const x = C[0] + dir * r * Math.cos(phi), y = C[1] - r * Math.sin(phi);
+      d += (i ? 'L' : 'M') + f1(x) + ',' + f1(y);
+      if (i % 5 === 3 && i < 38) { const nx = Math.cos(phi) * dir, ny = -Math.sin(phi), hw = lerp(20, 12, k);
+        ridges += `M${f1(x - nx * hw)},${f1(y - ny * hw)}L${f1(x + nx * hw)},${f1(y + ny * hw)}`; }
+    }
+    el('path', { d, stroke: '#2A1830', 'stroke-width': 58, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+    el('path', { d, stroke: '#F3E6C4', 'stroke-width': 44, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+    el('path', { d: ridges, stroke: '#B8A57A', 'stroke-width': 6, fill: 'none', 'stroke-linecap': 'round' }, g);
+  }
+}
+{ // clawed hands with orange fur cuffs
+  for (const [id, dir] of [['mHandL', -1], ['mHandR', 1]]) {
+    const g = $(id);
+    el('path', { class: 'o', fill: '#F07A3A', d: 'M-50,26 Q-40,4 -28,22 Q-16,0 0,20 Q16,0 28,22 Q40,4 50,26 Q40,50 0,52 Q-40,50 -50,26 Z' }, g);
+    el('circle', { class: 'o', cx: 0, cy: -8, r: 44, fill: '#B9A2E3' }, g);
+    for (const a of [-.55, 0, .55]) {
+      const x = Math.sin(a) * 44, y = -8 - Math.cos(a) * 44;
+      el('path', { d: `M${f1(x - 9)},${f1(y + 4)} L${f1(x + Math.sin(a) * 28)},${f1(y - Math.cos(a) * 28)} L${f1(x + 9)},${f1(y + 4)} Z`, fill: '#2A1830', 'stroke-linejoin': 'round' }, g);
+    }
+  }
+}
+{ // crooked teeth (positions on the mouth edge are set every frame)
+  const g = $('mTeeth'), r = rng(3);
+  window.TEETH = [-150, -96, -44, 8, 62, 118].map((x, i) => ({ x, top: true, w: 34 + r() * 10, h: 44 + r() * 14, rot: (r() - .5) * 18, gap: i === 2 }))
+    .concat([-110, 120].map(x => ({ x, top: false, w: 32, h: 46, rot: (r() - .5) * 14 })));
+  for (const T of TEETH) { if (T.gap) { T.node = null; continue; }
+    const hw = T.w / 2, h = T.h * (T.top ? 1 : -1);
+    T.node = el('path', { class: 'o', fill: '#F6EDC9', 'stroke-width': 5, d: T.top ? `M${-hw},-10 L${hw},-10 L${hw * .8},${h - 10} Q0,${h + 4} ${-hw * .8},${h - 10} Z` : `M${-hw},10 L${hw},10 L${hw * .5},${h + 4} L0,${h - 6} L${-hw * .5},${h + 4} Z` }, g);
+  }
+}
+{ // speed lines and saliva drops
+  const r = rng(11), g = $('speed');
+  window.LINES = Array.from({ length: 46 }, () => ({ a: r() * Math.PI * 2, w: .004 + r() * .01, r0: 560 + r() * 260, node: el('path', { fill: '#fff' }, g) }));
+  const gd = $('drops');
+  window.DROPS = Array.from({ length: 14 }, (_, i) => ({ a: (i / 14) * Math.PI * 2 + r() * .3, sp: .7 + r() * .6, sz: 18 + r() * 22, d: r() * .12,
+    node: (() => { const n = el('g', {}, gd); el('path', { class: 'o', fill: '#F7C9D6', 'stroke-width': 5, d: 'M0,-1.6 C0.9,-0.5 1,0.3 0.6,0.75 C0.3,1.05 -0.3,1.05 -0.6,0.75 C-1,0.3 -0.9,-0.5 0,-1.6 Z', 'vector-effect': 'non-scaling-stroke' }, n);
+      el('circle', { cx: -.3, cy: .25, r: .22, fill: '#fff' }, n); return n; })() }));
+  const gb = $('bang');
+  window.BANGS = [0, 1].map(() => { const n = el('g', {}, gb); el('text', { 'font-size': 150, fill: '#E2463A', stroke: '#2A1830', 'stroke-width': 10, 'paint-order': 'stroke', 'text-anchor': 'middle' }, n).textContent = '!'; return n; });
+}
+
+// ---------- timeline ----------
+const kidX = track(-320, [[0.00, 470, 11, .7]]);
+const banX = track(2260, [[0.05, 1450, 11, .7]]);
+const monY = track(1080 + 820, [[0.16, 600, 12, .55]]);
+const monRot = track(0, [[0.16, -6, 10, .5], [0.34, 3, 9, .5], [0.55, 0, 8, .7]]);
+const open = track(0, [[0.40, 1, 15, .45]]);
+const lid = track(.5, [[0.38, .05, 16, .6], [0.85, .2, 12, .7]]);
+const look = track(-1, [[0.22, 1, 10, .7], [0.40, 0, 14, .6]]);
+const camS = t => t < .55 ? 1 : t < .93 ? Math.exp(Math.log(14) * Math.pow(seg(t, .55, .93), 2.4)) : t < 1.3 ? lerp(14, 16.5, seg(t, .93, 1.3)) : lerp(16.5, 34, easeIn(1.8)(seg(t, 1.3, 1.8)));
+const camK = t => ease(seg(t, .5, .88));
+const irisR = t => t < 1.3 ? 0 : lerp(0, 1350, easeIn(2.1)(seg(t, 1.3, 1.72)));
+const MONSTER_SCALE = .92;
+
+const tr = (x, y, s = 1, r = 0, sx) => `translate(${f1(x)} ${f1(y)}) rotate(${r.toFixed(2)}) scale(${(sx ?? s).toFixed(4)} ${s.toFixed(4)})`;
+function mouthPath(rx, ry) { return `M${-rx},0 C${-rx * .85},${-ry * 1.05} ${rx * .85},${-ry * 1.05} ${rx},0 C${rx * .9},${ry * 1.2} ${-rx * .9},${ry * 1.2} ${-rx},0 Z`; }
+const topEdge = (x, rx, ry) => -.79 * ry * Math.sqrt(clamp(1 - (x / rx) ** 2));
+const botEdge = (x, rx, ry) => .9 * ry * Math.sqrt(clamp(1 - (x / rx) ** 2));
+
+function seek(T) {
+  const t = clamp(T, 0, VIDEO.duration);
+  const sA = t < VIDEO.transitionPoint; $('demoA').style.visibility = sA ? 'visible' : 'hidden'; $('demoB').style.visibility = sA ? 'hidden' : 'visible';
+
+  // ---- camera
+  const s = camS(t), k = camK(t);
+  const shake = t > .92 && t < 1.25 ? (1 - seg(t, .92, 1.25)) * 26 : 0;
+  const shx = shake * Math.sin(t * 97), shy = shake * Math.cos(t * 83);
+  const my = monY(t);
+  const mx = 960, Mx = mx, My = my;                   // mouth centre in world space
+  const fx = lerp(Mx, 960, k) + shx, fy = lerp(My, 540, k) + shy;
+  $('cam').setAttribute('transform', `translate(${f1(fx)} ${f1(fy)}) scale(${s.toFixed(4)}) translate(${f1(-Mx)} ${f1(-My)})`);
+  // boil only while the characters are near normal size
+  const boilOn = s < 1.6;
+  $('world').setAttribute('filter', boilOn ? 'url(#boil)' : '');
+  $('boilNoise').setAttribute('seed', 1 + Math.floor(t * 12));
+
+  // ---- monster
+  const vy = (monY(t) - monY(t - 1 / 120)) * 120;
+  const st = clamp(-vy / 7000, -.18, .3);
+  const sy = MONSTER_SCALE * (1 + st), sxm = MONSTER_SCALE / Math.sqrt(1 + st);
+  const breathe = Math.sin(t * 20) * .012 * seg(t, .4, .5);
+  $('monster').setAttribute('transform', `translate(${mx} ${f1(my)}) rotate(${monRot(t).toFixed(2)}) scale(${(sxm * (1 + breathe)).toFixed(4)} ${(sy * (1 - breathe)).toFixed(4)})`);
+  const o = open(t), rx = 120 + 95 * o, ry = 10 + 158 * o;
+  const mp = mouthPath(rx, ry);
+  for (const id of ['mouthClipPath', 'mouthBack', 'mouthLipO', 'mouthLip']) $(id).setAttribute('d', mp);
+  const chin = Math.max(205, ry * 1.1 + 70);
+  $('mHead').setAttribute('d', `M0,-420 C175,-420 236,-290 232,-140 C230,0 226,${chin - 70} 0,${chin} C-226,${chin - 70} -230,0 -232,-140 C-236,-290 -175,-420 0,-420 Z`);
+  // parallax planes inside the mouth: deeper = scales less than the camera
+  const sDeep = 1 + (s - 1) * .32, sMid = 1 + (s - 1) * .62;
+  $('mDeep').setAttribute('transform', `scale(${(sDeep / s).toFixed(4)})`);
+  $('mMid').setAttribute('transform', `scale(${(sMid / s).toFixed(4)}) translate(0 ${f1(ry * .55 - 95)})`);
+  $('uvula').setAttribute('transform', `rotate(${(Math.sin(t * 14) * 9).toFixed(2)} 0 -130)`);
+  $('tongue').setAttribute('transform', `rotate(${(Math.sin(t * 11) * 4 * seg(t, .4, .5)).toFixed(2)} 0 150)`);
+  for (const T of TEETH) { if (!T.node) continue;
+    const y = T.top ? topEdge(T.x * rx / 215, rx, ry) : botEdge(T.x * rx / 215, rx, ry);
+    T.node.setAttribute('transform', `translate(${f1(T.x * rx / 215)} ${f1(y)}) rotate(${T.rot.toFixed(1)}) scale(${(.4 + .6 * o).toFixed(3)})`); }
+  // eyes, lids, brow
+  const lk = look(t);
+  $('mIrisL').setAttribute('transform', `translate(${f1(lk * 20)} ${f1(-Math.abs(lk) * 4 + (1 - Math.abs(lk)) * 6)})`);
+  $('mIrisR').setAttribute('transform', `translate(${f1(lk * 18)} ${f1(-Math.abs(lk) * 4 + (1 - Math.abs(lk)) * 6)})`);
+  const l = lid(t);
+  $('mLidL').setAttribute('height', f1(132 * l + 6)); $('mLidR').setAttribute('height', f1(116 * l + 6));
+  const lyL = -334 + 132 * l + 6, lyR = -320 + 116 * l + 6;
+  const chord = (cx, cy, r, y) => { const h = Math.sqrt(Math.max(0, r * r - (y - cy) ** 2)); return `M${f1(cx - h)},${f1(y)} L${f1(cx + h)},${f1(y)}`; };
+  $('mLidLineL').setAttribute('d', chord(-90, -268, 66, lyL)); $('mLidLineR').setAttribute('d', chord(94, -262, 58, lyR));
+  const ang = lerp(0, 1, seg(t, .38, .5));
+  const bl = -350 - 30 * (1 - l) + ang * 10;
+  $('mBrow').setAttribute('d', `M-170,${f1(bl + 10)} C-120,${f1(bl - 40 + ang * 30)} -40,${f1(bl - 30 + ang * 40)} 0,${f1(bl + ang * 26)} C40,${f1(bl - 30 + ang * 40)} 120,${f1(bl - 40 + ang * 30)} 170,${f1(bl + 6)} C140,${f1(bl + 30)} 110,${f1(bl + 14)} 90,${f1(bl + 28)} C70,${f1(bl + 14)} 40,${f1(bl + 30 + ang * 20)} 0,${f1(bl + 34 + ang * 24)} C-40,${f1(bl + 30 + ang * 20)} -70,${f1(bl + 14)} -90,${f1(bl + 30)} C-110,${f1(bl + 14)} -140,${f1(bl + 30)} -170,${f1(bl + 10)} Z`);
+  // arms: raised claws, waving
+  const raise = spring(t - .3, 12, .5);
+  for (const [dir, ido, idf, hand] of [[-1, 'mArmLo', 'mArmLf', 'mHandL'], [1, 'mArmRo', 'mArmRf', 'mHandR']]) {
+    const wv = Math.sin(t * 16 + dir) * 18 * raise;
+    const sh = [dir * 170, 250], el2 = [dir * lerp(260, 330, raise), lerp(380, 170, raise) + wv * .5], hd = [dir * lerp(280, 360, raise) + wv, lerp(500, -20, raise)];
+    const d = `M${sh[0]},${sh[1]} Q${f1(el2[0])},${f1(el2[1])} ${f1(hd[0])},${f1(hd[1])}`;
+    $(ido).setAttribute('d', d); $(idf).setAttribute('d', d);
+    $(hand).setAttribute('transform', `translate(${f1(hd[0])} ${f1(hd[1])}) rotate(${f1(dir * lerp(40, 10, raise) + wv * .5)}) scale(1.1)`);
+  }
+
+  // ---- kid and banana guy (run in, panic)
+  const panic = seg(t, .44, .5);
+  const pose = (pre, x, v, jumpT, flip) => {
+    const runAmt = clamp(Math.abs(v) / 900);
+    const ph = t * 22;
+    const jump = Math.sin(Math.PI * seg(t, jumpT, jumpT + .26)) * 80;
+    const shiver = panic * Math.sin(t * 70) * 3;
+    $(pre).setAttribute('transform', `translate(${f1(x + shiver)} ${f1(1068 - jump)}) scale(${flip} 1) rotate(${f1(runAmt * 8)})`);
+    return { runAmt, ph };
+  };
+  const kv = (kidX(t) - kidX(t - 1 / 120)) * 120, bv = (banX(t) - banX(t - 1 / 120)) * 120;
+  const kp = pose('kid', kidX(t), kv, .46, 1), bp = pose('ban', banX(t), bv, .48, -1);
+  // limbs are shared by the <use> copies inside the mouth, so they animate from time only
+  const swing = (amt, ph, off) => Math.sin(ph + off) * 34 * amt;
+  const flail = Math.max(panic, t > .9 ? 1 : 0);
+  $('kLegL').setAttribute('transform', `rotate(${f1(swing(kp.runAmt + flail * .6, kp.ph, 0))} -26 -150)`);
+  $('kLegR').setAttribute('transform', `rotate(${f1(swing(kp.runAmt + flail * .6, kp.ph, Math.PI))} 26 -150)`);
+  $('kArmL').setAttribute('transform', `rotate(${f1(lerp(-60, 0, Math.max(panic, flail)) + Math.sin(t * 40) * 14 * flail)} -56 -318)`);
+  $('kArmR').setAttribute('transform', `rotate(${f1(lerp(70, 0, Math.max(panic, flail)) + Math.sin(t * 40 + 1) * 14 * flail)} 56 -318)`);
+  $('bLegL').setAttribute('transform', `rotate(${f1(swing(bp.runAmt + flail * .6, bp.ph + 1, 0))} -30 -130)`);
+  $('bLegR').setAttribute('transform', `rotate(${f1(swing(bp.runAmt + flail * .6, bp.ph + 1, Math.PI))} 30 -130)`);
+  $('bArmL').setAttribute('transform', `rotate(${f1(lerp(-70, 0, Math.max(panic, flail)) + Math.sin(t * 38) * 14 * flail)} -96 -330)`);
+  $('bArmR').setAttribute('transform', `rotate(${f1(lerp(70, 0, Math.max(panic, flail)) + Math.sin(t * 38 + 2) * 14 * flail)} 96 -330)`);
+  const scream = .35 + .65 * panic;
+  $('kMouth').setAttribute('transform', `translate(23 -384) scale(1 ${scream.toFixed(3)}) translate(-23 384)`);
+  $('bMouth').setAttribute('transform', `translate(16 -384) scale(1 ${scream.toFixed(3)}) translate(-16 384)`);
+  const pup = lerp(4, -2, panic);
+  for (const id of ['kPupL', 'kPupR', 'bPupL', 'bPupR']) $(id).setAttribute('transform', `translate(${f1(pup)} ${f1(-3 * panic)}) scale(${(1 - .45 * panic).toFixed(3)})`);
+  // "!" pops
+  [[kidX(t) + 10, .46], [banX(t) - 10, .5]].forEach(([x, tb], i) => {
+    const p = spring(t - tb, 18, .45), out = seg(t, .62, .7);
+    BANGS[i].setAttribute('transform', `translate(${f1(x)} ${f1(1068 - 600 - (i ? 90 : 0) - Math.sin(Math.PI * seg(t, tb, tb + .26)) * 80)}) scale(${(p * (1 - out)).toFixed(3)}) rotate(${i ? 12 : -12})`);
+  });
+
+  // ---- swallowed: the kids tumble into the throat (screen space)
+  const fall = (id, t0, a0, sc0, spin) => {
+    const p = seg(t, t0, 1.30), on = t > t0 && p < 1;
+    const e = easeIn(1.6)(p), R = lerp(1150, 0, e), a = a0 + p * 2.4;
+    const x = 960 + Math.cos(a) * R, y = 540 + Math.sin(a) * R * .62;
+    const sc = lerp(sc0, .02, easeIn(1.3)(p));
+    $(id).setAttribute('transform', `translate(${f1(x)} ${f1(y)}) rotate(${f1(spin * p * 540)}) scale(${sc.toFixed(4)}) translate(0 280)`);
+    $(id).style.display = on ? '' : 'none';
+    return { x, y, sc, on };
+  };
+  const fk = fall('fallKid', .93, Math.PI * .95, 1.05, 1), fb = fall('fallBan', .96, -.1, 1.0, -1);
+  for (const [id, f] of [['aah1', fk], ['aah2', fb]]) {
+    $(id).style.display = f.on && f.sc > .12 ? '' : 'none';
+    $(id).setAttribute('transform', `translate(${f1(f.x)} ${f1(f.y - 330 * f.sc)}) scale(${(f.sc * 1.2).toFixed(3)}) rotate(${f1(Math.sin(t * 30) * 6)})`);
+  }
+
+  // ---- throat iris reveals the next scene
+  const R = irisR(t);
+  if (R > 0) {
+    let d = ''; const n = 64;
+    for (let i = 0; i <= n; i++) {
+      const a = i / n * Math.PI * 2, rr = R * (1 + .05 * Math.sin(5 * a + t * 9) + .035 * Math.sin(3 * a - t * 7));
+      d += (i ? 'L' : 'M') + f1(960 + Math.cos(a) * rr) + ',' + f1(540 + Math.sin(a) * rr * .9);
+    }
+    $('irisHole').setAttribute('d', d + 'Z'); $('irisRimO').setAttribute('d', d + 'Z'); $('irisRim').setAttribute('d', d + 'Z');
+    $('masked').setAttribute('mask', 'url(#iris)');
+  } else { for (const id of ['irisHole', 'irisRimO', 'irisRim']) $(id).setAttribute('d', ''); $('masked').removeAttribute('mask'); }
+  $('masked').style.display = R > 1500 ? 'none' : '';
+
+  // ---- speed lines during the dive
+  const sp = seg(t, .55, .7) * (1 - seg(t, .86, .95));
+  $('speed').style.display = sp > 0 ? '' : 'none';
+  for (const L of LINES) {
+    const r0 = L.r0 * lerp(1.3, .9, seg(t, .55, .93)), r1 = 1500, a = L.a + t * .4;
+    const p = (ang, r) => f1(960 + Math.cos(ang) * r) + ',' + f1(540 + Math.sin(ang) * r);
+    L.node.setAttribute('d', `M${p(a, r0)} L${p(a - L.w, r1)} L${p(a + L.w, r1)} Z`);
+    L.node.setAttribute('opacity', (sp * .55).toFixed(3));
+  }
+
+  // ---- saliva drops fly out of the throat at the camera
+  for (const D of DROPS) {
+    const p = seg(t, 1.32 + D.d, 1.85 + D.d), on = p > 0 && p < 1;
+    D.node.style.display = on ? '' : 'none';
+    if (!on) continue;
+    const r = lerp(120, 1500, easeIn(1.7)(p) * D.sp), sz = D.sz * lerp(.6, 4.5, easeIn(2)(p));
+    D.node.setAttribute('transform', `translate(${f1(960 + Math.cos(D.a) * r)} ${f1(540 + Math.sin(D.a) * r * .8)}) rotate(${f1(D.a * 180 / Math.PI - 90)}) scale(${sz.toFixed(2)})`);
+  }
+
+  // ---- GULP!
+  const gp = spring(t - .91, 20, .42), gOut = easeIn(1.6)(seg(t, 1.28, 1.44));
+  $('gulp').style.display = t > .91 && gOut < 1 ? '' : 'none';
+  $('gulp').setAttribute('transform', `translate(960 ${f1(470 - gOut * 60)}) rotate(${f1(-8 + Math.sin(t * 25) * 2)}) scale(${(gp * (1 + gOut * 2.4)).toFixed(3)})`);
+  $('gulp').setAttribute('opacity', (1 - seg(gOut, .5, 1)).toFixed(3));
+}
+window.seek = seek;
+
+// ---------- sound: real CC0 recordings from the sound-effects skill library, placed on the cue list ----------
+const CUES = [
+  ['whoosh', 0.00, .55], ['quickwoosh', 0.04, .45], ['swoosh', 0.14, .8], ['thump', 0.29, .9],
+  ['pluck', 0.40, .7], ['pop', 0.46, .6], ['pop', 0.50, .45], ['riser', 0.55, .75, 0.93],
+  ['gulp', 0.92, 1.0], ['impact', 0.93, .95], ['longwoosh', 0.97, .5], ['chop', 1.28, .8], ['plop', 1.40, .7], ['plop', 1.52, .45],
+];
+window.CUES = CUES;
+window.buildAudio = async function (ctx) {
+  const buf = {};
+  for (const [k, b64] of Object.entries(SFX)) {
+    const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    buf[k] = await ctx.decodeAudioData(u8.buffer);
+  }
+  const master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+  for (const [k, at, vol, endAt] of CUES) {
+    const src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf[k];
+    g.gain.value = vol; src.connect(g); g.connect(master);
+    if (endAt) { // risers END on the hit: play the tail so it finishes exactly at endAt
+      const len = endAt - at, off = Math.max(0, buf[k].duration - len);
+      g.gain.setValueAtTime(vol, at); g.gain.setValueAtTime(vol, endAt - .02); g.gain.linearRampToValueAtTime(0, endAt + .03);
+      src.start(at, off); src.stop(endAt + .04);
+    } else src.start(at);
+  }
+};
+
+// ---------- preview UI ----------
+const params = new URLSearchParams(location.search);
+if (params.has('render')) { document.body.classList.add('render'); document.documentElement.style.background = 'transparent'; if (params.has('demo')) document.body.classList.add('demo'); }
+else {
+  const fit = () => { const k = Math.min(innerWidth / 1920, (innerHeight - 50) / 1080); $('stage').style.transform = `scale(${k})`; };
+  addEventListener('resize', fit); fit();
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() {
+    ac ??= new AudioContext();
+    if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * VIDEO.duration), 48000); await buildAudio(off); buf = await off.startRendering(); }
+    src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+    src.start(0, offset % VIDEO.duration); startAt = ac.currentTime; playing = true; $('pp').textContent = '❚❚ Pausa';
+  }
+  function pause() { if (!playing) return; offset = now(); src.stop(); playing = false; $('pp').textContent = '▶ Play'; }
+  function now() { return playing ? (offset + ac.currentTime - startAt) % VIDEO.duration : offset; }
+  $('pp').onclick = () => playing ? pause() : play();
+  $('scrub').oninput = e => { const was = playing; pause(); offset = e.target.value / 1000 * VIDEO.duration; if (was) play(); };
+  $('demoT').onchange = e => document.querySelectorAll('.demo').forEach(d => d.style.display = e.target.checked ? '' : 'none');
+  (function loop() { const t = now(); seek(t); $('scrub').value = t / VIDEO.duration * 1000; $('tc').textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+}
+seek(0);
+</script>
+</body>
+</html>
