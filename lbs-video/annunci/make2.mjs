@@ -9,7 +9,7 @@ const DATI = {
   RUOLO: 'CORRIERE', RUOLO_1: 'COR-', RUOLO_2: 'RIE-', RUOLO_3: 'RE',
   SOTTO: 'per azienda tedesca',
   SOTTO_B: 'tedesca',
-  CITTA: 'Kassel',
+  CITTA: 'Düsseldorf',
   STIP: '3.000 € netti',
   STIP_N: '3.000€', STIP_U1: 'netti', STIP_U2: 'al mese',
   ALLOG: 'Pagato dall’azienda',
@@ -48,6 +48,7 @@ const rep = {
   I_WA_BIG: `<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linejoin="round">${WA('#DAB6FC')}</svg>`,
   I_WA_P: `<svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linejoin="round">${WA('#5E2D61')}</svg>`,
   CK,
+  CKS: '<span class="ck"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#30103D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>',
 };
 let s = readFileSync(path.join(D, 'annunci2.src.html'), 'utf8');
 for (const [k, v] of Object.entries(rep)) s = s.replaceAll(`{{${k}}}`, v);
