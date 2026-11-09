@@ -33,12 +33,20 @@ const CK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="
 // codice a barre decorativo (righe fisse)
 const BARCODE = (() => { let x = 0, r = ''; const w = [3,1,2,1,4,1,1,3,2,2,1,4,1,2,3,1,1,2,4,1,2,1,3,2,1,1,4,2,1,3,1,2,2,1,3,1,4,1,2,1]; w.forEach((v, i) => { if (i % 2 === 0) r += `<rect x="${x}" width="${v * 2.4}" height="70" fill="#1d1020"/>`; x += v * 2.4; }); return `<svg width="${x}" height="70" style="margin:0 auto">${r}</svg>`; })();
 
+// motivo di sfondo: valigia trolley e valigetta da lavoro, stile a linee bianche come le icone LBS
+const VALIGIA = '<rect x="25" y="30" width="50" height="55" rx="8"/><path d="M40 30V18h20v12M40 40v35M60 40v35"/><circle cx="35" cy="91" r="4"/><circle cx="65" cy="91" r="4"/>';
+const VALIGETTA = '<rect x="12" y="34" width="76" height="48" rx="8"/><path d="M38 34v-7a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v7M12 56h31M57 56h31"/><rect x="43" y="50" width="14" height="12" rx="3"/>';
+const PAT_VALIGIE = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(18 14) rotate(-10 45 45) scale(.9)">${VALIGIA}</g>
+<g transform="translate(128 132) rotate(8 45 45) scale(.9)">${VALIGETTA}</g></svg>`;
+
 const rep = {
   ...DATI,
   PJS: b64(B + '/pjs.woff2'), INTER: b64(B + '/inter.woff2'), LOGO: b64(B + '/logo.png'),
   ICO_cappello: b64(B + '/icone/cappello.png'), ICO_aereo: b64(B + '/icone/aereo.png'),
   FOTO: b64('assets/foto-corriere.jpg'), CUT: b64('assets/corriere-scontornato.png'),
   ICO_furgone: b64(B + '/icone/furgone.png'),
+  PAT_VALIGIE: Buffer.from(PAT_VALIGIE).toString('base64'),
   DE_INLINE: flag('de', 30).replace('<svg', '<svg style="display:inline-block;vertical-align:-3px;border-radius:3px"'),
   I_WA_D: `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linejoin="round">${WA('#30103D')}</svg>`,
   BARCODE,

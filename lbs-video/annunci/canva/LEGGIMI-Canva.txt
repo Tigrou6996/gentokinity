@@ -10,7 +10,7 @@ ANNUNCIO "CORRIERE A DÜSSELDORF" - FILE MODIFICABILI PER CANVA
    (puoi cambiare qualche colore, non i testi). Per modificare i testi usa il PDF.
 
 3) Immagini separate, se vuoi rifare o spostare i pezzi:
-   - sfondo-F.png             sfondo viola con i furgoncini
+   - sfondo-F.png             sfondo viola con valigie e valigette da lavoro
    - corriere-adesivo-F.png   il corriere scontornato con bordo bianco (sfondo trasparente)
    - logo-LBS.png
 
